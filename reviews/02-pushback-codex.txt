@@ -1,0 +1,47 @@
+I read all requested files and ran targeted probes against the existing binaries without modifying repository files. Two compiler divergences reproduced.
+
+1. **High — the SIMD compiler rejects programs accepted by its specification.** This input compiles successfully in Python but exits **5** under stage2:
+
+   ```text
+   1 >xfntrxrmgiq
+   2 >xqhhsigtfyu
+   ```
+
+   Both names hash to `0x2d73ddc0`. Exact comparison prevents silent miscompilation, but rejection still violates “byte for byte on every input” (`DESIGN.md:112–115`). Python interns exact names and implements neither race exhaustion nor hash-collision rejection (`boot/strand.py:93–101`); Strand explicitly rejects them (`src/compiler.strand:120–126`).
+
+   Independently, concatenating `1 >x{i}\n` for `i=0..39999` produces **status 4** in stage2; Python emits a 14,041,155-byte executable. Three fixed rounds over 65,536 buckets provide no completeness guarantee (`boot/spec.py:72–73`, `src/compiler.strand:96–121`). This makes acceptance depend on unrelated names and their ordering. **The weakest design decision is making a bounded hashing heuristic part of language acceptance without matching reference semantics or a fallback.**
+
+2. **High — unchecked size limits become memory-safety failures.** The runtime reserves 64 GiB for input/heap and 4 GiB for output, checks neither `mmap` result, and never checks allocation/output cursors against those bounds (`stencils/stub.S:15–50`, `tools/mkstencils.py:22–35,56–64,166–169`). Repeated `out4` can overrun output; sufficient allocation can overrun the heap. These are faults/corruption, not specified runtime failures.
+
+   Lengths also mix 64-bit counters with 32-bit masks and signed gather addresses. Bounds checking uses **unsigned** dword comparison, but `vpgatherdd`/`vpscatterdd` sign-extend dword indices (`tools/mkstencils.py:91–95,129–132,163–165`). With a vector longer than `2^31`, an index whose high bit is set can pass bounds checking and address **before** its base. At `2^32`, the lane-mask length truncates entirely (`tools/mkstencils.py:41–47`). These are source-derived findings; I did not allocate multi-gigabyte test inputs. The interpreter’s `TooBig` escape prevents meaningful differential coverage (`boot/strand.py:205–206,247–250`).
+
+3. **High — bootstrap verification can report success despite mismatches.** Both `cmp` commands are the left-hand side of `&&`; shell `set -e` does not terminate on their failure. The final successful `sha256sum` can make `build.sh` return zero after either mismatch (`build.sh:13–15`). Consequently `test.sh:7` does not reliably enforce the advertised fixed point.
+
+4. **Medium — the suite systematically misses important lifetime and adversarial cases.**
+   
+   - Semantic generation always creates fresh destination names; it never generates ordinary vector reassignment, self-reassignment, or replacement of static data (`tests/fuzz_sem.py:64–88`). Thus old-destination release and allocator reuse during overwrite remain effectively untested.
+   - Programs contain only 1–24 generated lines; stdin lengths stop at 1,000 (`tests/fuzz_sem.py:19,98–103`). No table saturation, heap exhaustion, output overflow, or large-index semantics.
+   - Regular names are short counters, so neither deliberate hash collisions nor race exhaustion is exercised. The handwritten “one per compile error” cases omit errors 4 and 5 (`tests/cases.py:8–25`).
+   - Compiler mutation can produce redefinitions, but its output binaries are **not executed** (`tests/fuzz_compile.py:60–68`). It cannot replace semantic coverage.
+   - Padding samples one offset, rather than checking every residue for each program (`tests/fuzz_compile.py:38–44`).
+   - The interpreter shares lexical analysis, validation, and stencil-availability checks with the reference compiler (`boot/strand.py:135–138,225–227`). Shared acceptance bugs survive this oracle.
+
+5. **Medium — several presentation claims exceed what executes.** “Only branches are loop back-edges and runtime safety checks” is false: allocation has free-list/bump-selection branches, commit branches, and release branches (`DESIGN.md:10–13`; `tools/mkstencils.py:28–35,58–74`). `halt` executes a conditional scalar syscall outside the stub (`tools/mkstencils.py:170–175`). The ledger broadly includes allocation, but omits this separate exit path and does not distinguish allocator control dependencies; its fixed stub counts describe one workload, not all executions (`SCALAR_LEDGER.md:13–18`).
+
+   The blog claims comparison against **two** scalar compilers, but the suite invokes only Python (`blog/02-fixed-point.md:45–49`, `tests/fuzz_compile.py:60–63`, `test.sh:9–14`). C has a genuinely different interning implementation (`boot/strandc.c:24–30`), but that independence is unused here.
+
+   “SIMD code generator” is fair for SIMD **layout, copying, and patching**. It should not imply SIMD instruction encoding: Python selects instruction sequences and GNU `as` encodes them (`tools/mkstencils.py:105–176,187–220`). Fixed-point self-hosting includes these externally generated tables (`build.sh:5–6`). The ledger acknowledges this dependency correctly.
+
+6. **No substantiated small-input UAF or scatter-order bug.** Last-occurrence releases run after the entire line; overwrite commits new storage before freeing the old destination; final release clears the slot; static addresses are excluded (`boot/strand.py:184–193`, `tools/mkstencils.py:66–74,145–148,184`). I reproduced agreement for self-reassignment, static-data scatter, empty input, zero-length masked gather, and output followed by `256 halt`.
+
+   Same-address AVX-512 scatter ordering supports last-writer-wins, and sequential chunks preserve it. The stronger objection is bounded race completeness, not an invented nondeterministic scatter race. These probes are narrow, not proof of allocator correctness.
+
+7. **Design novelty is chiefly the combination and restriction.** Array-oriented compilation overlaps Co-dfns/Pareas; scan-based lexical work overlaps simdjson; preassembled templates are explicitly copy-and-patch (`DESIGN.md:60–69`). These files establish an interesting constrained self-hosting construction, not a new general compilation technique. The cost is severe expressiveness restrictions plus global full-array passes. Historical priority would require external comparison beyond repository evidence.
+
+The three most plausible performance changes, in priority order:
+
+- **Fuse passes and eliminate intermediate arrays.** Start with byte classification/token construction (`src/compiler.strand:22–88`). Measure phase time, bytes touched, peak live memory, and minor faults; the ledger reports roughly 250 passes (`SCALAR_LEDGER.md:31–33`).
+- **Introduce packed byte lanes for source and emitted code.** Replace widened byte arrays and per-byte gathers where contiguous loads/shuffles suffice. Measure cycles/source-byte, cache misses, and code-emission throughput. The hardware measurements already identify the density and gather penalties (`HARDWARE.md:41–55`).
+- **Specialize scalar lines and minimize their prologues.** Avoid allocator probing and clearing sixteen carry registers for one-lane arithmetic (`tools/mkstencils.py:21–43`; `SCALAR_LEDGER.md:18`). Measure scalar-line time and retired instructions.
+
+Benchmark each independently against C across source sizes, name densities, and cold/warm memory. None alone establishes that Strand will win.

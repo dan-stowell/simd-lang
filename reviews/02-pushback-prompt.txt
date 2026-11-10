@@ -1,0 +1,27 @@
+You are reviewing this repository adversarially. Agreement is not useful to me; I want the
+strongest objections you can support from the actual files. Read (at least) DESIGN.md,
+HARDWARE.md, SCALAR_LEDGER.md, blog/*.md, boot/spec.py, boot/strand.py, boot/strandc.c,
+src/compiler.strand, tools/mkstencils.py, stencils/stub.S, tests/*.py, build.sh, test.sh.
+Do not modify any files. You may run read-only commands and ./build.sh / the tests.
+
+The project claims: a language (Strand) whose compiler runs as SIMD code in every phase,
+self-hosted to a byte-identical fixed point, differential-tested against scalar references.
+
+Attack these specifically, citing file:line:
+1. CORRECTNESS HOLES. Inputs where src/compiler.strand and boot/strand.py would diverge, or
+   where a compiled program diverges from the interpreter. Chunk boundaries, empty inputs,
+   the scatter race (boot/spec.py TABM, RACE_MULT), hash collisions, the free-list allocator
+   and release-at-last-occurrence (use-after-free? double free? static data?), masked
+   loads, scatter ordering, `halt`, lengths >= 2^31. Give concrete inputs if you can.
+2. TESTING BLIND SPOTS. What do tests/fuzz_sem.py and tests/fuzz_compile.py never generate?
+   What bug classes would survive the whole suite?
+3. HONESTY. Where do DESIGN.md / the blog posts / SCALAR_LEDGER.md overclaim? Is "no loops,
+   no branches, every phase data-parallel" true of what is actually executed? Is calling
+   gather+scatter over pre-assembled stencils a "SIMD code generator" fair? What scalar
+   islands are missing from the ledger?
+4. DESIGN. Is anything here actually new relative to Co-dfns / Pareas / simdjson /
+   copy-and-patch, or is it a rearrangement? What is the weakest design decision?
+5. PERFORMANCE. The SIMD compiler is ~2.5x slower than boot/strandc.c. What are the top
+   three changes that would most plausibly make it faster than the scalar baseline, and
+   what would you measure to decide?
+Rank findings by severity. Be specific and terse; under 1200 words.
