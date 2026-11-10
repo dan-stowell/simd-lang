@@ -122,3 +122,20 @@ What I take from it: the first audit's lesson was "try other spellings of the ba
 I then did not try the most obvious other spelling of `swapcase`. The structural fix is the
 hand-C column: instead of arguing about how strong the C is, the table now brackets Strand
 between what a compiler does with ordinary source and what an expert does with intrinsics.
+
+## Review 6 — third audit (2026-11-10)
+
+Commissioned by me this time, at the owner's request that stable checkpoints be audited:
+astra, x-high, started with the shelley CLI against `af3ecc9`. The text is AUDIT_3.md, the
+evidence under `reviews/audit3*`.
+
+| finding | verdict | action |
+|---|---|---|
+| The retry and prev-check changes are sound; no false acceptance found in adversarial carry tests | — | none needed |
+| The hand-C column is substantive; "75-95% of hand C with the same technique, one CPU" is supported by retained and fresh samples | — | none needed |
+| **A stronger ordinary C for the multicore automata**: packing the four transitions into one byte (`s = (PACKED[c] >> 2*s) & 3`) roughly doubles the two-pass baseline on 8 CPUs; Strand's lead there is 1.8-2.8x, not 3-5.6x | correct. The third time. | **not yet done**: the packed form should join `base_omp.c` as an alternative (it is slower on one CPU for `strip` and `strings`, so both stay) and the table should be re-run. Until then read the 4- and 8-CPU "ordinary C" ratios for `strip`, `idents`, `strings` as about half of what SWEETSPOT.md prints. |
+| `tests/fsm_all.py` covers all 256 functions but not all ordered pairs at all positions, as its docstring claims | correct | **not yet done**; the docstring overstates |
+| JSON structural extraction is not "a complete scanner" | correct | SWEETSPOT.md row reworded |
+| The phase map misdescribes the compiler: positions and decimal literals were already built; liveness is not a gen/kill scan; "everything after the lexer is outside the model" is too broad | correct | rows rewritten (and overtaken: the lexer has since moved to byte lanes with a new bridge, see DESIGN.md) |
+| `check_probe.py` checks `avxvnni` with a pattern that AVX-512 VNNI also satisfies | correct | **not yet done** |
+| Measure retries, not only their existence | fair | **not yet done**: no benchmark of dependent-carry lines exists |
