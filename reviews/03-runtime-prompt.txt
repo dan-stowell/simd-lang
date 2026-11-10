@@ -1,0 +1,34 @@
+You are reviewing this repository adversarially. Agreement is not useful; I want the strongest
+objections you can support from the actual files. Do not modify files. You may build
+(./build.sh) and run programs and tests, but do not run ./test.sh (slow).
+
+Since your last review (REVIEWS.md, review 2) the runtime changed a lot. Read SWEETSPOT.md,
+stencils/stub.S (startup, I/O, the thread pool), tools/mkstencils.py (LOOPHEAD/LOOPEND, the
+VETO / [rbx-712] carry mask, byte-line stencils, outif), boot/spec.py (BYTEOF, byte classes),
+boot/strand.py (interpreter byte lines), tests/fuzz_sem.py (eager mode), bench/.
+
+Attack these, citing file:line and giving concrete Strand programs + inputs where you can
+(a program is compiled with `./build/stage2 < prog.strand > bin`; `./bin eager < input` forces
+every splittable line of 64+ elements through the pool with small blocks):
+
+1. THREAD POOL CORRECTNESS. Races, lost wakeups, missed futex wakes, ABA on `seq`, a worker
+   seeing a half-written job, the caller acting as the last thread, stack alignment, anything
+   clobbered across the fork call (registers the stencils assume), the warm-up chunk for
+   `prev`, deferred failures (justret/softfail), fork being entered with the output buffer
+   partly filled.
+2. PARALLEL SCANS. Is "every thread's IN equals its predecessor's real OUT => identical to
+   serial" actually sound? Find a line where verification passes but the result differs from
+   serial (nested scans, scan feeding prev feeding scan, scanmax with negative values,
+   byte-line prev, carries not marked in [rbx-712], overflow), or where the serial fallback
+   restores incomplete state (accumulators, r8/output regions already written, tee'd arrays).
+3. BYTE LINES. Semantics mismatches between boot/strand.py and the stencils: unsigned compares,
+   the multiply, table lookup with tables longer/shorter than 256, masks at the tail chunk,
+   vpcompressb regions overlapping between threads, sum overflow, `prev` at chunk seams.
+4. I/O. mmap of stdin (empty file, file not at offset 0, growing/truncated file, /dev/null,
+   pipes, > 2 GiB), streamed output on error paths, short writes, output to a closed pipe.
+5. TESTING. What can the eager-mode fuzzer not reach? (e.g. >1 block of real size, more than 8
+   threads, 1 thread, n just above multiples of 64*P.) What would you add?
+6. HONESTY. Does SWEETSPOT.md overclaim? Are the C baselines in bench/base.c fair (read()
+   blocks vs mmap, single thread vs pool, -O3 flags)? What comparison is missing that would
+   most likely embarrass the result?
+Rank findings by severity. Be specific and terse; under 1300 words.
