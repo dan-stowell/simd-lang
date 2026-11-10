@@ -1,0 +1,50 @@
+1. **High — persistent tees break parallel `prev`; reproduced in ordinary mode.**
+
+   ```strand
+   input :x x prev + >y
+   x end
+   y out4
+   ```
+
+   Input: 524,289 bytes of `0x01`, eight CPUs, **no eager argument**. Expected dwords: `1, 2, 2, …`. Observed exit 0, but indices 65,536, 131,072, …, 458,752 contained **1**. With 4,097 bytes and `eager`, wrong values appeared at several 256-element boundaries.
+
+   Warm-up clears `k5` (`stencils/stub.S:289`), suppressing the persistent tee’s `k6`-masked store (`tools/mkstencils.py:231`). But rereading `x` uses `k7`, loading the array anyway (`tools/mkstencils.py:155`). The preceding worker might have populated that memory—or might not. Consequently warm-up feeds stale/racing data into `prev`. This is silent corruption and an actual inter-thread race, not a hypothetical futex issue.
+
+   Keeping `x` alive after its defining line is essential: otherwise the compiler makes it chunk-local, whose unmasked temporary store avoids this bug. Fixing this requires making warm-up rereads consume locally computed tee values, or vetoing these lines; simply enabling the shared store reintroduces overlapping writes.
+
+2. **Medium — stdin errors become successful, truncated computations.**
+
+   `stencils/stub.S:153–154` treats **every negative `read()` result as EOF**. Reproduced: `bytes out` with a directory descriptor as stdin returns exit 0 and empty output despite `read()` failing with `EISDIR`. A nonblocking pipe can similarly stop at `EAGAIN` after consuming only a prefix.
+
+   Separately, the regular-file fast path assumes `st_size == 0` means empty (`stencils/stub.S:116–130`). Reproduced: `bytes out < /proc/version` returns nothing, successfully, although the file is readable and nonempty. Probe zero-sized files with `read()` rather than accepting metadata as EOF.
+
+3. **Medium — eager testing systematically bypasses important pool paths.**
+
+   Eager output blocks are 1,024 bytes (`stencils/stub.S:62`), divided by four for `out4`/`outif4` (`:420–423`). Dispatch requires at least `64 × P` elements (`:439–444`). Therefore, with eight CPUs, **every eager dword-output line remains serial**, regardless of input length. Even four CPUs can miss dispatch on the final exact-sized block because one element is reserved for the tail.
+
+   With more than eight CPUs, the 512-element eager scan probe cannot dispatch either (`:61`, `:412–415`). “Every splittable line of 64+ elements” is materially misleading (`tests/fuzz_sem.py:184`).
+
+   The fuzzer also supplies stdin exclusively through pipes (`tests/fuzz_sem.py:187`), never exercising mmap. It fixes neither CPU count nor scheduling, samples only six lengths, and discards all failed-run stdout (`:180–188`).
+
+   Add deterministic tests for:
+   - The persistent-tee reproducer, repeated under scheduling variation.
+   - CPU counts 1, 2, 3, 4, 8, 9, 16; assert that intended cases actually dispatch.
+   - `64P−1`, `64P`, `64P+1`, and multiple **production-sized** blocks.
+   - Nested scans, scan→prev→scan, negative scanmax, overflow, fallback after an accepted block, and pending output before fork.
+   - Regular files, nonzero offsets, procfs, read failures, short writes and closed pipes.
+
+4. **Medium — the headline performance conclusions exceed the measurements.**
+
+   “Matches or beats … every row” (`SWEETSPOT.md:98`) contradicts its own upper row: **6.08 versus 6.63 GB/s** (`:70`), and its OpenMP table: **5.8 versus 6.6** (`:129`). “Eight vCPUs are not better than four” (`:163`) contradicts, for example, pairs: **17.46 versus 10.90** (`:68`).
+
+   The main C baseline uses 64-KiB `read()` blocks (`bench/base.c:7,32`), while Strand maps input; “scalar” explicitly disables vectorization (`bench/run.py:37`). Those are disclosed, legitimate baselines, but their ratios combine runtime, SIMD and threading advantages. The mmap/OpenMP comparison partly addresses this, yet `bench/run.py:31–44` never builds or runs `base_omp.c`, so it does not reproduce that table.
+
+   **The most threatening missing comparison:** matched mmap, buffering and thread counts against hand-vectorized C for words/pairs and AVX-512 byte compression for filters. The supposed sweet spot is precisely where these C baselines retain scalar loops (`bench/base.c:37,41`; `bench/base_omp.c:44`). Also test a boundary-separated, explicitly SIMD word loop instead of leaving `i == 0` inside it (`bench/base_omp.c:28`). Failure of these particular loops to auto-vectorize does not establish an inherent C limitation.
+
+5. **Lower — mmap and output failure semantics need explicit boundaries.**
+
+   Successful mmap neither advances stdin’s shared file offset nor follows subsequent growth (`stencils/stub.S:120–144`); truncation can produce SIGBUS. These differ from the read path and deserve tests/documentation.
+
+   Short positive writes are correctly retried (`stencils/stub.S:209–218`). Negative writes exit 97 without retrying EINTR; with default SIGPIPE disposition, a closed pipe can terminate the process before that handler runs. Runtime failure and `halt` bypass flushing (`stencils/stub.S:687`; `tools/mkstencils.py:248–257`), making visible output depend on previous flushes. The fuzzer explicitly treats that output as unspecified; it does not verify any stronger guarantee.
+
+I found **no supported counterexample to scan verification itself**: with complete carries and deterministic range execution, predecessor equality gives an induction from thread zero’s true state. Nor did I establish a lost wakeup, sequence ABA, byte multiplication/comparison mismatch, or filter-region overlap. The barrier prevents a worker from being lapped through sequence wrap. Additional testing passed 245 generated programs on two CPUs; that did not catch finding 1. No files were modified, and `./test.sh` was not run.
