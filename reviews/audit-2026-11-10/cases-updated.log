@@ -1,0 +1,3 @@
+PASS build/stage1 97 cases
+PASS build/stage2 97 cases
+PASS build/stage3 97 cases

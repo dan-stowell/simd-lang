@@ -1,0 +1,20 @@
+build/review-methodology/base_adjacent.c:9:87: missed: couldn't vectorize loop
+build/review-methodology/base_adjacent.c:9:87: missed: not vectorized: control flow in loop.
+build/review-methodology/base_adjacent.c:32:47: missed: couldn't vectorize loop
+build/review-methodology/base_adjacent.c:32:47: missed: not vectorized: control flow in loop.
+build/review-methodology/base_adjacent.c:44:27: optimized: loop vectorized using 64 byte vectors
+build/review-methodology/base_adjacent.c:44:27: optimized: loop vectorized using 32 byte vectors
+build/review-methodology/base_adjacent.c:27:5: note: vectorized 1 loops in function.
+/usr/include/x86_64-linux-gnu/bits/unistd.h:28:10: missed: statement clobbers memory: iftmp.3_31 = __read_alias (0, &in, 65536);
+build/review-methodology/base_adjacent.c:9:87: missed: statement clobbers memory: w_35 = write (1, c_49, n_50);
+build/review-methodology/base_adjacent.c:9:115: missed: statement clobbers memory: _exit (1);
+build/review-methodology/base_adjacent.c:44:59: note: ***** Analysis failed with vector mode V16SI
+build/review-methodology/base_adjacent.c:44:59: note: ***** The result for vector mode V64QI would be the same
+build/review-methodology/base_adjacent.c:44:59: note: ***** Re-trying analysis with vector mode V32QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Analysis failed with vector mode V32QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Re-trying analysis with vector mode V16QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Analysis failed with vector mode V16QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Re-trying analysis with vector mode V8QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Analysis failed with vector mode V8QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Re-trying analysis with vector mode V4QI
+build/review-methodology/base_adjacent.c:44:59: note: ***** Analysis failed with vector mode V4QI

@@ -1,0 +1,7 @@
+input 256 MiB, in memory, pre-touched; best of 5; GB/s
+| kernel | scalar -O2 | gcc -O3 autovec | AVX-512 i32x16 (Strand today) | AVX-512 u8x64 | u8x64 x2 | x4 | x8 |
+|---|---|---|---|---|---|---|---|
+| count newlines | 1.83 | 10.54 | 19.71 | 31.18 | 44.0 | 60.9 | 57.0 |
+| count words (prev) | 1.23 | 1.23 | 15.31 | 29.46 | 29.0 | 54.5 | 65.7 |
+| uppercase -> buffer | 1.70 | 14.60 | 13.34 | 12.36 | 19.3 | 24.9 | 28.6 |
+check: newlines 6293207 6293207 6293207 6293207 ; words 39563625 39563625 39563625 39563625

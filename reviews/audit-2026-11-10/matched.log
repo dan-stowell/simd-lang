@@ -1,0 +1,35 @@
+| program | variant | CPUs | best GB/s | median GB/s |
+|---|---|---|---|---|
+| lines | Strand | 1 | 8.10 | 7.25 |
+| lines | OpenMP | 1 | 7.65 | 7.04 |
+| lines | Strand | 4 | 15.96 | 12.88 |
+| lines | OpenMP | 4 | 14.85 | 11.69 |
+| lines | Strand | 8 | 16.77 | 13.75 |
+| lines | OpenMP | 8 | 12.88 | 10.75 |
+| upper | Strand | 1 | 5.77 | 5.40 |
+| upper | OpenMP | 1 | 6.46 | 6.15 |
+| upper | Strand | 4 | 14.41 | 7.96 |
+| upper | OpenMP | 4 | 13.92 | 12.72 |
+| upper | Strand | 8 | 12.59 | 9.77 |
+| upper | OpenMP | 8 | 13.68 | 11.43 |
+| prefix4 | Strand | 1 | 6.55 | 6.30 |
+| prefix4 | OpenMP | 1 | 4.88 | 4.81 |
+| prefix4 | Strand | 4 | 11.84 | 7.62 |
+| prefix4 | OpenMP | 4 | 12.88 | 9.34 |
+| prefix4 | Strand | 8 | 13.23 | 9.56 |
+| prefix4 | OpenMP | 8 | 12.03 | 8.94 |
+| words | Strand | 1 | 7.83 | 6.51 |
+| words | OpenMP | 1 | 1.55 | 1.53 |
+| words | OpenMP peeled | 1 | 6.98 | 6.36 |
+| words | Strand | 4 | 18.00 | 12.70 |
+| words | OpenMP | 4 | 5.25 | 3.91 |
+| words | OpenMP peeled | 4 | 16.22 | 10.59 |
+| words | Strand | 8 | 16.12 | 10.58 |
+| words | OpenMP | 8 | 6.60 | 4.72 |
+| words | OpenMP peeled | 8 | 14.87 | 12.19 |
+| letters | Strand | 1 | 5.83 | 5.64 |
+| letters | OpenMP | 1 | 1.50 | 1.49 |
+| letters | Strand | 4 | 13.38 | 8.57 |
+| letters | OpenMP | 4 | 5.02 | 3.42 |
+| letters | Strand | 8 | 13.80 | 10.08 |
+| letters | OpenMP | 8 | 5.75 | 4.54 |

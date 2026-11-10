@@ -1,0 +1,42 @@
+total instructions executed: 8709660
+
+| kind | instructions | share |
+|---|---|---|
+| vector | 5181893 | 59.5% |
+| GPR bookkeeping (loop control, pointers, checks, allocator) | 2566965 | 29.5% |
+| mask register | 749329 | 8.6% |
+| gather (16 serial loads each) | 148927 | 1.7% |
+| scatter (16 serial stores each) | 62377 | 0.7% |
+| stub (syscall glue) | 169 | 0.0% |
+
+| phase | instructions | share |
+|---|---|---|
+| one pass over the bytes, seen from their tokens: | 1900071 | 21.8% |
+| code bytes: gather stencils, scatter operands | 1288908 | 14.8% |
+| byte classes: comments, strings, token chars | 1194355 | 13.7% |
+| names: the scatter race | 1171171 | 13.4% |
+| stack depth = register allocation, by one scan | 826222 | 9.5% |
+| token classes | 790258 | 9.1% |
+| code layout | 442977 | 5.1% |
+| tokens: sigil, operand class, name span | 334511 | 3.8% |
+| text = prelude ++ source ++ "\n" | 244015 | 2.8% |
+| data image: slots, then pool | 219131 | 2.5% |
+| keywords by self-join; slots by one scan | 208155 | 2.4% |
+| ELF, by concatenation | 88755 | 1.0% |
+| tables | 962 | 0.0% |
+| (startup/exit stub) | 169 | 0.0% |
+
+| line | instructions | source |
+|---|---|---|
+| 109 | 1574862 | `bt @nsl dup 1 & tc & :blit drop 1 >> :bns idx swap - :off 0 >= tc & :b` |
+| 88 | 604621 | `text 35 = scan dup text 10 = * scanmax > 1 ^ :ncm text 34 = & :q dup s` |
+| 91 | 589306 | `q par 1 ^ & prev tc & tc dup prev over over 1 ^ & :ts idx over %start ` |
+| 116 | 218501 | `bt @val u1 * par q 1 ^ & :u2 text * + u1 u2 | ?pool` |
+| 102 | 211253 | `tend start - :len 1 > c0 @sigtab :s0 0 > & start 1 + @text 127 min @op` |
+| 147 | 208350 | `bt @vd idx + 0 max Tm min @text text != bop * $Ec1` |
+| 177 | 203048 | `slot @tdef :td1 1 - 0 max :td @clso @istee td1 0 > & isname & td @rep ` |
+| 251 | 184106 | `mark scanmax @dmark idx + @sten >cb` |
+| 238 | 152306 | `ln1 @lft :tf @sbx :fb tf @sax + spx + :offp ln1 @llt :tl @sp :lp fb + ` |
+| 233 | 149009 | `code tid @qlen * :psz scan :sp psz - :spx code sl * :asz scan :sa asz ` |
+| 161 | 144103 | `kw 0 > sgi 0 > & Cerr kw 0 > sgi 0 = & kw 1 - sgi 5 * opc + @clstab se` |
+| 210 | 129390 | `td @clso @istee clso @reread & idx td > & 1 ^ td1 0 > isname & idx td ` |

@@ -1,0 +1,2 @@
+/home/exedev/simd-lang/build/review-matched/words_peeled.c:29:44: optimized: loop vectorized using 64 byte vectors
+/home/exedev/simd-lang/build/review-matched/words_peeled.c:29:44: optimized: loop vectorized using 32 byte vectors

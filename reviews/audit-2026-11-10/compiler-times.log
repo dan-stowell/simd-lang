@@ -1,0 +1,8 @@
+build/strandc.strand 3 build/strandc_scalar wall min 3028 us  median 3099 us   cpu min 2976 us median 3048 us   usr min 0 sys min 0 median usr 2984 sys 0 faults 1015
+build/strandc.strand 3 build/stage2 wall min 4498 us  median 4535 us   cpu min 4448 us median 4481 us   usr min 0 sys min 0 median usr 4464 sys 0 faults 1397
+build/strandc.strand 0-7 build/strandc_scalar wall min 3228 us  median 8033 us   cpu min 3087 us median 7847 us   usr min 0 sys min 0 median usr 3787 sys 3943 faults 1013
+build/strandc.strand 0-7 build/stage2 wall min 4863 us  median 11509 us   cpu min 4672 us median 11313 us   usr min 0 sys min 0 median usr 6800 sys 3915 faults 1398
+build/review/big64.strand 3 build/strandc_scalar wall min 231085 us  median 243017 us   cpu min 230963 us median 242330 us   usr min 107862 sys min 81932 median usr 140464 sys 100645 faults 58864
+build/review/big64.strand 3 build/stage2 wall min 345367 us  median 359729 us   cpu min 345192 us median 359550 us   usr min 202614 sys min 124047 median usr 224663 sys 132066 faults 83530
+build/review/big64.strand 0-7 build/strandc_scalar wall min 213852 us  median 255390 us   cpu min 213428 us median 255057 us   usr min 108124 sys min 82901 median usr 140966 sys 112544 faults 58863
+build/review/big64.strand 0-7 build/stage2 wall min 248095 us  median 282035 us   cpu min 745120 us median 783590 us   usr min 502775 sys min 160511 median usr 596755 sys 212451 faults 84520

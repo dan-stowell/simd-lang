@@ -1,0 +1,73 @@
+{
+  "race": {
+    "source": "0 >X1\n0 >X419\n0 >X444\n0 >X813\n0 >X892\n0 >X1337\n0 >X1388\n0 >X1827\n0 >X1846\n0 >X1858\n0 >X2124\n0 >X2129\n0 >X2563\n0 >X2713\n0 >X2816\n0 >X2835\n",
+    "name_hash_trials": 2835,
+    "mask": 255,
+    "expected_exit": 4,
+    "actual": {
+      "Python": 4,
+      "strandc_scalar": {
+        "exit": 4,
+        "stdout_bytes": 0
+      },
+      "stage1": {
+        "exit": 4,
+        "stdout_bytes": 0
+      },
+      "stage2": {
+        "exit": 4,
+        "stdout_bytes": 0
+      },
+      "stage3": {
+        "exit": 4,
+        "stdout_bytes": 0
+      }
+    }
+  },
+  "halt_output": {
+    "source": "~300000 out\n1 halt\n",
+    "interpreter": {
+      "exit": 1,
+      "stdout_bytes": 0
+    },
+    "binary": {
+      "exit": 1,
+      "stdout_bytes": 262144
+    }
+  },
+  "timer_accepts_failed_child": {
+    "child_exit": 1,
+    "timer_exit": 0,
+    "timer_stdout": "wall min 2555 us  median 2555 us   cpu min 1203 us median 1203 us   usr min 1203 sys min 0 median usr 1203 sys 0 faults 65\n"
+  },
+  "c_baseline_short_reads": {
+    "swapcase": {
+      "input_hex": "6142",
+      "normal_hex": "4162",
+      "short_read_hex": "414162"
+    },
+    "lines32": {
+      "input_hex": "0a0a",
+      "normal_hex": "02000000",
+      "short_read_hex": "03000000"
+    }
+  },
+  "openmp_reduced_team": {
+    "letters": {
+      "expected_hex": "61626364",
+      "actual_hex": "61"
+    },
+    "prefix4": {
+      "expected_hex": "0100000003000000060000000a000000",
+      "actual_hex": "01000000000000000000000000000000"
+    }
+  },
+  "hardware_scalar_prefix_ubsan": {
+    "exit": 1,
+    "stderr": "/home/exedev/simd-lang/hw/probe.c:125:128: runtime error: signed integer overflow: 1681692777 + 1804289383 cannot be represented in type 'int'\n"
+  },
+  "execution_probe_disassembly": {
+    "p_avx2": "\n/home/exedev/simd-lang/build/review-checks/probe:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000004930 <p_avx2>:\n    4930:\tf3 0f 1e fa          \tendbr64\n    4934:\t8b 05 d6 46 00 00    \tmov    eax,DWORD PTR [rip+0x46d6]        # 9010 <three>\n    493a:\t01 c0                \tadd    eax,eax\n    493c:\t48 98                \tcdqe\n    493e:\t48 89 05 db b6 02 04 \tmov    QWORD PTR [rip+0x402b6db],rax        # 4030020 <sink>\n    4945:\tc3                   \tret\n\nDisassembly of section .fini:\n",
+    "p_adx": "\n/home/exedev/simd-lang/build/review-checks/probe:     file format elf64-x86-64\n\n\nDisassembly of section .init:\n\nDisassembly of section .plt:\n\nDisassembly of section .plt.got:\n\nDisassembly of section .plt.sec:\n\nDisassembly of section .text:\n\n0000000000005350 <p_adx>:\n    5350:\tf3 0f 1e fa          \tendbr64\n    5354:\t48 83 ec 18          \tsub    rsp,0x18\n    5358:\t64 48 8b 04 25 28 00 \tmov    rax,QWORD PTR fs:0x28\n    535f:\t00 00 \n    5361:\t48 89 44 24 08       \tmov    QWORD PTR [rsp+0x8],rax\n    5366:\t31 c0                \txor    eax,eax\n    5368:\t48 8b 15 b1 ac 02 04 \tmov    rdx,QWORD PTR [rip+0x402acb1]        # 4030020 <sink>\n    536f:\t48 8b 05 aa ac 02 04 \tmov    rax,QWORD PTR [rip+0x402acaa]        # 4030020 <sink>\n    5376:\t48 01 d0             \tadd    rax,rdx\n    5379:\t48 89 04 24          \tmov    QWORD PTR [rsp],rax\n    537d:\t48 83 d0 00          \tadc    rax,0x0\n    5381:\t48 89 05 98 ac 02 04 \tmov    QWORD PTR [rip+0x402ac98],rax        # 4030020 <sink>\n    5388:\t48 8b 44 24 08       \tmov    rax,QWORD PTR [rsp+0x8]\n    538d:\t64 48 2b 04 25 28 00 \tsub    rax,QWORD PTR fs:0x28\n    5394:\t00 00 \n    5396:\t75 05                \tjne    539d <p_adx+0x4d>\n    5398:\t48 83 c4 18          \tadd    rsp,0x18\n    539c:\tc3                   \tret\n    539d:\te8 de cd ff ff       \tcall   2180 <__stack_chk_fail@plt>\n\nDisassembly of section .fini:\n"
+  }
+}

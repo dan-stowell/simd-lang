@@ -1,0 +1,20 @@
+--- bench/base.c
++++ adjacent-loads.c
+@@ -34,11 +34,15 @@
+ #if K == P_lines || K == P_lines32
+     for (ssize_t i = 0; i < n; i++) acc += in[i] == 10;
+ #elif K == P_words
+-    for (ssize_t i = 0; i < n; i++) { int nb = in[i] > 32; acc += nb & !prev; prev = nb; }
++    acc += (in[0] > 32) & !prev;
++    for (ssize_t i = 1; i < n; i++) acc += (in[i] > 32) & (in[i-1] <= 32);
++    prev = in[n-1] > 32;
+ #elif K == P_sum
+     for (ssize_t i = 0; i < n; i++) acc += in[i];
+ #elif K == P_pairs
+-    for (ssize_t i = 0; i < n; i++) { acc += (in[i] == 104) & (prev == 116); prev = in[i]; }
++    acc += (in[0] == 104) & (prev == 116);
++    for (ssize_t i = 1; i < n; i++) acc += (in[i] == 104) & (in[i-1] == 116);
++    prev = in[n-1];
+ #elif K == P_nonascii
+     for (ssize_t i = 0; i < n; i++) acc += in[i] > 127;
+ #elif K == P_upper

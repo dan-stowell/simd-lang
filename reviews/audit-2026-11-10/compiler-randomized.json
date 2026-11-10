@@ -1,0 +1,847 @@
+{
+  "date_utc": "2026-11-10T17:38:05.557833+00:00",
+  "revision": "ca01f9d07d5bdf19d7767113740ee258e0c0ee3c",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "repetitions": 21,
+  "order_seed": 20261111,
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "results": [
+    {
+      "source": "strandc.strand",
+      "source_bytes": 81130,
+      "compiler": "strandc_scalar",
+      "cpus": [
+        3
+      ],
+      "output": {
+        "sha256": "8ff94a8bf940ef259812831096a42bec69a90ee8308f658527d229e7eeb07428",
+        "bytes": 187950
+      },
+      "samples": [
+        {
+          "wall_us": 8492.0,
+          "raw": "wall min 8492 us  median 8492 us   cpu min 7977 us median 7977 us   usr min 0 sys min 7977 median usr 0 sys 7977 faults 1015"
+        },
+        {
+          "wall_us": 3195.0,
+          "raw": "wall min 3195 us  median 3195 us   cpu min 3133 us median 3133 us   usr min 3133 sys min 0 median usr 3133 sys 0 faults 1012"
+        },
+        {
+          "wall_us": 3828.0,
+          "raw": "wall min 3828 us  median 3828 us   cpu min 3440 us median 3440 us   usr min 3440 sys min 0 median usr 3440 sys 0 faults 1013"
+        },
+        {
+          "wall_us": 3896.0,
+          "raw": "wall min 3896 us  median 3896 us   cpu min 3804 us median 3804 us   usr min 3804 sys min 0 median usr 3804 sys 0 faults 1014"
+        },
+        {
+          "wall_us": 3123.0,
+          "raw": "wall min 3123 us  median 3123 us   cpu min 3057 us median 3057 us   usr min 0 sys min 3057 median usr 0 sys 3057 faults 1016"
+        },
+        {
+          "wall_us": 3373.0,
+          "raw": "wall min 3373 us  median 3373 us   cpu min 3308 us median 3308 us   usr min 0 sys min 3308 median usr 0 sys 3308 faults 1012"
+        },
+        {
+          "wall_us": 7548.0,
+          "raw": "wall min 7548 us  median 7548 us   cpu min 7402 us median 7402 us   usr min 7402 sys min 0 median usr 7402 sys 0 faults 1014"
+        },
+        {
+          "wall_us": 3359.0,
+          "raw": "wall min 3359 us  median 3359 us   cpu min 3299 us median 3299 us   usr min 0 sys min 3299 median usr 0 sys 3299 faults 1012"
+        },
+        {
+          "wall_us": 3188.0,
+          "raw": "wall min 3188 us  median 3188 us   cpu min 3126 us median 3126 us   usr min 0 sys min 3126 median usr 0 sys 3126 faults 1012"
+        },
+        {
+          "wall_us": 3047.0,
+          "raw": "wall min 3047 us  median 3047 us   cpu min 2986 us median 2986 us   usr min 0 sys min 2986 median usr 0 sys 2986 faults 1014"
+        },
+        {
+          "wall_us": 8297.0,
+          "raw": "wall min 8297 us  median 8297 us   cpu min 8120 us median 8120 us   usr min 0 sys min 8120 median usr 0 sys 8120 faults 1015"
+        },
+        {
+          "wall_us": 4316.0,
+          "raw": "wall min 4316 us  median 4316 us   cpu min 4237 us median 4237 us   usr min 0 sys min 4237 median usr 0 sys 4237 faults 1015"
+        },
+        {
+          "wall_us": 3031.0,
+          "raw": "wall min 3031 us  median 3031 us   cpu min 2974 us median 2974 us   usr min 2974 sys min 0 median usr 2974 sys 0 faults 1013"
+        },
+        {
+          "wall_us": 3380.0,
+          "raw": "wall min 3380 us  median 3380 us   cpu min 3295 us median 3295 us   usr min 0 sys min 3295 median usr 0 sys 3295 faults 1012"
+        },
+        {
+          "wall_us": 3482.0,
+          "raw": "wall min 3482 us  median 3482 us   cpu min 3413 us median 3413 us   usr min 0 sys min 3413 median usr 0 sys 3413 faults 1014"
+        },
+        {
+          "wall_us": 7806.0,
+          "raw": "wall min 7806 us  median 7806 us   cpu min 7670 us median 7670 us   usr min 3835 sys min 3835 median usr 3835 sys 3835 faults 1012"
+        },
+        {
+          "wall_us": 7700.0,
+          "raw": "wall min 7700 us  median 7700 us   cpu min 7571 us median 7571 us   usr min 0 sys min 7571 median usr 0 sys 7571 faults 1013"
+        },
+        {
+          "wall_us": 3333.0,
+          "raw": "wall min 3333 us  median 3333 us   cpu min 3261 us median 3261 us   usr min 0 sys min 3261 median usr 0 sys 3261 faults 1013"
+        },
+        {
+          "wall_us": 3460.0,
+          "raw": "wall min 3460 us  median 3460 us   cpu min 3394 us median 3394 us   usr min 3394 sys min 0 median usr 3394 sys 0 faults 1014"
+        },
+        {
+          "wall_us": 3380.0,
+          "raw": "wall min 3380 us  median 3380 us   cpu min 3318 us median 3318 us   usr min 3318 sys min 0 median usr 3318 sys 0 faults 1015"
+        },
+        {
+          "wall_us": 3164.0,
+          "raw": "wall min 3164 us  median 3164 us   cpu min 3097 us median 3097 us   usr min 0 sys min 3097 median usr 0 sys 3097 faults 1012"
+        }
+      ],
+      "best_ms": 3.031,
+      "median_ms": 3.38
+    },
+    {
+      "source": "strandc.strand",
+      "source_bytes": 81130,
+      "compiler": "stage2",
+      "cpus": [
+        3
+      ],
+      "output": {
+        "sha256": "8ff94a8bf940ef259812831096a42bec69a90ee8308f658527d229e7eeb07428",
+        "bytes": 187950
+      },
+      "samples": [
+        {
+          "wall_us": 12354.0,
+          "raw": "wall min 12354 us  median 12354 us   cpu min 12196 us median 12196 us   usr min 8011 sys min 4185 median usr 8011 sys 4185 faults 1400"
+        },
+        {
+          "wall_us": 5115.0,
+          "raw": "wall min 5115 us  median 5115 us   cpu min 5047 us median 5047 us   usr min 5047 sys min 0 median usr 5047 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 11723.0,
+          "raw": "wall min 11723 us  median 11723 us   cpu min 11584 us median 11584 us   usr min 7723 sys min 3861 median usr 7723 sys 3861 faults 1397"
+        },
+        {
+          "wall_us": 5056.0,
+          "raw": "wall min 5056 us  median 5056 us   cpu min 4991 us median 4991 us   usr min 4991 sys min 0 median usr 4991 sys 0 faults 1397"
+        },
+        {
+          "wall_us": 5683.0,
+          "raw": "wall min 5683 us  median 5683 us   cpu min 5612 us median 5612 us   usr min 5612 sys min 0 median usr 5612 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 5076.0,
+          "raw": "wall min 5076 us  median 5076 us   cpu min 4981 us median 4981 us   usr min 4981 sys min 0 median usr 4981 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 5029.0,
+          "raw": "wall min 5029 us  median 5029 us   cpu min 4964 us median 4964 us   usr min 4964 sys min 0 median usr 4964 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 11550.0,
+          "raw": "wall min 11550 us  median 11550 us   cpu min 11413 us median 11413 us   usr min 7609 sys min 3804 median usr 7609 sys 3804 faults 1398"
+        },
+        {
+          "wall_us": 5081.0,
+          "raw": "wall min 5081 us  median 5081 us   cpu min 5006 us median 5006 us   usr min 5006 sys min 0 median usr 5006 sys 0 faults 1397"
+        },
+        {
+          "wall_us": 5595.0,
+          "raw": "wall min 5595 us  median 5595 us   cpu min 5477 us median 5477 us   usr min 5477 sys min 0 median usr 5477 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 12546.0,
+          "raw": "wall min 12546 us  median 12546 us   cpu min 12353 us median 12353 us   usr min 12353 sys min 0 median usr 12353 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 5097.0,
+          "raw": "wall min 5097 us  median 5097 us   cpu min 5031 us median 5031 us   usr min 2496 sys min 2535 median usr 2496 sys 2535 faults 1397"
+        },
+        {
+          "wall_us": 11458.0,
+          "raw": "wall min 11458 us  median 11458 us   cpu min 11317 us median 11317 us   usr min 11317 sys min 0 median usr 11317 sys 0 faults 1397"
+        },
+        {
+          "wall_us": 11242.0,
+          "raw": "wall min 11242 us  median 11242 us   cpu min 11114 us median 11114 us   usr min 7374 sys min 3740 median usr 7374 sys 3740 faults 1398"
+        },
+        {
+          "wall_us": 14928.0,
+          "raw": "wall min 14928 us  median 14928 us   cpu min 14772 us median 14772 us   usr min 12480 sys min 2292 median usr 12480 sys 2292 faults 1398"
+        },
+        {
+          "wall_us": 5013.0,
+          "raw": "wall min 5013 us  median 5013 us   cpu min 4936 us median 4936 us   usr min 0 sys min 4936 median usr 0 sys 4936 faults 1399"
+        },
+        {
+          "wall_us": 5003.0,
+          "raw": "wall min 5003 us  median 5003 us   cpu min 4935 us median 4935 us   usr min 0 sys min 4935 median usr 0 sys 4935 faults 1399"
+        },
+        {
+          "wall_us": 6107.0,
+          "raw": "wall min 6107 us  median 6107 us   cpu min 6039 us median 6039 us   usr min 2543 sys min 3496 median usr 2543 sys 3496 faults 1396"
+        },
+        {
+          "wall_us": 5104.0,
+          "raw": "wall min 5104 us  median 5104 us   cpu min 5032 us median 5032 us   usr min 5032 sys min 0 median usr 5032 sys 0 faults 1400"
+        },
+        {
+          "wall_us": 4827.0,
+          "raw": "wall min 4827 us  median 4827 us   cpu min 4761 us median 4761 us   usr min 0 sys min 4761 median usr 0 sys 4761 faults 1397"
+        },
+        {
+          "wall_us": 5111.0,
+          "raw": "wall min 5111 us  median 5111 us   cpu min 5034 us median 5034 us   usr min 5034 sys min 0 median usr 5034 sys 0 faults 1398"
+        }
+      ],
+      "best_ms": 4.827,
+      "median_ms": 5.115
+    },
+    {
+      "source": "strandc.strand",
+      "source_bytes": 81130,
+      "compiler": "strandc_scalar",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output": {
+        "sha256": "8ff94a8bf940ef259812831096a42bec69a90ee8308f658527d229e7eeb07428",
+        "bytes": 187950
+      },
+      "samples": [
+        {
+          "wall_us": 3718.0,
+          "raw": "wall min 3718 us  median 3718 us   cpu min 3540 us median 3540 us   usr min 3540 sys min 0 median usr 3540 sys 0 faults 1013"
+        },
+        {
+          "wall_us": 8530.0,
+          "raw": "wall min 8530 us  median 8530 us   cpu min 8265 us median 8265 us   usr min 0 sys min 8265 median usr 0 sys 8265 faults 1015"
+        },
+        {
+          "wall_us": 7960.0,
+          "raw": "wall min 7960 us  median 7960 us   cpu min 7880 us median 7880 us   usr min 4008 sys min 3872 median usr 4008 sys 3872 faults 1013"
+        },
+        {
+          "wall_us": 3625.0,
+          "raw": "wall min 3625 us  median 3625 us   cpu min 3479 us median 3479 us   usr min 0 sys min 3479 median usr 0 sys 3479 faults 1015"
+        },
+        {
+          "wall_us": 8279.0,
+          "raw": "wall min 8279 us  median 8279 us   cpu min 8125 us median 8125 us   usr min 8125 sys min 0 median usr 8125 sys 0 faults 1015"
+        },
+        {
+          "wall_us": 8624.0,
+          "raw": "wall min 8624 us  median 8624 us   cpu min 8446 us median 8446 us   usr min 2782 sys min 5664 median usr 2782 sys 5664 faults 1014"
+        },
+        {
+          "wall_us": 5558.0,
+          "raw": "wall min 5558 us  median 5558 us   cpu min 5487 us median 5487 us   usr min 5487 sys min 0 median usr 5487 sys 0 faults 1012"
+        },
+        {
+          "wall_us": 8208.0,
+          "raw": "wall min 8208 us  median 8208 us   cpu min 8066 us median 8066 us   usr min 0 sys min 8066 median usr 0 sys 8066 faults 1015"
+        },
+        {
+          "wall_us": 7963.0,
+          "raw": "wall min 7963 us  median 7963 us   cpu min 7840 us median 7840 us   usr min 3920 sys min 3920 median usr 3920 sys 3920 faults 1014"
+        },
+        {
+          "wall_us": 8045.0,
+          "raw": "wall min 8045 us  median 8045 us   cpu min 7880 us median 7880 us   usr min 0 sys min 7880 median usr 0 sys 7880 faults 1013"
+        },
+        {
+          "wall_us": 9712.0,
+          "raw": "wall min 9712 us  median 9712 us   cpu min 9200 us median 9200 us   usr min 4600 sys min 4600 median usr 4600 sys 4600 faults 1014"
+        },
+        {
+          "wall_us": 8316.0,
+          "raw": "wall min 8316 us  median 8316 us   cpu min 8108 us median 8108 us   usr min 4054 sys min 4054 median usr 4054 sys 4054 faults 1016"
+        },
+        {
+          "wall_us": 8154.0,
+          "raw": "wall min 8154 us  median 8154 us   cpu min 7958 us median 7958 us   usr min 7958 sys min 0 median usr 7958 sys 0 faults 1014"
+        },
+        {
+          "wall_us": 6008.0,
+          "raw": "wall min 6008 us  median 6008 us   cpu min 5861 us median 5861 us   usr min 5861 sys min 0 median usr 5861 sys 0 faults 1013"
+        },
+        {
+          "wall_us": 6221.0,
+          "raw": "wall min 6221 us  median 6221 us   cpu min 6112 us median 6112 us   usr min 0 sys min 6112 median usr 0 sys 6112 faults 1011"
+        },
+        {
+          "wall_us": 8274.0,
+          "raw": "wall min 8274 us  median 8274 us   cpu min 8162 us median 8162 us   usr min 4081 sys min 4081 median usr 4081 sys 4081 faults 1014"
+        },
+        {
+          "wall_us": 8382.0,
+          "raw": "wall min 8382 us  median 8382 us   cpu min 8203 us median 8203 us   usr min 4141 sys min 4062 median usr 4141 sys 4062 faults 1013"
+        },
+        {
+          "wall_us": 6961.0,
+          "raw": "wall min 6961 us  median 6961 us   cpu min 6826 us median 6826 us   usr min 6826 sys min 0 median usr 6826 sys 0 faults 1013"
+        },
+        {
+          "wall_us": 8249.0,
+          "raw": "wall min 8249 us  median 8249 us   cpu min 8078 us median 8078 us   usr min 8078 sys min 0 median usr 8078 sys 0 faults 1015"
+        },
+        {
+          "wall_us": 7979.0,
+          "raw": "wall min 7979 us  median 7979 us   cpu min 7816 us median 7816 us   usr min 3908 sys min 3908 median usr 3908 sys 3908 faults 1014"
+        },
+        {
+          "wall_us": 8078.0,
+          "raw": "wall min 8078 us  median 8078 us   cpu min 7928 us median 7928 us   usr min 4005 sys min 3923 median usr 4005 sys 3923 faults 1014"
+        }
+      ],
+      "best_ms": 3.625,
+      "median_ms": 8.078
+    },
+    {
+      "source": "strandc.strand",
+      "source_bytes": 81130,
+      "compiler": "stage2",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output": {
+        "sha256": "8ff94a8bf940ef259812831096a42bec69a90ee8308f658527d229e7eeb07428",
+        "bytes": 187950
+      },
+      "samples": [
+        {
+          "wall_us": 12430.0,
+          "raw": "wall min 12430 us  median 12430 us   cpu min 12225 us median 12225 us   usr min 8043 sys min 4182 median usr 8043 sys 4182 faults 1396"
+        },
+        {
+          "wall_us": 5293.0,
+          "raw": "wall min 5293 us  median 5293 us   cpu min 5066 us median 5066 us   usr min 5066 sys min 0 median usr 5066 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 13001.0,
+          "raw": "wall min 13001 us  median 13001 us   cpu min 12915 us median 12915 us   usr min 8121 sys min 4794 median usr 8121 sys 4794 faults 1398"
+        },
+        {
+          "wall_us": 11331.0,
+          "raw": "wall min 11331 us  median 11331 us   cpu min 11192 us median 11192 us   usr min 7561 sys min 3631 median usr 7561 sys 3631 faults 1400"
+        },
+        {
+          "wall_us": 11749.0,
+          "raw": "wall min 11749 us  median 11749 us   cpu min 11671 us median 11671 us   usr min 7781 sys min 3890 median usr 7781 sys 3890 faults 1398"
+        },
+        {
+          "wall_us": 11756.0,
+          "raw": "wall min 11756 us  median 11756 us   cpu min 11509 us median 11509 us   usr min 3836 sys min 7673 median usr 3836 sys 7673 faults 1399"
+        },
+        {
+          "wall_us": 4974.0,
+          "raw": "wall min 4974 us  median 4974 us   cpu min 4910 us median 4910 us   usr min 0 sys min 4910 median usr 0 sys 4910 faults 1397"
+        },
+        {
+          "wall_us": 8659.0,
+          "raw": "wall min 8659 us  median 8659 us   cpu min 8472 us median 8472 us   usr min 4236 sys min 4236 median usr 4236 sys 4236 faults 1398"
+        },
+        {
+          "wall_us": 11651.0,
+          "raw": "wall min 11651 us  median 11651 us   cpu min 11572 us median 11572 us   usr min 7715 sys min 3857 median usr 7715 sys 3857 faults 1398"
+        },
+        {
+          "wall_us": 7599.0,
+          "raw": "wall min 7599 us  median 7599 us   cpu min 7514 us median 7514 us   usr min 3757 sys min 3757 median usr 3757 sys 3757 faults 1399"
+        },
+        {
+          "wall_us": 11588.0,
+          "raw": "wall min 11588 us  median 11588 us   cpu min 11506 us median 11506 us   usr min 7671 sys min 3835 median usr 7671 sys 3835 faults 1399"
+        },
+        {
+          "wall_us": 13369.0,
+          "raw": "wall min 13369 us  median 13369 us   cpu min 13182 us median 13182 us   usr min 8788 sys min 4394 median usr 8788 sys 4394 faults 1397"
+        },
+        {
+          "wall_us": 12521.0,
+          "raw": "wall min 12521 us  median 12521 us   cpu min 12373 us median 12373 us   usr min 8249 sys min 4124 median usr 8249 sys 4124 faults 1400"
+        },
+        {
+          "wall_us": 5172.0,
+          "raw": "wall min 5172 us  median 5172 us   cpu min 5070 us median 5070 us   usr min 5070 sys min 0 median usr 5070 sys 0 faults 1398"
+        },
+        {
+          "wall_us": 4862.0,
+          "raw": "wall min 4862 us  median 4862 us   cpu min 4725 us median 4725 us   usr min 4725 sys min 0 median usr 4725 sys 0 faults 1399"
+        },
+        {
+          "wall_us": 11540.0,
+          "raw": "wall min 11540 us  median 11540 us   cpu min 11452 us median 11452 us   usr min 7635 sys min 3817 median usr 7635 sys 3817 faults 1399"
+        },
+        {
+          "wall_us": 18876.0,
+          "raw": "wall min 18876 us  median 18876 us   cpu min 18692 us median 18692 us   usr min 17922 sys min 770 median usr 17922 sys 770 faults 1399"
+        },
+        {
+          "wall_us": 12899.0,
+          "raw": "wall min 12899 us  median 12899 us   cpu min 12789 us median 12789 us   usr min 8526 sys min 4263 median usr 8526 sys 4263 faults 1398"
+        },
+        {
+          "wall_us": 11852.0,
+          "raw": "wall min 11852 us  median 11852 us   cpu min 11707 us median 11707 us   usr min 7805 sys min 3902 median usr 7805 sys 3902 faults 1397"
+        },
+        {
+          "wall_us": 12192.0,
+          "raw": "wall min 12192 us  median 12192 us   cpu min 12048 us median 12048 us   usr min 8032 sys min 4016 median usr 8032 sys 4016 faults 1399"
+        },
+        {
+          "wall_us": 12314.0,
+          "raw": "wall min 12314 us  median 12314 us   cpu min 12154 us median 12154 us   usr min 12154 sys min 0 median usr 12154 sys 0 faults 1398"
+        }
+      ],
+      "best_ms": 4.862,
+      "median_ms": 11.749
+    },
+    {
+      "source": "big64.strand",
+      "source_bytes": 5252294,
+      "compiler": "strandc_scalar",
+      "cpus": [
+        3
+      ],
+      "output": {
+        "sha256": "61cd16ff69f344137119a88625610eb2bfbf0b081242ec8fd9ccff646d4ee73c",
+        "bytes": 11010846
+      },
+      "samples": [
+        {
+          "wall_us": 277646.0,
+          "raw": "wall min 277646 us  median 277646 us   cpu min 277416 us median 277416 us   usr min 166386 sys min 111030 median usr 166386 sys 111030 faults 58866"
+        },
+        {
+          "wall_us": 289790.0,
+          "raw": "wall min 289790 us  median 289790 us   cpu min 289460 us median 289460 us   usr min 143363 sys min 146097 median usr 143363 sys 146097 faults 58864"
+        },
+        {
+          "wall_us": 258790.0,
+          "raw": "wall min 258790 us  median 258790 us   cpu min 258593 us median 258593 us   usr min 142962 sys min 115631 median usr 142962 sys 115631 faults 58864"
+        },
+        {
+          "wall_us": 288839.0,
+          "raw": "wall min 288839 us  median 288839 us   cpu min 288661 us median 288661 us   usr min 164372 sys min 124289 median usr 164372 sys 124289 faults 58864"
+        },
+        {
+          "wall_us": 272613.0,
+          "raw": "wall min 272613 us  median 272613 us   cpu min 272246 us median 272246 us   usr min 142065 sys min 130181 median usr 142065 sys 130181 faults 58864"
+        },
+        {
+          "wall_us": 259466.0,
+          "raw": "wall min 259466 us  median 259466 us   cpu min 259320 us median 259320 us   usr min 163916 sys min 95404 median usr 163916 sys 95404 faults 58864"
+        },
+        {
+          "wall_us": 287457.0,
+          "raw": "wall min 287457 us  median 287457 us   cpu min 287276 us median 287276 us   usr min 139956 sys min 147320 median usr 139956 sys 147320 faults 58864"
+        },
+        {
+          "wall_us": 258665.0,
+          "raw": "wall min 258665 us  median 258665 us   cpu min 258476 us median 258476 us   usr min 132674 sys min 125802 median usr 132674 sys 125802 faults 58862"
+        },
+        {
+          "wall_us": 255255.0,
+          "raw": "wall min 255255 us  median 255255 us   cpu min 255134 us median 255134 us   usr min 151566 sys min 103568 median usr 151566 sys 103568 faults 58864"
+        },
+        {
+          "wall_us": 256170.0,
+          "raw": "wall min 256170 us  median 256170 us   cpu min 255696 us median 255696 us   usr min 123854 sys min 131842 median usr 123854 sys 131842 faults 58863"
+        },
+        {
+          "wall_us": 252444.0,
+          "raw": "wall min 252444 us  median 252444 us   cpu min 252314 us median 252314 us   usr min 157696 sys min 94618 median usr 157696 sys 94618 faults 58862"
+        },
+        {
+          "wall_us": 260976.0,
+          "raw": "wall min 260976 us  median 260976 us   cpu min 260840 us median 260840 us   usr min 162403 sys min 98437 median usr 162403 sys 98437 faults 58865"
+        },
+        {
+          "wall_us": 255291.0,
+          "raw": "wall min 255291 us  median 255291 us   cpu min 254952 us median 254952 us   usr min 136546 sys min 118406 median usr 136546 sys 118406 faults 58864"
+        },
+        {
+          "wall_us": 266612.0,
+          "raw": "wall min 266612 us  median 266612 us   cpu min 266267 us median 266267 us   usr min 151366 sys min 114901 median usr 151366 sys 114901 faults 58864"
+        },
+        {
+          "wall_us": 251082.0,
+          "raw": "wall min 251082 us  median 251082 us   cpu min 250700 us median 250700 us   usr min 161653 sys min 89047 median usr 161653 sys 89047 faults 58864"
+        },
+        {
+          "wall_us": 250375.0,
+          "raw": "wall min 250375 us  median 250375 us   cpu min 249618 us median 249618 us   usr min 162392 sys min 87226 median usr 162392 sys 87226 faults 58863"
+        },
+        {
+          "wall_us": 253616.0,
+          "raw": "wall min 253616 us  median 253616 us   cpu min 253484 us median 253484 us   usr min 161425 sys min 92059 median usr 161425 sys 92059 faults 58861"
+        },
+        {
+          "wall_us": 261667.0,
+          "raw": "wall min 261667 us  median 261667 us   cpu min 261533 us median 261533 us   usr min 159131 sys min 102402 median usr 159131 sys 102402 faults 58864"
+        },
+        {
+          "wall_us": 260669.0,
+          "raw": "wall min 260669 us  median 260669 us   cpu min 260516 us median 260516 us   usr min 167411 sys min 93105 median usr 167411 sys 93105 faults 58862"
+        },
+        {
+          "wall_us": 273373.0,
+          "raw": "wall min 273373 us  median 273373 us   cpu min 273248 us median 273248 us   usr min 149357 sys min 123891 median usr 149357 sys 123891 faults 58862"
+        },
+        {
+          "wall_us": 251877.0,
+          "raw": "wall min 251877 us  median 251877 us   cpu min 251781 us median 251781 us   usr min 139884 sys min 111897 median usr 139884 sys 111897 faults 58865"
+        }
+      ],
+      "best_ms": 250.375,
+      "median_ms": 259.466
+    },
+    {
+      "source": "big64.strand",
+      "source_bytes": 5252294,
+      "compiler": "stage2",
+      "cpus": [
+        3
+      ],
+      "output": {
+        "sha256": "61cd16ff69f344137119a88625610eb2bfbf0b081242ec8fd9ccff646d4ee73c",
+        "bytes": 11010846
+      },
+      "samples": [
+        {
+          "wall_us": 367340.0,
+          "raw": "wall min 367340 us  median 367340 us   cpu min 366876 us median 366876 us   usr min 219385 sys min 147491 median usr 219385 sys 147491 faults 83528"
+        },
+        {
+          "wall_us": 373163.0,
+          "raw": "wall min 373163 us  median 373163 us   cpu min 372613 us median 372613 us   usr min 244328 sys min 128285 median usr 244328 sys 128285 faults 83526"
+        },
+        {
+          "wall_us": 383669.0,
+          "raw": "wall min 383669 us  median 383669 us   cpu min 383271 us median 383271 us   usr min 227750 sys min 155521 median usr 227750 sys 155521 faults 83527"
+        },
+        {
+          "wall_us": 375160.0,
+          "raw": "wall min 375160 us  median 375160 us   cpu min 374652 us median 374652 us   usr min 223343 sys min 151309 median usr 223343 sys 151309 faults 83528"
+        },
+        {
+          "wall_us": 372163.0,
+          "raw": "wall min 372163 us  median 372163 us   cpu min 371691 us median 371691 us   usr min 235550 sys min 136141 median usr 235550 sys 136141 faults 83530"
+        },
+        {
+          "wall_us": 370307.0,
+          "raw": "wall min 370307 us  median 370307 us   cpu min 368250 us median 368250 us   usr min 205855 sys min 162395 median usr 205855 sys 162395 faults 83528"
+        },
+        {
+          "wall_us": 364503.0,
+          "raw": "wall min 364503 us  median 364503 us   cpu min 363788 us median 363788 us   usr min 226470 sys min 137318 median usr 226470 sys 137318 faults 83529"
+        },
+        {
+          "wall_us": 355520.0,
+          "raw": "wall min 355520 us  median 355520 us   cpu min 355366 us median 355366 us   usr min 218042 sys min 137324 median usr 218042 sys 137324 faults 83529"
+        },
+        {
+          "wall_us": 365518.0,
+          "raw": "wall min 365518 us  median 365518 us   cpu min 365404 us median 365404 us   usr min 247623 sys min 117781 median usr 247623 sys 117781 faults 83528"
+        },
+        {
+          "wall_us": 355777.0,
+          "raw": "wall min 355777 us  median 355777 us   cpu min 355424 us median 355424 us   usr min 235690 sys min 119734 median usr 235690 sys 119734 faults 83529"
+        },
+        {
+          "wall_us": 371803.0,
+          "raw": "wall min 371803 us  median 371803 us   cpu min 371684 us median 371684 us   usr min 231363 sys min 140321 median usr 231363 sys 140321 faults 83529"
+        },
+        {
+          "wall_us": 356893.0,
+          "raw": "wall min 356893 us  median 356893 us   cpu min 356728 us median 356728 us   usr min 216342 sys min 140386 median usr 216342 sys 140386 faults 83527"
+        },
+        {
+          "wall_us": 357542.0,
+          "raw": "wall min 357542 us  median 357542 us   cpu min 356529 us median 356529 us   usr min 232649 sys min 123880 median usr 232649 sys 123880 faults 83529"
+        },
+        {
+          "wall_us": 379781.0,
+          "raw": "wall min 379781 us  median 379781 us   cpu min 379403 us median 379403 us   usr min 223426 sys min 155977 median usr 223426 sys 155977 faults 83527"
+        },
+        {
+          "wall_us": 367625.0,
+          "raw": "wall min 367625 us  median 367625 us   cpu min 367526 us median 367526 us   usr min 211688 sys min 155838 median usr 211688 sys 155838 faults 83530"
+        },
+        {
+          "wall_us": 362600.0,
+          "raw": "wall min 362600 us  median 362600 us   cpu min 361897 us median 361897 us   usr min 210596 sys min 151301 median usr 210596 sys 151301 faults 83529"
+        },
+        {
+          "wall_us": 376142.0,
+          "raw": "wall min 376142 us  median 376142 us   cpu min 375951 us median 375951 us   usr min 251204 sys min 124747 median usr 251204 sys 124747 faults 83528"
+        },
+        {
+          "wall_us": 375030.0,
+          "raw": "wall min 375030 us  median 375030 us   cpu min 374407 us median 374407 us   usr min 234379 sys min 140028 median usr 234379 sys 140028 faults 83527"
+        },
+        {
+          "wall_us": 355282.0,
+          "raw": "wall min 355282 us  median 355282 us   cpu min 355160 us median 355160 us   usr min 219444 sys min 135716 median usr 219444 sys 135716 faults 83529"
+        },
+        {
+          "wall_us": 373325.0,
+          "raw": "wall min 373325 us  median 373325 us   cpu min 373183 us median 373183 us   usr min 231192 sys min 141991 median usr 231192 sys 141991 faults 83529"
+        },
+        {
+          "wall_us": 365743.0,
+          "raw": "wall min 365743 us  median 365743 us   cpu min 365656 us median 365656 us   usr min 227156 sys min 138500 median usr 227156 sys 138500 faults 83526"
+        }
+      ],
+      "best_ms": 355.282,
+      "median_ms": 367.625
+    },
+    {
+      "source": "big64.strand",
+      "source_bytes": 5252294,
+      "compiler": "strandc_scalar",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output": {
+        "sha256": "61cd16ff69f344137119a88625610eb2bfbf0b081242ec8fd9ccff646d4ee73c",
+        "bytes": 11010846
+      },
+      "samples": [
+        {
+          "wall_us": 252388.0,
+          "raw": "wall min 252388 us  median 252388 us   cpu min 250795 us median 250795 us   usr min 134397 sys min 116398 median usr 134397 sys 116398 faults 58864"
+        },
+        {
+          "wall_us": 233941.0,
+          "raw": "wall min 233941 us  median 233941 us   cpu min 233577 us median 233577 us   usr min 123449 sys min 110128 median usr 123449 sys 110128 faults 58863"
+        },
+        {
+          "wall_us": 260047.0,
+          "raw": "wall min 260047 us  median 260047 us   cpu min 259823 us median 259823 us   usr min 135976 sys min 123847 median usr 135976 sys 123847 faults 58865"
+        },
+        {
+          "wall_us": 250855.0,
+          "raw": "wall min 250855 us  median 250855 us   cpu min 250367 us median 250367 us   usr min 137750 sys min 112617 median usr 137750 sys 112617 faults 58864"
+        },
+        {
+          "wall_us": 238743.0,
+          "raw": "wall min 238743 us  median 238743 us   cpu min 237893 us median 237893 us   usr min 130636 sys min 107257 median usr 130636 sys 107257 faults 58863"
+        },
+        {
+          "wall_us": 249246.0,
+          "raw": "wall min 249246 us  median 249246 us   cpu min 248470 us median 248470 us   usr min 133158 sys min 115312 median usr 133158 sys 115312 faults 58865"
+        },
+        {
+          "wall_us": 240716.0,
+          "raw": "wall min 240716 us  median 240716 us   cpu min 240533 us median 240533 us   usr min 104328 sys min 136205 median usr 104328 sys 136205 faults 58864"
+        },
+        {
+          "wall_us": 237820.0,
+          "raw": "wall min 237820 us  median 237820 us   cpu min 237515 us median 237515 us   usr min 126449 sys min 111066 median usr 126449 sys 111066 faults 58865"
+        },
+        {
+          "wall_us": 284227.0,
+          "raw": "wall min 284227 us  median 284227 us   cpu min 283972 us median 283972 us   usr min 143990 sys min 139982 median usr 143990 sys 139982 faults 58865"
+        },
+        {
+          "wall_us": 279327.0,
+          "raw": "wall min 279327 us  median 279327 us   cpu min 279086 us median 279086 us   usr min 167540 sys min 111546 median usr 167540 sys 111546 faults 58862"
+        },
+        {
+          "wall_us": 267149.0,
+          "raw": "wall min 267149 us  median 267149 us   cpu min 266845 us median 266845 us   usr min 155473 sys min 111372 median usr 155473 sys 111372 faults 58864"
+        },
+        {
+          "wall_us": 277925.0,
+          "raw": "wall min 277925 us  median 277925 us   cpu min 276781 us median 276781 us   usr min 146342 sys min 130439 median usr 146342 sys 130439 faults 58865"
+        },
+        {
+          "wall_us": 291388.0,
+          "raw": "wall min 291388 us  median 291388 us   cpu min 290590 us median 290590 us   usr min 129212 sys min 161378 median usr 129212 sys 161378 faults 58862"
+        },
+        {
+          "wall_us": 245242.0,
+          "raw": "wall min 245242 us  median 245242 us   cpu min 244893 us median 244893 us   usr min 158394 sys min 86499 median usr 158394 sys 86499 faults 58863"
+        },
+        {
+          "wall_us": 275155.0,
+          "raw": "wall min 275155 us  median 275155 us   cpu min 274904 us median 274904 us   usr min 174039 sys min 100865 median usr 174039 sys 100865 faults 58866"
+        },
+        {
+          "wall_us": 259819.0,
+          "raw": "wall min 259819 us  median 259819 us   cpu min 259597 us median 259597 us   usr min 140328 sys min 119269 median usr 140328 sys 119269 faults 58863"
+        },
+        {
+          "wall_us": 265435.0,
+          "raw": "wall min 265435 us  median 265435 us   cpu min 265130 us median 265130 us   usr min 112658 sys min 152472 median usr 112658 sys 152472 faults 58864"
+        },
+        {
+          "wall_us": 244285.0,
+          "raw": "wall min 244285 us  median 244285 us   cpu min 243562 us median 243562 us   usr min 140441 sys min 103121 median usr 140441 sys 103121 faults 58864"
+        },
+        {
+          "wall_us": 259843.0,
+          "raw": "wall min 259843 us  median 259843 us   cpu min 259608 us median 259608 us   usr min 153334 sys min 106274 median usr 153334 sys 106274 faults 58864"
+        },
+        {
+          "wall_us": 279760.0,
+          "raw": "wall min 279760 us  median 279760 us   cpu min 279325 us median 279325 us   usr min 143590 sys min 135735 median usr 143590 sys 135735 faults 58866"
+        },
+        {
+          "wall_us": 282481.0,
+          "raw": "wall min 282481 us  median 282481 us   cpu min 281842 us median 281842 us   usr min 142943 sys min 138899 median usr 142943 sys 138899 faults 58865"
+        }
+      ],
+      "best_ms": 233.941,
+      "median_ms": 259.843
+    },
+    {
+      "source": "big64.strand",
+      "source_bytes": 5252294,
+      "compiler": "stage2",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output": {
+        "sha256": "61cd16ff69f344137119a88625610eb2bfbf0b081242ec8fd9ccff646d4ee73c",
+        "bytes": 11010846
+      },
+      "samples": [
+        {
+          "wall_us": 298480.0,
+          "raw": "wall min 298480 us  median 298480 us   cpu min 834422 us median 834422 us   usr min 574288 sys min 260134 median usr 574288 sys 260134 faults 84516"
+        },
+        {
+          "wall_us": 291870.0,
+          "raw": "wall min 291870 us  median 291870 us   cpu min 790464 us median 790464 us   usr min 559059 sys min 231405 median usr 559059 sys 231405 faults 84514"
+        },
+        {
+          "wall_us": 325497.0,
+          "raw": "wall min 325497 us  median 325497 us   cpu min 881354 us median 881354 us   usr min 630109 sys min 251245 median usr 630109 sys 251245 faults 84515"
+        },
+        {
+          "wall_us": 301526.0,
+          "raw": "wall min 301526 us  median 301526 us   cpu min 816067 us median 816067 us   usr min 605562 sys min 210505 median usr 605562 sys 210505 faults 84516"
+        },
+        {
+          "wall_us": 317467.0,
+          "raw": "wall min 317467 us  median 317467 us   cpu min 913627 us median 913627 us   usr min 723232 sys min 190395 median usr 723232 sys 190395 faults 84517"
+        },
+        {
+          "wall_us": 295513.0,
+          "raw": "wall min 295513 us  median 295513 us   cpu min 873613 us median 873613 us   usr min 649579 sys min 224034 median usr 649579 sys 224034 faults 84519"
+        },
+        {
+          "wall_us": 294776.0,
+          "raw": "wall min 294776 us  median 294776 us   cpu min 873657 us median 873657 us   usr min 616877 sys min 256780 median usr 616877 sys 256780 faults 84516"
+        },
+        {
+          "wall_us": 265220.0,
+          "raw": "wall min 265220 us  median 265220 us   cpu min 799589 us median 799589 us   usr min 578265 sys min 221324 median usr 578265 sys 221324 faults 84516"
+        },
+        {
+          "wall_us": 256616.0,
+          "raw": "wall min 256616 us  median 256616 us   cpu min 764124 us median 764124 us   usr min 592974 sys min 171150 median usr 592974 sys 171150 faults 84516"
+        },
+        {
+          "wall_us": 272022.0,
+          "raw": "wall min 272022 us  median 272022 us   cpu min 793324 us median 793324 us   usr min 601122 sys min 192202 median usr 601122 sys 192202 faults 84516"
+        },
+        {
+          "wall_us": 286627.0,
+          "raw": "wall min 286627 us  median 286627 us   cpu min 857289 us median 857289 us   usr min 603701 sys min 253588 median usr 603701 sys 253588 faults 84518"
+        },
+        {
+          "wall_us": 289269.0,
+          "raw": "wall min 289269 us  median 289269 us   cpu min 816981 us median 816981 us   usr min 603592 sys min 213389 median usr 603592 sys 213389 faults 84517"
+        },
+        {
+          "wall_us": 311059.0,
+          "raw": "wall min 311059 us  median 311059 us   cpu min 904851 us median 904851 us   usr min 654689 sys min 250162 median usr 654689 sys 250162 faults 84515"
+        },
+        {
+          "wall_us": 309300.0,
+          "raw": "wall min 309300 us  median 309300 us   cpu min 908483 us median 908483 us   usr min 693930 sys min 214553 median usr 693930 sys 214553 faults 84516"
+        },
+        {
+          "wall_us": 282650.0,
+          "raw": "wall min 282650 us  median 282650 us   cpu min 856082 us median 856082 us   usr min 624577 sys min 231505 median usr 624577 sys 231505 faults 84523"
+        },
+        {
+          "wall_us": 348073.0,
+          "raw": "wall min 348073 us  median 348073 us   cpu min 986827 us median 986827 us   usr min 761858 sys min 224969 median usr 761858 sys 224969 faults 84514"
+        },
+        {
+          "wall_us": 324638.0,
+          "raw": "wall min 324638 us  median 324638 us   cpu min 905521 us median 905521 us   usr min 657482 sys min 248039 median usr 657482 sys 248039 faults 84522"
+        },
+        {
+          "wall_us": 324572.0,
+          "raw": "wall min 324572 us  median 324572 us   cpu min 892190 us median 892190 us   usr min 688146 sys min 204044 median usr 688146 sys 204044 faults 84516"
+        },
+        {
+          "wall_us": 314628.0,
+          "raw": "wall min 314628 us  median 314628 us   cpu min 841136 us median 841136 us   usr min 651021 sys min 190115 median usr 651021 sys 190115 faults 84517"
+        },
+        {
+          "wall_us": 357948.0,
+          "raw": "wall min 357948 us  median 357948 us   cpu min 1002708 us median 1002708 us   usr min 754953 sys min 247755 median usr 754953 sys 247755 faults 84517"
+        },
+        {
+          "wall_us": 340727.0,
+          "raw": "wall min 340727 us  median 340727 us   cpu min 931690 us median 931690 us   usr min 637105 sys min 294585 median usr 637105 sys 294585 faults 84519"
+        }
+      ],
+      "best_ms": 256.616,
+      "median_ms": 301.526
+    }
+  ]
+}
