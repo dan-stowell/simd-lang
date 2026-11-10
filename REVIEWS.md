@@ -63,3 +63,34 @@ Prompt: `reviews/03-runtime-prompt.txt`; answer: `reviews/03-runtime-codex.txt`.
 | 4b | The C columns use `read()` blocks and one thread, so the ratios bundle I/O model, SIMD and threading; `run.py` does not reproduce the OpenMP table; and the most threatening missing comparison is hand-vectorised, hand-threaded C for `words` and filters — failure to auto-vectorise is not a limit of C. | Agreed on all three. | SWEETSPOT.md now has a "what this does not show" paragraph saying exactly that, pointing at `explore/ceiling.c` (hand intrinsics = the same instructions = the same speed). The matched hand-vectorised + threaded comparison is **not done** and is listed as such; I expect a tie. |
 | 5 | mmap does not advance the shared file offset or follow growth; truncation can SIGBUS; EINTR on write is not retried; a closed pipe kills by SIGPIPE; `halt` and failures skip the flush. | Accurate description. | Documented here as the semantics; not changed. Output is unspecified on a non-zero exit by definition. |
 | - | "No supported counterexample to scan verification itself", no lost wakeup, no ABA, no byte-semantics mismatch, no region overlap found; 245 generated programs on two CPUs passed. | (its probes) | Absence of evidence, noted. The pool remains the least-tested part of the system. |
+
+## Review 4 — independent audit of claims and measurements (2026-11-10)
+
+Commissioned by the repository owner (astra, x-high), not by me; the full text is AUDIT.md
+and its evidence is in `reviews/audit-2026-11-10/`. It reran the suite and the benchmarks
+and looked for counterexamples. What it found and what was done:
+
+| finding | verdict | action |
+|---|---|---|
+| Bootstrap, tests, mutation suite and the single-CPU benchmark table reproduce | — | none needed |
+| **`words` does not need intrinsics**: peeling the first iteration makes GCC vectorise the OpenMP baseline; Strand's lead drops from 3-4x to about 1.1x | **correct, and the most important point** | Both C baselines now use adjacent loads. SWEETSPOT.md is rewritten around the rebuilt table; `explore/cliff.c` measures five spellings of the loop (one vectorises). The claim "the compiler cannot vectorise a carried dependency" is withdrawn; what survives is narrower (filters, table lookups) and one new class was added where it does hold (automata). |
+| The 15% compile-time win on 8 vCPUs does not reproduce | accepted | withdrawn in SWEETSPOT.md and REPORT.md |
+| Defect 1: `tools/bench.c` reports failed children as fast runs; `run.py` hashes only one configuration | correct | `bench.c` fails on any failed child; `run.py` hashes every timed configuration under its own CPU mask, interleaves rounds, keeps all samples, reports median and best |
+| Defect 2: `base.c` reprocesses bytes after short reads; `base_omp.c` assumes the requested team size | correct | remainder handling restricted to dword kernels; every parallel region partitions by `omp_get_num_threads()` |
+| Defect 3: hardware probes that do not test what they say | correct, and understated | four probes (not two) lacked their instruction; rewritten in assembly with a disassembly check; signed overflow fixed; HARDWARE.md corrects the gather, classification and frequency statements |
+| Defect 4: the "I/O floor" is an experiment, not a bound; `iotest.c` has a data race | correct | race removed; SWEETSPOT.md now calls it an observation |
+| Defect 5: `halt` and failures can leave partial output, contrary to DESIGN.md | correct | DESIGN.md states the streaming semantics; tests still compare only the status on failure |
+| Defect 6: README omits VBMI/VBMI2; hard-coded CPU ids; stale statements | correct | README lists the requirements; `run.py` and `pool.py` use the real affinity ids; ledger and report corrected |
+| `E_RACE` is easy to construct (a 137-byte program) | correct | the audit added the fixture to `tests/cases.py`; the 2^-64 argument applies to fingerprint collisions only |
+| The interpreter shares `analyze()` with the Python compiler; all compilers share stencils | correct | not fixed. An independent front end for the interpreter is still on the list. |
+| Narrow benchmark data (lowercase only; `nonascii` always 0) | correct | the text generator now emits capitals, digits, punctuation and non-ASCII bytes; new inputs are CSV with quoted fields and real source text |
+
+Not done: resource-limit and `E_COLLISION` tests; an independent interpreter; a matched
+comparison against hand-vectorised, hand-threaded C for filters and automata (the expected
+result is a tie: `explore/fsm.c` is that C for one automaton, in memory, and is faster than
+the Strand program).
+
+What I take from it: I explained a measurement with a general claim about compilers and
+did not try to break the claim. The benchmark harness now makes the cheap version of that
+mistake hard (outputs are checked per configuration, failures stop the run), and the
+baselines were each tried in several formulations before being timed.
