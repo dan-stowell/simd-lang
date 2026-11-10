@@ -1,0 +1,10 @@
+{
+  "checks": 2997,
+  "mismatches": 18,
+  "duplicate_keys": {
+    "input": "{\"x\":[],\"x\":{}}",
+    "oracle": "{:{}}",
+    "scanner": "{:[],:{}}"
+  },
+  "repeated_document": "Extra data: line 2 column 1 (char 1238)"
+}

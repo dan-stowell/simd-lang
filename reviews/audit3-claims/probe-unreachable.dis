@@ -1,0 +1,51 @@
+<p_sse2>:
+    45b0:	c3                   	ret
+    45b1:	90                   	nop
+    45b2:	90                   	nop
+    45b3:	90                   	nop
+    45b4:	66 0f fe c0          	paddd  %xmm0,%xmm0
+    45b8:	48 63 05 51 4a 00 00 	movslq 0x4a51(%rip),%rax        # 9010 <three>
+    45bf:	48 89 05 5a ba 02 04 	mov    %rax,0x402ba5a(%rip)        # 4030020 <sink>
+    45c6:	c3                   	ret
+    45c7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+    45ce:	00 00
+
+<p_512vl>:
+    4f20:	c3                   	ret
+    4f21:	90                   	nop
+    4f22:	90                   	nop
+    4f23:	90                   	nop
+    4f24:	8b 05 e6 40 00 00    	mov    0x40e6(%rip),%eax        # 9010 <three>
+    4f2a:	62 f2 7d 28 7c c0    	vpbroadcastd %eax,%ymm0
+    4f30:	62 f3 7d 28 1f c0 00 	vpcmpeqd %ymm0,%ymm0,%k0
+    4f37:	c5 f9 93 c0          	kmovb  %k0,%eax
+    4f3b:	48 89 05 de b0 02 04 	mov    %rax,0x402b0de(%rip)        # 4030020 <sink>
+    4f42:	c5 f8 77             	vzeroupper
+    4f45:	c3                   	ret
+    4f46:	66 2e 0f 1f 84 00 00 	cs nopw 0x0(%rax,%rax,1)
+    4f4d:	00 00 00
+
+<p_apx>:
+    4650:	c3                   	ret
+    4651:	90                   	nop
+    4652:	90                   	nop
+    4653:	90                   	nop
+    4654:	d5 10 89 c0          	mov    %eax,%r16d
+    4658:	c3                   	ret
+    4659:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+
+<p_avxvnni>:
+    4940:	c3                   	ret
+    4941:	90                   	nop
+    4942:	90                   	nop
+    4943:	90                   	nop
+    4944:	8b 05 c6 46 00 00    	mov    0x46c6(%rip),%eax        # 9010 <three>
+    494a:	c5 f9 6e c0          	vmovd  %eax,%xmm0
+    494e:	c4 e2 7d 78 c0       	vpbroadcastb %xmm0,%ymm0
+    4953:	c4 e2 7d 50 c0       	{vex} vpdpbusd %ymm0,%ymm0,%ymm0
+    4958:	c5 f9 7e c0          	vmovd  %xmm0,%eax
+    495c:	48 98                	cltq
+    495e:	48 89 05 bb b6 02 04 	mov    %rax,0x402b6bb(%rip)        # 4030020 <sink>
+    4965:	c5 f8 77             	vzeroupper
+    4968:	c3                   	ret
+    4969:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)

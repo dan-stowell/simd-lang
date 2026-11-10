@@ -1,0 +1,46 @@
+{
+  "checks": 723,
+  "cpu_sets": {
+    "1": [
+      0
+    ],
+    "4": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "8": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "variants": [
+    "dual_json",
+    "packed_idents",
+    "packed_strings",
+    "packed_strip",
+    "persistent_csv",
+    "persistent_filter4",
+    "persistent_idents",
+    "persistent_json",
+    "persistent_letters",
+    "persistent_strings",
+    "persistent_strip",
+    "persistent_xlat"
+  ],
+  "all_passed": true,
+  "malformed_json64": {
+    "base_json": "",
+    "omp_json": "",
+    "hand_json": "{",
+    "st_json": ""
+  },
+  "note": "No timings recorded."
+}

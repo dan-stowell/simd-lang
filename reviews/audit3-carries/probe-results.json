@@ -1,0 +1,4983 @@
+{
+  "revision": "af3ecc935319a4698b499c66044faff95ef0663d",
+  "compiler_sha256": "b3a84702ef866973b462375aac041f5f805c61a6ba74cd3973bc058cfaf391dd",
+  "stub_sha256": "8858a6b29fc1ea092cd454bca69aee1049b09effcecfc14a6d8e2633d3518854",
+  "programs": {
+    "dword-00": "input 128 - 7 & 3 - prev scanmax out4\n",
+    "dword-01": "input 128 - 0 max prev scanmax dup 7 & 3 - scanmax + out4\n",
+    "dword-02": "input 128 - 257 * 17 - scanmax scan dup 16777216 * 31 + scan scanmax dup 0 max scanmax scan + + out4\n",
+    "dword-03": "input 128 - 0 max scanmax dup 0 max scanmax scan dup 0 max prev scanmax dup 257 * 17 - prev scanmax + + + out4\n",
+    "dword-04": "input 128 - 0 max scanmax dup 7 & 3 - scanmax dup 257 * 17 - scan dup 257 * 17 - scanmax scan dup 16777216 * 31 + prev scanmax + + + + out4\n",
+    "dword-05": "input 128 - 7 & 3 - scan dup 16777216 * 31 + prev scanmax dup 7 & 3 - scan dup 7 & 3 - scanmax dup 257 * 17 - prev dup 0 max prev + + + + + out4\n",
+    "dword-06": "input 128 - 0 max scan dup 7 & 3 - scanmax scan dup 7 & 3 - scanmax dup 7 & 3 - scanmax dup 257 * 17 - scan dup 16777216 * 31 + scanmax dup 16777216 * 31 + scan scanmax + + + + + + out4\n",
+    "dword-07": "input 128 - 0 max scan out4\n",
+    "dword-08": "input 128 - 16777216 * 31 + scanmax scan dup 16777216 * 31 + scan scanmax + out4\n",
+    "dword-09": "input 128 - 257 * 17 - prev dup 16777216 * 31 + prev dup 16777216 * 31 + scanmax scan + + out4\n",
+    "dword-10": "input 128 - 0 max scan dup 0 max scanmax scan dup 0 max prev dup 257 * 17 - scanmax + + + out4\n",
+    "dword-11": "input 128 - 7 & 3 - prev scanmax dup 257 * 17 - scan dup 257 * 17 - scanmax scan dup 0 max scan scanmax dup 16777216 * 31 + scanmax scan + + + + out4\n",
+    "dword-12": "input 128 - 7 & 3 - prev dup 0 max scanmax dup 16777216 * 31 + scan dup 0 max prev scanmax dup 7 & 3 - scanmax dup 7 & 3 - prev + + + + + out4\n",
+    "dword-13": "input 128 - 257 * 17 - scan scanmax dup 16777216 * 31 + scan dup 0 max scan scanmax dup 7 & 3 - scan scanmax dup 0 max prev scanmax dup 7 & 3 - scan dup 7 & 3 - scanmax scan + + + + + + out4\n",
+    "dword-14": "input 128 - 257 * 17 - prev scanmax out4\n",
+    "dword-15": "input 128 - 257 * 17 - prev scanmax dup 16777216 * 31 + scan scanmax + out4\n",
+    "dword-16": "input 128 - 7 & 3 - prev dup 0 max scan dup 16777216 * 31 + scanmax scan + + out4\n",
+    "dword-17": "input 128 - 257 * 17 - scan scanmax dup 0 max scanmax scan dup 16777216 * 31 + prev scanmax dup 16777216 * 31 + prev + + + out4\n",
+    "dword-18": "input 128 - 7 & 3 - prev dup 257 * 17 - prev dup 7 & 3 - prev dup 16777216 * 31 + scan scanmax dup 0 max prev + + + + out4\n",
+    "dword-19": "input 128 - 16777216 * 31 + prev dup 0 max scan dup 7 & 3 - prev dup 257 * 17 - scan dup 0 max scanmax dup 0 max scanmax scan + + + + + out4\n",
+    "dword-20": "input 128 - 7 & 3 - prev scanmax dup 7 & 3 - scan scanmax dup 0 max prev dup 16777216 * 31 + scan dup 7 & 3 - scanmax scan dup 0 max prev dup 257 * 17 - scan scanmax + + + + + + out4\n",
+    "dword-21": "input 128 - 257 * 17 - scanmax out4\n",
+    "dword-22": "input 128 - 0 max scanmax dup 7 & 3 - scanmax scan + out4\n",
+    "dword-23": "input 128 - 0 max scan dup 257 * 17 - scanmax dup 16777216 * 31 + prev scanmax + + out4\n",
+    "dword-24": "input 128 - 0 max prev dup 7 & 3 - scan dup 0 max prev dup 16777216 * 31 + scan scanmax + + + out4\n",
+    "dword-25": "input 128 - 16777216 * 31 + prev scanmax dup 16777216 * 31 + prev dup 257 * 17 - scan dup 0 max scanmax scan dup 16777216 * 31 + prev scanmax + + + + out4\n",
+    "dword-26": "input 128 - 16777216 * 31 + prev scanmax dup 7 & 3 - scanmax dup 0 max prev scanmax dup 7 & 3 - scanmax dup 0 max scanmax dup 16777216 * 31 + prev scanmax + + + + + out4\n",
+    "dword-27": "input 128 - 0 max scanmax scan dup 7 & 3 - scan dup 257 * 17 - prev dup 7 & 3 - scan scanmax dup 7 & 3 - scan dup 16777216 * 31 + scanmax scan dup 16777216 * 31 + prev scanmax + + + + + + out4\n",
+    "dword-28": "input 128 - 257 * 17 - prev out4\n",
+    "dword-29": "input 128 - 7 & 3 - prev scanmax dup 16777216 * 31 + scanmax scan + out4\n",
+    "dword-30": "input 128 - 0 max scanmax scan dup 257 * 17 - scanmax scan dup 257 * 17 - scan scanmax + + out4\n",
+    "dword-31": "input 128 - 16777216 * 31 + scan scanmax dup 16777216 * 31 + scanmax dup 257 * 17 - prev scanmax dup 16777216 * 31 + scan + + + out4\n",
+    "dword-32": "input 128 - 257 * 17 - prev scanmax dup 7 & 3 - prev dup 7 & 3 - scan scanmax dup 0 max scan scanmax dup 7 & 3 - prev scanmax + + + + out4\n",
+    "dword-33": "input 128 - 0 max scan scanmax dup 257 * 17 - scan scanmax dup 16777216 * 31 + scan scanmax dup 7 & 3 - prev dup 16777216 * 31 + scanmax scan dup 7 & 3 - scanmax scan + + + + + out4\n",
+    "dword-34": "input 128 - 0 max scanmax dup 7 & 3 - scan scanmax dup 7 & 3 - scan scanmax dup 257 * 17 - scanmax scan dup 257 * 17 - scan dup 257 * 17 - scan dup 7 & 3 - scanmax + + + + + + out4\n",
+    "dword-35": "input 128 - 257 * 17 - scan out4\n",
+    "dword-36": "input 128 - 7 & 3 - prev scanmax dup 16777216 * 31 + prev + out4\n",
+    "dword-37": "input 128 - 257 * 17 - scanmax dup 7 & 3 - scan scanmax dup 257 * 17 - prev + + out4\n",
+    "dword-38": "input 128 - 7 & 3 - scanmax dup 7 & 3 - prev dup 7 & 3 - prev dup 257 * 17 - scanmax scan + + + out4\n",
+    "dword-39": "input 128 - 0 max scanmax dup 0 max prev scanmax dup 257 * 17 - scanmax scan dup 16777216 * 31 + prev scanmax dup 257 * 17 - prev scanmax + + + + out4\n",
+    "dword-40": "input 128 - 7 & 3 - prev scanmax dup 7 & 3 - scan scanmax dup 0 max scanmax scan dup 257 * 17 - scan dup 16777216 * 31 + prev dup 16777216 * 31 + scanmax + + + + + out4\n",
+    "dword-41": "input 128 - 16777216 * 31 + scan dup 7 & 3 - prev scanmax dup 0 max scanmax scan dup 0 max prev scanmax dup 7 & 3 - prev dup 0 max prev scanmax dup 257 * 17 - prev + + + + + + out4\n",
+    "dword-42": "input 128 - 257 * 17 - scan scanmax out4\n",
+    "dword-43": "input 128 - 0 max scanmax scan dup 7 & 3 - scan + out4\n",
+    "dword-44": "input 128 - 16777216 * 31 + prev dup 257 * 17 - prev scanmax dup 257 * 17 - scan scanmax + + out4\n",
+    "dword-45": "input 128 - 0 max scan scanmax dup 0 max prev dup 0 max scanmax dup 0 max prev + + + out4\n",
+    "dword-46": "input 128 - 257 * 17 - scanmax dup 257 * 17 - prev scanmax dup 7 & 3 - scanmax scan dup 257 * 17 - scan scanmax dup 7 & 3 - scan scanmax + + + + out4\n",
+    "dword-47": "input 128 - 257 * 17 - prev scanmax dup 7 & 3 - prev scanmax dup 16777216 * 31 + scan scanmax dup 7 & 3 - prev dup 257 * 17 - scanmax dup 7 & 3 - scanmax scan + + + + + out4\n",
+    "dword-48": "input 128 - 257 * 17 - scan dup 0 max scanmax dup 257 * 17 - prev dup 0 max scanmax dup 7 & 3 - prev scanmax dup 16777216 * 31 + scanmax scan dup 0 max scan scanmax + + + + + + out4\n",
+    "dword-49": "input 128 - 0 max scan out4\n",
+    "dword-50": "input 128 - 7 & 3 - prev dup 16777216 * 31 + prev scanmax + out4\n",
+    "dword-51": "input 128 - 7 & 3 - prev scanmax dup 16777216 * 31 + prev dup 257 * 17 - scan + + out4\n",
+    "dword-52": "input 128 - 0 max prev dup 257 * 17 - scan dup 7 & 3 - prev dup 0 max scanmax + + + out4\n",
+    "dword-53": "input 128 - 16777216 * 31 + scan dup 257 * 17 - scan dup 16777216 * 31 + scan scanmax dup 0 max scanmax scan dup 7 & 3 - scan + + + + out4\n",
+    "dword-54": "input 128 - 257 * 17 - scan scanmax dup 16777216 * 31 + scan dup 257 * 17 - prev dup 7 & 3 - prev scanmax dup 7 & 3 - prev dup 7 & 3 - scan + + + + + out4\n",
+    "dword-55": "input 128 - 0 max scanmax scan dup 0 max scanmax scan dup 7 & 3 - scan scanmax dup 0 max scan scanmax dup 16777216 * 31 + scan scanmax dup 0 max scan dup 7 & 3 - scanmax scan + + + + + + out4\n",
+    "bytes-00": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 3 2 3 2 2 1 2 1 0 2 3 2 1 2 0 2 2 0 3 0 1 2 0 3 0 0 2 0 3 3 2 1 1 3 1 2 1 1 3 2 2 3 0 3 3 3 2 0 1 3 1 0 2 0 2 1 2 3 2 3 1 0 =a\nbytes 3 & /p out\n",
+    "bytes-01": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 1 2 3 0 3 3 2 3 1 0 0 3 0 1 1 2 1 2 1 2 0 1 0 0 3 2 3 3 1 0 2 0 0 3 3 2 1 0 2 1 2 2 0 0 3 0 2 2 2 2 1 2 1 3 0 1 1 3 0 1 1 1 =a\nbytes 3 ^ /p dup 3 ^ /p + out\n",
+    "bytes-02": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 2 3 1 1 2 2 3 2 3 1 2 2 3 0 1 3 3 0 1 0 1 1 3 1 1 2 1 2 2 1 2 2 2 3 2 1 2 2 2 0 1 1 0 3 0 3 1 0 0 2 1 0 0 0 2 0 1 3 0 2 2 0 =a\nbytes 3 & /p dup prev dup 7 + prev + + out\n",
+    "bytes-03": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 3 2 1 2 3 3 3 0 0 3 3 3 3 1 2 2 0 3 0 3 2 0 2 3 1 2 2 1 1 1 3 3 3 0 0 2 3 2 3 2 2 3 3 3 3 1 1 0 3 0 1 2 2 1 2 0 0 0 0 0 2 2 2 =a\nbytes 3 ^ /p dup 15 & /a dup 3 & /p dup prev + + + out\n",
+    "bytes-04": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 0 3 1 0 3 3 0 3 3 2 1 3 3 2 3 2 1 2 0 3 2 3 3 3 3 2 1 3 0 1 3 3 0 0 1 3 3 1 0 0 0 2 1 2 3 1 2 0 1 2 0 3 2 1 1 0 3 0 1 2 2 0 1 =a\nbytes 15 & /a dup 7 + prev dup 15 & /a dup 3 & /p dup 15 & /a + + + + out\n",
+    "bytes-05": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 1 1 2 3 3 2 2 0 3 1 2 0 3 3 0 3 2 0 1 3 0 0 0 0 0 0 2 3 0 3 3 2 0 0 3 2 2 2 3 1 2 1 0 2 2 3 1 3 0 2 3 2 3 3 0 0 1 3 2 3 1 3 1 =a\nbytes 15 & /a dup 3 ^ /p dup 3 ^ /p dup 3 ^ /p dup 15 & /a dup 7 + prev + + + + + out\n",
+    "bytes-06": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 0 1 1 3 1 3 3 3 0 1 3 1 3 3 3 0 1 3 1 3 2 0 3 1 0 0 2 0 0 1 1 3 0 2 0 2 1 1 3 3 3 0 0 0 3 1 2 2 3 1 1 2 2 0 2 2 0 2 2 1 2 3 =a\nbytes 3 & /p dup 3 ^ /p dup 3 ^ /p dup 15 & /a dup 3 ^ /p dup 15 & /a dup 3 & /p + + + + + + out\n",
+    "bytes-07": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 3 0 0 2 0 2 0 1 1 1 2 3 2 0 1 0 2 3 1 3 1 2 0 3 0 2 0 1 2 0 0 2 1 0 3 3 1 1 3 2 2 1 1 3 0 3 3 3 1 2 2 2 1 3 3 3 0 2 3 1 2 0 2 =a\nbytes 7 + prev out\n",
+    "bytes-08": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 3 1 0 3 1 3 3 3 1 0 2 0 2 1 0 3 3 2 3 3 2 1 3 2 1 3 2 0 1 0 0 3 2 0 0 3 1 3 2 3 3 2 2 1 2 0 1 0 1 1 1 2 2 3 3 2 1 3 3 0 3 3 3 =a\nbytes 7 + prev dup 3 ^ /p + out\n",
+    "bytes-09": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 1 0 2 1 0 2 3 0 1 3 0 2 3 1 3 3 3 1 1 3 3 3 1 0 1 0 3 2 2 1 1 3 1 0 2 2 2 3 0 0 2 0 0 2 0 1 0 0 2 0 3 1 1 3 3 2 2 3 1 1 2 1 0 =a\nbytes 3 & /p dup 7 + prev dup prev + + out\n",
+    "bytes-10": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 1 2 0 1 0 2 3 2 0 2 0 3 3 2 2 1 3 0 3 0 2 0 3 3 2 1 0 0 0 3 1 3 2 0 2 2 1 2 2 1 1 1 0 1 3 2 3 1 0 3 0 2 1 2 3 0 0 3 2 0 3 0 3 =a\nbytes 15 & /a dup 7 + prev dup 3 & /p dup 3 ^ /p + + + out\n",
+    "bytes-11": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 2 2 0 3 1 3 2 0 3 3 2 1 0 2 3 3 0 2 2 3 0 1 2 0 2 0 1 0 0 2 2 3 2 0 3 0 0 2 0 3 1 1 1 1 3 1 0 1 2 1 0 2 1 1 3 1 2 1 2 1 0 2 0 =a\nbytes 15 & /a dup 7 + prev dup 3 ^ /p dup 7 + prev dup 3 & /p + + + + out\n",
+    "bytes-12": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 1 3 0 1 3 1 1 2 0 1 3 0 3 2 1 1 3 1 2 1 1 1 1 0 1 0 2 3 1 0 2 1 0 3 1 1 0 2 3 3 2 1 0 2 2 3 0 1 1 1 0 0 3 3 1 3 3 3 0 1 3 3 2 =a\nbytes 7 + prev dup 3 & /p dup prev dup 3 ^ /p dup 15 & /a dup 3 ^ /p + + + + + out\n",
+    "bytes-13": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 3 2 2 0 0 0 2 3 1 1 1 0 2 3 2 2 1 2 1 3 3 2 1 2 1 3 3 2 0 0 2 0 0 2 3 2 0 1 3 0 1 0 3 1 1 3 3 3 1 0 1 3 2 2 2 0 1 2 3 0 3 3 3 =a\nbytes 7 + prev dup 3 & /p dup prev dup 3 & /p dup prev dup 7 + prev dup 15 & /a + + + + + + out\n",
+    "bytes-14": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 1 0 1 2 3 3 3 2 0 0 1 1 1 2 3 2 2 1 0 0 2 3 2 1 0 1 3 0 2 0 1 2 0 1 0 3 0 2 2 1 1 1 0 3 3 2 0 2 0 0 1 1 1 3 3 1 3 1 3 1 3 2 1 =a\nbytes 3 ^ /p out\n",
+    "bytes-15": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 3 0 3 1 3 1 1 2 0 2 0 0 1 0 1 0 1 3 2 0 2 1 3 2 2 1 3 0 2 0 1 0 0 1 3 3 0 2 1 3 0 1 2 3 3 0 3 0 3 3 1 2 2 3 0 0 1 0 0 1 3 3 2 =a\nbytes 3 ^ /p dup 15 & /a + out\n",
+    "bytes-16": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 1 1 2 1 2 0 3 3 3 3 2 3 3 0 0 1 0 1 0 0 1 1 0 2 1 0 2 0 2 3 3 2 3 0 2 3 1 0 3 3 2 1 1 0 2 0 0 0 0 3 2 0 3 1 1 1 2 3 3 1 1 0 3 =a\nbytes prev dup 3 & /p dup 3 ^ /p + + out\n",
+    "bytes-17": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 2 3 1 3 2 3 1 3 1 3 2 3 0 0 0 1 1 1 1 1 1 1 0 0 0 0 3 1 3 2 1 0 1 3 0 2 0 2 3 2 0 0 2 2 0 1 0 1 1 0 1 3 2 2 2 3 3 0 3 1 3 3 0 =a\nbytes 7 + prev dup 15 & /a dup 3 & /p dup 3 & /p + + + out\n",
+    "bytes-18": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 2 0 2 1 3 3 3 3 1 2 2 0 3 3 1 3 1 0 3 2 0 0 3 1 0 1 1 3 2 0 2 3 2 2 1 2 1 2 0 2 0 1 3 0 0 0 2 2 3 0 2 0 0 0 3 0 3 2 2 0 3 0 1 =a\nbytes 15 & /a dup 3 & /p dup 15 & /a dup 3 & /p dup 15 & /a + + + + out\n",
+    "bytes-19": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 0 3 2 2 1 3 3 1 0 0 0 3 3 2 3 0 2 1 3 0 2 0 1 0 1 0 1 1 0 0 2 0 3 2 0 1 3 3 2 0 0 2 2 0 2 1 1 1 3 2 1 1 1 0 1 1 1 1 2 2 2 1 3 =a\nbytes 7 + prev dup prev dup prev dup 3 ^ /p dup 3 & /p dup 3 ^ /p + + + + + out\n",
+    "bytes-20": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 0 3 0 1 1 1 0 2 0 1 3 3 0 2 1 3 3 2 1 2 0 2 2 0 2 3 3 2 1 3 1 0 3 2 1 1 1 0 2 1 2 2 2 2 3 3 0 3 3 3 1 3 2 1 0 0 1 2 2 3 2 0 2 =a\nbytes 3 ^ /p dup 3 & /p dup 3 & /p dup 15 & /a dup 15 & /a dup prev dup 3 ^ /p + + + + + + out\n",
+    "bytes-21": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 3 3 1 2 0 0 3 0 2 2 2 1 0 1 0 2 3 1 3 2 3 3 0 1 3 1 0 1 0 2 0 3 2 2 3 1 2 3 2 1 3 1 2 0 1 0 1 2 0 0 0 3 2 2 3 1 3 2 1 1 0 2 3 =a\nbytes 3 ^ /p out\n",
+    "bytes-22": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 2 0 3 0 0 1 2 2 3 3 2 0 3 3 2 1 2 2 3 3 0 2 2 3 2 1 0 2 3 0 3 1 3 0 1 2 3 3 3 0 1 3 2 3 3 0 2 2 3 2 0 3 2 0 1 0 1 1 0 3 2 1 0 =a\nbytes 3 & /p dup 3 ^ /p + out\n",
+    "bytes-23": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 3 0 0 2 1 0 0 3 3 1 2 2 2 2 0 2 3 0 3 1 0 1 3 3 1 2 1 2 2 1 3 3 1 1 3 2 0 0 1 0 2 2 3 0 1 3 0 0 0 0 2 2 2 2 2 2 1 3 1 1 0 3 3 =a\nbytes 15 & /a dup prev dup 7 + prev + + out\n",
+    "bytes-24": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 3 1 3 3 0 2 0 1 0 3 3 2 0 0 1 3 0 2 1 1 2 3 1 3 1 0 2 1 1 0 0 1 2 3 2 1 0 3 2 3 2 3 2 2 1 3 1 2 0 3 3 0 1 1 0 0 0 2 2 3 3 0 1 =a\nbytes prev dup 3 ^ /p dup prev dup 3 ^ /p + + + out\n",
+    "bytes-25": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 2 2 1 2 2 1 2 3 1 2 3 1 0 0 0 2 0 3 0 3 1 1 2 2 1 0 1 1 2 1 0 1 2 2 2 2 3 2 3 3 3 1 0 1 3 1 1 3 0 3 0 1 3 0 3 3 0 0 2 0 0 2 2 =a\nbytes 7 + prev dup prev dup 7 + prev dup 15 & /a dup 7 + prev + + + + out\n",
+    "bytes-26": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 2 0 1 3 1 1 0 0 0 1 3 3 2 2 0 2 0 2 2 3 0 0 2 2 1 2 3 2 0 1 0 2 3 2 2 2 3 1 1 3 2 3 3 0 1 2 1 2 2 3 1 1 0 2 1 1 2 0 3 3 0 1 1 =a\nbytes 7 + prev dup prev dup 3 & /p dup 15 & /a dup 3 ^ /p dup 3 ^ /p + + + + + out\n",
+    "bytes-27": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 1 3 3 2 2 3 3 2 1 2 3 3 3 2 3 0 2 3 0 3 3 0 2 3 3 2 3 1 0 2 1 2 3 2 1 2 3 0 2 2 0 0 1 1 0 0 1 3 3 0 0 1 2 2 1 2 3 2 3 0 3 2 0 =a\nbytes 3 ^ /p dup 3 & /p dup prev dup 7 + prev dup 3 & /p dup 3 & /p dup 3 & /p + + + + + + out\n",
+    "bytes-28": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 0 1 1 1 1 1 0 0 0 0 2 2 2 1 1 2 0 1 1 1 1 2 3 2 1 1 2 1 3 0 2 3 0 2 1 1 0 0 1 0 1 3 0 3 1 2 3 3 0 2 2 1 0 1 3 0 0 3 2 1 2 0 2 =a\nbytes 15 & /a out\n",
+    "bytes-29": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 1 2 3 0 3 0 3 0 3 1 1 0 1 3 1 0 2 1 2 1 0 0 3 3 3 3 1 3 2 1 2 2 1 1 0 1 3 3 1 1 2 3 1 0 3 1 3 0 3 2 2 3 3 0 1 1 1 0 2 1 0 0 3 =a\nbytes 3 & /p dup 7 + prev + out\n",
+    "bytes-30": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 0 0 1 2 2 0 2 3 3 0 1 0 0 3 0 0 1 0 0 1 2 1 1 0 3 1 3 0 2 3 3 1 2 2 1 1 2 1 2 0 1 0 1 0 3 3 3 0 0 2 2 0 0 2 0 0 0 3 3 0 0 1 2 =a\nbytes prev dup 3 ^ /p dup 3 ^ /p + + out\n",
+    "bytes-31": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n3 0 3 1 2 0 0 3 2 3 3 2 2 2 1 3 2 2 3 2 2 1 3 1 0 0 1 1 0 1 0 0 3 0 1 1 2 1 0 0 3 0 1 1 3 3 0 2 3 1 0 2 3 0 2 3 3 3 2 3 2 1 2 0 =a\nbytes 3 & /p dup prev dup 3 & /p dup 3 & /p + + + out\n",
+    "bytes-32": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 1 2 1 1 1 1 2 3 2 1 3 1 1 0 1 3 0 1 3 1 1 0 3 2 3 3 2 3 0 1 0 3 3 1 1 2 1 1 3 1 0 2 2 0 0 3 1 0 1 3 0 1 3 0 3 0 1 2 2 1 1 2 0 =a\nbytes 3 ^ /p dup 3 & /p dup 15 & /a dup 15 & /a dup 3 & /p + + + + out\n",
+    "bytes-33": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 2 1 2 1 3 1 3 0 0 3 0 0 0 0 0 1 0 3 0 0 2 3 0 0 1 0 3 1 1 2 2 1 3 2 0 0 3 2 3 1 2 2 1 0 3 0 0 2 0 1 1 3 1 2 3 0 2 2 3 1 3 0 =a\nbytes 7 + prev dup prev dup 15 & /a dup 15 & /a dup 15 & /a dup 3 & /p + + + + + out\n",
+    "bytes-34": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 0 0 1 2 3 3 1 1 1 1 2 1 0 0 2 3 3 0 2 0 1 1 1 3 0 3 2 2 2 3 3 3 2 0 1 3 1 2 3 3 3 0 1 0 3 3 3 0 3 3 2 2 3 1 0 1 0 1 1 1 1 1 1 =a\nbytes 15 & /a dup 3 ^ /p dup 7 + prev dup 15 & /a dup 7 + prev dup 7 + prev dup 3 ^ /p + + + + + + out\n",
+    "bytes-35": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 2 1 1 2 0 0 1 0 3 1 2 0 2 2 3 0 3 3 2 2 0 0 3 2 3 2 3 3 1 2 0 0 1 0 0 3 2 0 1 2 1 1 2 2 0 0 2 3 2 3 3 2 0 1 2 1 1 0 0 1 0 2 3 =a\nbytes 3 & /p out\n",
+    "bytes-36": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n0 2 0 0 1 0 1 1 2 2 2 0 0 1 3 1 1 1 3 3 1 3 1 0 0 1 3 2 0 1 2 0 0 1 0 3 1 2 3 1 2 1 0 0 1 1 3 2 2 1 0 0 1 2 2 1 2 2 2 1 0 0 1 0 =a\nbytes prev dup prev + out\n",
+    "bytes-37": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 0 0 2 0 3 1 0 0 0 1 3 1 0 3 2 1 1 3 1 0 2 1 2 3 1 0 0 3 0 1 3 2 2 3 1 3 0 2 1 3 0 0 1 0 2 0 0 1 1 0 1 1 0 2 3 3 0 2 1 1 2 0 1 =a\nbytes 7 + prev dup 7 + prev dup 15 & /a + + out\n",
+    "bytes-38": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n1 3 2 2 1 3 1 1 2 0 3 3 0 2 1 0 3 1 3 2 3 3 0 1 3 0 2 1 1 2 2 3 0 3 3 0 1 2 0 2 2 2 2 1 3 1 3 1 1 0 2 2 1 2 2 2 2 3 0 3 3 3 3 2 =a\nbytes 7 + prev dup 15 & /a dup prev dup 7 + prev + + + out\n",
+    "bytes-39": "0 1 2 3  1 0 2 3  1 2 3 0  0 1 3 2 =p\n2 1 1 0 1 0 2 3 3 1 1 3 0 3 2 0 0 0 2 0 1 3 0 2 2 3 0 0 2 1 0 1 2 3 2 3 2 1 0 2 3 0 3 2 2 2 1 0 3 2 0 0 2 2 0 1 3 2 3 1 0 2 2 0 =a\nbytes 7 + prev dup 3 & /p dup prev dup 3 & /p dup 3 ^ /p + + + + out\n",
+    "old-counterexample": "input 1 & scan dup prev dup prev + + out4\n",
+    "max-high-seed": "input 128 - scan dup 0 swap scanmax + + out4\n",
+    "max-prev-scan": "input 128 - scanmax dup prev dup scan + + out4\n",
+    "local-tee-max": "input 128 - :x scanmax dup x + scan + out4\n",
+    "reduce-retry": "input 1 & scan dup 3 & scan dup 7 & scan + + $S\n~1 S + out4\n",
+    "eight-prev-dword": "input prev dup prev dup prev dup prev dup prev dup prev dup prev dup prev + + + + + + + out4\n",
+    "eight-prev-byte": "bytes prev dup prev dup prev dup prev dup prev dup prev dup prev dup prev + + + + + + + out\n",
+    "eight-mixed-carries": "input scanmax prev dup scanmax prev dup scanmax prev dup scanmax prev dup scanmax prev dup scanmax prev dup scanmax prev dup scanmax prev + + + + + + + out4\n"
+  },
+  "compile_rejections": {
+    "two-prev-same-depth": {
+      "source": "input prev prev out4\n",
+      "status": 10
+    },
+    "nine-prev": {
+      "source": "input prev dup prev dup prev dup prev dup prev dup prev dup prev dup prev + prev + + + + + + out4\n",
+      "status": 10
+    }
+  },
+  "runs": [
+    {
+      "name": "dword-00",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a6501326738d674e81fd0ab04b4db04e20472d4784db7c49e89f1c3486057b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-00",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a6501326738d674e81fd0ab04b4db04e20472d4784db7c49e89f1c3486057b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-00",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a6501326738d674e81fd0ab04b4db04e20472d4784db7c49e89f1c3486057b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-00",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a6501326738d674e81fd0ab04b4db04e20472d4784db7c49e89f1c3486057b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-00",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a6501326738d674e81fd0ab04b4db04e20472d4784db7c49e89f1c3486057b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-01",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35051e21e90be447cd104b489523ba4ded372b3d459db86ac1d8d6da11ada761",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-01",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35051e21e90be447cd104b489523ba4ded372b3d459db86ac1d8d6da11ada761",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-01",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35051e21e90be447cd104b489523ba4ded372b3d459db86ac1d8d6da11ada761",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-01",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35051e21e90be447cd104b489523ba4ded372b3d459db86ac1d8d6da11ada761",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-01",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35051e21e90be447cd104b489523ba4ded372b3d459db86ac1d8d6da11ada761",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-02",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dfec7b0784efca7698c4395631d527cf075743a7f8eff496f19947055358a984",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-02",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dfec7b0784efca7698c4395631d527cf075743a7f8eff496f19947055358a984",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-02",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dfec7b0784efca7698c4395631d527cf075743a7f8eff496f19947055358a984",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-02",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dfec7b0784efca7698c4395631d527cf075743a7f8eff496f19947055358a984",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-02",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dfec7b0784efca7698c4395631d527cf075743a7f8eff496f19947055358a984",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-03",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fa3adc991ae714e5136a54fb2fefc457dcb6e7e3173b401c2676131de3016447",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-03",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fa3adc991ae714e5136a54fb2fefc457dcb6e7e3173b401c2676131de3016447",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-03",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fa3adc991ae714e5136a54fb2fefc457dcb6e7e3173b401c2676131de3016447",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-03",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fa3adc991ae714e5136a54fb2fefc457dcb6e7e3173b401c2676131de3016447",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-03",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fa3adc991ae714e5136a54fb2fefc457dcb6e7e3173b401c2676131de3016447",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-04",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8883a6bb51669d381170bc6e0316692ee27fd552e5237c6c4b60db99f75a0906",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-04",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8883a6bb51669d381170bc6e0316692ee27fd552e5237c6c4b60db99f75a0906",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-04",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8883a6bb51669d381170bc6e0316692ee27fd552e5237c6c4b60db99f75a0906",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-04",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8883a6bb51669d381170bc6e0316692ee27fd552e5237c6c4b60db99f75a0906",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-04",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8883a6bb51669d381170bc6e0316692ee27fd552e5237c6c4b60db99f75a0906",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-05",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3030d812ec024c30fdec2bf9616fd94595d1a6d6fdf727a1dffa83222b564bbe",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-05",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3030d812ec024c30fdec2bf9616fd94595d1a6d6fdf727a1dffa83222b564bbe",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-05",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3030d812ec024c30fdec2bf9616fd94595d1a6d6fdf727a1dffa83222b564bbe",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-05",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3030d812ec024c30fdec2bf9616fd94595d1a6d6fdf727a1dffa83222b564bbe",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-05",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3030d812ec024c30fdec2bf9616fd94595d1a6d6fdf727a1dffa83222b564bbe",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-06",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b824fa207968e0819c3f7cb0cac918b27125c7f6da641082c8cd250c3aa016c0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-06",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b824fa207968e0819c3f7cb0cac918b27125c7f6da641082c8cd250c3aa016c0",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-06",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b824fa207968e0819c3f7cb0cac918b27125c7f6da641082c8cd250c3aa016c0",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-06",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b824fa207968e0819c3f7cb0cac918b27125c7f6da641082c8cd250c3aa016c0",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-06",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b824fa207968e0819c3f7cb0cac918b27125c7f6da641082c8cd250c3aa016c0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-07",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-07",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-07",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-07",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-07",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-08",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "122049c22ffd5513384245a8d1130d61961f8c7b6ca1929bd81689c454d55cf3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-08",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "122049c22ffd5513384245a8d1130d61961f8c7b6ca1929bd81689c454d55cf3",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-08",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "122049c22ffd5513384245a8d1130d61961f8c7b6ca1929bd81689c454d55cf3",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-08",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "122049c22ffd5513384245a8d1130d61961f8c7b6ca1929bd81689c454d55cf3",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-08",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "122049c22ffd5513384245a8d1130d61961f8c7b6ca1929bd81689c454d55cf3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-09",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9adb90ead4f52d4c1c6247512c8ed1a024d6d2ef6e30ac7594d5a450801becfc",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-09",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9adb90ead4f52d4c1c6247512c8ed1a024d6d2ef6e30ac7594d5a450801becfc",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-09",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9adb90ead4f52d4c1c6247512c8ed1a024d6d2ef6e30ac7594d5a450801becfc",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-09",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9adb90ead4f52d4c1c6247512c8ed1a024d6d2ef6e30ac7594d5a450801becfc",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-09",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9adb90ead4f52d4c1c6247512c8ed1a024d6d2ef6e30ac7594d5a450801becfc",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-10",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "82070c75ef28f206b0cd00e3c9f1644de3694489de5fdb8e494b55dac2048e8d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-10",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "82070c75ef28f206b0cd00e3c9f1644de3694489de5fdb8e494b55dac2048e8d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-10",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "82070c75ef28f206b0cd00e3c9f1644de3694489de5fdb8e494b55dac2048e8d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-10",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "82070c75ef28f206b0cd00e3c9f1644de3694489de5fdb8e494b55dac2048e8d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-10",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "82070c75ef28f206b0cd00e3c9f1644de3694489de5fdb8e494b55dac2048e8d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-11",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "95a07a18b0c882745d06b97f3c8b55a1b859c5ae933cd15accf48d91706db139",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-11",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "95a07a18b0c882745d06b97f3c8b55a1b859c5ae933cd15accf48d91706db139",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-11",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "95a07a18b0c882745d06b97f3c8b55a1b859c5ae933cd15accf48d91706db139",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-11",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "95a07a18b0c882745d06b97f3c8b55a1b859c5ae933cd15accf48d91706db139",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-11",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "95a07a18b0c882745d06b97f3c8b55a1b859c5ae933cd15accf48d91706db139",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-12",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4507ad44bd231c58fae5e4658db896472ce2254cc7b95581589baa26647fb11",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-12",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4507ad44bd231c58fae5e4658db896472ce2254cc7b95581589baa26647fb11",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-12",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4507ad44bd231c58fae5e4658db896472ce2254cc7b95581589baa26647fb11",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-12",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4507ad44bd231c58fae5e4658db896472ce2254cc7b95581589baa26647fb11",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-12",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4507ad44bd231c58fae5e4658db896472ce2254cc7b95581589baa26647fb11",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-13",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4db181d39ae80f04e07c77506c8cb649e2fd5a72ec4619cf2dcd40a2f53406c6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-13",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4db181d39ae80f04e07c77506c8cb649e2fd5a72ec4619cf2dcd40a2f53406c6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-13",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4db181d39ae80f04e07c77506c8cb649e2fd5a72ec4619cf2dcd40a2f53406c6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-13",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4db181d39ae80f04e07c77506c8cb649e2fd5a72ec4619cf2dcd40a2f53406c6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-13",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4db181d39ae80f04e07c77506c8cb649e2fd5a72ec4619cf2dcd40a2f53406c6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-14",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dbe30e2e6dca8a6b940c7fa862ef3e051c9423449de497e829b13541dac5e5a4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-14",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dbe30e2e6dca8a6b940c7fa862ef3e051c9423449de497e829b13541dac5e5a4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-14",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dbe30e2e6dca8a6b940c7fa862ef3e051c9423449de497e829b13541dac5e5a4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-14",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dbe30e2e6dca8a6b940c7fa862ef3e051c9423449de497e829b13541dac5e5a4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-14",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dbe30e2e6dca8a6b940c7fa862ef3e051c9423449de497e829b13541dac5e5a4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-15",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dcfa3ee626ca68b88581d9eb1dc50630013e720e844e1e85d64cd8687f4b5af6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-15",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dcfa3ee626ca68b88581d9eb1dc50630013e720e844e1e85d64cd8687f4b5af6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-15",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dcfa3ee626ca68b88581d9eb1dc50630013e720e844e1e85d64cd8687f4b5af6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-15",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dcfa3ee626ca68b88581d9eb1dc50630013e720e844e1e85d64cd8687f4b5af6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-15",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "dcfa3ee626ca68b88581d9eb1dc50630013e720e844e1e85d64cd8687f4b5af6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-16",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f6787448a551c616708c30cb2b874d8f48849d0c3a9eb362eb6e49676a06e8e1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-16",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f6787448a551c616708c30cb2b874d8f48849d0c3a9eb362eb6e49676a06e8e1",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-16",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f6787448a551c616708c30cb2b874d8f48849d0c3a9eb362eb6e49676a06e8e1",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-16",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f6787448a551c616708c30cb2b874d8f48849d0c3a9eb362eb6e49676a06e8e1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-16",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f6787448a551c616708c30cb2b874d8f48849d0c3a9eb362eb6e49676a06e8e1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-17",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b5fa4960c993621758d92310531bd01f5eabce7b565b06f3f3e8ea414bae02f7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-17",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b5fa4960c993621758d92310531bd01f5eabce7b565b06f3f3e8ea414bae02f7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-17",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b5fa4960c993621758d92310531bd01f5eabce7b565b06f3f3e8ea414bae02f7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-17",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b5fa4960c993621758d92310531bd01f5eabce7b565b06f3f3e8ea414bae02f7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-17",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b5fa4960c993621758d92310531bd01f5eabce7b565b06f3f3e8ea414bae02f7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-18",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3329cd28cdb8a11591eda4e248b2d5add962b8a7355cd2193bd37173648052df",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-18",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3329cd28cdb8a11591eda4e248b2d5add962b8a7355cd2193bd37173648052df",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-18",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3329cd28cdb8a11591eda4e248b2d5add962b8a7355cd2193bd37173648052df",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-18",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3329cd28cdb8a11591eda4e248b2d5add962b8a7355cd2193bd37173648052df",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-18",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3329cd28cdb8a11591eda4e248b2d5add962b8a7355cd2193bd37173648052df",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-19",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5baf619f8e0ed94fa2f1c5b6fb0001d500ab3e20de7659f908311a3f753af7a5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-19",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5baf619f8e0ed94fa2f1c5b6fb0001d500ab3e20de7659f908311a3f753af7a5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-19",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5baf619f8e0ed94fa2f1c5b6fb0001d500ab3e20de7659f908311a3f753af7a5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-19",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5baf619f8e0ed94fa2f1c5b6fb0001d500ab3e20de7659f908311a3f753af7a5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-19",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5baf619f8e0ed94fa2f1c5b6fb0001d500ab3e20de7659f908311a3f753af7a5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-20",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6ad76b1a245c56500204bba52905813baf1dd43626f39f4cdc16c76525c9668e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-20",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6ad76b1a245c56500204bba52905813baf1dd43626f39f4cdc16c76525c9668e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-20",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6ad76b1a245c56500204bba52905813baf1dd43626f39f4cdc16c76525c9668e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-20",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6ad76b1a245c56500204bba52905813baf1dd43626f39f4cdc16c76525c9668e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-20",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6ad76b1a245c56500204bba52905813baf1dd43626f39f4cdc16c76525c9668e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-21",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2aa80b3cd4026123e5b8e80cefcb61db18cad966ef106b275404cd244508176",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-21",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2aa80b3cd4026123e5b8e80cefcb61db18cad966ef106b275404cd244508176",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-21",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2aa80b3cd4026123e5b8e80cefcb61db18cad966ef106b275404cd244508176",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-21",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2aa80b3cd4026123e5b8e80cefcb61db18cad966ef106b275404cd244508176",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-21",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2aa80b3cd4026123e5b8e80cefcb61db18cad966ef106b275404cd244508176",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-22",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6b64dbfdd6bc8c43e52e53b6c28151f07a6c8b06c8bd5339b0664daaf990aedf",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-22",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6b64dbfdd6bc8c43e52e53b6c28151f07a6c8b06c8bd5339b0664daaf990aedf",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-22",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6b64dbfdd6bc8c43e52e53b6c28151f07a6c8b06c8bd5339b0664daaf990aedf",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-22",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6b64dbfdd6bc8c43e52e53b6c28151f07a6c8b06c8bd5339b0664daaf990aedf",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-22",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "6b64dbfdd6bc8c43e52e53b6c28151f07a6c8b06c8bd5339b0664daaf990aedf",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-23",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "864fe647028a0a7a8fa4b44fce9c0b6024119398e38cb22b37a3d238af293426",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-23",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "864fe647028a0a7a8fa4b44fce9c0b6024119398e38cb22b37a3d238af293426",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-23",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "864fe647028a0a7a8fa4b44fce9c0b6024119398e38cb22b37a3d238af293426",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-23",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "864fe647028a0a7a8fa4b44fce9c0b6024119398e38cb22b37a3d238af293426",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-23",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "864fe647028a0a7a8fa4b44fce9c0b6024119398e38cb22b37a3d238af293426",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-24",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1c157e7099f73a31632f2cfe9a9f51bb3157eb1981c835f4795533c3d71be4b6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-24",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1c157e7099f73a31632f2cfe9a9f51bb3157eb1981c835f4795533c3d71be4b6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-24",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1c157e7099f73a31632f2cfe9a9f51bb3157eb1981c835f4795533c3d71be4b6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-24",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1c157e7099f73a31632f2cfe9a9f51bb3157eb1981c835f4795533c3d71be4b6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-24",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1c157e7099f73a31632f2cfe9a9f51bb3157eb1981c835f4795533c3d71be4b6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-25",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "520025a5c32ecdb620dd715e6ba9d069bd473b780e85cec0e78eb8fc272107d7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-25",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "520025a5c32ecdb620dd715e6ba9d069bd473b780e85cec0e78eb8fc272107d7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-25",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "520025a5c32ecdb620dd715e6ba9d069bd473b780e85cec0e78eb8fc272107d7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-25",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "520025a5c32ecdb620dd715e6ba9d069bd473b780e85cec0e78eb8fc272107d7",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-25",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "520025a5c32ecdb620dd715e6ba9d069bd473b780e85cec0e78eb8fc272107d7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-26",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c003d4ec09ff4f0b9b871824c2b86738e34d34d05988a708e880d0501a86f152",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-26",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c003d4ec09ff4f0b9b871824c2b86738e34d34d05988a708e880d0501a86f152",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-26",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c003d4ec09ff4f0b9b871824c2b86738e34d34d05988a708e880d0501a86f152",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-26",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c003d4ec09ff4f0b9b871824c2b86738e34d34d05988a708e880d0501a86f152",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-26",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c003d4ec09ff4f0b9b871824c2b86738e34d34d05988a708e880d0501a86f152",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-27",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e8e8a34a2bc880afa8d6019347b6379beabd11bafe117b72d6b12abdf13318c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-27",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e8e8a34a2bc880afa8d6019347b6379beabd11bafe117b72d6b12abdf13318c8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-27",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e8e8a34a2bc880afa8d6019347b6379beabd11bafe117b72d6b12abdf13318c8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-27",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e8e8a34a2bc880afa8d6019347b6379beabd11bafe117b72d6b12abdf13318c8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-27",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e8e8a34a2bc880afa8d6019347b6379beabd11bafe117b72d6b12abdf13318c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-28",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1677790a8fc56ca420c8b1612c6bc7d5ac7410330fd80103002cd55367616ff9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-28",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1677790a8fc56ca420c8b1612c6bc7d5ac7410330fd80103002cd55367616ff9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-28",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1677790a8fc56ca420c8b1612c6bc7d5ac7410330fd80103002cd55367616ff9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-28",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1677790a8fc56ca420c8b1612c6bc7d5ac7410330fd80103002cd55367616ff9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-28",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "1677790a8fc56ca420c8b1612c6bc7d5ac7410330fd80103002cd55367616ff9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-29",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "97bab5299332596edf0871a17551c885d10221cbfe7378fc5d2b19a9bf67b2d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-29",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "97bab5299332596edf0871a17551c885d10221cbfe7378fc5d2b19a9bf67b2d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-29",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "97bab5299332596edf0871a17551c885d10221cbfe7378fc5d2b19a9bf67b2d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-29",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "97bab5299332596edf0871a17551c885d10221cbfe7378fc5d2b19a9bf67b2d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-29",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "97bab5299332596edf0871a17551c885d10221cbfe7378fc5d2b19a9bf67b2d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-30",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "721661fc611f48d66758cfa62e8f08d23c6858444666f3d01e0cb292d5e4721d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-30",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "721661fc611f48d66758cfa62e8f08d23c6858444666f3d01e0cb292d5e4721d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-30",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "721661fc611f48d66758cfa62e8f08d23c6858444666f3d01e0cb292d5e4721d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-30",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "721661fc611f48d66758cfa62e8f08d23c6858444666f3d01e0cb292d5e4721d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-30",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "721661fc611f48d66758cfa62e8f08d23c6858444666f3d01e0cb292d5e4721d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-31",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8714f55c832ca81dcfbf676f4e0e188cca7802d06379ec55fc4f4d3af902b14c",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-31",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8714f55c832ca81dcfbf676f4e0e188cca7802d06379ec55fc4f4d3af902b14c",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-31",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8714f55c832ca81dcfbf676f4e0e188cca7802d06379ec55fc4f4d3af902b14c",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-31",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8714f55c832ca81dcfbf676f4e0e188cca7802d06379ec55fc4f4d3af902b14c",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-31",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8714f55c832ca81dcfbf676f4e0e188cca7802d06379ec55fc4f4d3af902b14c",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-32",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0057c15abd495322561dc44ab8f7ab16f3cd74279e40890b6044063ec47a2dc8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-32",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0057c15abd495322561dc44ab8f7ab16f3cd74279e40890b6044063ec47a2dc8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-32",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0057c15abd495322561dc44ab8f7ab16f3cd74279e40890b6044063ec47a2dc8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-32",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0057c15abd495322561dc44ab8f7ab16f3cd74279e40890b6044063ec47a2dc8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-32",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0057c15abd495322561dc44ab8f7ab16f3cd74279e40890b6044063ec47a2dc8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-33",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4cf992dcfbd04e85ab0881f9ee6a6f788064a3f450df01df9bdca697291e3cd5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-33",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4cf992dcfbd04e85ab0881f9ee6a6f788064a3f450df01df9bdca697291e3cd5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-33",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4cf992dcfbd04e85ab0881f9ee6a6f788064a3f450df01df9bdca697291e3cd5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-33",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4cf992dcfbd04e85ab0881f9ee6a6f788064a3f450df01df9bdca697291e3cd5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-33",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4cf992dcfbd04e85ab0881f9ee6a6f788064a3f450df01df9bdca697291e3cd5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-34",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4dcf0a7c2525e12ebb9f9df6819971676706a32b3e097ec15e9de2ac9530731b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-34",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4dcf0a7c2525e12ebb9f9df6819971676706a32b3e097ec15e9de2ac9530731b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-34",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4dcf0a7c2525e12ebb9f9df6819971676706a32b3e097ec15e9de2ac9530731b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-34",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4dcf0a7c2525e12ebb9f9df6819971676706a32b3e097ec15e9de2ac9530731b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-34",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4dcf0a7c2525e12ebb9f9df6819971676706a32b3e097ec15e9de2ac9530731b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-35",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f4c84de6e99b06e7a6ecf25074c217e6e0f0a9f2b49c332beb8b3c037050f4c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-35",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f4c84de6e99b06e7a6ecf25074c217e6e0f0a9f2b49c332beb8b3c037050f4c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-35",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f4c84de6e99b06e7a6ecf25074c217e6e0f0a9f2b49c332beb8b3c037050f4c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-35",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f4c84de6e99b06e7a6ecf25074c217e6e0f0a9f2b49c332beb8b3c037050f4c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-35",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f4c84de6e99b06e7a6ecf25074c217e6e0f0a9f2b49c332beb8b3c037050f4c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-36",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "04e826b34be4015c2a0f64d35d0a480ca5c5a6e5217656777db807f114f43c91",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-36",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "04e826b34be4015c2a0f64d35d0a480ca5c5a6e5217656777db807f114f43c91",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-36",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "04e826b34be4015c2a0f64d35d0a480ca5c5a6e5217656777db807f114f43c91",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-36",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "04e826b34be4015c2a0f64d35d0a480ca5c5a6e5217656777db807f114f43c91",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-36",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "04e826b34be4015c2a0f64d35d0a480ca5c5a6e5217656777db807f114f43c91",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-37",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e648d3edd4c894be19b107e27b9174e791e95821fb5b64d99d33221e1b054d7f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-37",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e648d3edd4c894be19b107e27b9174e791e95821fb5b64d99d33221e1b054d7f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-37",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e648d3edd4c894be19b107e27b9174e791e95821fb5b64d99d33221e1b054d7f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-37",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e648d3edd4c894be19b107e27b9174e791e95821fb5b64d99d33221e1b054d7f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-37",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e648d3edd4c894be19b107e27b9174e791e95821fb5b64d99d33221e1b054d7f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-38",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3e61715dcc309fb1a9c9f0dc2e6b4f4e1ca248c657709d5cadc47c079d179edf",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-38",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3e61715dcc309fb1a9c9f0dc2e6b4f4e1ca248c657709d5cadc47c079d179edf",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-38",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3e61715dcc309fb1a9c9f0dc2e6b4f4e1ca248c657709d5cadc47c079d179edf",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-38",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3e61715dcc309fb1a9c9f0dc2e6b4f4e1ca248c657709d5cadc47c079d179edf",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-38",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3e61715dcc309fb1a9c9f0dc2e6b4f4e1ca248c657709d5cadc47c079d179edf",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-39",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "00e920e5580649a274e6685ecb51821e2c9587bb338b58ec957208173b4a5f39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-39",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "00e920e5580649a274e6685ecb51821e2c9587bb338b58ec957208173b4a5f39",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-39",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "00e920e5580649a274e6685ecb51821e2c9587bb338b58ec957208173b4a5f39",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-39",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "00e920e5580649a274e6685ecb51821e2c9587bb338b58ec957208173b4a5f39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-39",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "00e920e5580649a274e6685ecb51821e2c9587bb338b58ec957208173b4a5f39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-40",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c593d2239b9b34f476b230f7429b69682131c3f9e4af192d9f33f90da8c5b6e4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-40",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c593d2239b9b34f476b230f7429b69682131c3f9e4af192d9f33f90da8c5b6e4",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-40",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c593d2239b9b34f476b230f7429b69682131c3f9e4af192d9f33f90da8c5b6e4",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-40",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c593d2239b9b34f476b230f7429b69682131c3f9e4af192d9f33f90da8c5b6e4",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-40",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c593d2239b9b34f476b230f7429b69682131c3f9e4af192d9f33f90da8c5b6e4",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-41",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4524286df005a83a76f000feec7792d5f9a0c9b53c28bdbfcb2282f4c4320680",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-41",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4524286df005a83a76f000feec7792d5f9a0c9b53c28bdbfcb2282f4c4320680",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-41",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4524286df005a83a76f000feec7792d5f9a0c9b53c28bdbfcb2282f4c4320680",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-41",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4524286df005a83a76f000feec7792d5f9a0c9b53c28bdbfcb2282f4c4320680",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-41",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4524286df005a83a76f000feec7792d5f9a0c9b53c28bdbfcb2282f4c4320680",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-42",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "bff401252715cffe171c46dc9aa54265620e09d50d774b04a693ce8f6bc9c978",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-42",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "bff401252715cffe171c46dc9aa54265620e09d50d774b04a693ce8f6bc9c978",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-42",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "bff401252715cffe171c46dc9aa54265620e09d50d774b04a693ce8f6bc9c978",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-42",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "bff401252715cffe171c46dc9aa54265620e09d50d774b04a693ce8f6bc9c978",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-42",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "bff401252715cffe171c46dc9aa54265620e09d50d774b04a693ce8f6bc9c978",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-43",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e5e86ca43160fb9f7d28180d12074f62d19bff60533eb2653c0ebdb74ff8729",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-43",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e5e86ca43160fb9f7d28180d12074f62d19bff60533eb2653c0ebdb74ff8729",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-43",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e5e86ca43160fb9f7d28180d12074f62d19bff60533eb2653c0ebdb74ff8729",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-43",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e5e86ca43160fb9f7d28180d12074f62d19bff60533eb2653c0ebdb74ff8729",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-43",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e5e86ca43160fb9f7d28180d12074f62d19bff60533eb2653c0ebdb74ff8729",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-44",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e4ea30bd3cb05581c0ba882cbc0ee84ece8fc1aab9b9ce9bcfae79aa3030006",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-44",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e4ea30bd3cb05581c0ba882cbc0ee84ece8fc1aab9b9ce9bcfae79aa3030006",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-44",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e4ea30bd3cb05581c0ba882cbc0ee84ece8fc1aab9b9ce9bcfae79aa3030006",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-44",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e4ea30bd3cb05581c0ba882cbc0ee84ece8fc1aab9b9ce9bcfae79aa3030006",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-44",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "7e4ea30bd3cb05581c0ba882cbc0ee84ece8fc1aab9b9ce9bcfae79aa3030006",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-45",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11dc3074e49b269fd3ef89044bcd6c1b1ace14c076a7ec850b7fa150b961fbad",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-45",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11dc3074e49b269fd3ef89044bcd6c1b1ace14c076a7ec850b7fa150b961fbad",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-45",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11dc3074e49b269fd3ef89044bcd6c1b1ace14c076a7ec850b7fa150b961fbad",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-45",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11dc3074e49b269fd3ef89044bcd6c1b1ace14c076a7ec850b7fa150b961fbad",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-45",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11dc3074e49b269fd3ef89044bcd6c1b1ace14c076a7ec850b7fa150b961fbad",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-46",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0d6d108d33dbf62cdcc3754e53a58cfc902ce3a0b91758a01dae91c744fe2c1b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-46",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0d6d108d33dbf62cdcc3754e53a58cfc902ce3a0b91758a01dae91c744fe2c1b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-46",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0d6d108d33dbf62cdcc3754e53a58cfc902ce3a0b91758a01dae91c744fe2c1b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-46",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0d6d108d33dbf62cdcc3754e53a58cfc902ce3a0b91758a01dae91c744fe2c1b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-46",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0d6d108d33dbf62cdcc3754e53a58cfc902ce3a0b91758a01dae91c744fe2c1b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-47",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3c19a60f95472a82f47fd81f575aa7e760555fbf393a6057d780c7e5938c0cb2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-47",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3c19a60f95472a82f47fd81f575aa7e760555fbf393a6057d780c7e5938c0cb2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-47",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3c19a60f95472a82f47fd81f575aa7e760555fbf393a6057d780c7e5938c0cb2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-47",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3c19a60f95472a82f47fd81f575aa7e760555fbf393a6057d780c7e5938c0cb2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-47",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "3c19a60f95472a82f47fd81f575aa7e760555fbf393a6057d780c7e5938c0cb2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-48",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0dcfc1b3dc2c44023dd44c53135a642db6b18a08abe654dd3ab6c92f2e57c88d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-48",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0dcfc1b3dc2c44023dd44c53135a642db6b18a08abe654dd3ab6c92f2e57c88d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-48",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0dcfc1b3dc2c44023dd44c53135a642db6b18a08abe654dd3ab6c92f2e57c88d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-48",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0dcfc1b3dc2c44023dd44c53135a642db6b18a08abe654dd3ab6c92f2e57c88d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-48",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0dcfc1b3dc2c44023dd44c53135a642db6b18a08abe654dd3ab6c92f2e57c88d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-49",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-49",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-49",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-49",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-49",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b1a12ffbdb747b3d2287b26e0e327da7c482c358a730e79a53f2957b601c50d9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-50",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9bd3baa21a78679e6c525600bb94385347317bede5e57017a11e2070e9575d4a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-50",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9bd3baa21a78679e6c525600bb94385347317bede5e57017a11e2070e9575d4a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-50",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9bd3baa21a78679e6c525600bb94385347317bede5e57017a11e2070e9575d4a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-50",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9bd3baa21a78679e6c525600bb94385347317bede5e57017a11e2070e9575d4a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-50",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9bd3baa21a78679e6c525600bb94385347317bede5e57017a11e2070e9575d4a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-51",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "912317c218f2da7ee9af69900d5aefb0c124027a1d7514b48db415c6e8eb87d3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-51",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "912317c218f2da7ee9af69900d5aefb0c124027a1d7514b48db415c6e8eb87d3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-51",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "912317c218f2da7ee9af69900d5aefb0c124027a1d7514b48db415c6e8eb87d3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-51",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "912317c218f2da7ee9af69900d5aefb0c124027a1d7514b48db415c6e8eb87d3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-51",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "912317c218f2da7ee9af69900d5aefb0c124027a1d7514b48db415c6e8eb87d3",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-52",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9dd9c7d699ad324e26413e5fc36a4d973afc8dfc970c3e3cc079cd78dc625aa5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-52",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9dd9c7d699ad324e26413e5fc36a4d973afc8dfc970c3e3cc079cd78dc625aa5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-52",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9dd9c7d699ad324e26413e5fc36a4d973afc8dfc970c3e3cc079cd78dc625aa5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-52",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9dd9c7d699ad324e26413e5fc36a4d973afc8dfc970c3e3cc079cd78dc625aa5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-52",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "9dd9c7d699ad324e26413e5fc36a4d973afc8dfc970c3e3cc079cd78dc625aa5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-53",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c7aa8e3d271d3c940e815971f6b57b0dd186f3dae6df5c378857a98823e0f716",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-53",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c7aa8e3d271d3c940e815971f6b57b0dd186f3dae6df5c378857a98823e0f716",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-53",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c7aa8e3d271d3c940e815971f6b57b0dd186f3dae6df5c378857a98823e0f716",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-53",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c7aa8e3d271d3c940e815971f6b57b0dd186f3dae6df5c378857a98823e0f716",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-53",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c7aa8e3d271d3c940e815971f6b57b0dd186f3dae6df5c378857a98823e0f716",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-54",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "643586fef96e36277f29db6a31f9a7c024b57a6e09920f23da1beca3dbd06423",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-54",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "643586fef96e36277f29db6a31f9a7c024b57a6e09920f23da1beca3dbd06423",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-54",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "643586fef96e36277f29db6a31f9a7c024b57a6e09920f23da1beca3dbd06423",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-54",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "643586fef96e36277f29db6a31f9a7c024b57a6e09920f23da1beca3dbd06423",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-54",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "643586fef96e36277f29db6a31f9a7c024b57a6e09920f23da1beca3dbd06423",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-55",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f7888cbbbf148f0c84b703fdbb07df29e36f44ba06e5ceaea661eabb85d64d43",
+      "fallback_detector": 0
+    },
+    {
+      "name": "dword-55",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f7888cbbbf148f0c84b703fdbb07df29e36f44ba06e5ceaea661eabb85d64d43",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-55",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f7888cbbbf148f0c84b703fdbb07df29e36f44ba06e5ceaea661eabb85d64d43",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-55",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f7888cbbbf148f0c84b703fdbb07df29e36f44ba06e5ceaea661eabb85d64d43",
+      "fallback_detector": 77
+    },
+    {
+      "name": "dword-55",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f7888cbbbf148f0c84b703fdbb07df29e36f44ba06e5ceaea661eabb85d64d43",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-00",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-00",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-00",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-00",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-00",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-01",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8f20601a83fe3993a9de1c2564c3d010a6502fad3db5b8ad8fb9216bbe762503",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-01",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8f20601a83fe3993a9de1c2564c3d010a6502fad3db5b8ad8fb9216bbe762503",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-01",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8f20601a83fe3993a9de1c2564c3d010a6502fad3db5b8ad8fb9216bbe762503",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-01",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8f20601a83fe3993a9de1c2564c3d010a6502fad3db5b8ad8fb9216bbe762503",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-01",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8f20601a83fe3993a9de1c2564c3d010a6502fad3db5b8ad8fb9216bbe762503",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-02",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cd20b7282d7c84bc7b11a63c8a03504d5c211c238fc91f54c818f2ba064ceb70",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-02",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cd20b7282d7c84bc7b11a63c8a03504d5c211c238fc91f54c818f2ba064ceb70",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-02",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cd20b7282d7c84bc7b11a63c8a03504d5c211c238fc91f54c818f2ba064ceb70",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-02",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cd20b7282d7c84bc7b11a63c8a03504d5c211c238fc91f54c818f2ba064ceb70",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-02",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cd20b7282d7c84bc7b11a63c8a03504d5c211c238fc91f54c818f2ba064ceb70",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-03",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b56e77834f3ac72f92f60bd9b0affaa88684007fa9434f47a5809a753458c710",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-03",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b56e77834f3ac72f92f60bd9b0affaa88684007fa9434f47a5809a753458c710",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-03",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b56e77834f3ac72f92f60bd9b0affaa88684007fa9434f47a5809a753458c710",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-03",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b56e77834f3ac72f92f60bd9b0affaa88684007fa9434f47a5809a753458c710",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-03",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b56e77834f3ac72f92f60bd9b0affaa88684007fa9434f47a5809a753458c710",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-04",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fb2668e04afc043282824e3d311381a3f4ecc9cc2e248b6a4a562161629c1dd8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-04",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fb2668e04afc043282824e3d311381a3f4ecc9cc2e248b6a4a562161629c1dd8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-04",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fb2668e04afc043282824e3d311381a3f4ecc9cc2e248b6a4a562161629c1dd8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-04",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fb2668e04afc043282824e3d311381a3f4ecc9cc2e248b6a4a562161629c1dd8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-04",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fb2668e04afc043282824e3d311381a3f4ecc9cc2e248b6a4a562161629c1dd8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-05",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f420a63e7b3dcd448f1be9866712d296e43864a17e0503af434029b79303d385",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-05",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f420a63e7b3dcd448f1be9866712d296e43864a17e0503af434029b79303d385",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-05",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f420a63e7b3dcd448f1be9866712d296e43864a17e0503af434029b79303d385",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-05",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f420a63e7b3dcd448f1be9866712d296e43864a17e0503af434029b79303d385",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-05",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f420a63e7b3dcd448f1be9866712d296e43864a17e0503af434029b79303d385",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-06",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5f703345b6f15ecd2c151df0d3f67de4ebe95b48b795a6f86c86b7228a09754e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-06",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5f703345b6f15ecd2c151df0d3f67de4ebe95b48b795a6f86c86b7228a09754e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-06",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5f703345b6f15ecd2c151df0d3f67de4ebe95b48b795a6f86c86b7228a09754e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-06",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5f703345b6f15ecd2c151df0d3f67de4ebe95b48b795a6f86c86b7228a09754e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-06",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "5f703345b6f15ecd2c151df0d3f67de4ebe95b48b795a6f86c86b7228a09754e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-07",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "ec5577cb410520a5c2bbc6269c98b0bbb62d259c900edb28bef44f89408bd9b8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-07",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "ec5577cb410520a5c2bbc6269c98b0bbb62d259c900edb28bef44f89408bd9b8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-07",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "ec5577cb410520a5c2bbc6269c98b0bbb62d259c900edb28bef44f89408bd9b8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-07",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "ec5577cb410520a5c2bbc6269c98b0bbb62d259c900edb28bef44f89408bd9b8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-07",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "ec5577cb410520a5c2bbc6269c98b0bbb62d259c900edb28bef44f89408bd9b8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-08",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c6680264e98816d39f604bd1decf471cf3dffadf2709a25e1cabfa9304bb04e6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-08",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c6680264e98816d39f604bd1decf471cf3dffadf2709a25e1cabfa9304bb04e6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-08",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c6680264e98816d39f604bd1decf471cf3dffadf2709a25e1cabfa9304bb04e6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-08",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c6680264e98816d39f604bd1decf471cf3dffadf2709a25e1cabfa9304bb04e6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-08",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c6680264e98816d39f604bd1decf471cf3dffadf2709a25e1cabfa9304bb04e6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e6547f4d08de597e0f74e048b74a4848a148209dce75241bfa285bad4f0377c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e6547f4d08de597e0f74e048b74a4848a148209dce75241bfa285bad4f0377c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e6547f4d08de597e0f74e048b74a4848a148209dce75241bfa285bad4f0377c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e6547f4d08de597e0f74e048b74a4848a148209dce75241bfa285bad4f0377c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "e6547f4d08de597e0f74e048b74a4848a148209dce75241bfa285bad4f0377c8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "4e2af14fba05df96834a5fc05af59c16249a3b22855d0d0474b4c14932c2bd0a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "4e2af14fba05df96834a5fc05af59c16249a3b22855d0d0474b4c14932c2bd0a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2,3",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "4e2af14fba05df96834a5fc05af59c16249a3b22855d0d0474b4c14932c2bd0a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-09",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "4e2af14fba05df96834a5fc05af59c16249a3b22855d0d0474b4c14932c2bd0a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-10",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35f72cdc1fb6ae4a8414b5c75c1eb1c088e9751dea7df378e50236afd0d803de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-10",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35f72cdc1fb6ae4a8414b5c75c1eb1c088e9751dea7df378e50236afd0d803de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-10",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35f72cdc1fb6ae4a8414b5c75c1eb1c088e9751dea7df378e50236afd0d803de",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-10",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35f72cdc1fb6ae4a8414b5c75c1eb1c088e9751dea7df378e50236afd0d803de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-10",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "35f72cdc1fb6ae4a8414b5c75c1eb1c088e9751dea7df378e50236afd0d803de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-11",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d66485d3dc103a72c4eec0e2cb6cac30107bddb036e479ed7474573bafb771c7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-11",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d66485d3dc103a72c4eec0e2cb6cac30107bddb036e479ed7474573bafb771c7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-11",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d66485d3dc103a72c4eec0e2cb6cac30107bddb036e479ed7474573bafb771c7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-11",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d66485d3dc103a72c4eec0e2cb6cac30107bddb036e479ed7474573bafb771c7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-11",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d66485d3dc103a72c4eec0e2cb6cac30107bddb036e479ed7474573bafb771c7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-12",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2416f827f8deb6ed324ed52555ab789d268914c3afa897532f2c28b56a33f421",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-12",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2416f827f8deb6ed324ed52555ab789d268914c3afa897532f2c28b56a33f421",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-12",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2416f827f8deb6ed324ed52555ab789d268914c3afa897532f2c28b56a33f421",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-12",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2416f827f8deb6ed324ed52555ab789d268914c3afa897532f2c28b56a33f421",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-12",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2416f827f8deb6ed324ed52555ab789d268914c3afa897532f2c28b56a33f421",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-13",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "830e81b90dc51fc4c1ce72758386d1b44322eb3f60601061329d0734d31bc9c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-13",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "830e81b90dc51fc4c1ce72758386d1b44322eb3f60601061329d0734d31bc9c2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-13",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "830e81b90dc51fc4c1ce72758386d1b44322eb3f60601061329d0734d31bc9c2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-13",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "830e81b90dc51fc4c1ce72758386d1b44322eb3f60601061329d0734d31bc9c2",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-13",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "830e81b90dc51fc4c1ce72758386d1b44322eb3f60601061329d0734d31bc9c2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-14",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-14",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-14",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-14",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-14",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-15",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0de8acb2f25c8d1890ff874377e6ca0e3eafb872bd718ff24c1c4c4622d542a9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-15",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0de8acb2f25c8d1890ff874377e6ca0e3eafb872bd718ff24c1c4c4622d542a9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-15",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0de8acb2f25c8d1890ff874377e6ca0e3eafb872bd718ff24c1c4c4622d542a9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-15",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0de8acb2f25c8d1890ff874377e6ca0e3eafb872bd718ff24c1c4c4622d542a9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-15",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0de8acb2f25c8d1890ff874377e6ca0e3eafb872bd718ff24c1c4c4622d542a9",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-16",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4676224f3054afbeaeb3968f077a5fad111e56d0c3be4ada26b0700df5bab1f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-16",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4676224f3054afbeaeb3968f077a5fad111e56d0c3be4ada26b0700df5bab1f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-16",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4676224f3054afbeaeb3968f077a5fad111e56d0c3be4ada26b0700df5bab1f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-16",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4676224f3054afbeaeb3968f077a5fad111e56d0c3be4ada26b0700df5bab1f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-16",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a4676224f3054afbeaeb3968f077a5fad111e56d0c3be4ada26b0700df5bab1f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-17",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "22e6e78e2af74ba9d674e68770a6a51346de3963ec76d8f88b7a15dccb81b9bb",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-17",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "22e6e78e2af74ba9d674e68770a6a51346de3963ec76d8f88b7a15dccb81b9bb",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-17",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "22e6e78e2af74ba9d674e68770a6a51346de3963ec76d8f88b7a15dccb81b9bb",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-17",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "22e6e78e2af74ba9d674e68770a6a51346de3963ec76d8f88b7a15dccb81b9bb",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-17",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "22e6e78e2af74ba9d674e68770a6a51346de3963ec76d8f88b7a15dccb81b9bb",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-18",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "796638888c77bb6e4fde8719590cf51de97a15cffdeff34d7abd2a581fa37151",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-18",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "796638888c77bb6e4fde8719590cf51de97a15cffdeff34d7abd2a581fa37151",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-18",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "796638888c77bb6e4fde8719590cf51de97a15cffdeff34d7abd2a581fa37151",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-18",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "796638888c77bb6e4fde8719590cf51de97a15cffdeff34d7abd2a581fa37151",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-18",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "796638888c77bb6e4fde8719590cf51de97a15cffdeff34d7abd2a581fa37151",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-19",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2993bd288f68c4225241eb57a876c155b6c8f47723e079cc51608bf7590f12ce",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-19",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2993bd288f68c4225241eb57a876c155b6c8f47723e079cc51608bf7590f12ce",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-19",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2993bd288f68c4225241eb57a876c155b6c8f47723e079cc51608bf7590f12ce",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-19",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2993bd288f68c4225241eb57a876c155b6c8f47723e079cc51608bf7590f12ce",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-19",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2993bd288f68c4225241eb57a876c155b6c8f47723e079cc51608bf7590f12ce",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-20",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b872b087a5633f543b63c2344a9a8de353658476e1ca7224360793bbd97f5b82",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-20",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b872b087a5633f543b63c2344a9a8de353658476e1ca7224360793bbd97f5b82",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-20",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b872b087a5633f543b63c2344a9a8de353658476e1ca7224360793bbd97f5b82",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-20",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b872b087a5633f543b63c2344a9a8de353658476e1ca7224360793bbd97f5b82",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-20",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b872b087a5633f543b63c2344a9a8de353658476e1ca7224360793bbd97f5b82",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-21",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-21",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-21",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-21",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-21",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "38e830c274dd2241ce0038d87c1f4300b5b05b97554ba4c5cf7448255857654e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-22",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4a043d0da353d1640e66bc32a466f1a662479264f5c902254331b2c523d05eea",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-22",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4a043d0da353d1640e66bc32a466f1a662479264f5c902254331b2c523d05eea",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-22",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4a043d0da353d1640e66bc32a466f1a662479264f5c902254331b2c523d05eea",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-22",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4a043d0da353d1640e66bc32a466f1a662479264f5c902254331b2c523d05eea",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-22",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4a043d0da353d1640e66bc32a466f1a662479264f5c902254331b2c523d05eea",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-23",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "09081ac44a89525386d95e9b795c399d5138d2eb270764b1a6992e934ee15ac7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-23",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "09081ac44a89525386d95e9b795c399d5138d2eb270764b1a6992e934ee15ac7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-23",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "09081ac44a89525386d95e9b795c399d5138d2eb270764b1a6992e934ee15ac7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-23",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "09081ac44a89525386d95e9b795c399d5138d2eb270764b1a6992e934ee15ac7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-23",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "09081ac44a89525386d95e9b795c399d5138d2eb270764b1a6992e934ee15ac7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-24",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "79378fe569ad3ff12866caf86fccffd7550e5f824f5d17ae4696b05e9876dc97",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-24",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "79378fe569ad3ff12866caf86fccffd7550e5f824f5d17ae4696b05e9876dc97",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-24",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "79378fe569ad3ff12866caf86fccffd7550e5f824f5d17ae4696b05e9876dc97",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-24",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "79378fe569ad3ff12866caf86fccffd7550e5f824f5d17ae4696b05e9876dc97",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-24",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "79378fe569ad3ff12866caf86fccffd7550e5f824f5d17ae4696b05e9876dc97",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-25",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "832bea6579e59109557e7d8f56fdab73093a90534c5629e685573c181040c169",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-25",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "832bea6579e59109557e7d8f56fdab73093a90534c5629e685573c181040c169",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-25",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "832bea6579e59109557e7d8f56fdab73093a90534c5629e685573c181040c169",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-25",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "832bea6579e59109557e7d8f56fdab73093a90534c5629e685573c181040c169",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-25",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "832bea6579e59109557e7d8f56fdab73093a90534c5629e685573c181040c169",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-26",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11b86959b932e7704e7d376862f0bfa06506a25eda2bea62c8cf3e6cabdf680a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-26",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11b86959b932e7704e7d376862f0bfa06506a25eda2bea62c8cf3e6cabdf680a",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-26",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11b86959b932e7704e7d376862f0bfa06506a25eda2bea62c8cf3e6cabdf680a",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-26",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11b86959b932e7704e7d376862f0bfa06506a25eda2bea62c8cf3e6cabdf680a",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-26",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "11b86959b932e7704e7d376862f0bfa06506a25eda2bea62c8cf3e6cabdf680a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-27",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "090b804257830b67fd72249ba139d6484f44d371386e078a7f4e26133adc73f6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-27",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "090b804257830b67fd72249ba139d6484f44d371386e078a7f4e26133adc73f6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-27",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "090b804257830b67fd72249ba139d6484f44d371386e078a7f4e26133adc73f6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-27",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "090b804257830b67fd72249ba139d6484f44d371386e078a7f4e26133adc73f6",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-27",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "090b804257830b67fd72249ba139d6484f44d371386e078a7f4e26133adc73f6",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-28",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4eaedee11a3451c9f1174773ecce4580c2f377a736414ea2981daafeb6f533de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-28",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4eaedee11a3451c9f1174773ecce4580c2f377a736414ea2981daafeb6f533de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-28",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4eaedee11a3451c9f1174773ecce4580c2f377a736414ea2981daafeb6f533de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-28",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4eaedee11a3451c9f1174773ecce4580c2f377a736414ea2981daafeb6f533de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-28",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "4eaedee11a3451c9f1174773ecce4580c2f377a736414ea2981daafeb6f533de",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-29",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b3e7914c2f17f628e00ebcbdb7fdf9a6d50e4383549f1b3a8722779ab536653a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-29",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b3e7914c2f17f628e00ebcbdb7fdf9a6d50e4383549f1b3a8722779ab536653a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-29",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b3e7914c2f17f628e00ebcbdb7fdf9a6d50e4383549f1b3a8722779ab536653a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-29",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b3e7914c2f17f628e00ebcbdb7fdf9a6d50e4383549f1b3a8722779ab536653a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-29",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "b3e7914c2f17f628e00ebcbdb7fdf9a6d50e4383549f1b3a8722779ab536653a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-30",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "db194bbd391244f430117679e699b134d8be12456c232a8ef61ab866c937241a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-30",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "db194bbd391244f430117679e699b134d8be12456c232a8ef61ab866c937241a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-30",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "db194bbd391244f430117679e699b134d8be12456c232a8ef61ab866c937241a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-30",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "db194bbd391244f430117679e699b134d8be12456c232a8ef61ab866c937241a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-30",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "db194bbd391244f430117679e699b134d8be12456c232a8ef61ab866c937241a",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-31",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cc36ea3f026435714db3e09d4efb0de7c8eb141e7ac00cf67614560d110af464",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-31",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cc36ea3f026435714db3e09d4efb0de7c8eb141e7ac00cf67614560d110af464",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-31",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cc36ea3f026435714db3e09d4efb0de7c8eb141e7ac00cf67614560d110af464",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-31",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cc36ea3f026435714db3e09d4efb0de7c8eb141e7ac00cf67614560d110af464",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-31",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "cc36ea3f026435714db3e09d4efb0de7c8eb141e7ac00cf67614560d110af464",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-32",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "eb42de0354b15564101ea470851c70eeecbfc246ac635c6b308b99b52ad46295",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-32",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "eb42de0354b15564101ea470851c70eeecbfc246ac635c6b308b99b52ad46295",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-32",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "eb42de0354b15564101ea470851c70eeecbfc246ac635c6b308b99b52ad46295",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-32",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "eb42de0354b15564101ea470851c70eeecbfc246ac635c6b308b99b52ad46295",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-32",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "eb42de0354b15564101ea470851c70eeecbfc246ac635c6b308b99b52ad46295",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-33",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0c65be905d8253f87c68dfdb1ad2097d388c7e0607ff998a072d9f312f7fa856",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-33",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0c65be905d8253f87c68dfdb1ad2097d388c7e0607ff998a072d9f312f7fa856",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-33",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0c65be905d8253f87c68dfdb1ad2097d388c7e0607ff998a072d9f312f7fa856",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-33",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0c65be905d8253f87c68dfdb1ad2097d388c7e0607ff998a072d9f312f7fa856",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-33",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "0c65be905d8253f87c68dfdb1ad2097d388c7e0607ff998a072d9f312f7fa856",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-34",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c4be3dc6b5bc246a2e2d314e5d41950024e9720d8c9b9db968e80097b9009e1d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-34",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c4be3dc6b5bc246a2e2d314e5d41950024e9720d8c9b9db968e80097b9009e1d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-34",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c4be3dc6b5bc246a2e2d314e5d41950024e9720d8c9b9db968e80097b9009e1d",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-34",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c4be3dc6b5bc246a2e2d314e5d41950024e9720d8c9b9db968e80097b9009e1d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-34",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c4be3dc6b5bc246a2e2d314e5d41950024e9720d8c9b9db968e80097b9009e1d",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-35",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-35",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-35",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-35",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-35",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "da1751a171cd0e139b90053ab076a7e0b4048c50ac27d08d22220b6a28a423d1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-36",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "960628aa0884288fd8cfac84d4f0926c50acbea0f34093f67f264058c9cf16e2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-36",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "960628aa0884288fd8cfac84d4f0926c50acbea0f34093f67f264058c9cf16e2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-36",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "960628aa0884288fd8cfac84d4f0926c50acbea0f34093f67f264058c9cf16e2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-36",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "960628aa0884288fd8cfac84d4f0926c50acbea0f34093f67f264058c9cf16e2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-36",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "960628aa0884288fd8cfac84d4f0926c50acbea0f34093f67f264058c9cf16e2",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-37",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fad5678a9f7e4d16b7f94551ba162335909b4fbfb596805d88d2c7e3f6c49fc0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-37",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fad5678a9f7e4d16b7f94551ba162335909b4fbfb596805d88d2c7e3f6c49fc0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-37",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fad5678a9f7e4d16b7f94551ba162335909b4fbfb596805d88d2c7e3f6c49fc0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-37",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fad5678a9f7e4d16b7f94551ba162335909b4fbfb596805d88d2c7e3f6c49fc0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-37",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "fad5678a9f7e4d16b7f94551ba162335909b4fbfb596805d88d2c7e3f6c49fc0",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-38",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a51b21de7af7d44227c1f3babeb21e50dd62588d3dd63d9ffa8ba824e5c9ed",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-38",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a51b21de7af7d44227c1f3babeb21e50dd62588d3dd63d9ffa8ba824e5c9ed",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-38",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a51b21de7af7d44227c1f3babeb21e50dd62588d3dd63d9ffa8ba824e5c9ed",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-38",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a51b21de7af7d44227c1f3babeb21e50dd62588d3dd63d9ffa8ba824e5c9ed",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-38",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "f5a51b21de7af7d44227c1f3babeb21e50dd62588d3dd63d9ffa8ba824e5c9ed",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-39",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "be04cf352cd79b5d5067bcd211d94718f5688320f519bf25ad76a0f88475ba19",
+      "fallback_detector": 0
+    },
+    {
+      "name": "bytes-39",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "be04cf352cd79b5d5067bcd211d94718f5688320f519bf25ad76a0f88475ba19",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-39",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "be04cf352cd79b5d5067bcd211d94718f5688320f519bf25ad76a0f88475ba19",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-39",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "be04cf352cd79b5d5067bcd211d94718f5688320f519bf25ad76a0f88475ba19",
+      "fallback_detector": 77
+    },
+    {
+      "name": "bytes-39",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "be04cf352cd79b5d5067bcd211d94718f5688320f519bf25ad76a0f88475ba19",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c74a43279a818bd4392e14e13d99b73f55bacd0d4ef902267b7e0cfd29e8c9c1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c74a43279a818bd4392e14e13d99b73f55bacd0d4ef902267b7e0cfd29e8c9c1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c74a43279a818bd4392e14e13d99b73f55bacd0d4ef902267b7e0cfd29e8c9c1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c74a43279a818bd4392e14e13d99b73f55bacd0d4ef902267b7e0cfd29e8c9c1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "c74a43279a818bd4392e14e13d99b73f55bacd0d4ef902267b7e0cfd29e8c9c1",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1",
+      "n": 524289,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "6941a5fd074a4a7c05cec085ef0491084e7906e163b802123831900c3f17cf39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2",
+      "n": 524289,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "6941a5fd074a4a7c05cec085ef0491084e7906e163b802123831900c3f17cf39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2,3",
+      "n": 524289,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "6941a5fd074a4a7c05cec085ef0491084e7906e163b802123831900c3f17cf39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "old-counterexample",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 524289,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "6941a5fd074a4a7c05cec085ef0491084e7906e163b802123831900c3f17cf39",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "48c0d1966fabf6d4359f010c7323e2a0ea74889983abc2c7b27c18126fc8e7ce",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "48c0d1966fabf6d4359f010c7323e2a0ea74889983abc2c7b27c18126fc8e7ce",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "48c0d1966fabf6d4359f010c7323e2a0ea74889983abc2c7b27c18126fc8e7ce",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "48c0d1966fabf6d4359f010c7323e2a0ea74889983abc2c7b27c18126fc8e7ce",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "48c0d1966fabf6d4359f010c7323e2a0ea74889983abc2c7b27c18126fc8e7ce",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f0f7e1aa85f583b40c13af888c12dd1507628bf2c0033b44f3d5e63da07f4e5f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f0f7e1aa85f583b40c13af888c12dd1507628bf2c0033b44f3d5e63da07f4e5f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2,3",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f0f7e1aa85f583b40c13af888c12dd1507628bf2c0033b44f3d5e63da07f4e5f",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-high-seed",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f0f7e1aa85f583b40c13af888c12dd1507628bf2c0033b44f3d5e63da07f4e5f",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2294315dabed35ccdfda72428a4708098a9835dbaa79e808b6da07f0ff9f0d8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2294315dabed35ccdfda72428a4708098a9835dbaa79e808b6da07f0ff9f0d8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2294315dabed35ccdfda72428a4708098a9835dbaa79e808b6da07f0ff9f0d8",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2294315dabed35ccdfda72428a4708098a9835dbaa79e808b6da07f0ff9f0d8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d2294315dabed35ccdfda72428a4708098a9835dbaa79e808b6da07f0ff9f0d8",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "fdcf0d61e2315f3705ebddc4698d2af44d1764f8afe88de132f395fcda3f416e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "fdcf0d61e2315f3705ebddc4698d2af44d1764f8afe88de132f395fcda3f416e",
+      "fallback_detector": 77
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2,3",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "fdcf0d61e2315f3705ebddc4698d2af44d1764f8afe88de132f395fcda3f416e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "max-prev-scan",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "fdcf0d61e2315f3705ebddc4698d2af44d1764f8afe88de132f395fcda3f416e",
+      "fallback_detector": 0
+    },
+    {
+      "name": "local-tee-max",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "018f8068d5e2165b6099fca8e03a141d108b97201761da74db72c39bef76e488",
+      "fallback_detector": 0
+    },
+    {
+      "name": "local-tee-max",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "018f8068d5e2165b6099fca8e03a141d108b97201761da74db72c39bef76e488",
+      "fallback_detector": 77
+    },
+    {
+      "name": "local-tee-max",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "018f8068d5e2165b6099fca8e03a141d108b97201761da74db72c39bef76e488",
+      "fallback_detector": 77
+    },
+    {
+      "name": "local-tee-max",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "018f8068d5e2165b6099fca8e03a141d108b97201761da74db72c39bef76e488",
+      "fallback_detector": 0
+    },
+    {
+      "name": "local-tee-max",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "018f8068d5e2165b6099fca8e03a141d108b97201761da74db72c39bef76e488",
+      "fallback_detector": 0
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2311e32208deb9c94400e83bcfbcd5f21ee0d37863d93dc66432cbeb7539c58b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2311e32208deb9c94400e83bcfbcd5f21ee0d37863d93dc66432cbeb7539c58b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2311e32208deb9c94400e83bcfbcd5f21ee0d37863d93dc66432cbeb7539c58b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2311e32208deb9c94400e83bcfbcd5f21ee0d37863d93dc66432cbeb7539c58b",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "2311e32208deb9c94400e83bcfbcd5f21ee0d37863d93dc66432cbeb7539c58b",
+      "fallback_detector": 0
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f319126e0ce3f2cdf5e2bd5753de5c710c4ec8351dfb0145fb66486f38ea48d5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f319126e0ce3f2cdf5e2bd5753de5c710c4ec8351dfb0145fb66486f38ea48d5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2,3",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f319126e0ce3f2cdf5e2bd5753de5c710c4ec8351dfb0145fb66486f38ea48d5",
+      "fallback_detector": 77
+    },
+    {
+      "name": "reduce-retry",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 528513,
+      "mode": "normal",
+      "status": 0,
+      "output_sha256": "f319126e0ce3f2cdf5e2bd5753de5c710c4ec8351dfb0145fb66486f38ea48d5",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-dword",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d79cf54eea801899799629ffdb706ae4009c0f3988fd1e1fc2fd3676c8e61360",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-dword",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d79cf54eea801899799629ffdb706ae4009c0f3988fd1e1fc2fd3676c8e61360",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-dword",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d79cf54eea801899799629ffdb706ae4009c0f3988fd1e1fc2fd3676c8e61360",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-dword",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d79cf54eea801899799629ffdb706ae4009c0f3988fd1e1fc2fd3676c8e61360",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-dword",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "d79cf54eea801899799629ffdb706ae4009c0f3988fd1e1fc2fd3676c8e61360",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-byte",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8c4d16abbe8c32674b8fb3f8a05c5dbddf0264b77a0ef8b730276682828888b7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-byte",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8c4d16abbe8c32674b8fb3f8a05c5dbddf0264b77a0ef8b730276682828888b7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-byte",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8c4d16abbe8c32674b8fb3f8a05c5dbddf0264b77a0ef8b730276682828888b7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-byte",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8c4d16abbe8c32674b8fb3f8a05c5dbddf0264b77a0ef8b730276682828888b7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-prev-byte",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "8c4d16abbe8c32674b8fb3f8a05c5dbddf0264b77a0ef8b730276682828888b7",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-mixed-carries",
+      "cpus": "0",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a0d3266b151f6fd67fa76f0c3473e01cb13c7783bb5b4977b42f6b24d4d1c505",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-mixed-carries",
+      "cpus": "0,1",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a0d3266b151f6fd67fa76f0c3473e01cb13c7783bb5b4977b42f6b24d4d1c505",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-mixed-carries",
+      "cpus": "0,1,2",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a0d3266b151f6fd67fa76f0c3473e01cb13c7783bb5b4977b42f6b24d4d1c505",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-mixed-carries",
+      "cpus": "0,1,2,3",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a0d3266b151f6fd67fa76f0c3473e01cb13c7783bb5b4977b42f6b24d4d1c505",
+      "fallback_detector": 0
+    },
+    {
+      "name": "eight-mixed-carries",
+      "cpus": "0,1,2,3,4,5,6,7",
+      "n": 4097,
+      "mode": "eager",
+      "status": 0,
+      "output_sha256": "a0d3266b151f6fd67fa76f0c3473e01cb13c7783bb5b4977b42f6b24d4d1c505",
+      "fallback_detector": 0
+    }
+  ]
+}

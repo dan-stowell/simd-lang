@@ -1,0 +1,5 @@
+caught:  '<' compiled as '<='
+caught:  release ignores the static-data check
+caught:  prev forgets its carry across chunks
+caught:  scan loses a lane (shift 8 -> 9)
+caught:  store sink frees the block it just wrote

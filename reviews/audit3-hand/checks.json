@@ -1,0 +1,231 @@
+{
+  "revision": "af3ecc935319a4698b499c66044faff95ef0663d",
+  "cpu_sets": {
+    "1": [
+      0
+    ],
+    "4": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "8": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "checks": 2997,
+  "mismatches": [
+    {
+      "case": "random-256",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-256-json-hand-1",
+      "want": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b3a3a2c5b7b7d5b3a3a3a7b7b7b7d7d7b7b5b7d7b5b3a5d3a7d7d2c2c7d7d3a2c",
+      "got": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b5b5b7b7b5b7b5d7b5b2c5d7d7d2c5b2c5d3a7d7d7d",
+      "wantlen": 49,
+      "gotlen": 38
+    },
+    {
+      "case": "random-256",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-256-json-hand-4",
+      "want": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b3a3a2c5b7b7d5b3a3a3a7b7b7b7d7d7b7b5b7d7b5b3a5d3a7d7d2c2c7d7d3a2c",
+      "got": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b5b5b7b7b5b7b5d7b5b2c5d7d7d2c5b2c5d3a7d7d7d",
+      "wantlen": 49,
+      "gotlen": 38
+    },
+    {
+      "case": "random-256",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-256-json-hand-8",
+      "want": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b3a3a2c5b7b7d5b3a3a3a7b7b7b7d7d7b7b5b7d7b5b3a5d3a7d7d2c2c7d7d3a2c",
+      "got": "5b2c7d7b5d5b7b7b2c5b5b5d3a2c5d7d5b5b5b7b7b5b7b5d7b5b2c5d7d7d2c5b2c5d3a7d7d7d",
+      "wantlen": 49,
+      "gotlen": 38
+    },
+    {
+      "case": "random-512",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-512-json-hand-1",
+      "want": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7d5d7b3a5b3a5b",
+      "got": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7b3a7b5d7d7b7b3a3a5b5b2c7d7d5d7b3a5b3a5b",
+      "wantlen": 67,
+      "gotlen": 80
+    },
+    {
+      "case": "random-512",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-512-json-hand-4",
+      "want": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7d5d7b3a5b3a5b",
+      "got": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7b3a7b5d7d7b7b3a3a5b5b2c7d7d5d7b3a5b3a5b",
+      "wantlen": 67,
+      "gotlen": 80
+    },
+    {
+      "case": "random-512",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-512-json-hand-8",
+      "want": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7d5d7b3a5b3a5b",
+      "got": "2c2c7b3a2c5b2c5d7d5b5d2c7d5b7d7b2c2c5b5d7d5d2c7d7b5d7d5b5d3a7d7d5b2c3a5b7b7b5d7d2c5b7d7b7d7d7b7b7d5d7d2c2c7b5b5b7d2c2c7d7b3a7b5d7d7b7b3a3a5b5b2c7d7d5d7b3a5b3a5b",
+      "wantlen": 67,
+      "gotlen": 80
+    },
+    {
+      "case": "random-513",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-513-json-hand-1",
+      "want": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c5d5d7b7b5d7d7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "got": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c2c7d7d2c7d3a7b5d7d5d5b5d3a3a5d5b3a7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "wantlen": 104,
+      "gotlen": 115
+    },
+    {
+      "case": "random-513",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-513-json-hand-4",
+      "want": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c5d5d7b7b5d7d7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "got": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c2c7d7d2c7d3a7b5d7d5d5b5d3a3a5d5b3a7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "wantlen": 104,
+      "gotlen": 115
+    },
+    {
+      "case": "random-513",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-513-json-hand-8",
+      "want": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c5d5d7b7b5d7d7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "got": "7d5b7d7b2c5d2c2c2c7b5d2c3a5b3a3a5d7b7b7d2c2c7d7d2c7d3a7b5d7d5d5b5d3a3a5d5b3a7d2c5b5b7b5d3a7d3a5b3a2c3a3a5b7b5d5b7d7b5b7d5b5d3a3a7d5d5b7b2c7d7b5b5d2c7b5b7b7d7b5d2c7d5d7b5b5b5b5d5d5d5d2c7b3a5d7d3a7d5d3a2c3a5b3a3a2c3a5d7b5b2c5b2c5d2c",
+      "wantlen": 104,
+      "gotlen": 115
+    },
+    {
+      "case": "random-4095",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4095-json-hand-1",
+      "want": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "got": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "wantlen": 593,
+      "gotlen": 605
+    },
+    {
+      "case": "random-4095",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4095-json-hand-4",
+      "want": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "got": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "wantlen": 593,
+      "gotlen": 605
+    },
+    {
+      "case": "random-4095",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4095-json-hand-8",
+      "want": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "got": "3a3a3a5d7b7d5d3a5b7b2c7b2c7b2c7d7b3a5d5b5b5d3a5d3a7d7b2c7d7d3a7b3a5d5b7d7b3a7d5b2c2c5b5d2c3a3a5d7d3a5b2c3a3a7b5b2c7d5d5d5b5d7d7b2c5b5b5d5d7d3a3a7d7d5d7b5b7d7b2c7b2c2c3a3a7d5b3a2c7d2c3a7b7d7b5d3a7d7b2c7d7b2c2c5d7b7d7d7b5d5d7d2c5b3a7b5d2c3a2c2c5d5d7b7d7b3a5d",
+      "wantlen": 593,
+      "gotlen": 605
+    },
+    {
+      "case": "random-4096",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4096-json-hand-1",
+      "want": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b5d7b5b5d5b5d2c5d7d5b7b7d7b2c5b7d2c5d3a5d3a5d7b5b5d3a2c3a7d5d2c2c7d5b7d7b2c5d3a2c3a",
+      "got": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b7d3a7b7d2c3a7d7b7d5b2c5d5d7d3a7b7b7b3a5d2c3a7d5b3a2c3a7b5d2c2c3a7b2c5b2c2c7d5d5d5b",
+      "wantlen": 505,
+      "gotlen": 617
+    },
+    {
+      "case": "random-4096",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4096-json-hand-4",
+      "want": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b5d7b5b5d5b5d2c5d7d5b7b7d7b2c5b7d2c5d3a5d3a5d7b5b5d3a2c3a7d5d2c2c7d5b7d7b2c5d3a2c3a",
+      "got": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b7d3a7b7d2c3a7d7b7d5b2c5d5d7d3a7b7b7b3a5d2c3a7d5b3a2c3a7b5d2c2c3a7b2c5b2c2c7d5d5d5b",
+      "wantlen": 505,
+      "gotlen": 617
+    },
+    {
+      "case": "random-4096",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4096-json-hand-8",
+      "want": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b5d7b5b5d5b5d2c5d7d5b7b7d7b2c5b7d2c5d3a5d3a5d7b5b5d3a2c3a7d5d2c2c7d5b7d7b2c5d3a2c3a",
+      "got": "3a5b5d5b2c5d5b2c7b7b2c5b5d5b5b3a7d7b5d5d7b7b7d5d7b7b3a3a5b7b2c2c5b2c2c7b7b5d7b7b5b7d5d5d5b5b2c5b2c7d7d7b5d5d5b5d7d3a7b3a5d3a5d5b5d5b5b7b5b5d7d7d2c7b5d5b5b5b7b7b2c5d7d3a7d2c7b7d3a7b7d2c3a7d7b7d5b2c5d5d7d3a7b7b7b3a5d2c3a7d5b3a2c3a7b5d2c2c3a7b2c5b2c2c7d5d5d5b",
+      "wantlen": 505,
+      "gotlen": 617
+    },
+    {
+      "case": "random-4097",
+      "name": "json",
+      "typ": "hand",
+      "threads": 1,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4097-json-hand-1",
+      "want": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "got": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "wantlen": 565,
+      "gotlen": 611
+    },
+    {
+      "case": "random-4097",
+      "name": "json",
+      "typ": "hand",
+      "threads": 4,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4097-json-hand-4",
+      "want": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "got": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "wantlen": 565,
+      "gotlen": 611
+    },
+    {
+      "case": "random-4097",
+      "name": "json",
+      "typ": "hand",
+      "threads": 8,
+      "input": "/home/exedev/simd-lang/build/audit3-hand/random-4097-json-hand-8",
+      "want": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "got": "5b7b5d7d2c7b5d2c2c7d3a3a5d5b7b5d5b7d3a3a3a3a7d3a7b2c7b5b5d5b5b5b7d2c7b2c7d5d5d5d5d7d5d5b3a3a7d7d5b5b5b5d2c2c7d5d7d3a7d5b7b5d7b5b7b2c5b5d5d2c5b7b2c7b7b7d5b7b5d7b5d2c7b3a5d7b5b7b7d2c3a3a5b7b3a5d7d5b5d2c2c2c2c5d7b5b3a5d2c3a3a5d2c7b7b5b7d5d7b7d5b5b5b2c3a7b3a7b",
+      "wantlen": 565,
+      "gotlen": 611
+    }
+  ],
+  "duplicate_keys": {
+    "input": "{\"x\":[],\"x\":{}}",
+    "oracle": "{:{}}",
+    "scanner": "{:[],:{}}"
+  },
+  "repeated_document": "Extra data: line 2 column 1 (char 1238)"
+}

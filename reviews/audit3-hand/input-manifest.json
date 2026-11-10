@@ -1,0 +1,1471 @@
+[
+  {
+    "case": "random-0",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-1",
+    "bytes": 1,
+    "sha256": "d03502c43d74a30b936740a9517dc4ea2b2ad7168caa0a774cefe793ce0b33e7",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-2",
+    "bytes": 2,
+    "sha256": "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-3",
+    "bytes": 3,
+    "sha256": "d34c0334fba6a553e60e4fcc1b4701346e4d8b35fd1cbc231bd65313f032e865",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-4",
+    "bytes": 4,
+    "sha256": "0916a081ddaafd90e1732a98c9d8f1bf2146b840fc2cf9f8b2cd3efd6ad323e6",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-15",
+    "bytes": 15,
+    "sha256": "245cd0d855017f395a71636616d0f89bcdf8c821cbd925aae78f3342645658d1",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-16",
+    "bytes": 16,
+    "sha256": "40f3a917d43d09fe5e1b900e65c654505ec9b65d24ee662062a7a3153d547a2b",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-17",
+    "bytes": 17,
+    "sha256": "938e77185f602dab3f59fe4ad142d9b084f8566af302f835e2c3f61f3cf710cc",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-63",
+    "bytes": 63,
+    "sha256": "71dba510e66bbb615ad52f667e601409d69c68725f05ffbe4130ed4f715bb601",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-64",
+    "bytes": 64,
+    "sha256": "b72044900957586e629ef7aa9b8e536eb5e7258b4135e50ee0b32b7c14833b9d",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-65",
+    "bytes": 65,
+    "sha256": "9417b3f2c74848cbced9e4b1cfba8ea6fd26a02a041476beb3e8e7ce04f466c0",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-127",
+    "bytes": 127,
+    "sha256": "14d4cea27ea7b984d7fe5035d0962825c81033a13084d4b590c18e978831453d",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-128",
+    "bytes": 128,
+    "sha256": "3a2bb37b744e93d406afbe3f3f6e489d8e33c72d34aca6fd34016712cd322399",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-129",
+    "bytes": 129,
+    "sha256": "9f83e733c137b37069008d11c958830504e9e7fdb37c589f7a7954e29944e526",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-191",
+    "bytes": 191,
+    "sha256": "577e3263b02352fb9675d842267943928ca957990c3a108c62689d53b416cf8d",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-192",
+    "bytes": 192,
+    "sha256": "1872cd497907b47c1b535709feb60283b82c61fbb81a9531e4363716648fcc43",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-193",
+    "bytes": 193,
+    "sha256": "96886bcae88704e82b98c18cb4eb7350e8e7aee56b7fa2fd503573af46440b0c",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-255",
+    "bytes": 255,
+    "sha256": "86d7d1202d8c5b9912b56d4fcf292350a384fb8ac4c472fb3d745800bfb62bfe",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-256",
+    "bytes": 256,
+    "sha256": "581441f93faf551ec29cf1caf874728779026d98fa2e61c9bf22f8a13e8a64da",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-257",
+    "bytes": 257,
+    "sha256": "098553abe0bd3750bf7b39f7944d812a912836078d1c87a0c10461550eca71b0",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-511",
+    "bytes": 511,
+    "sha256": "e1bec5f5645d06af84bf4fd03aaddc3391917cde5489c17cff5ae3c1585991c3",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-512",
+    "bytes": 512,
+    "sha256": "12ef138a516a08f80133322a9d319f41c58c7d348bf56d39c0c7c7678931bfd1",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-513",
+    "bytes": 513,
+    "sha256": "89c245e819c8b75671f4f2a33626d3c2c91652bd1075bc434582b90dc6485932",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-4095",
+    "bytes": 4095,
+    "sha256": "ace8e990f903c633a4691d12922e6613e997ce1a300b7e9b435ff3312e67d9de",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-4096",
+    "bytes": 4096,
+    "sha256": "073a295498e4810b9aa13f6726a509b62af1a30f2e59db2c08946e9f00300d9f",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "random-4097",
+    "bytes": 4097,
+    "sha256": "44114e4d9face99828afec9c3edbebba9bc8f335714702f00a531d55215c2846",
+    "tasks": [
+      "letters",
+      "filter4",
+      "strip",
+      "csv",
+      "idents",
+      "strings",
+      "xlat",
+      "json"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "valid-0",
+    "bytes": 686,
+    "sha256": "b012ee00503a99db4168691cfa763ac0e3ea72447771c4e5c4f4f8e5adf12685",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-1",
+    "bytes": 1238,
+    "sha256": "3d18439a35ccda57ab17483a5378c5c2125ba0952b1529e6b31dcd19a06ebdb6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-2",
+    "bytes": 980,
+    "sha256": "414184f24d48a3eec1128669c3289e28ee7b7938beef112942796170f9efe3cf",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-3",
+    "bytes": 1039,
+    "sha256": "1257e76190fe882e630dc0910ac2db3e0c32b5f8fa4642740704963e7f0ecd93",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-4",
+    "bytes": 1874,
+    "sha256": "432852a1cfcd47b641e4c3ca64f07f26505cf6ffe851220a1bb84b19f6a06727",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-5",
+    "bytes": 1706,
+    "sha256": "21d0b02c234bbe1728cd93a21b47dfbea8329605055130650f22b5552038a159",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-6",
+    "bytes": 1218,
+    "sha256": "7c6747e52db668540578b7e69af1dde73d36e3439fcd3e69dad58b2aab289ba6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-7",
+    "bytes": 1685,
+    "sha256": "8e49deb8b76d2c9c1d62f7987de9fb14f052952b1922aebe580b09358a924c0b",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-8",
+    "bytes": 1377,
+    "sha256": "3f67f309d2a63038ee1455e88de3e005c3831c457ff3695a8adb96362dfdcdfd",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-9",
+    "bytes": 2014,
+    "sha256": "94f90629111e8819552c56021084a0bcb02efc0e4f650c08b14bd1adc10d2d71",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-10",
+    "bytes": 2651,
+    "sha256": "d2ec8b9ae43d0c34952a13ab8aa51a65b6a36c8870eaedc1929cba65a0709e91",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-11",
+    "bytes": 2675,
+    "sha256": "b704617d9169adb5e8c4178723df3e038cc717699a3b6a1ba34efe034c6d76b3",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-12",
+    "bytes": 1929,
+    "sha256": "8a86943779eb9e3f0bc50062b54f6cd25a47be0f93e5055aa753bb36a3cd219e",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-13",
+    "bytes": 2667,
+    "sha256": "70d8a166a32a06503f7179df28ce03cb11056bdc4d337a03d167a6923f25068e",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-14",
+    "bytes": 2044,
+    "sha256": "c8f77759ab95a81300cf17037dc525614dfda5d20599bc4d576fb4aafbc19647",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-15",
+    "bytes": 2149,
+    "sha256": "8f216128c5eafdc4207350b9f6ddc8bfc96c1044d15c602ca687f6c8595221ad",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-16",
+    "bytes": 2219,
+    "sha256": "ef77b21434f2b960454b4b9c7dba6afccfaa4f8e564225d068c1de8b6d348ae1",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-17",
+    "bytes": 2378,
+    "sha256": "622ebfa4c079915474d072c9d9f3d5bb5aa21204b1ab03fa5ebbb814aeb859e8",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-18",
+    "bytes": 3632,
+    "sha256": "47fd99c183ccbd4b8f4089a6320767614d8cdcfc7dd779d60059da4a564df19a",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-19",
+    "bytes": 2445,
+    "sha256": "5c93213cd052641296e35d73a197c3e21bccc74a268c1930106de46f0d147114",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-1",
+    "bytes": 86,
+    "sha256": "827f88780663461d3dd4fd4dd712d299133f31a8d8287d319be6c7300c3c64c1",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-2",
+    "bytes": 88,
+    "sha256": "286363262ad7f3257a0a45bba1a86c1e69ecd0adadfea2006d9679fb6b44d6b1",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-31",
+    "bytes": 146,
+    "sha256": "98ec7fcdb4bf6d214876da6b75a00eb286af7d64837d84b135b8a7b2cb9ca580",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-32",
+    "bytes": 148,
+    "sha256": "5cbdba2130316c4b3561b3d276596fa3219f96c977f7b7972db69cbbdec557f4",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-63",
+    "bytes": 210,
+    "sha256": "c156500c29684aab7736471ca669ed16a171b53d044fba0294cbefa24db0b74e",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-64",
+    "bytes": 212,
+    "sha256": "eefbb9f80075b1a3a28a682e42a52c3662ca50ae1b587a53b5f24d8ec7f9f6a7",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-63-65",
+    "bytes": 214,
+    "sha256": "678194c7020afb74840cb53469dfc89b37a7e7bad175fef7083c179fafadd27c",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-1",
+    "bytes": 87,
+    "sha256": "5b21064459a4d27c8cf08fd19fdd6acd293deb21f13d312f40354abbd51acaaf",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-2",
+    "bytes": 89,
+    "sha256": "c763069259955c65787e2718ca942506ab1f69b135b19cc5abcac72bdc4f0fad",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-31",
+    "bytes": 147,
+    "sha256": "f25118b371020c89061c67da09eb467b54fb07c14a8e1f97d8eb00c4f7af9b89",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-32",
+    "bytes": 149,
+    "sha256": "544f5498dcd76925774f1c17b1368ad336cbe91d7c2b67923d9d4c263a438a3b",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-63",
+    "bytes": 211,
+    "sha256": "5efe1a47588f249a0c2700c585728fc696c096b590fa37091a2fee7af0bad0e4",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-64",
+    "bytes": 213,
+    "sha256": "883964b9df50486bedf7cb94f29a0de50ccfe1d9c33d723614df7aa6d44ff710",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-64-65",
+    "bytes": 215,
+    "sha256": "e8e39a35263a7e55a68aa7e68f1e928f79534a43beb68e936179ec279b577718",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-1",
+    "bytes": 88,
+    "sha256": "439068b29bb3154ae0c6eefa268be54f4100565ba8b51d4e6c651f9ae71760cb",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-2",
+    "bytes": 90,
+    "sha256": "16f800cad1b63e3a077055fcac075141a28ed458b387f73dcb9a4803b77c5756",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-31",
+    "bytes": 148,
+    "sha256": "875016eca868db396efd79b9188a9ba9014eaa99b92acfa0ad9e5593d973b429",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-32",
+    "bytes": 150,
+    "sha256": "d0b584ec39ed6ce791caf907ce135ac95a9df5fb9865d45d89821c74dda4b78f",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-63",
+    "bytes": 212,
+    "sha256": "79c24a1ad5582b503c33c09021ab0d556eb24e1a903afb53330f0317c808dc6c",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-64",
+    "bytes": 214,
+    "sha256": "6345e91240e3104ae09ab7986cb91d89afe077b3e03aedb4ac0c35dacbe72040",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-65-65",
+    "bytes": 216,
+    "sha256": "2f01840db12f14f63bd8f8014eddadc1ad71e3bcf1eb9f51d402f84924fb9417",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-1",
+    "bytes": 150,
+    "sha256": "f7113472bbb932c2d76439f52314458a861015fe6597534e63f5895d892c6a45",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-2",
+    "bytes": 152,
+    "sha256": "0f625fefabd6f631290a72041411df6da60c22410208e1c48d649692756a58af",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-31",
+    "bytes": 210,
+    "sha256": "0be75f43ec99454ceadfe78c27387896224d3bc48d936b878de5914efe25465b",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-32",
+    "bytes": 212,
+    "sha256": "61e4c79fc8cda37e7cf5a23b6785e8c6281c6b36141e2f8175bd13d11fadf6da",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-63",
+    "bytes": 274,
+    "sha256": "1be9f09a453e5873d02f2d5eb62fd8eaea20f41f0d305e9dc1cea227614fa274",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-64",
+    "bytes": 276,
+    "sha256": "ffc05ed76427ed5534303c8bb3abea8fb209c1ad1d690cfe5a601cbe559999fe",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-127-65",
+    "bytes": 278,
+    "sha256": "f4d8901b444bea5237d2a843c377cc7814d764aba92e51838e42c6efedfe961d",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-1",
+    "bytes": 151,
+    "sha256": "5712e2acd888a7e3f069b50cd98017b62ae9f966af5d1ee76a754fe3d8432501",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-2",
+    "bytes": 153,
+    "sha256": "19e2a113a22b15965d196bf2c04d9ec273596f8084b9e9d312ad26dcd77c041f",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-31",
+    "bytes": 211,
+    "sha256": "430d1909a0d0c8191c2ef34b12881da332cb791d02ca0790f5c66bf5f2c8273b",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-32",
+    "bytes": 213,
+    "sha256": "21cc188dba0d57791f9d78cac9d0b2b114a7c2337e978628776de09b0c5a69c3",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-63",
+    "bytes": 275,
+    "sha256": "5d7c76ec64c31ad171428968512cd69d1c49a2dac6b87a0eefedfa83358150eb",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-64",
+    "bytes": 277,
+    "sha256": "af74f2e4b4183e444577590e98a954a23f9caf6afb765dae0304998e06363ca6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-128-65",
+    "bytes": 279,
+    "sha256": "a51cc0f4d4c5057ee0803e35357fe6232e8e64b3d917e3696993a1144b0a0d03",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-1",
+    "bytes": 152,
+    "sha256": "d83009d3e76359a1dd8ac02fb01cfc5e82f17d15a2159c5eefd0c939473bc8d1",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-2",
+    "bytes": 154,
+    "sha256": "6169d5a8521da36bf45e13339afa1afaae2e9e31379e55dbe61edf845c307014",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-31",
+    "bytes": 212,
+    "sha256": "9504dc8c9df7fbfd9d269b63a1c4fb2c6796c179550af35eb3efa1ff9e26e78e",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-32",
+    "bytes": 214,
+    "sha256": "f5260530529db7354691f9f80a0bbc313e91c781bf050a6f23349fc12c1cbf23",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-63",
+    "bytes": 276,
+    "sha256": "8a0f69e48650b5d61329147e113ec417a3fe20812963853f770ca659ac77316a",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-64",
+    "bytes": 278,
+    "sha256": "f2e3ccd35d90950585a842094f56aa20985891d0b4fcfa96e7bc3f457957cf86",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-129-65",
+    "bytes": 280,
+    "sha256": "1d16b230c6166acc59e80a7fa8067cacdb569edc33a4e32e49792ce09f3b0e74",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-1",
+    "bytes": 534,
+    "sha256": "9f5fc2d7a56539b5d139e7c16f4706c737c59fb4344ec3d6a07c11da1110b971",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-2",
+    "bytes": 536,
+    "sha256": "d0a0ed167e9d74c755c87ecf9a35388977bc8aeacab6780c69671826b3c657c6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-31",
+    "bytes": 594,
+    "sha256": "fd878b7aa6bd635fb587ddbb7f921ca33efc2a2d0ba411fdc034629eac67e318",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-32",
+    "bytes": 596,
+    "sha256": "c5807bd45003ba9825fc651a003a186621eaa2046b8952a77fd110af0be78584",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-63",
+    "bytes": 658,
+    "sha256": "358848fa8090cffe808fedbc691abceb9b020e7ac3082bfb5fa34d94a854a918",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-64",
+    "bytes": 660,
+    "sha256": "a53b619ad857fb5cf1cd070e9ee7b4d2900130e64caab7ac904dbade4363f4de",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-511-65",
+    "bytes": 662,
+    "sha256": "8cae4d148f27d69e9f20d8d04ed94997ff1fc5c0f937c0bb39b6f8f72afe214a",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-1",
+    "bytes": 535,
+    "sha256": "27be86d8f106d2562ac811912b3ce9c56373543b89bde001f6f7d68f5726b4be",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-2",
+    "bytes": 537,
+    "sha256": "b781f45aef2d48ec021549bc55e67bc69eed00beaa98fbed1ee7a00c8ccd8921",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-31",
+    "bytes": 595,
+    "sha256": "5c2cfecd62799e10898dd4357714ca242e9ad6fe45473dd128154f9400ce8b90",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-32",
+    "bytes": 597,
+    "sha256": "a86f6eff9fe8f266f67269ec5cf39e45189e2fce5268a0944c37daa26e2b3492",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-63",
+    "bytes": 659,
+    "sha256": "839f597e2bbec9ad766c74e3f38d0e8525ebcb255208d63351115783c4181c8c",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-64",
+    "bytes": 661,
+    "sha256": "d1fa5192167a5874eb58c2a29679be994930f75c38f83f39a21eb5ce7330fb94",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-512-65",
+    "bytes": 663,
+    "sha256": "9f8b40624cc279bfdacefd7e6a55915b088c38547582067563b6b283dd7b8efa",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-1",
+    "bytes": 536,
+    "sha256": "e57527f9a9a64ec4e339c0cbeefec3ebfc1fa569cc9543137f56118212ea1cd1",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-2",
+    "bytes": 538,
+    "sha256": "4601d0e8d9a506c0a6d00ec4ab2e30a16d3c8a214d7f9555c4e5524ff496fd3f",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-31",
+    "bytes": 596,
+    "sha256": "a1cfb4e1fa50b00b9df11b9bd3f534a7373d7c2b6912895ee4d2cf1a07866814",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-32",
+    "bytes": 598,
+    "sha256": "2f550a51a14f994615b6ac8a24aa896fbc3ddd3e17d96220b01c3926cfaa6dd7",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-63",
+    "bytes": 660,
+    "sha256": "dc2b7de935ecc9efcf69fdfa2d48c6633ccc540133fed74c2634dfbf47ef49ed",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-64",
+    "bytes": 662,
+    "sha256": "077f407ec3df08ac8ad5223ad511bc15d1d5cfcfb586532d3ce702010df95a91",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-513-65",
+    "bytes": 664,
+    "sha256": "b0db3fd45b28637337f4e593a2bcd80862cfc0446a703631cf9ac63a000c5b5d",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-1",
+    "bytes": 1046,
+    "sha256": "21363635198ab4d764b6c82bc27cc5ec91bc2279c1d502749a2f64354e417501",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-2",
+    "bytes": 1048,
+    "sha256": "443c6bb69238b48c8c0411b4e95beeb9550809413c8e9d6340bf859ad06726f3",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-31",
+    "bytes": 1106,
+    "sha256": "81ec98775a1d849b7435a9bc16579497e00a38ba49ba60833a8359fd9d4596ef",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-32",
+    "bytes": 1108,
+    "sha256": "86cd74cd21bed79902ec404f09c0a4563798a1962e8f3dac66807d3c7641f52c",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-63",
+    "bytes": 1170,
+    "sha256": "782f95636c146994fc007ca654fe0134bb729291133719a0f83dbefc7dfdce0c",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-64",
+    "bytes": 1172,
+    "sha256": "c84cbf18ccea2a086634f7213fde8d10c6b5061d563109d581d8801d403794f5",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1023-65",
+    "bytes": 1174,
+    "sha256": "1da0f642b599f0e64bf7988c1c2434677f4ceca5caf7c0060339bd0fea3fce32",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-1",
+    "bytes": 1047,
+    "sha256": "ac3e62e3a822dbf83fb89d146a326ca5a8544aa77b95759eb63a91800d9775d5",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-2",
+    "bytes": 1049,
+    "sha256": "78d21c49b745f812364c26ac98db211d133f5dc7dc4f4d5f51776bc03d5313d6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-31",
+    "bytes": 1107,
+    "sha256": "069af28b091e42d3baa77b84f499b23f6abe20b18f593ef326502967a539c80f",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-32",
+    "bytes": 1109,
+    "sha256": "e2119daeeef20b72df9becbf5913ae7e92c2b6e48d87891f9005d7c493522a67",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-63",
+    "bytes": 1171,
+    "sha256": "2d4c75a6e3b0e3bb78279888b653db0a292529dac0f9042c955af88a11973d73",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-64",
+    "bytes": 1173,
+    "sha256": "efd20376de4254a6cd668e912c9b990c61c8eafcbaa4b446473baf88e799c855",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1024-65",
+    "bytes": 1175,
+    "sha256": "5f6ce2c216bfe5585b49a04013515ebd840cefd2e7881813b7db224db6d0f89d",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-1",
+    "bytes": 1048,
+    "sha256": "fb6cec8e0688896a9307ddddca013bb1a6ffa163de7bd5d61f62494f20a267c4",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-2",
+    "bytes": 1050,
+    "sha256": "c7b100dcc351378603344af179a693646dbac6392c1fda9806eeb635dabe7c29",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-31",
+    "bytes": 1108,
+    "sha256": "5c93007c8b7166dadc14a70c7ee02f1b225301e2a4d1dc4fc2ff4891554e8603",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-32",
+    "bytes": 1110,
+    "sha256": "d149715e1da0b697f4d120891cfaf1c6155689b9efb7132c45a687058c23c09d",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-63",
+    "bytes": 1172,
+    "sha256": "f109ae007749d8f100173da4def7b946920624e021fc7f1508ca020f13a56b6f",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-64",
+    "bytes": 1174,
+    "sha256": "5cb8c46d371f79a5399f7c63f4468686b238a87cc330444487b1251afe6043b2",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-1025-65",
+    "bytes": 1176,
+    "sha256": "dd99ed2bec06a651c63b778ff79ad2027bd3e4686024a6fed0ce8729cda61232",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194303-1",
+    "bytes": 4194326,
+    "sha256": "a4741680787bf6c7054ed435d550219bb22a5765aa24ac89b829a9ceb4a94b6b",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194303-64",
+    "bytes": 4194452,
+    "sha256": "5865a1deac9ef9981ccab4cf292658b96fffce243dc06fa28f89f4d08887e701",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194303-65",
+    "bytes": 4194454,
+    "sha256": "463183416a367ab8f8e048667019267c5d4db39a23589092a1ca077fd28c0e59",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194304-1",
+    "bytes": 4194327,
+    "sha256": "691de745caa8dd08334746d6df71fe8c623d6a2b21472f29e55339367ab0c6a6",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194304-64",
+    "bytes": 4194453,
+    "sha256": "5bf98213af7f98c35b2c575411892208724179aedd73a5890b788c8e40c5c171",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194304-65",
+    "bytes": 4194455,
+    "sha256": "f80837e3d13e524aea60c008b8c2b08441958abac083a71b82ff3bee240c877e",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194305-1",
+    "bytes": 4194328,
+    "sha256": "ead4d4b90df7ff1aea85e44094521b20753b94db59740e06d0896c40b12c9f2a",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194305-64",
+    "bytes": 4194454,
+    "sha256": "97d5ab1ee081d34901063fd78780784802b461b1251daf09491c58eb1fc34115",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "valid-boundary-4194305-65",
+    "bytes": 4194456,
+    "sha256": "02fdab63ac675a25b5fbfabffeab564497fa26772bc49c18857d81457cc65cc2",
+    "tasks": [
+      "json"
+    ],
+    "oracle": "jsongen.skeleton"
+  },
+  {
+    "case": "fsm-big-04b77f95",
+    "bytes": 4194317,
+    "sha256": "04b77f95c341b7831d15dbf82af38bac63286b0cc03112a8700d10e63f07a15b",
+    "tasks": [
+      "strip",
+      "idents",
+      "strings",
+      "csv"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "fsm-big-362fffd2",
+    "bytes": 4194313,
+    "sha256": "362fffd22cec52dca8d82459325681ffc1633c1f18a70d1e4fc82bdcba1b5d74",
+    "tasks": [
+      "strip",
+      "idents",
+      "strings",
+      "csv"
+    ],
+    "oracle": "base.c"
+  },
+  {
+    "case": "fsm-big-a0adad88",
+    "bytes": 4194312,
+    "sha256": "a0adad883c3e58c821fa9bbfb0facc8b506725bbc3c4efb762bfe36fcaa48b37",
+    "tasks": [
+      "strip",
+      "idents",
+      "strings",
+      "csv"
+    ],
+    "oracle": "base.c"
+  }
+]

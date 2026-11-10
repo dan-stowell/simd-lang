@@ -1,0 +1,68 @@
+<p_sse2>:
+    45b0:	f3 0f 1e fa          	endbr64
+    45b4:	66 0f fe c0          	paddd  %xmm0,%xmm0
+    45b8:	48 63 05 51 4a 00 00 	movslq 0x4a51(%rip),%rax        # 9010 <three>
+    45bf:	48 89 05 5a ba 02 04 	mov    %rax,0x402ba5a(%rip)        # 4030020 <sink>
+    45c6:	c3                   	ret
+    45c7:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+    45ce:	00 00
+
+<p_avx>:
+    45d0:	f3 0f 1e fa          	endbr64
+    45d4:	c5 fc 58 c0          	vaddps %ymm0,%ymm0,%ymm0
+    45d8:	c5 f8 77             	vzeroupper
+    45db:	48 63 05 2e 4a 00 00 	movslq 0x4a2e(%rip),%rax        # 9010 <three>
+    45e2:	48 89 05 37 ba 02 04 	mov    %rax,0x402ba37(%rip)        # 4030020 <sink>
+    45e9:	c5 f8 77             	vzeroupper
+    45ec:	c3                   	ret
+    45ed:	0f 1f 00             	nopl   (%rax)
+
+<p_avx2>:
+    45f0:	f3 0f 1e fa          	endbr64
+    45f4:	c5 fd fe c0          	vpaddd %ymm0,%ymm0,%ymm0
+    45f8:	c5 f8 77             	vzeroupper
+    45fb:	48 63 05 0e 4a 00 00 	movslq 0x4a0e(%rip),%rax        # 9010 <three>
+    4602:	48 89 05 17 ba 02 04 	mov    %rax,0x402ba17(%rip)        # 4030020 <sink>
+    4609:	c5 f8 77             	vzeroupper
+    460c:	c3                   	ret
+    460d:	0f 1f 00             	nopl   (%rax)
+
+<p_adx>:
+    4610:	f3 0f 1e fa          	endbr64
+    4614:	66 48 0f 38 f6 c0    	adcx   %rax,%rax
+    461a:	f3 48 0f 38 f6 c0    	adox   %rax,%rax
+    4620:	48 63 05 e9 49 00 00 	movslq 0x49e9(%rip),%rax        # 9010 <three>
+    4627:	48 89 05 f2 b9 02 04 	mov    %rax,0x402b9f2(%rip)        # 4030020 <sink>
+    462e:	c3                   	ret
+    462f:	90                   	nop
+
+<p_512vl>:
+    4f20:	f3 0f 1e fa          	endbr64
+    4f24:	8b 05 e6 40 00 00    	mov    0x40e6(%rip),%eax        # 9010 <three>
+    4f2a:	62 f2 7d 28 7c c0    	vpbroadcastd %eax,%ymm0
+    4f30:	62 f3 7d 28 1f c0 00 	vpcmpeqd %ymm0,%ymm0,%k0
+    4f37:	c5 f9 93 c0          	kmovb  %k0,%eax
+    4f3b:	48 89 05 de b0 02 04 	mov    %rax,0x402b0de(%rip)        # 4030020 <sink>
+    4f42:	c5 f8 77             	vzeroupper
+    4f45:	c3                   	ret
+    4f46:	66 2e 0f 1f 84 00 00 	cs nopw 0x0(%rax,%rax,1)
+    4f4d:	00 00 00
+
+<p_apx>:
+    4650:	f3 0f 1e fa          	endbr64
+    4654:	d5 10 89 c0          	mov    %eax,%r16d
+    4658:	c3                   	ret
+    4659:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)
+
+<p_avxvnni>:
+    4940:	f3 0f 1e fa          	endbr64
+    4944:	8b 05 c6 46 00 00    	mov    0x46c6(%rip),%eax        # 9010 <three>
+    494a:	c5 f9 6e c0          	vmovd  %eax,%xmm0
+    494e:	c4 e2 7d 78 c0       	vpbroadcastb %xmm0,%ymm0
+    4953:	c4 e2 7d 50 c0       	{vex} vpdpbusd %ymm0,%ymm0,%ymm0
+    4958:	c5 f9 7e c0          	vmovd  %xmm0,%eax
+    495c:	48 98                	cltq
+    495e:	48 89 05 bb b6 02 04 	mov    %rax,0x402b6bb(%rip)        # 4030020 <sink>
+    4965:	c5 f8 77             	vzeroupper
+    4968:	c3                   	ret
+    4969:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)

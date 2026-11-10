@@ -1,0 +1,35 @@
+<p_avxvnni>:
+    4940:	f3 0f 1e fa          	endbr64
+    4944:	62 f2 7d 48 50 c0    	vpdpbusd %zmm0,%zmm0,%zmm0
+    494a:	c3                   	ret
+    494b:	90                   	nop
+    494c:	90                   	nop
+    494d:	90                   	nop
+    494e:	90                   	nop
+    494f:	90                   	nop
+    4950:	90                   	nop
+    4951:	90                   	nop
+    4952:	90                   	nop
+    4953:	90                   	nop
+    4954:	90                   	nop
+    4955:	90                   	nop
+    4956:	90                   	nop
+    4957:	90                   	nop
+    4958:	90                   	nop
+    4959:	90                   	nop
+    495a:	90                   	nop
+    495b:	90                   	nop
+    495c:	90                   	nop
+    495d:	90                   	nop
+    495e:	90                   	nop
+    495f:	90                   	nop
+    4960:	90                   	nop
+    4961:	90                   	nop
+    4962:	90                   	nop
+    4963:	90                   	nop
+    4964:	90                   	nop
+    4965:	90                   	nop
+    4966:	90                   	nop
+    4967:	90                   	nop
+    4968:	90                   	nop
+    4969:	0f 1f 80 00 00 00 00 	nopl   0x0(%rax)

@@ -1,0 +1,3752 @@
+{
+  "rounds": 15,
+  "sets": {
+    "1": [
+      3
+    ],
+    "4": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "all": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "unit": "microseconds wall",
+  "sources_sha256": {
+    "reviews/audit3-hand/hand_persistent.c": "af3bfc674dc4aafde72af430e9b027f560d2a10b0b12b8b8773e6ae357da0ed1",
+    "reviews/audit3-hand/ordinary_packed.c": "ea7fba6ec7f48d041bed92b2d8a0c2a900713ea0109fceea0d594709cab44afd",
+    "reviews/audit3-hand/hand_json_dual.c": "1d6867980deac3396bbb422acf08db3cea54c9088b5f3fddb1400f25ebab8c41"
+  },
+  "programs": {
+    "strip": {
+      "input": "/home/exedev/simd-lang/build/audit3/fresh-j6nu59sc/suite/code256-b7ac6fee",
+      "input_bytes": 268435456,
+      "output_sha256": "3b3549194c0f13626caf9c73a4a0121c41c99b80fee0ea65d7e8203bcd05b275",
+      "median_GBps": {
+        "c:1": 0.9011439256352327,
+        "omp:1": 1.0227203511231675,
+        "omp:4": 0.9566515062420037,
+        "omp:all": 1.005263288769052,
+        "hand:1": 3.798167046338875,
+        "hand:4": 6.167668956643613,
+        "hand:all": 6.956809620069455,
+        "st:1": 3.0552983302791974,
+        "st:4": 6.524767409640019,
+        "st:all": 5.612282166004599,
+        "persistent:1": 3.709567817807443,
+        "persistent:4": 5.654367780258668,
+        "persistent:all": 8.484053603034134,
+        "packed:1": 0.8492750351181361,
+        "packed:4": 1.5930036733942994,
+        "packed:all": 2.0910911031307697
+      },
+      "samples": {
+        "c:1": [
+          {
+            "wall_us": 298862.0,
+            "timer_output": "wall min 298862 us  median 298862 us   fastest run: usr 266637 sys 31929 faults 100   all: 298862"
+          },
+          {
+            "wall_us": 299399.0,
+            "timer_output": "wall min 299399 us  median 299399 us   fastest run: usr 259334 sys 39905 faults 100   all: 299399"
+          },
+          {
+            "wall_us": 309582.0,
+            "timer_output": "wall min 309582 us  median 309582 us   fastest run: usr 277597 sys 31866 faults 96   all: 309582"
+          },
+          {
+            "wall_us": 295384.0,
+            "timer_output": "wall min 295384 us  median 295384 us   fastest run: usr 263356 sys 31933 faults 99   all: 295384"
+          },
+          {
+            "wall_us": 296186.0,
+            "timer_output": "wall min 296186 us  median 296186 us   fastest run: usr 280069 sys 16013 faults 98   all: 296186"
+          },
+          {
+            "wall_us": 300095.0,
+            "timer_output": "wall min 300095 us  median 300095 us   fastest run: usr 259606 sys 40375 faults 98   all: 300095"
+          },
+          {
+            "wall_us": 302941.0,
+            "timer_output": "wall min 302941 us  median 302941 us   fastest run: usr 266629 sys 36175 faults 98   all: 302941"
+          },
+          {
+            "wall_us": 295443.0,
+            "timer_output": "wall min 295443 us  median 295443 us   fastest run: usr 271390 sys 23948 faults 100   all: 295443"
+          },
+          {
+            "wall_us": 297438.0,
+            "timer_output": "wall min 297438 us  median 297438 us   fastest run: usr 253709 sys 43611 faults 96   all: 297438"
+          },
+          {
+            "wall_us": 297291.0,
+            "timer_output": "wall min 297291 us  median 297291 us   fastest run: usr 253552 sys 43618 faults 96   all: 297291"
+          },
+          {
+            "wall_us": 321839.0,
+            "timer_output": "wall min 321839 us  median 321839 us   fastest run: usr 282179 sys 39503 faults 97   all: 321839"
+          },
+          {
+            "wall_us": 297437.0,
+            "timer_output": "wall min 297437 us  median 297437 us   fastest run: usr 265585 sys 31729 faults 99   all: 297437"
+          },
+          {
+            "wall_us": 302053.0,
+            "timer_output": "wall min 302053 us  median 302053 us   fastest run: usr 278157 sys 23757 faults 99   all: 302053"
+          },
+          {
+            "wall_us": 297784.0,
+            "timer_output": "wall min 297784 us  median 297784 us   fastest run: usr 265884 sys 31762 faults 100   all: 297784"
+          },
+          {
+            "wall_us": 297883.0,
+            "timer_output": "wall min 297883 us  median 297883 us   fastest run: usr 245282 sys 52436 faults 96   all: 297883"
+          }
+        ],
+        "omp:1": [
+          {
+            "wall_us": 261292.0,
+            "timer_output": "wall min 261292 us  median 261292 us   fastest run: usr 237074 sys 24060 faults 5120   all: 261292"
+          },
+          {
+            "wall_us": 263659.0,
+            "timer_output": "wall min 263659 us  median 263659 us   fastest run: usr 247380 sys 16129 faults 5120   all: 263659"
+          },
+          {
+            "wall_us": 261486.0,
+            "timer_output": "wall min 261486 us  median 261486 us   fastest run: usr 241211 sys 20128 faults 5121   all: 261486"
+          },
+          {
+            "wall_us": 264499.0,
+            "timer_output": "wall min 264499 us  median 264499 us   fastest run: usr 240507 sys 23838 faults 5118   all: 264499"
+          },
+          {
+            "wall_us": 262984.0,
+            "timer_output": "wall min 262984 us  median 262984 us   fastest run: usr 246519 sys 16322 faults 5119   all: 262984"
+          },
+          {
+            "wall_us": 260226.0,
+            "timer_output": "wall min 260226 us  median 260226 us   fastest run: usr 244096 sys 16006 faults 5118   all: 260226"
+          },
+          {
+            "wall_us": 262181.0,
+            "timer_output": "wall min 262181 us  median 262181 us   fastest run: usr 238150 sys 23935 faults 5115   all: 262181"
+          },
+          {
+            "wall_us": 261430.0,
+            "timer_output": "wall min 261430 us  median 261430 us   fastest run: usr 237130 sys 24166 faults 5119   all: 261430"
+          },
+          {
+            "wall_us": 264809.0,
+            "timer_output": "wall min 264809 us  median 264809 us   fastest run: usr 252458 sys 12218 faults 5118   all: 264809"
+          },
+          {
+            "wall_us": 264667.0,
+            "timer_output": "wall min 264667 us  median 264667 us   fastest run: usr 244198 sys 20328 faults 5115   all: 264667"
+          },
+          {
+            "wall_us": 260015.0,
+            "timer_output": "wall min 260015 us  median 260015 us   fastest run: usr 239886 sys 20013 faults 5119   all: 260015"
+          },
+          {
+            "wall_us": 263256.0,
+            "timer_output": "wall min 263256 us  median 263256 us   fastest run: usr 230723 sys 31977 faults 5116   all: 263256"
+          },
+          {
+            "wall_us": 262472.0,
+            "timer_output": "wall min 262472 us  median 262472 us   fastest run: usr 254357 sys 8010 faults 5120   all: 262472"
+          },
+          {
+            "wall_us": 261020.0,
+            "timer_output": "wall min 261020 us  median 261020 us   fastest run: usr 248686 sys 12086 faults 5118   all: 261020"
+          },
+          {
+            "wall_us": 265033.0,
+            "timer_output": "wall min 265033 us  median 265033 us   fastest run: usr 245201 sys 19721 faults 5120   all: 265033"
+          }
+        ],
+        "omp:4": [
+          {
+            "wall_us": 268327.0,
+            "timer_output": "wall min 268327 us  median 268327 us   fastest run: usr 1017845 sys 19853 faults 5186   all: 268327"
+          },
+          {
+            "wall_us": 284086.0,
+            "timer_output": "wall min 284086 us  median 284086 us   fastest run: usr 1072734 sys 28132 faults 5182   all: 284086"
+          },
+          {
+            "wall_us": 299809.0,
+            "timer_output": "wall min 299809 us  median 299809 us   fastest run: usr 1128328 sys 30707 faults 5185   all: 299809"
+          },
+          {
+            "wall_us": 298918.0,
+            "timer_output": "wall min 298918 us  median 298918 us   fastest run: usr 1134047 sys 31927 faults 5188   all: 298918"
+          },
+          {
+            "wall_us": 311516.0,
+            "timer_output": "wall min 311516 us  median 311516 us   fastest run: usr 1194711 sys 14224 faults 5190   all: 311516"
+          },
+          {
+            "wall_us": 268525.0,
+            "timer_output": "wall min 268525 us  median 268525 us   fastest run: usr 1018278 sys 19796 faults 5189   all: 268525"
+          },
+          {
+            "wall_us": 280599.0,
+            "timer_output": "wall min 280599 us  median 280599 us   fastest run: usr 1055264 sys 30377 faults 5187   all: 280599"
+          },
+          {
+            "wall_us": 319278.0,
+            "timer_output": "wall min 319278 us  median 319278 us   fastest run: usr 1205350 sys 36140 faults 5188   all: 319278"
+          },
+          {
+            "wall_us": 272790.0,
+            "timer_output": "wall min 272790 us  median 272790 us   fastest run: usr 1033223 sys 23944 faults 5184   all: 272790"
+          },
+          {
+            "wall_us": 268114.0,
+            "timer_output": "wall min 268114 us  median 268114 us   fastest run: usr 1015209 sys 19445 faults 5188   all: 268114"
+          },
+          {
+            "wall_us": 288857.0,
+            "timer_output": "wall min 288857 us  median 288857 us   fastest run: usr 1079744 sys 36217 faults 5191   all: 288857"
+          },
+          {
+            "wall_us": 286524.0,
+            "timer_output": "wall min 286524 us  median 286524 us   fastest run: usr 1064485 sys 47870 faults 5187   all: 286524"
+          },
+          {
+            "wall_us": 266439.0,
+            "timer_output": "wall min 266439 us  median 266439 us   fastest run: usr 1020188 sys 15621 faults 5184   all: 266439"
+          },
+          {
+            "wall_us": 267490.0,
+            "timer_output": "wall min 267490 us  median 267490 us   fastest run: usr 994368 sys 35840 faults 5190   all: 267490"
+          },
+          {
+            "wall_us": 270934.0,
+            "timer_output": "wall min 270934 us  median 270934 us   fastest run: usr 1021926 sys 28293 faults 5186   all: 270934"
+          }
+        ],
+        "omp:all": [
+          {
+            "wall_us": 223410.0,
+            "timer_output": "wall min 223410 us  median 223410 us   fastest run: usr 1661388 sys 23971 faults 5221   all: 223410"
+          },
+          {
+            "wall_us": 148740.0,
+            "timer_output": "wall min 148740 us  median 148740 us   fastest run: usr 1101024 sys 11915 faults 5219   all: 148740"
+          },
+          {
+            "wall_us": 220113.0,
+            "timer_output": "wall min 220113 us  median 220113 us   fastest run: usr 1646901 sys 16040 faults 5215   all: 220113"
+          },
+          {
+            "wall_us": 210122.0,
+            "timer_output": "wall min 210122 us  median 210122 us   fastest run: usr 1534006 sys 73172 faults 5219   all: 210122"
+          },
+          {
+            "wall_us": 258854.0,
+            "timer_output": "wall min 258854 us  median 258854 us   fastest run: usr 1949540 sys 28145 faults 5221   all: 258854"
+          },
+          {
+            "wall_us": 300744.0,
+            "timer_output": "wall min 300744 us  median 300744 us   fastest run: usr 2267034 sys 55754 faults 5222   all: 300744"
+          },
+          {
+            "wall_us": 278828.0,
+            "timer_output": "wall min 278828 us  median 278828 us   fastest run: usr 2093127 sys 48316 faults 5215   all: 278828"
+          },
+          {
+            "wall_us": 277763.0,
+            "timer_output": "wall min 277763 us  median 277763 us   fastest run: usr 2094918 sys 42282 faults 5214   all: 277763"
+          },
+          {
+            "wall_us": 202060.0,
+            "timer_output": "wall min 202060 us  median 202060 us   fastest run: usr 1513378 sys 23911 faults 5216   all: 202060"
+          },
+          {
+            "wall_us": 274806.0,
+            "timer_output": "wall min 274806 us  median 274806 us   fastest run: usr 2116129 sys 12001 faults 5222   all: 274806"
+          },
+          {
+            "wall_us": 231961.0,
+            "timer_output": "wall min 231961 us  median 231961 us   fastest run: usr 1733253 sys 44510 faults 5215   all: 231961"
+          },
+          {
+            "wall_us": 267030.0,
+            "timer_output": "wall min 267030 us  median 267030 us   fastest run: usr 2024161 sys 35226 faults 5217   all: 267030"
+          },
+          {
+            "wall_us": 295974.0,
+            "timer_output": "wall min 295974 us  median 295974 us   fastest run: usr 2283627 sys 12015 faults 5222   all: 295974"
+          },
+          {
+            "wall_us": 294023.0,
+            "timer_output": "wall min 294023 us  median 294023 us   fastest run: usr 2231803 sys 28503 faults 5216   all: 294023"
+          },
+          {
+            "wall_us": 296365.0,
+            "timer_output": "wall min 296365 us  median 296365 us   fastest run: usr 2275755 sys 20011 faults 5214   all: 296365"
+          }
+        ],
+        "hand:1": [
+          {
+            "wall_us": 73841.0,
+            "timer_output": "wall min 73841 us  median 73841 us   fastest run: usr 41069 sys 32681 faults 5121   all: 73841"
+          },
+          {
+            "wall_us": 71084.0,
+            "timer_output": "wall min 71084 us  median 71084 us   fastest run: usr 47340 sys 23656 faults 5121   all: 71084"
+          },
+          {
+            "wall_us": 71052.0,
+            "timer_output": "wall min 71052 us  median 71052 us   fastest run: usr 51099 sys 19874 faults 5118   all: 71052"
+          },
+          {
+            "wall_us": 70300.0,
+            "timer_output": "wall min 70300 us  median 70300 us   fastest run: usr 45471 sys 24743 faults 5114   all: 70300"
+          },
+          {
+            "wall_us": 70258.0,
+            "timer_output": "wall min 70258 us  median 70258 us   fastest run: usr 54576 sys 15593 faults 5116   all: 70258"
+          },
+          {
+            "wall_us": 69470.0,
+            "timer_output": "wall min 69470 us  median 69470 us   fastest run: usr 38549 sys 30839 faults 5121   all: 69470"
+          },
+          {
+            "wall_us": 70659.0,
+            "timer_output": "wall min 70659 us  median 70659 us   fastest run: usr 43133 sys 27442 faults 5117   all: 70659"
+          },
+          {
+            "wall_us": 70675.0,
+            "timer_output": "wall min 70675 us  median 70675 us   fastest run: usr 39183 sys 31381 faults 5120   all: 70675"
+          },
+          {
+            "wall_us": 70933.0,
+            "timer_output": "wall min 70933 us  median 70933 us   fastest run: usr 47322 sys 23500 faults 5117   all: 70933"
+          },
+          {
+            "wall_us": 70373.0,
+            "timer_output": "wall min 70373 us  median 70373 us   fastest run: usr 50763 sys 19524 faults 5121   all: 70373"
+          },
+          {
+            "wall_us": 76548.0,
+            "timer_output": "wall min 76548 us  median 76548 us   fastest run: usr 45051 sys 31370 faults 5118   all: 76548"
+          },
+          {
+            "wall_us": 72889.0,
+            "timer_output": "wall min 72889 us  median 72889 us   fastest run: usr 56603 sys 16172 faults 5122   all: 72889"
+          },
+          {
+            "wall_us": 69813.0,
+            "timer_output": "wall min 69813 us  median 69813 us   fastest run: usr 57420 sys 12304 faults 5120   all: 69813"
+          },
+          {
+            "wall_us": 70483.0,
+            "timer_output": "wall min 70483 us  median 70483 us   fastest run: usr 43023 sys 27378 faults 5120   all: 70483"
+          },
+          {
+            "wall_us": 71040.0,
+            "timer_output": "wall min 71040 us  median 71040 us   fastest run: usr 31562 sys 39383 faults 5116   all: 71040"
+          }
+        ],
+        "hand:4": [
+          {
+            "wall_us": 33525.0,
+            "timer_output": "wall min 33525 us  median 33525 us   fastest run: usr 78054 sys 27308 faults 5188   all: 33525"
+          },
+          {
+            "wall_us": 52899.0,
+            "timer_output": "wall min 52899 us  median 52899 us   fastest run: usr 142638 sys 30436 faults 5185   all: 52899"
+          },
+          {
+            "wall_us": 38057.0,
+            "timer_output": "wall min 38057 us  median 38057 us   fastest run: usr 90862 sys 22814 faults 5191   all: 38057"
+          },
+          {
+            "wall_us": 32948.0,
+            "timer_output": "wall min 32948 us  median 32948 us   fastest run: usr 76520 sys 22994 faults 5188   all: 32948"
+          },
+          {
+            "wall_us": 34207.0,
+            "timer_output": "wall min 34207 us  median 34207 us   fastest run: usr 81079 sys 23244 faults 5194   all: 34207"
+          },
+          {
+            "wall_us": 43523.0,
+            "timer_output": "wall min 43523 us  median 43523 us   fastest run: usr 114259 sys 25793 faults 5191   all: 43523"
+          },
+          {
+            "wall_us": 45525.0,
+            "timer_output": "wall min 45525 us  median 45525 us   fastest run: usr 123864 sys 23391 faults 5195   all: 45525"
+          },
+          {
+            "wall_us": 53806.0,
+            "timer_output": "wall min 53806 us  median 53806 us   fastest run: usr 134952 sys 42477 faults 5192   all: 53806"
+          },
+          {
+            "wall_us": 58108.0,
+            "timer_output": "wall min 58108 us  median 58108 us   fastest run: usr 165950 sys 37690 faults 5189   all: 58108"
+          },
+          {
+            "wall_us": 34908.0,
+            "timer_output": "wall min 34908 us  median 34908 us   fastest run: usr 77739 sys 23198 faults 5192   all: 34908"
+          },
+          {
+            "wall_us": 51000.0,
+            "timer_output": "wall min 51000 us  median 51000 us   fastest run: usr 140444 sys 30622 faults 5192   all: 51000"
+          },
+          {
+            "wall_us": 38776.0,
+            "timer_output": "wall min 38776 us  median 38776 us   fastest run: usr 96400 sys 23223 faults 5191   all: 38776"
+          },
+          {
+            "wall_us": 32811.0,
+            "timer_output": "wall min 32811 us  median 32811 us   fastest run: usr 86034 sys 18637 faults 5192   all: 32811"
+          },
+          {
+            "wall_us": 48531.0,
+            "timer_output": "wall min 48531 us  median 48531 us   fastest run: usr 134978 sys 21746 faults 5187   all: 48531"
+          },
+          {
+            "wall_us": 62867.0,
+            "timer_output": "wall min 62867 us  median 62867 us   fastest run: usr 184773 sys 27695 faults 5189   all: 62867"
+          }
+        ],
+        "hand:all": [
+          {
+            "wall_us": 25160.0,
+            "timer_output": "wall min 25160 us  median 25160 us   fastest run: usr 101516 sys 13597 faults 5225   all: 25160"
+          },
+          {
+            "wall_us": 38586.0,
+            "timer_output": "wall min 38586 us  median 38586 us   fastest run: usr 189198 sys 43521 faults 5229   all: 38586"
+          },
+          {
+            "wall_us": 45515.0,
+            "timer_output": "wall min 45515 us  median 45515 us   fastest run: usr 196333 sys 79335 faults 5224   all: 45515"
+          },
+          {
+            "wall_us": 41381.0,
+            "timer_output": "wall min 41381 us  median 41381 us   fastest run: usr 228193 sys 14444 faults 5226   all: 41381"
+          },
+          {
+            "wall_us": 44519.0,
+            "timer_output": "wall min 44519 us  median 44519 us   fastest run: usr 216701 sys 21673 faults 5225   all: 44519"
+          },
+          {
+            "wall_us": 29417.0,
+            "timer_output": "wall min 29417 us  median 29417 us   fastest run: usr 152314 sys 11724 faults 5229   all: 29417"
+          },
+          {
+            "wall_us": 29654.0,
+            "timer_output": "wall min 29654 us  median 29654 us   fastest run: usr 130819 sys 21802 faults 5227   all: 29654"
+          },
+          {
+            "wall_us": 35527.0,
+            "timer_output": "wall min 35527 us  median 35527 us   fastest run: usr 180972 sys 15482 faults 5229   all: 35527"
+          },
+          {
+            "wall_us": 30835.0,
+            "timer_output": "wall min 30835 us  median 30835 us   fastest run: usr 135805 sys 22147 faults 5224   all: 30835"
+          },
+          {
+            "wall_us": 60777.0,
+            "timer_output": "wall min 60777 us  median 60777 us   fastest run: usr 347555 sys 35131 faults 5227   all: 60777"
+          },
+          {
+            "wall_us": 55926.0,
+            "timer_output": "wall min 55926 us  median 55926 us   fastest run: usr 327861 sys 23198 faults 5227   all: 55926"
+          },
+          {
+            "wall_us": 46776.0,
+            "timer_output": "wall min 46776 us  median 46776 us   fastest run: usr 220800 sys 42566 faults 5225   all: 46776"
+          },
+          {
+            "wall_us": 30328.0,
+            "timer_output": "wall min 30328 us  median 30328 us   fastest run: usr 156639 sys 13437 faults 5229   all: 30328"
+          },
+          {
+            "wall_us": 30860.0,
+            "timer_output": "wall min 30860 us  median 30860 us   fastest run: usr 135591 sys 31263 faults 5227   all: 30860"
+          },
+          {
+            "wall_us": 68401.0,
+            "timer_output": "wall min 68401 us  median 68401 us   fastest run: usr 404241 sys 46729 faults 5228   all: 68401"
+          }
+        ],
+        "st:1": [
+          {
+            "wall_us": 90469.0,
+            "timer_output": "wall min 90469 us  median 90469 us   fastest run: usr 77981 sys 12365 faults 4182   all: 90469"
+          },
+          {
+            "wall_us": 88783.0,
+            "timer_output": "wall min 88783 us  median 88783 us   fastest run: usr 72521 sys 16163 faults 4179   all: 88783"
+          },
+          {
+            "wall_us": 86776.0,
+            "timer_output": "wall min 86776 us  median 86776 us   fastest run: usr 66973 sys 19698 faults 4181   all: 86776"
+          },
+          {
+            "wall_us": 87859.0,
+            "timer_output": "wall min 87859 us  median 87859 us   fastest run: usr 71807 sys 15957 faults 4180   all: 87859"
+          },
+          {
+            "wall_us": 87804.0,
+            "timer_output": "wall min 87804 us  median 87804 us   fastest run: usr 71936 sys 15785 faults 4182   all: 87804"
+          },
+          {
+            "wall_us": 87442.0,
+            "timer_output": "wall min 87442 us  median 87442 us   fastest run: usr 71445 sys 15906 faults 4182   all: 87442"
+          },
+          {
+            "wall_us": 88972.0,
+            "timer_output": "wall min 88972 us  median 88972 us   fastest run: usr 76929 sys 11914 faults 4180   all: 88972"
+          },
+          {
+            "wall_us": 93683.0,
+            "timer_output": "wall min 93683 us  median 93683 us   fastest run: usr 80632 sys 12956 faults 4180   all: 93683"
+          },
+          {
+            "wall_us": 89771.0,
+            "timer_output": "wall min 89771 us  median 89771 us   fastest run: usr 73998 sys 15647 faults 4180   all: 89771"
+          },
+          {
+            "wall_us": 86620.0,
+            "timer_output": "wall min 86620 us  median 86620 us   fastest run: usr 78648 sys 7873 faults 4180   all: 86620"
+          },
+          {
+            "wall_us": 87385.0,
+            "timer_output": "wall min 87385 us  median 87385 us   fastest run: usr 63493 sys 23810 faults 4179   all: 87385"
+          },
+          {
+            "wall_us": 86937.0,
+            "timer_output": "wall min 86937 us  median 86937 us   fastest run: usr 62009 sys 24812 faults 4182   all: 86937"
+          },
+          {
+            "wall_us": 89681.0,
+            "timer_output": "wall min 89681 us  median 89681 us   fastest run: usr 61434 sys 28160 faults 4180   all: 89681"
+          },
+          {
+            "wall_us": 87608.0,
+            "timer_output": "wall min 87608 us  median 87608 us   fastest run: usr 67528 sys 19907 faults 4180   all: 87608"
+          },
+          {
+            "wall_us": 88358.0,
+            "timer_output": "wall min 88358 us  median 88358 us   fastest run: usr 68139 sys 20119 faults 4181   all: 88358"
+          }
+        ],
+        "st:4": [
+          {
+            "wall_us": 41141.0,
+            "timer_output": "wall min 41141 us  median 41141 us   fastest run: usr 96724 sys 33659 faults 5142   all: 41141"
+          },
+          {
+            "wall_us": 38564.0,
+            "timer_output": "wall min 38564 us  median 38564 us   fastest run: usr 101939 sys 21620 faults 5142   all: 38564"
+          },
+          {
+            "wall_us": 38795.0,
+            "timer_output": "wall min 38795 us  median 38795 us   fastest run: usr 108191 sys 18717 faults 5142   all: 38795"
+          },
+          {
+            "wall_us": 38750.0,
+            "timer_output": "wall min 38750 us  median 38750 us   fastest run: usr 103529 sys 15754 faults 5141   all: 38750"
+          },
+          {
+            "wall_us": 66849.0,
+            "timer_output": "wall min 66849 us  median 66849 us   fastest run: usr 204529 sys 30372 faults 5140   all: 66849"
+          },
+          {
+            "wall_us": 50589.0,
+            "timer_output": "wall min 50589 us  median 50589 us   fastest run: usr 147585 sys 20086 faults 5142   all: 50589"
+          },
+          {
+            "wall_us": 58180.0,
+            "timer_output": "wall min 58180 us  median 58180 us   fastest run: usr 166664 sys 38016 faults 5143   all: 58180"
+          },
+          {
+            "wall_us": 38769.0,
+            "timer_output": "wall min 38769 us  median 38769 us   fastest run: usr 99838 sys 25861 faults 5141   all: 38769"
+          },
+          {
+            "wall_us": 40701.0,
+            "timer_output": "wall min 40701 us  median 40701 us   fastest run: usr 100922 sys 25774 faults 5141   all: 40701"
+          },
+          {
+            "wall_us": 58439.0,
+            "timer_output": "wall min 58439 us  median 58439 us   fastest run: usr 175636 sys 31469 faults 5140   all: 58439"
+          },
+          {
+            "wall_us": 65919.0,
+            "timer_output": "wall min 65919 us  median 65919 us   fastest run: usr 202325 sys 31517 faults 5142   all: 65919"
+          },
+          {
+            "wall_us": 70262.0,
+            "timer_output": "wall min 70262 us  median 70262 us   fastest run: usr 189100 sys 54231 faults 5140   all: 70262"
+          },
+          {
+            "wall_us": 38012.0,
+            "timer_output": "wall min 38012 us  median 38012 us   fastest run: usr 85449 sys 29657 faults 5143   all: 38012"
+          },
+          {
+            "wall_us": 63408.0,
+            "timer_output": "wall min 63408 us  median 63408 us   fastest run: usr 187483 sys 28919 faults 5141   all: 63408"
+          },
+          {
+            "wall_us": 38337.0,
+            "timer_output": "wall min 38337 us  median 38337 us   fastest run: usr 93748 sys 22501 faults 5141   all: 38337"
+          }
+        ],
+        "st:all": [
+          {
+            "wall_us": 48377.0,
+            "timer_output": "wall min 48377 us  median 48377 us   fastest run: usr 282513 sys 18190 faults 5160   all: 48377"
+          },
+          {
+            "wall_us": 26310.0,
+            "timer_output": "wall min 26310 us  median 26310 us   fastest run: usr 101999 sys 26459 faults 5160   all: 26310"
+          },
+          {
+            "wall_us": 47496.0,
+            "timer_output": "wall min 47496 us  median 47496 us   fastest run: usr 266865 sys 27430 faults 5161   all: 47496"
+          },
+          {
+            "wall_us": 57723.0,
+            "timer_output": "wall min 57723 us  median 57723 us   fastest run: usr 266294 sys 61842 faults 5159   all: 57723"
+          },
+          {
+            "wall_us": 49904.0,
+            "timer_output": "wall min 49904 us  median 49904 us   fastest run: usr 267027 sys 36743 faults 5162   all: 49904"
+          },
+          {
+            "wall_us": 32978.0,
+            "timer_output": "wall min 32978 us  median 32978 us   fastest run: usr 155799 sys 34115 faults 5160   all: 32978"
+          },
+          {
+            "wall_us": 46431.0,
+            "timer_output": "wall min 46431 us  median 46431 us   fastest run: usr 206720 sys 70053 faults 5159   all: 46431"
+          },
+          {
+            "wall_us": 43831.0,
+            "timer_output": "wall min 43831 us  median 43831 us   fastest run: usr 236118 sys 41371 faults 5159   all: 43831"
+          },
+          {
+            "wall_us": 45598.0,
+            "timer_output": "wall min 45598 us  median 45598 us   fastest run: usr 196621 sys 78237 faults 5159   all: 45598"
+          },
+          {
+            "wall_us": 48528.0,
+            "timer_output": "wall min 48528 us  median 48528 us   fastest run: usr 268866 sys 19228 faults 5162   all: 48528"
+          },
+          {
+            "wall_us": 34124.0,
+            "timer_output": "wall min 34124 us  median 34124 us   fastest run: usr 115382 sys 57269 faults 5160   all: 34124"
+          },
+          {
+            "wall_us": 53825.0,
+            "timer_output": "wall min 53825 us  median 53825 us   fastest run: usr 294324 sys 29588 faults 5160   all: 53825"
+          },
+          {
+            "wall_us": 79634.0,
+            "timer_output": "wall min 79634 us  median 79634 us   fastest run: usr 461719 sys 35999 faults 5157   all: 79634"
+          },
+          {
+            "wall_us": 47830.0,
+            "timer_output": "wall min 47830 us  median 47830 us   fastest run: usr 245092 sys 25690 faults 5161   all: 47830"
+          },
+          {
+            "wall_us": 65872.0,
+            "timer_output": "wall min 65872 us  median 65872 us   fastest run: usr 413056 sys 25550 faults 5159   all: 65872"
+          }
+        ],
+        "persistent:1": [
+          {
+            "wall_us": 71462.0,
+            "timer_output": "wall min 71462 us  median 71462 us   fastest run: usr 47574 sys 23787 faults 5122   all: 71462"
+          },
+          {
+            "wall_us": 76228.0,
+            "timer_output": "wall min 76228 us  median 76228 us   fastest run: usr 59308 sys 16820 faults 5120   all: 76228"
+          },
+          {
+            "wall_us": 86183.0,
+            "timer_output": "wall min 86183 us  median 86183 us   fastest run: usr 67411 sys 18627 faults 5116   all: 86183"
+          },
+          {
+            "wall_us": 71090.0,
+            "timer_output": "wall min 71090 us  median 71090 us   fastest run: usr 39443 sys 31554 faults 5120   all: 71090"
+          },
+          {
+            "wall_us": 71513.0,
+            "timer_output": "wall min 71513 us  median 71513 us   fastest run: usr 43603 sys 27810 faults 5120   all: 71513"
+          },
+          {
+            "wall_us": 71612.0,
+            "timer_output": "wall min 71612 us  median 71612 us   fastest run: usr 47753 sys 23767 faults 5120   all: 71612"
+          },
+          {
+            "wall_us": 71934.0,
+            "timer_output": "wall min 71934 us  median 71934 us   fastest run: usr 39905 sys 31927 faults 5118   all: 71934"
+          },
+          {
+            "wall_us": 75606.0,
+            "timer_output": "wall min 75606 us  median 75606 us   fastest run: usr 51099 sys 24406 faults 5117   all: 75606"
+          },
+          {
+            "wall_us": 71425.0,
+            "timer_output": "wall min 71425 us  median 71425 us   fastest run: usr 55484 sys 15861 faults 5122   all: 71425"
+          },
+          {
+            "wall_us": 72604.0,
+            "timer_output": "wall min 72604 us  median 72604 us   fastest run: usr 48496 sys 24028 faults 5121   all: 72604"
+          },
+          {
+            "wall_us": 72363.0,
+            "timer_output": "wall min 72363 us  median 72363 us   fastest run: usr 56122 sys 16144 faults 5114   all: 72363"
+          },
+          {
+            "wall_us": 72759.0,
+            "timer_output": "wall min 72759 us  median 72759 us   fastest run: usr 44180 sys 28492 faults 5115   all: 72759"
+          },
+          {
+            "wall_us": 72395.0,
+            "timer_output": "wall min 72395 us  median 72395 us   fastest run: usr 60165 sys 12143 faults 5117   all: 72395"
+          },
+          {
+            "wall_us": 73171.0,
+            "timer_output": "wall min 73171 us  median 73171 us   fastest run: usr 52818 sys 20139 faults 5119   all: 73171"
+          },
+          {
+            "wall_us": 71484.0,
+            "timer_output": "wall min 71484 us  median 71484 us   fastest run: usr 47594 sys 23797 faults 5115   all: 71484"
+          }
+        ],
+        "persistent:4": [
+          {
+            "wall_us": 49907.0,
+            "timer_output": "wall min 49907 us  median 49907 us   fastest run: usr 140077 sys 19996 faults 5189   all: 49907"
+          },
+          {
+            "wall_us": 34258.0,
+            "timer_output": "wall min 34258 us  median 34258 us   fastest run: usr 75759 sys 27999 faults 5191   all: 34258"
+          },
+          {
+            "wall_us": 33266.0,
+            "timer_output": "wall min 33266 us  median 33266 us   fastest run: usr 76637 sys 17417 faults 5188   all: 33266"
+          },
+          {
+            "wall_us": 34052.0,
+            "timer_output": "wall min 34052 us  median 34052 us   fastest run: usr 88778 sys 15518 faults 5196   all: 34052"
+          },
+          {
+            "wall_us": 36488.0,
+            "timer_output": "wall min 36488 us  median 36488 us   fastest run: usr 83313 sys 26109 faults 5187   all: 36488"
+          },
+          {
+            "wall_us": 61933.0,
+            "timer_output": "wall min 61933 us  median 61933 us   fastest run: usr 169376 sys 43663 faults 5188   all: 61933"
+          },
+          {
+            "wall_us": 49256.0,
+            "timer_output": "wall min 49256 us  median 49256 us   fastest run: usr 129166 sys 37069 faults 5191   all: 49256"
+          },
+          {
+            "wall_us": 47520.0,
+            "timer_output": "wall min 47520 us  median 47520 us   fastest run: usr 117007 sys 36185 faults 5190   all: 47520"
+          },
+          {
+            "wall_us": 53155.0,
+            "timer_output": "wall min 53155 us  median 53155 us   fastest run: usr 145769 sys 30700 faults 5193   all: 53155"
+          },
+          {
+            "wall_us": 37788.0,
+            "timer_output": "wall min 37788 us  median 37788 us   fastest run: usr 107782 sys 14344 faults 5192   all: 37788"
+          },
+          {
+            "wall_us": 50511.0,
+            "timer_output": "wall min 50511 us  median 50511 us   fastest run: usr 136762 sys 32887 faults 5186   all: 50511"
+          },
+          {
+            "wall_us": 34809.0,
+            "timer_output": "wall min 34809 us  median 34809 us   fastest run: usr 87392 sys 15936 faults 5185   all: 34809"
+          },
+          {
+            "wall_us": 61642.0,
+            "timer_output": "wall min 61642 us  median 61642 us   fastest run: usr 190685 sys 23513 faults 5188   all: 61642"
+          },
+          {
+            "wall_us": 47474.0,
+            "timer_output": "wall min 47474 us  median 47474 us   fastest run: usr 141112 sys 14761 faults 5191   all: 47474"
+          },
+          {
+            "wall_us": 33549.0,
+            "timer_output": "wall min 33549 us  median 33549 us   fastest run: usr 68077 sys 30274 faults 5192   all: 33549"
+          }
+        ],
+        "persistent:all": [
+          {
+            "wall_us": 24531.0,
+            "timer_output": "wall min 24531 us  median 24531 us   fastest run: usr 61359 sys 46088 faults 5228   all: 24531"
+          },
+          {
+            "wall_us": 43371.0,
+            "timer_output": "wall min 43371 us  median 43371 us   fastest run: usr 229559 sys 41249 faults 5222   all: 43371"
+          },
+          {
+            "wall_us": 24716.0,
+            "timer_output": "wall min 24716 us  median 24716 us   fastest run: usr 91032 sys 28218 faults 5231   all: 24716"
+          },
+          {
+            "wall_us": 27290.0,
+            "timer_output": "wall min 27290 us  median 27290 us   fastest run: usr 112158 sys 30745 faults 5227   all: 27290"
+          },
+          {
+            "wall_us": 30342.0,
+            "timer_output": "wall min 30342 us  median 30342 us   fastest run: usr 163292 sys 14199 faults 5230   all: 30342"
+          },
+          {
+            "wall_us": 30455.0,
+            "timer_output": "wall min 30455 us  median 30455 us   fastest run: usr 130177 sys 45798 faults 5226   all: 30455"
+          },
+          {
+            "wall_us": 41228.0,
+            "timer_output": "wall min 41228 us  median 41228 us   fastest run: usr 232827 sys 28490 faults 5225   all: 41228"
+          },
+          {
+            "wall_us": 31640.0,
+            "timer_output": "wall min 31640 us  median 31640 us   fastest run: usr 119567 sys 41079 faults 5223   all: 31640"
+          },
+          {
+            "wall_us": 30115.0,
+            "timer_output": "wall min 30115 us  median 30115 us   fastest run: usr 122629 sys 47806 faults 5226   all: 30115"
+          },
+          {
+            "wall_us": 30337.0,
+            "timer_output": "wall min 30337 us  median 30337 us   fastest run: usr 147304 sys 24135 faults 5225   all: 30337"
+          },
+          {
+            "wall_us": 48859.0,
+            "timer_output": "wall min 48859 us  median 48859 us   fastest run: usr 270117 sys 23463 faults 5224   all: 48859"
+          },
+          {
+            "wall_us": 62829.0,
+            "timer_output": "wall min 62829 us  median 62829 us   fastest run: usr 354282 sys 36730 faults 5223   all: 62829"
+          },
+          {
+            "wall_us": 33115.0,
+            "timer_output": "wall min 33115 us  median 33115 us   fastest run: usr 154715 sys 25014 faults 5222   all: 33115"
+          },
+          {
+            "wall_us": 58411.0,
+            "timer_output": "wall min 58411 us  median 58411 us   fastest run: usr 321318 sys 43537 faults 5228   all: 58411"
+          },
+          {
+            "wall_us": 57145.0,
+            "timer_output": "wall min 57145 us  median 57145 us   fastest run: usr 312289 sys 50225 faults 5228   all: 57145"
+          }
+        ],
+        "packed:1": [
+          {
+            "wall_us": 315269.0,
+            "timer_output": "wall min 315269 us  median 315269 us   fastest run: usr 295212 sys 19946 faults 5121   all: 315269"
+          },
+          {
+            "wall_us": 318755.0,
+            "timer_output": "wall min 318755 us  median 318755 us   fastest run: usr 302583 sys 16026 faults 5121   all: 318755"
+          },
+          {
+            "wall_us": 317166.0,
+            "timer_output": "wall min 317166 us  median 317166 us   fastest run: usr 300833 sys 16130 faults 5121   all: 317166"
+          },
+          {
+            "wall_us": 316035.0,
+            "timer_output": "wall min 316035 us  median 316035 us   fastest run: usr 296122 sys 19792 faults 5120   all: 316035"
+          },
+          {
+            "wall_us": 314912.0,
+            "timer_output": "wall min 314912 us  median 314912 us   fastest run: usr 298612 sys 16148 faults 5114   all: 314912"
+          },
+          {
+            "wall_us": 314322.0,
+            "timer_output": "wall min 314322 us  median 314322 us   fastest run: usr 298295 sys 15915 faults 5117   all: 314322"
+          },
+          {
+            "wall_us": 317671.0,
+            "timer_output": "wall min 317671 us  median 317671 us   fastest run: usr 277073 sys 40455 faults 5117   all: 317671"
+          },
+          {
+            "wall_us": 315413.0,
+            "timer_output": "wall min 315413 us  median 315413 us   fastest run: usr 295078 sys 20225 faults 5114   all: 315413"
+          },
+          {
+            "wall_us": 316395.0,
+            "timer_output": "wall min 316395 us  median 316395 us   fastest run: usr 284131 sys 32104 faults 5116   all: 316395"
+          },
+          {
+            "wall_us": 327251.0,
+            "timer_output": "wall min 327251 us  median 327251 us   fastest run: usr 308016 sys 19133 faults 5121   all: 327251"
+          },
+          {
+            "wall_us": 316648.0,
+            "timer_output": "wall min 316648 us  median 316648 us   fastest run: usr 284443 sys 32064 faults 5118   all: 316648"
+          },
+          {
+            "wall_us": 316195.0,
+            "timer_output": "wall min 316195 us  median 316195 us   fastest run: usr 296267 sys 19799 faults 5121   all: 316195"
+          },
+          {
+            "wall_us": 315746.0,
+            "timer_output": "wall min 315746 us  median 315746 us   fastest run: usr 291619 sys 24021 faults 5122   all: 315746"
+          },
+          {
+            "wall_us": 316076.0,
+            "timer_output": "wall min 316076 us  median 316076 us   fastest run: usr 303396 sys 12042 faults 5121   all: 316076"
+          },
+          {
+            "wall_us": 315930.0,
+            "timer_output": "wall min 315930 us  median 315930 us   fastest run: usr 283647 sys 32053 faults 5120   all: 315930"
+          }
+        ],
+        "packed:4": [
+          {
+            "wall_us": 161653.0,
+            "timer_output": "wall min 161653 us  median 161653 us   fastest run: usr 567101 sys 44125 faults 5189   all: 161653"
+          },
+          {
+            "wall_us": 164073.0,
+            "timer_output": "wall min 164073 us  median 164073 us   fastest run: usr 594414 sys 27876 faults 5188   all: 164073"
+          },
+          {
+            "wall_us": 214725.0,
+            "timer_output": "wall min 214725 us  median 214725 us   fastest run: usr 812399 sys 8413 faults 5191   all: 214725"
+          },
+          {
+            "wall_us": 175877.0,
+            "timer_output": "wall min 175877 us  median 175877 us   fastest run: usr 638229 sys 28155 faults 5192   all: 175877"
+          },
+          {
+            "wall_us": 156286.0,
+            "timer_output": "wall min 156286 us  median 156286 us   fastest run: usr 578400 sys 15913 faults 5194   all: 156286"
+          },
+          {
+            "wall_us": 155594.0,
+            "timer_output": "wall min 155594 us  median 155594 us   fastest run: usr 542648 sys 39820 faults 5190   all: 155594"
+          },
+          {
+            "wall_us": 215134.0,
+            "timer_output": "wall min 215134 us  median 215134 us   fastest run: usr 811165 sys 16576 faults 5183   all: 215134"
+          },
+          {
+            "wall_us": 168509.0,
+            "timer_output": "wall min 168509 us  median 168509 us   fastest run: usr 627663 sys 12002 faults 5189   all: 168509"
+          },
+          {
+            "wall_us": 157035.0,
+            "timer_output": "wall min 157035 us  median 157035 us   fastest run: usr 587978 sys 11951 faults 5191   all: 157035"
+          },
+          {
+            "wall_us": 168049.0,
+            "timer_output": "wall min 168049 us  median 168049 us   fastest run: usr 590619 sys 44170 faults 5192   all: 168049"
+          },
+          {
+            "wall_us": 201872.0,
+            "timer_output": "wall min 201872 us  median 201872 us   fastest run: usr 746915 sys 20618 faults 5190   all: 201872"
+          },
+          {
+            "wall_us": 157794.0,
+            "timer_output": "wall min 157794 us  median 157794 us   fastest run: usr 566565 sys 31593 faults 5189   all: 157794"
+          },
+          {
+            "wall_us": 176570.0,
+            "timer_output": "wall min 176570 us  median 176570 us   fastest run: usr 630630 sys 36144 faults 5189   all: 176570"
+          },
+          {
+            "wall_us": 180683.0,
+            "timer_output": "wall min 180683 us  median 180683 us   fastest run: usr 675233 sys 11783 faults 5192   all: 180683"
+          },
+          {
+            "wall_us": 179514.0,
+            "timer_output": "wall min 179514 us  median 179514 us   fastest run: usr 653550 sys 28099 faults 5191   all: 179514"
+          }
+        ],
+        "packed:all": [
+          {
+            "wall_us": 126967.0,
+            "timer_output": "wall min 126967 us  median 126967 us   fastest run: usr 872860 sys 59839 faults 5225   all: 126967"
+          },
+          {
+            "wall_us": 119255.0,
+            "timer_output": "wall min 119255 us  median 119255 us   fastest run: usr 816833 sys 47801 faults 5227   all: 119255"
+          },
+          {
+            "wall_us": 114733.0,
+            "timer_output": "wall min 114733 us  median 114733 us   fastest run: usr 817800 sys 25050 faults 5224   all: 114733"
+          },
+          {
+            "wall_us": 126570.0,
+            "timer_output": "wall min 126570 us  median 126570 us   fastest run: usr 873257 sys 55910 faults 5224   all: 126570"
+          },
+          {
+            "wall_us": 136649.0,
+            "timer_output": "wall min 136649 us  median 136649 us   fastest run: usr 981021 sys 33372 faults 5225   all: 136649"
+          },
+          {
+            "wall_us": 168617.0,
+            "timer_output": "wall min 168617 us  median 168617 us   fastest run: usr 1227866 sys 29200 faults 5224   all: 168617"
+          },
+          {
+            "wall_us": 136612.0,
+            "timer_output": "wall min 136612 us  median 136612 us   fastest run: usr 969133 sys 27763 faults 5229   all: 136612"
+          },
+          {
+            "wall_us": 139874.0,
+            "timer_output": "wall min 139874 us  median 139874 us   fastest run: usr 1034907 sys 7871 faults 5230   all: 139874"
+          },
+          {
+            "wall_us": 101487.0,
+            "timer_output": "wall min 101487 us  median 101487 us   fastest run: usr 723078 sys 15941 faults 5225   all: 101487"
+          },
+          {
+            "wall_us": 147876.0,
+            "timer_output": "wall min 147876 us  median 147876 us   fastest run: usr 1072854 sys 24205 faults 5223   all: 147876"
+          },
+          {
+            "wall_us": 126326.0,
+            "timer_output": "wall min 126326 us  median 126326 us   fastest run: usr 889775 sys 23452 faults 5227   all: 126326"
+          },
+          {
+            "wall_us": 133769.0,
+            "timer_output": "wall min 133769 us  median 133769 us   fastest run: usr 965966 sys 13966 faults 5228   all: 133769"
+          },
+          {
+            "wall_us": 128371.0,
+            "timer_output": "wall min 128371 us  median 128371 us   fastest run: usr 930845 sys 23780 faults 5228   all: 128371"
+          },
+          {
+            "wall_us": 159465.0,
+            "timer_output": "wall min 159465 us  median 159465 us   fastest run: usr 1144701 sys 40850 faults 5224   all: 159465"
+          },
+          {
+            "wall_us": 105286.0,
+            "timer_output": "wall min 105286 us  median 105286 us   fastest run: usr 729283 sys 23323 faults 5228   all: 105286"
+          }
+        ]
+      },
+      "binary_sha256": {
+        "c": "eb9651adf468b0f24f65444bfc0202ee705925c778babb48d85411ce12ce9d0b",
+        "omp": "957363e52e6924b6c0e83073df96eb55e05c6ea78b71ad980f453e24bcec0445",
+        "hand": "e2feb6e882b9577d238b71bdc51126161f74608f74efb204d81d9806df4116ca",
+        "st": "7e91ad45a3c6ea36f344342c3561ec5d81393661e6156338c0bbbd8133c87684",
+        "persistent": "1894608d0b3f6ef4fee52ab63044288553a8237d7f29bec3b3ca65bc6729365c",
+        "packed": "5c04f9e5a8e224f3eef382742cfbebb861f8ffb51e08ae3f9bf63025bf339823"
+      }
+    },
+    "idents": {
+      "input": "/home/exedev/simd-lang/build/audit3/fresh-j6nu59sc/suite/code256-b7ac6fee",
+      "input_bytes": 268435456,
+      "output_sha256": "ab6f15b3dec2948c8e8bd2374cd3f00ef6feed7817f485719110736a4a89ae16",
+      "median_GBps": {
+        "c:1": 0.7762243466291908,
+        "omp:1": 0.7828959708348524,
+        "omp:4": 1.027099195341167,
+        "omp:all": 1.2759309453190355,
+        "hand:1": 3.793390085354135,
+        "hand:4": 4.995542123383269,
+        "hand:all": 5.905650899810797,
+        "st:1": 3.1413963089957986,
+        "st:4": 4.618085502434324,
+        "st:all": 4.417599868345264,
+        "packed:1": 0.8979966881546331,
+        "packed:4": 1.7614915316521318,
+        "packed:all": 2.2259437119591357
+      },
+      "samples": {
+        "c:1": [
+          {
+            "wall_us": 391619.0,
+            "timer_output": "wall min 391619 us  median 391619 us   fastest run: usr 351442 sys 40039 faults 83   all: 391619"
+          },
+          {
+            "wall_us": 342553.0,
+            "timer_output": "wall min 342553 us  median 342553 us   fastest run: usr 314322 sys 28130 faults 81   all: 342553"
+          },
+          {
+            "wall_us": 346651.0,
+            "timer_output": "wall min 346651 us  median 346651 us   fastest run: usr 318480 sys 28076 faults 82   all: 346651"
+          },
+          {
+            "wall_us": 351131.0,
+            "timer_output": "wall min 351131 us  median 351131 us   fastest run: usr 306635 sys 44395 faults 83   all: 351131"
+          },
+          {
+            "wall_us": 332272.0,
+            "timer_output": "wall min 332272 us  median 332272 us   fastest run: usr 312157 sys 20010 faults 80   all: 332272"
+          },
+          {
+            "wall_us": 345822.0,
+            "timer_output": "wall min 345822 us  median 345822 us   fastest run: usr 297586 sys 48111 faults 80   all: 345822"
+          },
+          {
+            "wall_us": 329981.0,
+            "timer_output": "wall min 329981 us  median 329981 us   fastest run: usr 305663 sys 24132 faults 83   all: 329981"
+          },
+          {
+            "wall_us": 335536.0,
+            "timer_output": "wall min 335536 us  median 335536 us   fastest run: usr 295332 sys 40084 faults 80   all: 335536"
+          },
+          {
+            "wall_us": 344551.0,
+            "timer_output": "wall min 344551 us  median 344551 us   fastest run: usr 316435 sys 27996 faults 78   all: 344551"
+          },
+          {
+            "wall_us": 337581.0,
+            "timer_output": "wall min 337581 us  median 337581 us   fastest run: usr 309300 sys 28141 faults 82   all: 337581"
+          },
+          {
+            "wall_us": 351221.0,
+            "timer_output": "wall min 351221 us  median 351221 us   fastest run: usr 315171 sys 35947 faults 82   all: 351221"
+          },
+          {
+            "wall_us": 352111.0,
+            "timer_output": "wall min 352111 us  median 352111 us   fastest run: usr 343993 sys 8018 faults 81   all: 352111"
+          },
+          {
+            "wall_us": 334003.0,
+            "timer_output": "wall min 334003 us  median 334003 us   fastest run: usr 305645 sys 28226 faults 81   all: 334003"
+          },
+          {
+            "wall_us": 354819.0,
+            "timer_output": "wall min 354819 us  median 354819 us   fastest run: usr 334754 sys 19938 faults 82   all: 354819"
+          },
+          {
+            "wall_us": 350685.0,
+            "timer_output": "wall min 350685 us  median 350685 us   fastest run: usr 326671 sys 23911 faults 84   all: 350685"
+          }
+        ],
+        "omp:1": [
+          {
+            "wall_us": 369441.0,
+            "timer_output": "wall min 369441 us  median 369441 us   fastest run: usr 357255 sys 12058 faults 4181   all: 369441"
+          },
+          {
+            "wall_us": 337070.0,
+            "timer_output": "wall min 337070 us  median 337070 us   fastest run: usr 324914 sys 12043 faults 4176   all: 337070"
+          },
+          {
+            "wall_us": 341516.0,
+            "timer_output": "wall min 341516 us  median 341516 us   fastest run: usr 325300 sys 16074 faults 4178   all: 341516"
+          },
+          {
+            "wall_us": 344093.0,
+            "timer_output": "wall min 344093 us  median 344093 us   fastest run: usr 323958 sys 20000 faults 4180   all: 344093"
+          },
+          {
+            "wall_us": 341881.0,
+            "timer_output": "wall min 341881 us  median 341881 us   fastest run: usr 321892 sys 19874 faults 4182   all: 341881"
+          },
+          {
+            "wall_us": 341251.0,
+            "timer_output": "wall min 341251 us  median 341251 us   fastest run: usr 325131 sys 16017 faults 4177   all: 341251"
+          },
+          {
+            "wall_us": 342875.0,
+            "timer_output": "wall min 342875 us  median 342875 us   fastest run: usr 330797 sys 11958 faults 4180   all: 342875"
+          },
+          {
+            "wall_us": 339954.0,
+            "timer_output": "wall min 339954 us  median 339954 us   fastest run: usr 315886 sys 23947 faults 4177   all: 339954"
+          },
+          {
+            "wall_us": 341174.0,
+            "timer_output": "wall min 341174 us  median 341174 us   fastest run: usr 317010 sys 24060 faults 4183   all: 341174"
+          },
+          {
+            "wall_us": 331452.0,
+            "timer_output": "wall min 331452 us  median 331452 us   fastest run: usr 319371 sys 11979 faults 4175   all: 331452"
+          },
+          {
+            "wall_us": 343191.0,
+            "timer_output": "wall min 343191 us  median 343191 us   fastest run: usr 319167 sys 23909 faults 4179   all: 343191"
+          },
+          {
+            "wall_us": 348411.0,
+            "timer_output": "wall min 348411 us  median 348411 us   fastest run: usr 320245 sys 28028 faults 4182   all: 348411"
+          },
+          {
+            "wall_us": 345940.0,
+            "timer_output": "wall min 345940 us  median 345940 us   fastest run: usr 321685 sys 24128 faults 4180   all: 345940"
+          },
+          {
+            "wall_us": 342911.0,
+            "timer_output": "wall min 342911 us  median 342911 us   fastest run: usr 330728 sys 12018 faults 4175   all: 342911"
+          },
+          {
+            "wall_us": 344542.0,
+            "timer_output": "wall min 344542 us  median 344542 us   fastest run: usr 304484 sys 39901 faults 4181   all: 344542"
+          }
+        ],
+        "omp:4": [
+          {
+            "wall_us": 283011.0,
+            "timer_output": "wall min 283011 us  median 283011 us   fastest run: usr 1028782 sys 23998 faults 4184   all: 283011"
+          },
+          {
+            "wall_us": 245703.0,
+            "timer_output": "wall min 245703 us  median 245703 us   fastest run: usr 927035 sys 15884 faults 4187   all: 245703"
+          },
+          {
+            "wall_us": 265248.0,
+            "timer_output": "wall min 265248 us  median 265248 us   fastest run: usr 953775 sys 15969 faults 4184   all: 265248"
+          },
+          {
+            "wall_us": 246161.0,
+            "timer_output": "wall min 246161 us  median 246161 us   fastest run: usr 932806 sys 19748 faults 4186   all: 246161"
+          },
+          {
+            "wall_us": 284833.0,
+            "timer_output": "wall min 284833 us  median 284833 us   fastest run: usr 1040501 sys 19860 faults 4184   all: 284833"
+          },
+          {
+            "wall_us": 275228.0,
+            "timer_output": "wall min 275228 us  median 275228 us   fastest run: usr 994173 sys 15810 faults 4185   all: 275228"
+          },
+          {
+            "wall_us": 261353.0,
+            "timer_output": "wall min 261353 us  median 261353 us   fastest run: usr 981643 sys 19710 faults 4191   all: 261353"
+          },
+          {
+            "wall_us": 274541.0,
+            "timer_output": "wall min 274541 us  median 274541 us   fastest run: usr 1009934 sys 11936 faults 4186   all: 274541"
+          },
+          {
+            "wall_us": 266381.0,
+            "timer_output": "wall min 266381 us  median 266381 us   fastest run: usr 975071 sys 16095 faults 4186   all: 266381"
+          },
+          {
+            "wall_us": 259956.0,
+            "timer_output": "wall min 259956 us  median 259956 us   fastest run: usr 931082 sys 27984 faults 4189   all: 259956"
+          },
+          {
+            "wall_us": 251993.0,
+            "timer_output": "wall min 251993 us  median 251993 us   fastest run: usr 956340 sys 11866 faults 4187   all: 251993"
+          },
+          {
+            "wall_us": 237498.0,
+            "timer_output": "wall min 237498 us  median 237498 us   fastest run: usr 899971 sys 11916 faults 4184   all: 237498"
+          },
+          {
+            "wall_us": 245062.0,
+            "timer_output": "wall min 245062 us  median 245062 us   fastest run: usr 916470 sys 23712 faults 4190   all: 245062"
+          },
+          {
+            "wall_us": 240985.0,
+            "timer_output": "wall min 240985 us  median 240985 us   fastest run: usr 905046 sys 23880 faults 4190   all: 240985"
+          },
+          {
+            "wall_us": 269159.0,
+            "timer_output": "wall min 269159 us  median 269159 us   fastest run: usr 974069 sys 31932 faults 4191   all: 269159"
+          }
+        ],
+        "omp:all": [
+          {
+            "wall_us": 230399.0,
+            "timer_output": "wall min 230399 us  median 230399 us   fastest run: usr 1305938 sys 32232 faults 4198   all: 230399"
+          },
+          {
+            "wall_us": 215284.0,
+            "timer_output": "wall min 215284 us  median 215284 us   fastest run: usr 1364557 sys 19794 faults 4197   all: 215284"
+          },
+          {
+            "wall_us": 180487.0,
+            "timer_output": "wall min 180487 us  median 180487 us   fastest run: usr 1158686 sys 24325 faults 4194   all: 180487"
+          },
+          {
+            "wall_us": 229193.0,
+            "timer_output": "wall min 229193 us  median 229193 us   fastest run: usr 1324126 sys 27691 faults 4197   all: 229193"
+          },
+          {
+            "wall_us": 240662.0,
+            "timer_output": "wall min 240662 us  median 240662 us   fastest run: usr 1442802 sys 34808 faults 4197   all: 240662"
+          },
+          {
+            "wall_us": 140633.0,
+            "timer_output": "wall min 140633 us  median 140633 us   fastest run: usr 964178 sys 27423 faults 4199   all: 140633"
+          },
+          {
+            "wall_us": 161387.0,
+            "timer_output": "wall min 161387 us  median 161387 us   fastest run: usr 1021465 sys 35575 faults 4196   all: 161387"
+          },
+          {
+            "wall_us": 217873.0,
+            "timer_output": "wall min 217873 us  median 217873 us   fastest run: usr 1181101 sys 20220 faults 4199   all: 217873"
+          },
+          {
+            "wall_us": 244324.0,
+            "timer_output": "wall min 244324 us  median 244324 us   fastest run: usr 1471029 sys 24006 faults 4195   all: 244324"
+          },
+          {
+            "wall_us": 214454.0,
+            "timer_output": "wall min 214454 us  median 214454 us   fastest run: usr 1230982 sys 15787 faults 4191   all: 214454"
+          },
+          {
+            "wall_us": 193666.0,
+            "timer_output": "wall min 193666 us  median 193666 us   fastest run: usr 1278588 sys 19787 faults 4192   all: 193666"
+          },
+          {
+            "wall_us": 210384.0,
+            "timer_output": "wall min 210384 us  median 210384 us   fastest run: usr 1281637 sys 20423 faults 4197   all: 210384"
+          },
+          {
+            "wall_us": 173309.0,
+            "timer_output": "wall min 173309 us  median 173309 us   fastest run: usr 1124458 sys 16046 faults 4200   all: 173309"
+          },
+          {
+            "wall_us": 172735.0,
+            "timer_output": "wall min 172735 us  median 172735 us   fastest run: usr 1100743 sys 24162 faults 4194   all: 172735"
+          },
+          {
+            "wall_us": 171289.0,
+            "timer_output": "wall min 171289 us  median 171289 us   fastest run: usr 1177375 sys 19368 faults 4195   all: 171289"
+          }
+        ],
+        "hand:1": [
+          {
+            "wall_us": 73779.0,
+            "timer_output": "wall min 73779 us  median 73779 us   fastest run: usr 57308 sys 16383 faults 4178   all: 73779"
+          },
+          {
+            "wall_us": 71232.0,
+            "timer_output": "wall min 71232 us  median 71232 us   fastest run: usr 50005 sys 20957 faults 4178   all: 71232"
+          },
+          {
+            "wall_us": 68754.0,
+            "timer_output": "wall min 68754 us  median 68754 us   fastest run: usr 53388 sys 15271 faults 4179   all: 68754"
+          },
+          {
+            "wall_us": 69409.0,
+            "timer_output": "wall min 69409 us  median 69409 us   fastest run: usr 48950 sys 20379 faults 4177   all: 69409"
+          },
+          {
+            "wall_us": 69610.0,
+            "timer_output": "wall min 69610 us  median 69610 us   fastest run: usr 42486 sys 27036 faults 4180   all: 69610"
+          },
+          {
+            "wall_us": 67608.0,
+            "timer_output": "wall min 67608 us  median 67608 us   fastest run: usr 55588 sys 11911 faults 4183   all: 67608"
+          },
+          {
+            "wall_us": 71885.0,
+            "timer_output": "wall min 71885 us  median 71885 us   fastest run: usr 47946 sys 23843 faults 4182   all: 71885"
+          },
+          {
+            "wall_us": 70899.0,
+            "timer_output": "wall min 70899 us  median 70899 us   fastest run: usr 58964 sys 11835 faults 4176   all: 70899"
+          },
+          {
+            "wall_us": 69738.0,
+            "timer_output": "wall min 69738 us  median 69738 us   fastest run: usr 54163 sys 15475 faults 4176   all: 69738"
+          },
+          {
+            "wall_us": 72399.0,
+            "timer_output": "wall min 72399 us  median 72399 us   fastest run: usr 60214 sys 12073 faults 4181   all: 72399"
+          },
+          {
+            "wall_us": 70764.0,
+            "timer_output": "wall min 70764 us  median 70764 us   fastest run: usr 47186 sys 23493 faults 4179   all: 70764"
+          },
+          {
+            "wall_us": 71187.0,
+            "timer_output": "wall min 71187 us  median 71187 us   fastest run: usr 54405 sys 16695 faults 4181   all: 71187"
+          },
+          {
+            "wall_us": 69050.0,
+            "timer_output": "wall min 69050 us  median 69050 us   fastest run: usr 52741 sys 16228 faults 4174   all: 69050"
+          },
+          {
+            "wall_us": 69939.0,
+            "timer_output": "wall min 69939 us  median 69939 us   fastest run: usr 57514 sys 12340 faults 4182   all: 69939"
+          },
+          {
+            "wall_us": 71005.0,
+            "timer_output": "wall min 71005 us  median 71005 us   fastest run: usr 47270 sys 23635 faults 4181   all: 71005"
+          }
+        ],
+        "hand:4": [
+          {
+            "wall_us": 64257.0,
+            "timer_output": "wall min 64257 us  median 64257 us   fastest run: usr 156439 sys 43157 faults 4189   all: 64257"
+          },
+          {
+            "wall_us": 37846.0,
+            "timer_output": "wall min 37846 us  median 37846 us   fastest run: usr 97251 sys 18744 faults 4191   all: 37846"
+          },
+          {
+            "wall_us": 31765.0,
+            "timer_output": "wall min 31765 us  median 31765 us   fastest run: usr 84971 sys 11083 faults 4192   all: 31765"
+          },
+          {
+            "wall_us": 63002.0,
+            "timer_output": "wall min 63002 us  median 63002 us   fastest run: usr 146454 sys 47804 faults 4191   all: 63002"
+          },
+          {
+            "wall_us": 56533.0,
+            "timer_output": "wall min 56533 us  median 56533 us   fastest run: usr 145544 sys 35273 faults 4189   all: 56533"
+          },
+          {
+            "wall_us": 53735.0,
+            "timer_output": "wall min 53735 us  median 53735 us   fastest run: usr 149392 sys 20203 faults 4187   all: 53735"
+          },
+          {
+            "wall_us": 63810.0,
+            "timer_output": "wall min 63810 us  median 63810 us   fastest run: usr 168475 sys 34568 faults 4193   all: 63810"
+          },
+          {
+            "wall_us": 31703.0,
+            "timer_output": "wall min 31703 us  median 31703 us   fastest run: usr 65108 sys 24415 faults 4191   all: 31703"
+          },
+          {
+            "wall_us": 31764.0,
+            "timer_output": "wall min 31764 us  median 31764 us   fastest run: usr 78586 sys 14294 faults 4190   all: 31764"
+          },
+          {
+            "wall_us": 55013.0,
+            "timer_output": "wall min 55013 us  median 55013 us   fastest run: usr 145399 sys 28976 faults 4192   all: 55013"
+          },
+          {
+            "wall_us": 32473.0,
+            "timer_output": "wall min 32473 us  median 32473 us   fastest run: usr 83182 sys 15138 faults 4191   all: 32473"
+          },
+          {
+            "wall_us": 60394.0,
+            "timer_output": "wall min 60394 us  median 60394 us   fastest run: usr 180057 sys 8015 faults 4187   all: 60394"
+          },
+          {
+            "wall_us": 59886.0,
+            "timer_output": "wall min 59886 us  median 59886 us   fastest run: usr 168740 sys 23576 faults 4192   all: 59886"
+          },
+          {
+            "wall_us": 32232.0,
+            "timer_output": "wall min 32232 us  median 32232 us   fastest run: usr 67628 sys 30136 faults 4189   all: 32232"
+          },
+          {
+            "wall_us": 32970.0,
+            "timer_output": "wall min 32970 us  median 32970 us   fastest run: usr 85235 sys 11167 faults 4190   all: 32970"
+          }
+        ],
+        "hand:all": [
+          {
+            "wall_us": 42546.0,
+            "timer_output": "wall min 42546 us  median 42546 us   fastest run: usr 179567 sys 40416 faults 4202   all: 42546"
+          },
+          {
+            "wall_us": 46954.0,
+            "timer_output": "wall min 46954 us  median 46954 us   fastest run: usr 211495 sys 34943 faults 4195   all: 46954"
+          },
+          {
+            "wall_us": 44088.0,
+            "timer_output": "wall min 44088 us  median 44088 us   fastest run: usr 193657 sys 33993 faults 4202   all: 44088"
+          },
+          {
+            "wall_us": 57451.0,
+            "timer_output": "wall min 57451 us  median 57451 us   fastest run: usr 290797 sys 40606 faults 4201   all: 57451"
+          },
+          {
+            "wall_us": 56620.0,
+            "timer_output": "wall min 56620 us  median 56620 us   fastest run: usr 302910 sys 31051 faults 4203   all: 56620"
+          },
+          {
+            "wall_us": 45040.0,
+            "timer_output": "wall min 45040 us  median 45040 us   fastest run: usr 198692 sys 31688 faults 4200   all: 45040"
+          },
+          {
+            "wall_us": 47628.0,
+            "timer_output": "wall min 47628 us  median 47628 us   fastest run: usr 217311 sys 24207 faults 4202   all: 47628"
+          },
+          {
+            "wall_us": 55866.0,
+            "timer_output": "wall min 55866 us  median 55866 us   fastest run: usr 290189 sys 37253 faults 4198   all: 55866"
+          },
+          {
+            "wall_us": 29499.0,
+            "timer_output": "wall min 29499 us  median 29499 us   fastest run: usr 144017 sys 15167 faults 4200   all: 29499"
+          },
+          {
+            "wall_us": 57831.0,
+            "timer_output": "wall min 57831 us  median 57831 us   fastest run: usr 274725 sys 51765 faults 4203   all: 57831"
+          },
+          {
+            "wall_us": 40975.0,
+            "timer_output": "wall min 40975 us  median 40975 us   fastest run: usr 197309 sys 32270 faults 4205   all: 40975"
+          },
+          {
+            "wall_us": 51616.0,
+            "timer_output": "wall min 51616 us  median 51616 us   fastest run: usr 295236 sys 23047 faults 4204   all: 51616"
+          },
+          {
+            "wall_us": 45454.0,
+            "timer_output": "wall min 45454 us  median 45454 us   fastest run: usr 194880 sys 36667 faults 4202   all: 45454"
+          },
+          {
+            "wall_us": 21459.0,
+            "timer_output": "wall min 21459 us  median 21459 us   fastest run: usr 68395 sys 20595 faults 4204   all: 21459"
+          },
+          {
+            "wall_us": 42107.0,
+            "timer_output": "wall min 42107 us  median 42107 us   fastest run: usr 188387 sys 37638 faults 4204   all: 42107"
+          }
+        ],
+        "st:1": [
+          {
+            "wall_us": 89121.0,
+            "timer_output": "wall min 89121 us  median 89121 us   fastest run: usr 68800 sys 20235 faults 4116   all: 89121"
+          },
+          {
+            "wall_us": 84514.0,
+            "timer_output": "wall min 84514 us  median 84514 us   fastest run: usr 72243 sys 12195 faults 4117   all: 84514"
+          },
+          {
+            "wall_us": 88887.0,
+            "timer_output": "wall min 88887 us  median 88887 us   fastest run: usr 65609 sys 23172 faults 4119   all: 88887"
+          },
+          {
+            "wall_us": 84750.0,
+            "timer_output": "wall min 84750 us  median 84750 us   fastest run: usr 64456 sys 20133 faults 4118   all: 84750"
+          },
+          {
+            "wall_us": 88053.0,
+            "timer_output": "wall min 88053 us  median 88053 us   fastest run: usr 61400 sys 26556 faults 4118   all: 88053"
+          },
+          {
+            "wall_us": 84242.0,
+            "timer_output": "wall min 84242 us  median 84242 us   fastest run: usr 76110 sys 8011 faults 4116   all: 84242"
+          },
+          {
+            "wall_us": 82318.0,
+            "timer_output": "wall min 82318 us  median 82318 us   fastest run: usr 65753 sys 16454 faults 4118   all: 82318"
+          },
+          {
+            "wall_us": 85858.0,
+            "timer_output": "wall min 85858 us  median 85858 us   fastest run: usr 52951 sys 32800 faults 4117   all: 85858"
+          },
+          {
+            "wall_us": 84561.0,
+            "timer_output": "wall min 84561 us  median 84561 us   fastest run: usr 72943 sys 11517 faults 4118   all: 84561"
+          },
+          {
+            "wall_us": 82324.0,
+            "timer_output": "wall min 82324 us  median 82324 us   fastest run: usr 62656 sys 19573 faults 4117   all: 82324"
+          },
+          {
+            "wall_us": 89283.0,
+            "timer_output": "wall min 89283 us  median 89283 us   fastest run: usr 72673 sys 16514 faults 4118   all: 89283"
+          },
+          {
+            "wall_us": 85451.0,
+            "timer_output": "wall min 85451 us  median 85451 us   fastest run: usr 73162 sys 12193 faults 4118   all: 85451"
+          },
+          {
+            "wall_us": 86724.0,
+            "timer_output": "wall min 86724 us  median 86724 us   fastest run: usr 58972 sys 27672 faults 4118   all: 86724"
+          },
+          {
+            "wall_us": 86945.0,
+            "timer_output": "wall min 86945 us  median 86945 us   fastest run: usr 74983 sys 11866 faults 4117   all: 86945"
+          },
+          {
+            "wall_us": 83351.0,
+            "timer_output": "wall min 83351 us  median 83351 us   fastest run: usr 71352 sys 11912 faults 4117   all: 83351"
+          }
+        ],
+        "st:4": [
+          {
+            "wall_us": 83945.0,
+            "timer_output": "wall min 83945 us  median 83945 us   fastest run: usr 274667 sys 24033 faults 4130   all: 83945"
+          },
+          {
+            "wall_us": 58127.0,
+            "timer_output": "wall min 58127 us  median 58127 us   fastest run: usr 173811 sys 27826 faults 4129   all: 58127"
+          },
+          {
+            "wall_us": 44463.0,
+            "timer_output": "wall min 44463 us  median 44463 us   fastest run: usr 134483 sys 18733 faults 4129   all: 44463"
+          },
+          {
+            "wall_us": 68013.0,
+            "timer_output": "wall min 68013 us  median 68013 us   fastest run: usr 222535 sys 15291 faults 4131   all: 68013"
+          },
+          {
+            "wall_us": 80912.0,
+            "timer_output": "wall min 80912 us  median 80912 us   fastest run: usr 266437 sys 27972 faults 4128   all: 80912"
+          },
+          {
+            "wall_us": 86438.0,
+            "timer_output": "wall min 86438 us  median 86438 us   fastest run: usr 276959 sys 28066 faults 4129   all: 86438"
+          },
+          {
+            "wall_us": 45146.0,
+            "timer_output": "wall min 45146 us  median 45146 us   fastest run: usr 125285 sys 18268 faults 4130   all: 45146"
+          },
+          {
+            "wall_us": 83074.0,
+            "timer_output": "wall min 83074 us  median 83074 us   fastest run: usr 277908 sys 27471 faults 4129   all: 83074"
+          },
+          {
+            "wall_us": 76951.0,
+            "timer_output": "wall min 76951 us  median 76951 us   fastest run: usr 263856 sys 15891 faults 4129   all: 76951"
+          },
+          {
+            "wall_us": 49974.0,
+            "timer_output": "wall min 49974 us  median 49974 us   fastest run: usr 153476 sys 18720 faults 4129   all: 49974"
+          },
+          {
+            "wall_us": 44039.0,
+            "timer_output": "wall min 44039 us  median 44039 us   fastest run: usr 105244 sys 37487 faults 4130   all: 44039"
+          },
+          {
+            "wall_us": 44057.0,
+            "timer_output": "wall min 44057 us  median 44057 us   fastest run: usr 121742 sys 22877 faults 4130   all: 44057"
+          },
+          {
+            "wall_us": 55586.0,
+            "timer_output": "wall min 55586 us  median 55586 us   fastest run: usr 173086 sys 23704 faults 4130   all: 55586"
+          },
+          {
+            "wall_us": 47964.0,
+            "timer_output": "wall min 47964 us  median 47964 us   fastest run: usr 149328 sys 15750 faults 4129   all: 47964"
+          },
+          {
+            "wall_us": 66429.0,
+            "timer_output": "wall min 66429 us  median 66429 us   fastest run: usr 225016 sys 11453 faults 4126   all: 66429"
+          }
+        ],
+        "st:all": [
+          {
+            "wall_us": 45455.0,
+            "timer_output": "wall min 45455 us  median 45455 us   fastest run: usr 254719 sys 40287 faults 4145   all: 45455"
+          },
+          {
+            "wall_us": 60765.0,
+            "timer_output": "wall min 60765 us  median 60765 us   fastest run: usr 341671 sys 30220 faults 4144   all: 60765"
+          },
+          {
+            "wall_us": 71119.0,
+            "timer_output": "wall min 71119 us  median 71119 us   fastest run: usr 442214 sys 35069 faults 4143   all: 71119"
+          },
+          {
+            "wall_us": 46215.0,
+            "timer_output": "wall min 46215 us  median 46215 us   fastest run: usr 262949 sys 27129 faults 4146   all: 46215"
+          },
+          {
+            "wall_us": 70909.0,
+            "timer_output": "wall min 70909 us  median 70909 us   fastest run: usr 468782 sys 23718 faults 4147   all: 70909"
+          },
+          {
+            "wall_us": 46462.0,
+            "timer_output": "wall min 46462 us  median 46462 us   fastest run: usr 247313 sys 38517 faults 4146   all: 46462"
+          },
+          {
+            "wall_us": 40263.0,
+            "timer_output": "wall min 40263 us  median 40263 us   fastest run: usr 237691 sys 23752 faults 4146   all: 40263"
+          },
+          {
+            "wall_us": 71474.0,
+            "timer_output": "wall min 71474 us  median 71474 us   fastest run: usr 439724 sys 47823 faults 4144   all: 71474"
+          },
+          {
+            "wall_us": 66083.0,
+            "timer_output": "wall min 66083 us  median 66083 us   fastest run: usr 406579 sys 14385 faults 4146   all: 66083"
+          },
+          {
+            "wall_us": 77692.0,
+            "timer_output": "wall min 77692 us  median 77692 us   fastest run: usr 425989 sys 34491 faults 4144   all: 77692"
+          },
+          {
+            "wall_us": 50224.0,
+            "timer_output": "wall min 50224 us  median 50224 us   fastest run: usr 323772 sys 15056 faults 4145   all: 50224"
+          },
+          {
+            "wall_us": 76460.0,
+            "timer_output": "wall min 76460 us  median 76460 us   fastest run: usr 517434 sys 15959 faults 4144   all: 76460"
+          },
+          {
+            "wall_us": 28555.0,
+            "timer_output": "wall min 28555 us  median 28555 us   fastest run: usr 126704 sys 34363 faults 4145   all: 28555"
+          },
+          {
+            "wall_us": 63365.0,
+            "timer_output": "wall min 63365 us  median 63365 us   fastest run: usr 327018 sys 56398 faults 4145   all: 63365"
+          },
+          {
+            "wall_us": 57885.0,
+            "timer_output": "wall min 57885 us  median 57885 us   fastest run: usr 343619 sys 19805 faults 4146   all: 57885"
+          }
+        ],
+        "packed:1": [
+          {
+            "wall_us": 302860.0,
+            "timer_output": "wall min 302860 us  median 302860 us   fastest run: usr 274814 sys 27947 faults 4182   all: 302860"
+          },
+          {
+            "wall_us": 299673.0,
+            "timer_output": "wall min 299673 us  median 299673 us   fastest run: usr 275543 sys 24014 faults 4181   all: 299673"
+          },
+          {
+            "wall_us": 307700.0,
+            "timer_output": "wall min 307700 us  median 307700 us   fastest run: usr 283008 sys 24564 faults 4181   all: 307700"
+          },
+          {
+            "wall_us": 297990.0,
+            "timer_output": "wall min 297990 us  median 297990 us   fastest run: usr 250197 sys 47656 faults 4176   all: 297990"
+          },
+          {
+            "wall_us": 296728.0,
+            "timer_output": "wall min 296728 us  median 296728 us   fastest run: usr 276561 sys 20045 faults 4178   all: 296728"
+          },
+          {
+            "wall_us": 298927.0,
+            "timer_output": "wall min 298927 us  median 298927 us   fastest run: usr 274841 sys 23929 faults 4178   all: 298927"
+          },
+          {
+            "wall_us": 297837.0,
+            "timer_output": "wall min 297837 us  median 297837 us   fastest run: usr 281671 sys 16060 faults 4179   all: 297837"
+          },
+          {
+            "wall_us": 301225.0,
+            "timer_output": "wall min 301225 us  median 301225 us   fastest run: usr 289143 sys 11983 faults 4180   all: 301225"
+          },
+          {
+            "wall_us": 299970.0,
+            "timer_output": "wall min 299970 us  median 299970 us   fastest run: usr 279795 sys 20058 faults 4176   all: 299970"
+          },
+          {
+            "wall_us": 298629.0,
+            "timer_output": "wall min 298629 us  median 298629 us   fastest run: usr 278619 sys 19909 faults 4181   all: 298629"
+          },
+          {
+            "wall_us": 299363.0,
+            "timer_output": "wall min 299363 us  median 299363 us   fastest run: usr 279249 sys 19988 faults 4175   all: 299363"
+          },
+          {
+            "wall_us": 300124.0,
+            "timer_output": "wall min 300124 us  median 300124 us   fastest run: usr 283974 sys 16034 faults 4176   all: 300124"
+          },
+          {
+            "wall_us": 298342.0,
+            "timer_output": "wall min 298342 us  median 298342 us   fastest run: usr 290267 sys 7952 faults 4174   all: 298342"
+          },
+          {
+            "wall_us": 298637.0,
+            "timer_output": "wall min 298637 us  median 298637 us   fastest run: usr 290465 sys 8068 faults 4179   all: 298637"
+          },
+          {
+            "wall_us": 297589.0,
+            "timer_output": "wall min 297589 us  median 297589 us   fastest run: usr 277650 sys 19834 faults 4178   all: 297589"
+          }
+        ],
+        "packed:4": [
+          {
+            "wall_us": 152391.0,
+            "timer_output": "wall min 152391 us  median 152391 us   fastest run: usr 556642 sys 19618 faults 4184   all: 152391"
+          },
+          {
+            "wall_us": 167313.0,
+            "timer_output": "wall min 167313 us  median 167313 us   fastest run: usr 601222 sys 15891 faults 4190   all: 167313"
+          },
+          {
+            "wall_us": 182673.0,
+            "timer_output": "wall min 182673 us  median 182673 us   fastest run: usr 637124 sys 15871 faults 4187   all: 182673"
+          },
+          {
+            "wall_us": 147909.0,
+            "timer_output": "wall min 147909 us  median 147909 us   fastest run: usr 541651 sys 19854 faults 4190   all: 147909"
+          },
+          {
+            "wall_us": 155960.0,
+            "timer_output": "wall min 155960 us  median 155960 us   fastest run: usr 561379 sys 27505 faults 4190   all: 155960"
+          },
+          {
+            "wall_us": 150390.0,
+            "timer_output": "wall min 150390 us  median 150390 us   fastest run: usr 551058 sys 19644 faults 4189   all: 150390"
+          },
+          {
+            "wall_us": 148016.0,
+            "timer_output": "wall min 148016 us  median 148016 us   fastest run: usr 543340 sys 15809 faults 4182   all: 148016"
+          },
+          {
+            "wall_us": 181734.0,
+            "timer_output": "wall min 181734 us  median 181734 us   fastest run: usr 624988 sys 23654 faults 4188   all: 181734"
+          },
+          {
+            "wall_us": 183996.0,
+            "timer_output": "wall min 183996 us  median 183996 us   fastest run: usr 648653 sys 19789 faults 4191   all: 183996"
+          },
+          {
+            "wall_us": 147837.0,
+            "timer_output": "wall min 147837 us  median 147837 us   fastest run: usr 541377 sys 15670 faults 4189   all: 147837"
+          },
+          {
+            "wall_us": 150843.0,
+            "timer_output": "wall min 150843 us  median 150843 us   fastest run: usr 540663 sys 35785 faults 4185   all: 150843"
+          },
+          {
+            "wall_us": 155586.0,
+            "timer_output": "wall min 155586 us  median 155586 us   fastest run: usr 573959 sys 20116 faults 4187   all: 155586"
+          },
+          {
+            "wall_us": 170042.0,
+            "timer_output": "wall min 170042 us  median 170042 us   fastest run: usr 597679 sys 23880 faults 4191   all: 170042"
+          },
+          {
+            "wall_us": 148498.0,
+            "timer_output": "wall min 148498 us  median 148498 us   fastest run: usr 551407 sys 11967 faults 4184   all: 148498"
+          },
+          {
+            "wall_us": 148337.0,
+            "timer_output": "wall min 148337 us  median 148337 us   fastest run: usr 543057 sys 19890 faults 4189   all: 148337"
+          }
+        ],
+        "packed:all": [
+          {
+            "wall_us": 134080.0,
+            "timer_output": "wall min 134080 us  median 134080 us   fastest run: usr 864636 sys 19947 faults 4197   all: 134080"
+          },
+          {
+            "wall_us": 131494.0,
+            "timer_output": "wall min 131494 us  median 131494 us   fastest run: usr 754032 sys 20425 faults 4200   all: 131494"
+          },
+          {
+            "wall_us": 136115.0,
+            "timer_output": "wall min 136115 us  median 136115 us   fastest run: usr 864273 sys 20417 faults 4196   all: 136115"
+          },
+          {
+            "wall_us": 111941.0,
+            "timer_output": "wall min 111941 us  median 111941 us   fastest run: usr 691391 sys 28713 faults 4198   all: 111941"
+          },
+          {
+            "wall_us": 106878.0,
+            "timer_output": "wall min 106878 us  median 106878 us   fastest run: usr 698021 sys 11540 faults 4198   all: 106878"
+          },
+          {
+            "wall_us": 117520.0,
+            "timer_output": "wall min 117520 us  median 117520 us   fastest run: usr 703264 sys 32039 faults 4193   all: 117520"
+          },
+          {
+            "wall_us": 138233.0,
+            "timer_output": "wall min 138233 us  median 138233 us   fastest run: usr 883156 sys 28390 faults 4193   all: 138233"
+          },
+          {
+            "wall_us": 117860.0,
+            "timer_output": "wall min 117860 us  median 117860 us   fastest run: usr 749806 sys 37160 faults 4194   all: 117860"
+          },
+          {
+            "wall_us": 122704.0,
+            "timer_output": "wall min 122704 us  median 122704 us   fastest run: usr 756247 sys 24023 faults 4192   all: 122704"
+          },
+          {
+            "wall_us": 112077.0,
+            "timer_output": "wall min 112077 us  median 112077 us   fastest run: usr 698578 sys 28147 faults 4197   all: 112077"
+          },
+          {
+            "wall_us": 135266.0,
+            "timer_output": "wall min 135266 us  median 135266 us   fastest run: usr 843447 sys 27496 faults 4197   all: 135266"
+          },
+          {
+            "wall_us": 134162.0,
+            "timer_output": "wall min 134162 us  median 134162 us   fastest run: usr 813185 sys 19482 faults 4197   all: 134162"
+          },
+          {
+            "wall_us": 115935.0,
+            "timer_output": "wall min 115935 us  median 115935 us   fastest run: usr 653023 sys 39401 faults 4199   all: 115935"
+          },
+          {
+            "wall_us": 110498.0,
+            "timer_output": "wall min 110498 us  median 110498 us   fastest run: usr 670832 sys 23891 faults 4195   all: 110498"
+          },
+          {
+            "wall_us": 120594.0,
+            "timer_output": "wall min 120594 us  median 120594 us   fastest run: usr 716622 sys 35726 faults 4199   all: 120594"
+          }
+        ]
+      },
+      "binary_sha256": {
+        "c": "47c0991b02315e0e6cae56a14a0aa47e3bde603390ad62af004905ab60b43afc",
+        "omp": "cdb637b4d9badba8cc563bf7bedd8c016a234fbad36044c2249ff8947bf5b951",
+        "hand": "4d7d666bb60de47bc889b2d956aab7f95b71ad9140c5fa5d12daf4d2611037f1",
+        "st": "523dc1cf5202bf8029028e9bc2d9a5b9131c8959b7d12da6654262241473ac5b",
+        "packed": "4c242491b4410f79dfdbdcd5104360d3c0ce6109b3ab8d40e12eafabda31b8f8"
+      }
+    },
+    "strings": {
+      "input": "/home/exedev/simd-lang/build/audit3/fresh-j6nu59sc/suite/code256-b7ac6fee",
+      "input_bytes": 268435456,
+      "output_sha256": "6e9371a2e4bf22ed83d9cab4fe889ba9335e0687e8442042c5e793d399e15cc4",
+      "median_GBps": {
+        "c:1": 0.8809798983265562,
+        "omp:1": 0.7946273707642986,
+        "omp:4": 0.8694462902802654,
+        "omp:all": 1.0353430220000617,
+        "hand:1": 3.79430160996226,
+        "hand:4": 5.553071079851056,
+        "hand:all": 6.481599806833273,
+        "st:1": 2.9391494235254187,
+        "st:4": 5.110914588172576,
+        "st:all": 4.865693704797985,
+        "packed:1": 0.8037374724537703,
+        "packed:4": 1.5966516142846947,
+        "packed:all": 2.1954318802649873
+      },
+      "samples": {
+        "c:1": [
+          {
+            "wall_us": 306412.0,
+            "timer_output": "wall min 306412 us  median 306412 us   fastest run: usr 282552 sys 23726 faults 81   all: 306412"
+          },
+          {
+            "wall_us": 305926.0,
+            "timer_output": "wall min 305926 us  median 305926 us   fastest run: usr 273482 sys 32174 faults 79   all: 305926"
+          },
+          {
+            "wall_us": 304701.0,
+            "timer_output": "wall min 304701 us  median 304701 us   fastest run: usr 280436 sys 24133 faults 80   all: 304701"
+          },
+          {
+            "wall_us": 302134.0,
+            "timer_output": "wall min 302134 us  median 302134 us   fastest run: usr 270165 sys 31765 faults 82   all: 302134"
+          },
+          {
+            "wall_us": 304317.0,
+            "timer_output": "wall min 304317 us  median 304317 us   fastest run: usr 264268 sys 39921 faults 79   all: 304317"
+          },
+          {
+            "wall_us": 303991.0,
+            "timer_output": "wall min 303991 us  median 303991 us   fastest run: usr 279862 sys 24002 faults 81   all: 303991"
+          },
+          {
+            "wall_us": 304994.0,
+            "timer_output": "wall min 304994 us  median 304994 us   fastest run: usr 272783 sys 32097 faults 79   all: 304994"
+          },
+          {
+            "wall_us": 297744.0,
+            "timer_output": "wall min 297744 us  median 297744 us   fastest run: usr 249897 sys 47717 faults 80   all: 297744"
+          },
+          {
+            "wall_us": 305023.0,
+            "timer_output": "wall min 305023 us  median 305023 us   fastest run: usr 252755 sys 52166 faults 83   all: 305023"
+          },
+          {
+            "wall_us": 272649.0,
+            "timer_output": "wall min 272649 us  median 272649 us   fastest run: usr 252438 sys 20055 faults 83   all: 272649"
+          },
+          {
+            "wall_us": 293990.0,
+            "timer_output": "wall min 293990 us  median 293990 us   fastest run: usr 274024 sys 19790 faults 83   all: 293990"
+          },
+          {
+            "wall_us": 302552.0,
+            "timer_output": "wall min 302552 us  median 302552 us   fastest run: usr 268198 sys 34204 faults 79   all: 302552"
+          },
+          {
+            "wall_us": 307961.0,
+            "timer_output": "wall min 307961 us  median 307961 us   fastest run: usr 283787 sys 23986 faults 81   all: 307961"
+          },
+          {
+            "wall_us": 337231.0,
+            "timer_output": "wall min 337231 us  median 337231 us   fastest run: usr 281554 sys 55549 faults 79   all: 337231"
+          },
+          {
+            "wall_us": 306031.0,
+            "timer_output": "wall min 306031 us  median 306031 us   fastest run: usr 269638 sys 36246 faults 81   all: 306031"
+          }
+        ],
+        "omp:1": [
+          {
+            "wall_us": 337852.0,
+            "timer_output": "wall min 337852 us  median 337852 us   fastest run: usr 325769 sys 11955 faults 4180   all: 337852"
+          },
+          {
+            "wall_us": 336387.0,
+            "timer_output": "wall min 336387 us  median 336387 us   fastest run: usr 320179 sys 16008 faults 4181   all: 336387"
+          },
+          {
+            "wall_us": 337813.0,
+            "timer_output": "wall min 337813 us  median 337813 us   fastest run: usr 317545 sys 20111 faults 4175   all: 337813"
+          },
+          {
+            "wall_us": 338666.0,
+            "timer_output": "wall min 338666 us  median 338666 us   fastest run: usr 314318 sys 24189 faults 4179   all: 338666"
+          },
+          {
+            "wall_us": 338736.0,
+            "timer_output": "wall min 338736 us  median 338736 us   fastest run: usr 304039 sys 34588 faults 4181   all: 338736"
+          },
+          {
+            "wall_us": 339680.0,
+            "timer_output": "wall min 339680 us  median 339680 us   fastest run: usr 323512 sys 16030 faults 4177   all: 339680"
+          },
+          {
+            "wall_us": 333785.0,
+            "timer_output": "wall min 333785 us  median 333785 us   fastest run: usr 317781 sys 15889 faults 4175   all: 333785"
+          },
+          {
+            "wall_us": 336568.0,
+            "timer_output": "wall min 336568 us  median 336568 us   fastest run: usr 312382 sys 24052 faults 4179   all: 336568"
+          },
+          {
+            "wall_us": 340588.0,
+            "timer_output": "wall min 340588 us  median 340588 us   fastest run: usr 328424 sys 12038 faults 4175   all: 340588"
+          },
+          {
+            "wall_us": 339952.0,
+            "timer_output": "wall min 339952 us  median 339952 us   fastest run: usr 323683 sys 16169 faults 4174   all: 339952"
+          },
+          {
+            "wall_us": 335630.0,
+            "timer_output": "wall min 335630 us  median 335630 us   fastest run: usr 311549 sys 23974 faults 4180   all: 335630"
+          },
+          {
+            "wall_us": 335583.0,
+            "timer_output": "wall min 335583 us  median 335583 us   fastest run: usr 323476 sys 11977 faults 4180   all: 335583"
+          },
+          {
+            "wall_us": 335895.0,
+            "timer_output": "wall min 335895 us  median 335895 us   fastest run: usr 327658 sys 7996 faults 4180   all: 335895"
+          },
+          {
+            "wall_us": 371323.0,
+            "timer_output": "wall min 371323 us  median 371323 us   fastest run: usr 347245 sys 23969 faults 4174   all: 371323"
+          },
+          {
+            "wall_us": 337623.0,
+            "timer_output": "wall min 337623 us  median 337623 us   fastest run: usr 313333 sys 24157 faults 4179   all: 337623"
+          }
+        ],
+        "omp:4": [
+          {
+            "wall_us": 298006.0,
+            "timer_output": "wall min 298006 us  median 298006 us   fastest run: usr 1125181 sys 19727 faults 4185   all: 298006"
+          },
+          {
+            "wall_us": 295269.0,
+            "timer_output": "wall min 295269 us  median 295269 us   fastest run: usr 1107028 sys 27892 faults 4184   all: 295269"
+          },
+          {
+            "wall_us": 315270.0,
+            "timer_output": "wall min 315270 us  median 315270 us   fastest run: usr 1181611 sys 19591 faults 4190   all: 315270"
+          },
+          {
+            "wall_us": 285846.0,
+            "timer_output": "wall min 285846 us  median 285846 us   fastest run: usr 1086572 sys 19986 faults 4188   all: 285846"
+          },
+          {
+            "wall_us": 305555.0,
+            "timer_output": "wall min 305555 us  median 305555 us   fastest run: usr 1151242 sys 19998 faults 4186   all: 305555"
+          },
+          {
+            "wall_us": 286607.0,
+            "timer_output": "wall min 286607 us  median 286607 us   fastest run: usr 1074796 sys 36007 faults 4189   all: 286607"
+          },
+          {
+            "wall_us": 289130.0,
+            "timer_output": "wall min 289130 us  median 289130 us   fastest run: usr 1094118 sys 28000 faults 4181   all: 289130"
+          },
+          {
+            "wall_us": 304946.0,
+            "timer_output": "wall min 304946 us  median 304946 us   fastest run: usr 1139355 sys 19892 faults 4185   all: 304946"
+          },
+          {
+            "wall_us": 320886.0,
+            "timer_output": "wall min 320886 us  median 320886 us   fastest run: usr 1199112 sys 12203 faults 4183   all: 320886"
+          },
+          {
+            "wall_us": 330150.0,
+            "timer_output": "wall min 330150 us  median 330150 us   fastest run: usr 1163036 sys 12583 faults 4184   all: 330150"
+          },
+          {
+            "wall_us": 323475.0,
+            "timer_output": "wall min 323475 us  median 323475 us   fastest run: usr 1183346 sys 20155 faults 4184   all: 323475"
+          },
+          {
+            "wall_us": 308743.0,
+            "timer_output": "wall min 308743 us  median 308743 us   fastest run: usr 1146783 sys 23335 faults 4190   all: 308743"
+          },
+          {
+            "wall_us": 310261.0,
+            "timer_output": "wall min 310261 us  median 310261 us   fastest run: usr 1173424 sys 11761 faults 4190   all: 310261"
+          },
+          {
+            "wall_us": 318959.0,
+            "timer_output": "wall min 318959 us  median 318959 us   fastest run: usr 1190928 sys 7968 faults 4191   all: 318959"
+          },
+          {
+            "wall_us": 344323.0,
+            "timer_output": "wall min 344323 us  median 344323 us   fastest run: usr 1195670 sys 22282 faults 4189   all: 344323"
+          }
+        ],
+        "omp:all": [
+          {
+            "wall_us": 259272.0,
+            "timer_output": "wall min 259272 us  median 259272 us   fastest run: usr 1466835 sys 20016 faults 4191   all: 259272"
+          },
+          {
+            "wall_us": 199657.0,
+            "timer_output": "wall min 199657 us  median 199657 us   fastest run: usr 1396818 sys 24050 faults 4197   all: 199657"
+          },
+          {
+            "wall_us": 191597.0,
+            "timer_output": "wall min 191597 us  median 191597 us   fastest run: usr 1375534 sys 11784 faults 4194   all: 191597"
+          },
+          {
+            "wall_us": 211441.0,
+            "timer_output": "wall min 211441 us  median 211441 us   fastest run: usr 1385526 sys 23944 faults 4198   all: 211441"
+          },
+          {
+            "wall_us": 252982.0,
+            "timer_output": "wall min 252982 us  median 252982 us   fastest run: usr 1498247 sys 20148 faults 4194   all: 252982"
+          },
+          {
+            "wall_us": 237681.0,
+            "timer_output": "wall min 237681 us  median 237681 us   fastest run: usr 1503014 sys 24291 faults 4194   all: 237681"
+          },
+          {
+            "wall_us": 263505.0,
+            "timer_output": "wall min 263505 us  median 263505 us   fastest run: usr 1682896 sys 36005 faults 4194   all: 263505"
+          },
+          {
+            "wall_us": 272140.0,
+            "timer_output": "wall min 272140 us  median 272140 us   fastest run: usr 1674081 sys 36299 faults 4197   all: 272140"
+          },
+          {
+            "wall_us": 276489.0,
+            "timer_output": "wall min 276489 us  median 276489 us   fastest run: usr 1613576 sys 15852 faults 4198   all: 276489"
+          },
+          {
+            "wall_us": 294901.0,
+            "timer_output": "wall min 294901 us  median 294901 us   fastest run: usr 1723533 sys 23868 faults 4191   all: 294901"
+          },
+          {
+            "wall_us": 257786.0,
+            "timer_output": "wall min 257786 us  median 257786 us   fastest run: usr 1632702 sys 24020 faults 4194   all: 257786"
+          },
+          {
+            "wall_us": 274550.0,
+            "timer_output": "wall min 274550 us  median 274550 us   fastest run: usr 1591924 sys 20400 faults 4197   all: 274550"
+          },
+          {
+            "wall_us": 262364.0,
+            "timer_output": "wall min 262364 us  median 262364 us   fastest run: usr 1528635 sys 15761 faults 4197   all: 262364"
+          },
+          {
+            "wall_us": 184501.0,
+            "timer_output": "wall min 184501 us  median 184501 us   fastest run: usr 1274145 sys 35957 faults 4198   all: 184501"
+          },
+          {
+            "wall_us": 261985.0,
+            "timer_output": "wall min 261985 us  median 261985 us   fastest run: usr 1472079 sys 23779 faults 4191   all: 261985"
+          }
+        ],
+        "hand:1": [
+          {
+            "wall_us": 65687.0,
+            "timer_output": "wall min 65687 us  median 65687 us   fastest run: usr 50146 sys 15421 faults 4175   all: 65687"
+          },
+          {
+            "wall_us": 69993.0,
+            "timer_output": "wall min 69993 us  median 69993 us   fastest run: usr 53468 sys 16433 faults 4180   all: 69993"
+          },
+          {
+            "wall_us": 70114.0,
+            "timer_output": "wall min 70114 us  median 70114 us   fastest run: usr 54498 sys 15512 faults 4175   all: 70114"
+          },
+          {
+            "wall_us": 68992.0,
+            "timer_output": "wall min 68992 us  median 68992 us   fastest run: usr 56560 sys 12312 faults 4182   all: 68992"
+          },
+          {
+            "wall_us": 70890.0,
+            "timer_output": "wall min 70890 us  median 70890 us   fastest run: usr 49991 sys 20789 faults 4177   all: 70890"
+          },
+          {
+            "wall_us": 70937.0,
+            "timer_output": "wall min 70937 us  median 70937 us   fastest run: usr 45809 sys 25042 faults 4179   all: 70937"
+          },
+          {
+            "wall_us": 70747.0,
+            "timer_output": "wall min 70747 us  median 70747 us   fastest run: usr 54945 sys 15698 faults 4181   all: 70747"
+          },
+          {
+            "wall_us": 70611.0,
+            "timer_output": "wall min 70611 us  median 70611 us   fastest run: usr 50935 sys 19590 faults 4182   all: 70611"
+          },
+          {
+            "wall_us": 68400.0,
+            "timer_output": "wall min 68400 us  median 68400 us   fastest run: usr 44147 sys 24152 faults 4179   all: 68400"
+          },
+          {
+            "wall_us": 71699.0,
+            "timer_output": "wall min 71699 us  median 71699 us   fastest run: usr 63591 sys 8016 faults 4180   all: 71699"
+          },
+          {
+            "wall_us": 71709.0,
+            "timer_output": "wall min 71709 us  median 71709 us   fastest run: usr 43853 sys 27759 faults 4176   all: 71709"
+          },
+          {
+            "wall_us": 69075.0,
+            "timer_output": "wall min 69075 us  median 69075 us   fastest run: usr 52677 sys 16208 faults 4180   all: 69075"
+          },
+          {
+            "wall_us": 70967.0,
+            "timer_output": "wall min 70967 us  median 70967 us   fastest run: usr 55115 sys 15747 faults 4175   all: 70967"
+          },
+          {
+            "wall_us": 75705.0,
+            "timer_output": "wall min 75705 us  median 75705 us   fastest run: usr 47727 sys 27841 faults 4179   all: 75705"
+          },
+          {
+            "wall_us": 72794.0,
+            "timer_output": "wall min 72794 us  median 72794 us   fastest run: usr 56538 sys 16159 faults 4180   all: 72794"
+          }
+        ],
+        "hand:4": [
+          {
+            "wall_us": 31846.0,
+            "timer_output": "wall min 31846 us  median 31846 us   fastest run: usr 84198 sys 15308 faults 4193   all: 31846"
+          },
+          {
+            "wall_us": 59957.0,
+            "timer_output": "wall min 59957 us  median 59957 us   fastest run: usr 154158 sys 38519 faults 4186   all: 59957"
+          },
+          {
+            "wall_us": 48340.0,
+            "timer_output": "wall min 48340 us  median 48340 us   fastest run: usr 124603 sys 32642 faults 4190   all: 48340"
+          },
+          {
+            "wall_us": 32116.0,
+            "timer_output": "wall min 32116 us  median 32116 us   fastest run: usr 67773 sys 23926 faults 4191   all: 32116"
+          },
+          {
+            "wall_us": 59770.0,
+            "timer_output": "wall min 59770 us  median 59770 us   fastest run: usr 168382 sys 19499 faults 4187   all: 59770"
+          },
+          {
+            "wall_us": 34757.0,
+            "timer_output": "wall min 34757 us  median 34757 us   fastest run: usr 67111 sys 33524 faults 4194   all: 34757"
+          },
+          {
+            "wall_us": 57439.0,
+            "timer_output": "wall min 57439 us  median 57439 us   fastest run: usr 151664 sys 18993 faults 4192   all: 57439"
+          },
+          {
+            "wall_us": 31864.0,
+            "timer_output": "wall min 31864 us  median 31864 us   fastest run: usr 80702 sys 14612 faults 4188   all: 31864"
+          },
+          {
+            "wall_us": 37788.0,
+            "timer_output": "wall min 37788 us  median 37788 us   fastest run: usr 93891 sys 28558 faults 4192   all: 37788"
+          },
+          {
+            "wall_us": 31479.0,
+            "timer_output": "wall min 31479 us  median 31479 us   fastest run: usr 83194 sys 10864 faults 4187   all: 31479"
+          },
+          {
+            "wall_us": 53084.0,
+            "timer_output": "wall min 53084 us  median 53084 us   fastest run: usr 161162 sys 11292 faults 4190   all: 53084"
+          },
+          {
+            "wall_us": 52501.0,
+            "timer_output": "wall min 52501 us  median 52501 us   fastest run: usr 142434 sys 19853 faults 4192   all: 52501"
+          },
+          {
+            "wall_us": 31501.0,
+            "timer_output": "wall min 31501 us  median 31501 us   fastest run: usr 76475 sys 22814 faults 4188   all: 31501"
+          },
+          {
+            "wall_us": 52679.0,
+            "timer_output": "wall min 52679 us  median 52679 us   fastest run: usr 151533 sys 14995 faults 4187   all: 52679"
+          },
+          {
+            "wall_us": 60846.0,
+            "timer_output": "wall min 60846 us  median 60846 us   fastest run: usr 180399 sys 18192 faults 4188   all: 60846"
+          }
+        ],
+        "hand:all": [
+          {
+            "wall_us": 58098.0,
+            "timer_output": "wall min 58098 us  median 58098 us   fastest run: usr 290866 sys 38832 faults 4199   all: 58098"
+          },
+          {
+            "wall_us": 22206.0,
+            "timer_output": "wall min 22206 us  median 22206 us   fastest run: usr 65439 sys 24134 faults 4204   all: 22206"
+          },
+          {
+            "wall_us": 40370.0,
+            "timer_output": "wall min 40370 us  median 40370 us   fastest run: usr 195554 sys 30790 faults 4198   all: 40370"
+          },
+          {
+            "wall_us": 43976.0,
+            "timer_output": "wall min 43976 us  median 43976 us   fastest run: usr 188717 sys 37756 faults 4201   all: 43976"
+          },
+          {
+            "wall_us": 39994.0,
+            "timer_output": "wall min 39994 us  median 39994 us   fastest run: usr 202231 sys 18635 faults 4199   all: 39994"
+          },
+          {
+            "wall_us": 31221.0,
+            "timer_output": "wall min 31221 us  median 31221 us   fastest run: usr 171942 sys 11103 faults 4202   all: 31221"
+          },
+          {
+            "wall_us": 41415.0,
+            "timer_output": "wall min 41415 us  median 41415 us   fastest run: usr 195840 sys 26915 faults 4196   all: 41415"
+          },
+          {
+            "wall_us": 52565.0,
+            "timer_output": "wall min 52565 us  median 52565 us   fastest run: usr 272961 sys 36826 faults 4200   all: 52565"
+          },
+          {
+            "wall_us": 45539.0,
+            "timer_output": "wall min 45539 us  median 45539 us   fastest run: usr 192246 sys 34027 faults 4203   all: 45539"
+          },
+          {
+            "wall_us": 46300.0,
+            "timer_output": "wall min 46300 us  median 46300 us   fastest run: usr 209733 sys 27723 faults 4198   all: 46300"
+          },
+          {
+            "wall_us": 57819.0,
+            "timer_output": "wall min 57819 us  median 57819 us   fastest run: usr 254381 sys 32679 faults 4207   all: 57819"
+          },
+          {
+            "wall_us": 45881.0,
+            "timer_output": "wall min 45881 us  median 45881 us   fastest run: usr 225748 sys 27107 faults 4205   all: 45881"
+          },
+          {
+            "wall_us": 21319.0,
+            "timer_output": "wall min 21319 us  median 21319 us   fastest run: usr 70182 sys 21153 faults 4201   all: 21319"
+          },
+          {
+            "wall_us": 29202.0,
+            "timer_output": "wall min 29202 us  median 29202 us   fastest run: usr 130016 sys 17455 faults 4200   all: 29202"
+          },
+          {
+            "wall_us": 38507.0,
+            "timer_output": "wall min 38507 us  median 38507 us   fastest run: usr 183118 sys 30479 faults 4199   all: 38507"
+          }
+        ],
+        "st:1": [
+          {
+            "wall_us": 90099.0,
+            "timer_output": "wall min 90099 us  median 90099 us   fastest run: usr 78267 sys 11740 faults 4117   all: 90099"
+          },
+          {
+            "wall_us": 91940.0,
+            "timer_output": "wall min 91940 us  median 91940 us   fastest run: usr 71909 sys 19942 faults 4116   all: 91940"
+          },
+          {
+            "wall_us": 88186.0,
+            "timer_output": "wall min 88186 us  median 88186 us   fastest run: usr 76004 sys 12076 faults 4115   all: 88186"
+          },
+          {
+            "wall_us": 91403.0,
+            "timer_output": "wall min 91403 us  median 91403 us   fastest run: usr 63463 sys 27812 faults 4117   all: 91403"
+          },
+          {
+            "wall_us": 92133.0,
+            "timer_output": "wall min 92133 us  median 92133 us   fastest run: usr 76066 sys 15958 faults 4115   all: 92133"
+          },
+          {
+            "wall_us": 91331.0,
+            "timer_output": "wall min 91331 us  median 91331 us   fastest run: usr 75353 sys 15863 faults 4116   all: 91331"
+          },
+          {
+            "wall_us": 89286.0,
+            "timer_output": "wall min 89286 us  median 89286 us   fastest run: usr 68901 sys 20265 faults 4117   all: 89286"
+          },
+          {
+            "wall_us": 87922.0,
+            "timer_output": "wall min 87922 us  median 87922 us   fastest run: usr 71808 sys 15983 faults 4115   all: 87922"
+          },
+          {
+            "wall_us": 93729.0,
+            "timer_output": "wall min 93729 us  median 93729 us   fastest run: usr 81549 sys 12091 faults 4116   all: 93729"
+          },
+          {
+            "wall_us": 92499.0,
+            "timer_output": "wall min 92499 us  median 92499 us   fastest run: usr 72422 sys 19964 faults 4117   all: 92499"
+          },
+          {
+            "wall_us": 93590.0,
+            "timer_output": "wall min 93590 us  median 93590 us   fastest run: usr 73165 sys 20318 faults 4116   all: 93590"
+          },
+          {
+            "wall_us": 89912.0,
+            "timer_output": "wall min 89912 us  median 89912 us   fastest run: usr 81406 sys 8369 faults 4114   all: 89912"
+          },
+          {
+            "wall_us": 90739.0,
+            "timer_output": "wall min 90739 us  median 90739 us   fastest run: usr 70895 sys 19693 faults 4116   all: 90739"
+          },
+          {
+            "wall_us": 90761.0,
+            "timer_output": "wall min 90761 us  median 90761 us   fastest run: usr 74172 sys 16489 faults 4118   all: 90761"
+          },
+          {
+            "wall_us": 92186.0,
+            "timer_output": "wall min 92186 us  median 92186 us   fastest run: usr 67962 sys 24137 faults 4117   all: 92186"
+          }
+        ],
+        "st:4": [
+          {
+            "wall_us": 46304.0,
+            "timer_output": "wall min 46304 us  median 46304 us   fastest run: usr 119605 sys 37386 faults 4128   all: 46304"
+          },
+          {
+            "wall_us": 81400.0,
+            "timer_output": "wall min 81400 us  median 81400 us   fastest run: usr 262999 sys 27477 faults 4127   all: 81400"
+          },
+          {
+            "wall_us": 52522.0,
+            "timer_output": "wall min 52522 us  median 52522 us   fastest run: usr 157104 sys 19154 faults 4129   all: 52522"
+          },
+          {
+            "wall_us": 62517.0,
+            "timer_output": "wall min 62517 us  median 62517 us   fastest run: usr 180487 sys 21169 faults 4128   all: 62517"
+          },
+          {
+            "wall_us": 66782.0,
+            "timer_output": "wall min 66782 us  median 66782 us   fastest run: usr 213162 sys 15041 faults 4129   all: 66782"
+          },
+          {
+            "wall_us": 60113.0,
+            "timer_output": "wall min 60113 us  median 60113 us   fastest run: usr 182063 sys 22790 faults 4127   all: 60113"
+          },
+          {
+            "wall_us": 46147.0,
+            "timer_output": "wall min 46147 us  median 46147 us   fastest run: usr 134479 sys 15821 faults 4129   all: 46147"
+          },
+          {
+            "wall_us": 80731.0,
+            "timer_output": "wall min 80731 us  median 80731 us   fastest run: usr 275782 sys 19703 faults 4128   all: 80731"
+          },
+          {
+            "wall_us": 81164.0,
+            "timer_output": "wall min 81164 us  median 81164 us   fastest run: usr 263537 sys 23279 faults 4130   all: 81164"
+          },
+          {
+            "wall_us": 80774.0,
+            "timer_output": "wall min 80774 us  median 80774 us   fastest run: usr 260361 sys 35515 faults 4129   all: 80774"
+          },
+          {
+            "wall_us": 46776.0,
+            "timer_output": "wall min 46776 us  median 46776 us   fastest run: usr 139400 sys 18919 faults 4128   all: 46776"
+          },
+          {
+            "wall_us": 47204.0,
+            "timer_output": "wall min 47204 us  median 47204 us   fastest run: usr 138582 sys 18605 faults 4129   all: 47204"
+          },
+          {
+            "wall_us": 48041.0,
+            "timer_output": "wall min 48041 us  median 48041 us   fastest run: usr 145188 sys 15379 faults 4129   all: 48041"
+          },
+          {
+            "wall_us": 48684.0,
+            "timer_output": "wall min 48684 us  median 48684 us   fastest run: usr 132546 sys 31110 faults 4129   all: 48684"
+          },
+          {
+            "wall_us": 48077.0,
+            "timer_output": "wall min 48077 us  median 48077 us   fastest run: usr 155676 sys 7605 faults 4129   all: 48077"
+          }
+        ],
+        "st:all": [
+          {
+            "wall_us": 40525.0,
+            "timer_output": "wall min 40525 us  median 40525 us   fastest run: usr 223383 sys 35271 faults 4143   all: 40525"
+          },
+          {
+            "wall_us": 55169.0,
+            "timer_output": "wall min 55169 us  median 55169 us   fastest run: usr 314740 sys 34552 faults 4144   all: 55169"
+          },
+          {
+            "wall_us": 62198.0,
+            "timer_output": "wall min 62198 us  median 62198 us   fastest run: usr 358704 sys 45937 faults 4145   all: 62198"
+          },
+          {
+            "wall_us": 54569.0,
+            "timer_output": "wall min 54569 us  median 54569 us   fastest run: usr 296384 sys 63437 faults 4145   all: 54569"
+          },
+          {
+            "wall_us": 62215.0,
+            "timer_output": "wall min 62215 us  median 62215 us   fastest run: usr 336020 sys 20887 faults 4144   all: 62215"
+          },
+          {
+            "wall_us": 77540.0,
+            "timer_output": "wall min 77540 us  median 77540 us   fastest run: usr 512784 sys 31468 faults 4145   all: 77540"
+          },
+          {
+            "wall_us": 76792.0,
+            "timer_output": "wall min 76792 us  median 76792 us   fastest run: usr 499202 sys 34883 faults 4145   all: 76792"
+          },
+          {
+            "wall_us": 57977.0,
+            "timer_output": "wall min 57977 us  median 57977 us   fastest run: usr 310735 sys 50476 faults 4146   all: 57977"
+          },
+          {
+            "wall_us": 40617.0,
+            "timer_output": "wall min 40617 us  median 40617 us   fastest run: usr 242276 sys 15647 faults 4146   all: 40617"
+          },
+          {
+            "wall_us": 73253.0,
+            "timer_output": "wall min 73253 us  median 73253 us   fastest run: usr 399170 sys 58949 faults 4143   all: 73253"
+          },
+          {
+            "wall_us": 40530.0,
+            "timer_output": "wall min 40530 us  median 40530 us   fastest run: usr 249477 sys 11931 faults 4143   all: 40530"
+          },
+          {
+            "wall_us": 59342.0,
+            "timer_output": "wall min 59342 us  median 59342 us   fastest run: usr 358201 sys 49747 faults 4144   all: 59342"
+          },
+          {
+            "wall_us": 28899.0,
+            "timer_output": "wall min 28899 us  median 28899 us   fastest run: usr 131323 sys 17804 faults 4143   all: 28899"
+          },
+          {
+            "wall_us": 51145.0,
+            "timer_output": "wall min 51145 us  median 51145 us   fastest run: usr 279814 sys 18360 faults 4141   all: 51145"
+          },
+          {
+            "wall_us": 45572.0,
+            "timer_output": "wall min 45572 us  median 45572 us   fastest run: usr 243704 sys 28624 faults 4143   all: 45572"
+          }
+        ],
+        "packed:1": [
+          {
+            "wall_us": 332992.0,
+            "timer_output": "wall min 332992 us  median 332992 us   fastest run: usr 304610 sys 28090 faults 4177   all: 332992"
+          },
+          {
+            "wall_us": 332226.0,
+            "timer_output": "wall min 332226 us  median 332226 us   fastest run: usr 300096 sys 32017 faults 4177   all: 332226"
+          },
+          {
+            "wall_us": 333984.0,
+            "timer_output": "wall min 333984 us  median 333984 us   fastest run: usr 309699 sys 24167 faults 4178   all: 333984"
+          },
+          {
+            "wall_us": 334419.0,
+            "timer_output": "wall min 334419 us  median 334419 us   fastest run: usr 314363 sys 19903 faults 4182   all: 334419"
+          },
+          {
+            "wall_us": 336616.0,
+            "timer_output": "wall min 336616 us  median 336616 us   fastest run: usr 308314 sys 28191 faults 4177   all: 336616"
+          },
+          {
+            "wall_us": 336992.0,
+            "timer_output": "wall min 336992 us  median 336992 us   fastest run: usr 304519 sys 32303 faults 4180   all: 336992"
+          },
+          {
+            "wall_us": 332821.0,
+            "timer_output": "wall min 332821 us  median 332821 us   fastest run: usr 308711 sys 23986 faults 4179   all: 332821"
+          },
+          {
+            "wall_us": 333580.0,
+            "timer_output": "wall min 333580 us  median 333580 us   fastest run: usr 309271 sys 24099 faults 4177   all: 333580"
+          },
+          {
+            "wall_us": 336398.0,
+            "timer_output": "wall min 336398 us  median 336398 us   fastest run: usr 308218 sys 28046 faults 4182   all: 336398"
+          },
+          {
+            "wall_us": 332771.0,
+            "timer_output": "wall min 332771 us  median 332771 us   fastest run: usr 304926 sys 27714 faults 4175   all: 332771"
+          },
+          {
+            "wall_us": 333366.0,
+            "timer_output": "wall min 333366 us  median 333366 us   fastest run: usr 317082 sys 16111 faults 4181   all: 333366"
+          },
+          {
+            "wall_us": 332875.0,
+            "timer_output": "wall min 332875 us  median 332875 us   fastest run: usr 316483 sys 16024 faults 4181   all: 332875"
+          },
+          {
+            "wall_us": 335071.0,
+            "timer_output": "wall min 335071 us  median 335071 us   fastest run: usr 311933 sys 22808 faults 4179   all: 335071"
+          },
+          {
+            "wall_us": 335838.0,
+            "timer_output": "wall min 335838 us  median 335838 us   fastest run: usr 319578 sys 16130 faults 4179   all: 335838"
+          },
+          {
+            "wall_us": 337032.0,
+            "timer_output": "wall min 337032 us  median 337032 us   fastest run: usr 312696 sys 23930 faults 4180   all: 337032"
+          }
+        ],
+        "packed:4": [
+          {
+            "wall_us": 164423.0,
+            "timer_output": "wall min 164423 us  median 164423 us   fastest run: usr 609682 sys 11879 faults 4191   all: 164423"
+          },
+          {
+            "wall_us": 156035.0,
+            "timer_output": "wall min 156035 us  median 156035 us   fastest run: usr 573679 sys 15724 faults 4192   all: 156035"
+          },
+          {
+            "wall_us": 162843.0,
+            "timer_output": "wall min 162843 us  median 162843 us   fastest run: usr 599446 sys 19649 faults 4191   all: 162843"
+          },
+          {
+            "wall_us": 196257.0,
+            "timer_output": "wall min 196257 us  median 196257 us   fastest run: usr 655873 sys 12809 faults 4189   all: 196257"
+          },
+          {
+            "wall_us": 188051.0,
+            "timer_output": "wall min 188051 us  median 188051 us   fastest run: usr 675304 sys 15174 faults 4188   all: 188051"
+          },
+          {
+            "wall_us": 156896.0,
+            "timer_output": "wall min 156896 us  median 156896 us   fastest run: usr 585877 sys 7940 faults 4193   all: 156896"
+          },
+          {
+            "wall_us": 166954.0,
+            "timer_output": "wall min 166954 us  median 166954 us   fastest run: usr 621484 sys 11888 faults 4188   all: 166954"
+          },
+          {
+            "wall_us": 180916.0,
+            "timer_output": "wall min 180916 us  median 180916 us   fastest run: usr 641440 sys 16063 faults 4187   all: 180916"
+          },
+          {
+            "wall_us": 184960.0,
+            "timer_output": "wall min 184960 us  median 184960 us   fastest run: usr 649510 sys 19464 faults 4192   all: 184960"
+          },
+          {
+            "wall_us": 176934.0,
+            "timer_output": "wall min 176934 us  median 176934 us   fastest run: usr 604280 sys 35697 faults 4192   all: 176934"
+          },
+          {
+            "wall_us": 168124.0,
+            "timer_output": "wall min 168124 us  median 168124 us   fastest run: usr 609301 sys 20124 faults 4185   all: 168124"
+          },
+          {
+            "wall_us": 158455.0,
+            "timer_output": "wall min 158455 us  median 158455 us   fastest run: usr 586897 sys 18648 faults 4188   all: 158455"
+          },
+          {
+            "wall_us": 157074.0,
+            "timer_output": "wall min 157074 us  median 157074 us   fastest run: usr 574659 sys 15432 faults 4187   all: 157074"
+          },
+          {
+            "wall_us": 181421.0,
+            "timer_output": "wall min 181421 us  median 181421 us   fastest run: usr 647358 sys 31695 faults 4194   all: 181421"
+          },
+          {
+            "wall_us": 181629.0,
+            "timer_output": "wall min 181629 us  median 181629 us   fastest run: usr 638513 sys 19902 faults 4187   all: 181629"
+          }
+        ],
+        "packed:all": [
+          {
+            "wall_us": 110539.0,
+            "timer_output": "wall min 110539 us  median 110539 us   fastest run: usr 746631 sys 19301 faults 4204   all: 110539"
+          },
+          {
+            "wall_us": 106204.0,
+            "timer_output": "wall min 106204 us  median 106204 us   fastest run: usr 665907 sys 19227 faults 4205   all: 106204"
+          },
+          {
+            "wall_us": 123872.0,
+            "timer_output": "wall min 123872 us  median 123872 us   fastest run: usr 786102 sys 19871 faults 4206   all: 123872"
+          },
+          {
+            "wall_us": 113632.0,
+            "timer_output": "wall min 113632 us  median 113632 us   fastest run: usr 731869 sys 19262 faults 4205   all: 113632"
+          },
+          {
+            "wall_us": 111543.0,
+            "timer_output": "wall min 111543 us  median 111543 us   fastest run: usr 738970 sys 19194 faults 4206   all: 111543"
+          },
+          {
+            "wall_us": 122270.0,
+            "timer_output": "wall min 122270 us  median 122270 us   fastest run: usr 809398 sys 20035 faults 4205   all: 122270"
+          },
+          {
+            "wall_us": 126482.0,
+            "timer_output": "wall min 126482 us  median 126482 us   fastest run: usr 788158 sys 16201 faults 4201   all: 126482"
+          },
+          {
+            "wall_us": 131627.0,
+            "timer_output": "wall min 131627 us  median 131627 us   fastest run: usr 793308 sys 27308 faults 4202   all: 131627"
+          },
+          {
+            "wall_us": 124955.0,
+            "timer_output": "wall min 124955 us  median 124955 us   fastest run: usr 797230 sys 23841 faults 4198   all: 124955"
+          },
+          {
+            "wall_us": 122741.0,
+            "timer_output": "wall min 122741 us  median 122741 us   fastest run: usr 800090 sys 15616 faults 4200   all: 122741"
+          },
+          {
+            "wall_us": 144180.0,
+            "timer_output": "wall min 144180 us  median 144180 us   fastest run: usr 883641 sys 15880 faults 4197   all: 144180"
+          },
+          {
+            "wall_us": 134629.0,
+            "timer_output": "wall min 134629 us  median 134629 us   fastest run: usr 795364 sys 26827 faults 4196   all: 134629"
+          },
+          {
+            "wall_us": 86344.0,
+            "timer_output": "wall min 86344 us  median 86344 us   fastest run: usr 596881 sys 10421 faults 4206   all: 86344"
+          },
+          {
+            "wall_us": 120946.0,
+            "timer_output": "wall min 120946 us  median 120946 us   fastest run: usr 778884 sys 11416 faults 4202   all: 120946"
+          },
+          {
+            "wall_us": 110563.0,
+            "timer_output": "wall min 110563 us  median 110563 us   fastest run: usr 710598 sys 7740 faults 4199   all: 110563"
+          }
+        ]
+      },
+      "binary_sha256": {
+        "c": "6ecd147d8dd554e5b65e6a347732a3563d28c87011f096eaaa0dce1899ae8322",
+        "omp": "30240107c799a8d6ec84543731dced6a03b5055f63f7c7a3d2712d3b41f610a5",
+        "hand": "d77391be45a29ea92450e4ca5aac2ba8d847224c7906a83edf06e17743df27c2",
+        "st": "83904607fe0a6cd7941a0f6ed0d1fde46adf174d0e02422cd2964b47bc409ed4",
+        "packed": "e41f653627a38d45d0438a2f4496ef7972a998b366c14c9d793172e5932cb69e"
+      }
+    },
+    "json": {
+      "input": "/home/exedev/simd-lang/build/audit3/fresh-j6nu59sc/suite/json256-b7ac6fee",
+      "input_bytes": 268435936,
+      "output_sha256": "76870520fea060581ec030c8cb287f5c100e4b8583387c61c7b81ddcda37590d",
+      "median_GBps": {
+        "c:1": 0.550075893753663,
+        "omp:1": 0.5538347218611638,
+        "omp:4": 0.9316195863801846,
+        "omp:all": 1.046052638552245,
+        "hand:1": 4.813785524711283,
+        "hand:4": 6.328349662878966,
+        "hand:all": 7.347363788148351,
+        "st:1": 3.061506324061085,
+        "st:4": 6.26118853357591,
+        "st:all": 5.415836497528497,
+        "persistent:1": 4.650334973321322,
+        "persistent:4": 7.187424654599979,
+        "persistent:all": 7.318717923550902,
+        "dual:1": 4.503127543574172,
+        "dual:4": 7.529337372377427,
+        "dual:all": 8.142317884008735
+      },
+      "samples": {
+        "c:1": [
+          {
+            "wall_us": 487757.0,
+            "timer_output": "wall min 487757 us  median 487757 us   fastest run: usr 459382 sys 28248 faults 84   all: 487757"
+          },
+          {
+            "wall_us": 487460.0,
+            "timer_output": "wall min 487460 us  median 487460 us   fastest run: usr 438970 sys 48328 faults 81   all: 487460"
+          },
+          {
+            "wall_us": 487456.0,
+            "timer_output": "wall min 487456 us  median 487456 us   fastest run: usr 446963 sys 40268 faults 83   all: 487456"
+          },
+          {
+            "wall_us": 487011.0,
+            "timer_output": "wall min 487011 us  median 487011 us   fastest run: usr 446612 sys 40269 faults 84   all: 487011"
+          },
+          {
+            "wall_us": 487593.0,
+            "timer_output": "wall min 487593 us  median 487593 us   fastest run: usr 443474 sys 43979 faults 84   all: 487593"
+          },
+          {
+            "wall_us": 487998.0,
+            "timer_output": "wall min 487998 us  median 487998 us   fastest run: usr 456106 sys 31765 faults 83   all: 487998"
+          },
+          {
+            "wall_us": 485411.0,
+            "timer_output": "wall min 485411 us  median 485411 us   fastest run: usr 461248 sys 24044 faults 85   all: 485411"
+          },
+          {
+            "wall_us": 495544.0,
+            "timer_output": "wall min 495544 us  median 495544 us   fastest run: usr 471601 sys 23796 faults 84   all: 495544"
+          },
+          {
+            "wall_us": 490458.0,
+            "timer_output": "wall min 490458 us  median 490458 us   fastest run: usr 454317 sys 35914 faults 82   all: 490458"
+          },
+          {
+            "wall_us": 487585.0,
+            "timer_output": "wall min 487585 us  median 487585 us   fastest run: usr 439109 sys 48345 faults 85   all: 487585"
+          },
+          {
+            "wall_us": 489887.0,
+            "timer_output": "wall min 489887 us  median 489887 us   fastest run: usr 465563 sys 24199 faults 85   all: 489887"
+          },
+          {
+            "wall_us": 488295.0,
+            "timer_output": "wall min 488295 us  median 488295 us   fastest run: usr 452046 sys 36014 faults 84   all: 488295"
+          },
+          {
+            "wall_us": 490293.0,
+            "timer_output": "wall min 490293 us  median 490293 us   fastest run: usr 449983 sys 40196 faults 83   all: 490293"
+          },
+          {
+            "wall_us": 490800.0,
+            "timer_output": "wall min 490800 us  median 490800 us   fastest run: usr 470471 sys 20160 faults 84   all: 490800"
+          },
+          {
+            "wall_us": 492875.0,
+            "timer_output": "wall min 492875 us  median 492875 us   fastest run: usr 460900 sys 31759 faults 82   all: 492875"
+          }
+        ],
+        "omp:1": [
+          {
+            "wall_us": 483586.0,
+            "timer_output": "wall min 483586 us  median 483586 us   fastest run: usr 455253 sys 28021 faults 4288   all: 483586"
+          },
+          {
+            "wall_us": 481612.0,
+            "timer_output": "wall min 481612 us  median 481612 us   fastest run: usr 461592 sys 19905 faults 4287   all: 481612"
+          },
+          {
+            "wall_us": 482603.0,
+            "timer_output": "wall min 482603 us  median 482603 us   fastest run: usr 458540 sys 23912 faults 4288   all: 482603"
+          },
+          {
+            "wall_us": 482928.0,
+            "timer_output": "wall min 482928 us  median 482928 us   fastest run: usr 454810 sys 27953 faults 4286   all: 482928"
+          },
+          {
+            "wall_us": 486861.0,
+            "timer_output": "wall min 486861 us  median 486861 us   fastest run: usr 470564 sys 16183 faults 4290   all: 486861"
+          },
+          {
+            "wall_us": 483037.0,
+            "timer_output": "wall min 483037 us  median 483037 us   fastest run: usr 470392 sys 11974 faults 4286   all: 483037"
+          },
+          {
+            "wall_us": 484160.0,
+            "timer_output": "wall min 484160 us  median 484160 us   fastest run: usr 456181 sys 27810 faults 4285   all: 484160"
+          },
+          {
+            "wall_us": 484932.0,
+            "timer_output": "wall min 484932 us  median 484932 us   fastest run: usr 452917 sys 31886 faults 4285   all: 484932"
+          },
+          {
+            "wall_us": 485223.0,
+            "timer_output": "wall min 485223 us  median 485223 us   fastest run: usr 464482 sys 20058 faults 4290   all: 485223"
+          },
+          {
+            "wall_us": 481951.0,
+            "timer_output": "wall min 481951 us  median 481951 us   fastest run: usr 461785 sys 19872 faults 4287   all: 481951"
+          },
+          {
+            "wall_us": 507982.0,
+            "timer_output": "wall min 507982 us  median 507982 us   fastest run: usr 480212 sys 27624 faults 4290   all: 507982"
+          },
+          {
+            "wall_us": 486812.0,
+            "timer_output": "wall min 486812 us  median 486812 us   fastest run: usr 458261 sys 28346 faults 4291   all: 486812"
+          },
+          {
+            "wall_us": 487554.0,
+            "timer_output": "wall min 487554 us  median 487554 us   fastest run: usr 471353 sys 16036 faults 4289   all: 487554"
+          },
+          {
+            "wall_us": 484686.0,
+            "timer_output": "wall min 484686 us  median 484686 us   fastest run: usr 464444 sys 20019 faults 4290   all: 484686"
+          },
+          {
+            "wall_us": 486728.0,
+            "timer_output": "wall min 486728 us  median 486728 us   fastest run: usr 458338 sys 28268 faults 4285   all: 486728"
+          }
+        ],
+        "omp:4": [
+          {
+            "wall_us": 286633.0,
+            "timer_output": "wall min 286633 us  median 286633 us   fastest run: usr 1079333 sys 32121 faults 4296   all: 286633"
+          },
+          {
+            "wall_us": 302035.0,
+            "timer_output": "wall min 302035 us  median 302035 us   fastest run: usr 1151223 sys 15850 faults 4298   all: 302035"
+          },
+          {
+            "wall_us": 291312.0,
+            "timer_output": "wall min 291312 us  median 291312 us   fastest run: usr 1099910 sys 27964 faults 4297   all: 291312"
+          },
+          {
+            "wall_us": 288139.0,
+            "timer_output": "wall min 288139 us  median 288139 us   fastest run: usr 1093684 sys 19994 faults 4300   all: 288139"
+          },
+          {
+            "wall_us": 287012.0,
+            "timer_output": "wall min 287012 us  median 287012 us   fastest run: usr 1090292 sys 19726 faults 4299   all: 287012"
+          },
+          {
+            "wall_us": 279196.0,
+            "timer_output": "wall min 279196 us  median 279196 us   fastest run: usr 1052338 sys 31692 faults 4300   all: 279196"
+          },
+          {
+            "wall_us": 278964.0,
+            "timer_output": "wall min 278964 us  median 278964 us   fastest run: usr 1056091 sys 19834 faults 4300   all: 278964"
+          },
+          {
+            "wall_us": 318015.0,
+            "timer_output": "wall min 318015 us  median 318015 us   fastest run: usr 1206667 sys 20468 faults 4294   all: 318015"
+          },
+          {
+            "wall_us": 287667.0,
+            "timer_output": "wall min 287667 us  median 287667 us   fastest run: usr 1105899 sys 15927 faults 4301   all: 287667"
+          },
+          {
+            "wall_us": 283270.0,
+            "timer_output": "wall min 283270 us  median 283270 us   fastest run: usr 1087600 sys 7925 faults 4297   all: 283270"
+          },
+          {
+            "wall_us": 311257.0,
+            "timer_output": "wall min 311257 us  median 311257 us   fastest run: usr 1180233 sys 23869 faults 4296   all: 311257"
+          },
+          {
+            "wall_us": 294313.0,
+            "timer_output": "wall min 294313 us  median 294313 us   fastest run: usr 1105525 sys 31742 faults 4300   all: 294313"
+          },
+          {
+            "wall_us": 295879.0,
+            "timer_output": "wall min 295879 us  median 295879 us   fastest run: usr 1110761 sys 35975 faults 4298   all: 295879"
+          },
+          {
+            "wall_us": 302302.0,
+            "timer_output": "wall min 302302 us  median 302302 us   fastest run: usr 1125469 sys 51856 faults 4295   all: 302302"
+          },
+          {
+            "wall_us": 275222.0,
+            "timer_output": "wall min 275222 us  median 275222 us   fastest run: usr 1048981 sys 19802 faults 4294   all: 275222"
+          }
+        ],
+        "omp:all": [
+          {
+            "wall_us": 266611.0,
+            "timer_output": "wall min 266611 us  median 266611 us   fastest run: usr 2029497 sys 20005 faults 4304   all: 266611"
+          },
+          {
+            "wall_us": 265656.0,
+            "timer_output": "wall min 265656 us  median 265656 us   fastest run: usr 2013996 sys 43421 faults 4310   all: 265656"
+          },
+          {
+            "wall_us": 280034.0,
+            "timer_output": "wall min 280034 us  median 280034 us   fastest run: usr 2079533 sys 11886 faults 4307   all: 280034"
+          },
+          {
+            "wall_us": 247785.0,
+            "timer_output": "wall min 247785 us  median 247785 us   fastest run: usr 1873078 sys 23751 faults 4310   all: 247785"
+          },
+          {
+            "wall_us": 315869.0,
+            "timer_output": "wall min 315869 us  median 315869 us   fastest run: usr 2226492 sys 20032 faults 4304   all: 315869"
+          },
+          {
+            "wall_us": 256618.0,
+            "timer_output": "wall min 256618 us  median 256618 us   fastest run: usr 1929869 sys 31994 faults 4306   all: 256618"
+          },
+          {
+            "wall_us": 252046.0,
+            "timer_output": "wall min 252046 us  median 252046 us   fastest run: usr 1911989 sys 19798 faults 4307   all: 252046"
+          },
+          {
+            "wall_us": 197897.0,
+            "timer_output": "wall min 197897 us  median 197897 us   fastest run: usr 1474919 sys 19823 faults 4306   all: 197897"
+          },
+          {
+            "wall_us": 248388.0,
+            "timer_output": "wall min 248388 us  median 248388 us   fastest run: usr 1869734 sys 28052 faults 4309   all: 248388"
+          },
+          {
+            "wall_us": 246389.0,
+            "timer_output": "wall min 246389 us  median 246389 us   fastest run: usr 1862801 sys 19887 faults 4308   all: 246389"
+          },
+          {
+            "wall_us": 301291.0,
+            "timer_output": "wall min 301291 us  median 301291 us   fastest run: usr 2105620 sys 16092 faults 4310   all: 301291"
+          },
+          {
+            "wall_us": 248321.0,
+            "timer_output": "wall min 248321 us  median 248321 us   fastest run: usr 1891363 sys 23946 faults 4308   all: 248321"
+          },
+          {
+            "wall_us": 265699.0,
+            "timer_output": "wall min 265699 us  median 265699 us   fastest run: usr 2026131 sys 11929 faults 4309   all: 265699"
+          },
+          {
+            "wall_us": 248425.0,
+            "timer_output": "wall min 248425 us  median 248425 us   fastest run: usr 1868002 sys 15986 faults 4306   all: 248425"
+          },
+          {
+            "wall_us": 257511.0,
+            "timer_output": "wall min 257511 us  median 257511 us   fastest run: usr 1947317 sys 19704 faults 4302   all: 257511"
+          }
+        ],
+        "hand:1": [
+          {
+            "wall_us": 56146.0,
+            "timer_output": "wall min 56146 us  median 56146 us   fastest run: usr 44020 sys 12028 faults 4285   all: 56146"
+          },
+          {
+            "wall_us": 56740.0,
+            "timer_output": "wall min 56740 us  median 56740 us   fastest run: usr 29845 sys 26813 faults 4286   all: 56740"
+          },
+          {
+            "wall_us": 55764.0,
+            "timer_output": "wall min 55764 us  median 55764 us   fastest run: usr 39772 sys 15908 faults 4284   all: 55764"
+          },
+          {
+            "wall_us": 52871.0,
+            "timer_output": "wall min 52871 us  median 52871 us   fastest run: usr 32490 sys 20306 faults 4290   all: 52871"
+          },
+          {
+            "wall_us": 57114.0,
+            "timer_output": "wall min 57114 us  median 57114 us   fastest run: usr 44719 sys 12294 faults 4289   all: 57114"
+          },
+          {
+            "wall_us": 50611.0,
+            "timer_output": "wall min 50611 us  median 50611 us   fastest run: usr 42086 sys 8446 faults 4284   all: 50611"
+          },
+          {
+            "wall_us": 57040.0,
+            "timer_output": "wall min 57040 us  median 57040 us   fastest run: usr 44588 sys 12357 faults 4288   all: 57040"
+          },
+          {
+            "wall_us": 58345.0,
+            "timer_output": "wall min 58345 us  median 58345 us   fastest run: usr 38782 sys 19472 faults 4287   all: 58345"
+          },
+          {
+            "wall_us": 53746.0,
+            "timer_output": "wall min 53746 us  median 53746 us   fastest run: usr 37158 sys 16481 faults 4290   all: 53746"
+          },
+          {
+            "wall_us": 53432.0,
+            "timer_output": "wall min 53432 us  median 53432 us   fastest run: usr 30454 sys 22899 faults 4288   all: 53432"
+          },
+          {
+            "wall_us": 53406.0,
+            "timer_output": "wall min 53406 us  median 53406 us   fastest run: usr 45098 sys 8223 faults 4287   all: 53406"
+          },
+          {
+            "wall_us": 52817.0,
+            "timer_output": "wall min 52817 us  median 52817 us   fastest run: usr 36505 sys 16224 faults 4289   all: 52817"
+          },
+          {
+            "wall_us": 58521.0,
+            "timer_output": "wall min 58521 us  median 58521 us   fastest run: usr 42313 sys 16110 faults 4289   all: 58521"
+          },
+          {
+            "wall_us": 57581.0,
+            "timer_output": "wall min 57581 us  median 57581 us   fastest run: usr 36727 sys 20747 faults 4286   all: 57581"
+          },
+          {
+            "wall_us": 55389.0,
+            "timer_output": "wall min 55389 us  median 55389 us   fastest run: usr 31641 sys 23669 faults 4289   all: 55389"
+          }
+        ],
+        "hand:4": [
+          {
+            "wall_us": 41228.0,
+            "timer_output": "wall min 41228 us  median 41228 us   fastest run: usr 114781 sys 15329 faults 4298   all: 41228"
+          },
+          {
+            "wall_us": 39994.0,
+            "timer_output": "wall min 39994 us  median 39994 us   fastest run: usr 121726 sys 7615 faults 4298   all: 39994"
+          },
+          {
+            "wall_us": 28409.0,
+            "timer_output": "wall min 28409 us  median 28409 us   fastest run: usr 66167 sys 14707 faults 4301   all: 28409"
+          },
+          {
+            "wall_us": 54633.0,
+            "timer_output": "wall min 54633 us  median 54633 us   fastest run: usr 136081 sys 41451 faults 4295   all: 54633"
+          },
+          {
+            "wall_us": 54449.0,
+            "timer_output": "wall min 54449 us  median 54449 us   fastest run: usr 149361 sys 23202 faults 4299   all: 54449"
+          },
+          {
+            "wall_us": 47108.0,
+            "timer_output": "wall min 47108 us  median 47108 us   fastest run: usr 126442 sys 23042 faults 4297   all: 47108"
+          },
+          {
+            "wall_us": 41011.0,
+            "timer_output": "wall min 41011 us  median 41011 us   fastest run: usr 115342 sys 15094 faults 4300   all: 41011"
+          },
+          {
+            "wall_us": 50020.0,
+            "timer_output": "wall min 50020 us  median 50020 us   fastest run: usr 136551 sys 15543 faults 4297   all: 50020"
+          },
+          {
+            "wall_us": 56338.0,
+            "timer_output": "wall min 56338 us  median 56338 us   fastest run: usr 159948 sys 19073 faults 4295   all: 56338"
+          },
+          {
+            "wall_us": 57261.0,
+            "timer_output": "wall min 57261 us  median 57261 us   fastest run: usr 153768 sys 31516 faults 4298   all: 57261"
+          },
+          {
+            "wall_us": 46669.0,
+            "timer_output": "wall min 46669 us  median 46669 us   fastest run: usr 123497 sys 27910 faults 4299   all: 46669"
+          },
+          {
+            "wall_us": 40523.0,
+            "timer_output": "wall min 40523 us  median 40523 us   fastest run: usr 98943 sys 14658 faults 4297   all: 40523"
+          },
+          {
+            "wall_us": 42418.0,
+            "timer_output": "wall min 42418 us  median 42418 us   fastest run: usr 106781 sys 22142 faults 4295   all: 42418"
+          },
+          {
+            "wall_us": 29337.0,
+            "timer_output": "wall min 29337 us  median 29337 us   fastest run: usr 54759 sys 24093 faults 4296   all: 29337"
+          },
+          {
+            "wall_us": 29262.0,
+            "timer_output": "wall min 29262 us  median 29262 us   fastest run: usr 51314 sys 29469 faults 4300   all: 29262"
+          }
+        ],
+        "hand:all": [
+          {
+            "wall_us": 23304.0,
+            "timer_output": "wall min 23304 us  median 23304 us   fastest run: usr 80784 sys 18383 faults 4308   all: 23304"
+          },
+          {
+            "wall_us": 38168.0,
+            "timer_output": "wall min 38168 us  median 38168 us   fastest run: usr 149582 sys 49187 faults 4305   all: 38168"
+          },
+          {
+            "wall_us": 47019.0,
+            "timer_output": "wall min 47019 us  median 47019 us   fastest run: usr 194002 sys 47611 faults 4306   all: 47019"
+          },
+          {
+            "wall_us": 23589.0,
+            "timer_output": "wall min 23589 us  median 23589 us   fastest run: usr 76634 sys 23037 faults 4308   all: 23589"
+          },
+          {
+            "wall_us": 26096.0,
+            "timer_output": "wall min 26096 us  median 26096 us   fastest run: usr 105115 sys 31244 faults 4308   all: 26096"
+          },
+          {
+            "wall_us": 36427.0,
+            "timer_output": "wall min 36427 us  median 36427 us   fastest run: usr 172754 sys 27379 faults 4302   all: 36427"
+          },
+          {
+            "wall_us": 39823.0,
+            "timer_output": "wall min 39823 us  median 39823 us   fastest run: usr 123559 sys 55948 faults 4307   all: 39823"
+          },
+          {
+            "wall_us": 22025.0,
+            "timer_output": "wall min 22025 us  median 22025 us   fastest run: usr 76595 sys 14051 faults 4310   all: 22025"
+          },
+          {
+            "wall_us": 37482.0,
+            "timer_output": "wall min 37482 us  median 37482 us   fastest run: usr 175151 sys 36515 faults 4306   all: 37482"
+          },
+          {
+            "wall_us": 25878.0,
+            "timer_output": "wall min 25878 us  median 25878 us   fastest run: usr 113426 sys 10982 faults 4302   all: 25878"
+          },
+          {
+            "wall_us": 36535.0,
+            "timer_output": "wall min 36535 us  median 36535 us   fastest run: usr 171414 sys 18797 faults 4309   all: 36535"
+          },
+          {
+            "wall_us": 36059.0,
+            "timer_output": "wall min 36059 us  median 36059 us   fastest run: usr 160432 sys 34472 faults 4305   all: 36059"
+          },
+          {
+            "wall_us": 39470.0,
+            "timer_output": "wall min 39470 us  median 39470 us   fastest run: usr 180510 sys 36799 faults 4308   all: 39470"
+          },
+          {
+            "wall_us": 36850.0,
+            "timer_output": "wall min 36850 us  median 36850 us   fastest run: usr 153378 sys 24250 faults 4310   all: 36850"
+          },
+          {
+            "wall_us": 40517.0,
+            "timer_output": "wall min 40517 us  median 40517 us   fastest run: usr 166999 sys 66009 faults 4305   all: 40517"
+          }
+        ],
+        "st:1": [
+          {
+            "wall_us": 85855.0,
+            "timer_output": "wall min 85855 us  median 85855 us   fastest run: usr 65278 sys 20500 faults 4182   all: 85855"
+          },
+          {
+            "wall_us": 87681.0,
+            "timer_output": "wall min 87681 us  median 87681 us   fastest run: usr 63685 sys 23911 faults 4183   all: 87681"
+          },
+          {
+            "wall_us": 87459.0,
+            "timer_output": "wall min 87459 us  median 87459 us   fastest run: usr 55599 sys 31771 faults 4181   all: 87459"
+          },
+          {
+            "wall_us": 85819.0,
+            "timer_output": "wall min 85819 us  median 85819 us   fastest run: usr 65313 sys 20413 faults 4180   all: 85819"
+          },
+          {
+            "wall_us": 87580.0,
+            "timer_output": "wall min 87580 us  median 87580 us   fastest run: usr 79480 sys 8012 faults 4182   all: 87580"
+          },
+          {
+            "wall_us": 87837.0,
+            "timer_output": "wall min 87837 us  median 87837 us   fastest run: usr 67793 sys 19951 faults 4182   all: 87837"
+          },
+          {
+            "wall_us": 86579.0,
+            "timer_output": "wall min 86579 us  median 86579 us   fastest run: usr 58972 sys 27524 faults 4180   all: 86579"
+          },
+          {
+            "wall_us": 87710.0,
+            "timer_output": "wall min 87710 us  median 87710 us   fastest run: usr 67646 sys 19972 faults 4182   all: 87710"
+          },
+          {
+            "wall_us": 88084.0,
+            "timer_output": "wall min 88084 us  median 88084 us   fastest run: usr 59867 sys 28016 faults 4181   all: 88084"
+          },
+          {
+            "wall_us": 89198.0,
+            "timer_output": "wall min 89198 us  median 89198 us   fastest run: usr 68828 sys 20276 faults 4180   all: 89198"
+          },
+          {
+            "wall_us": 91779.0,
+            "timer_output": "wall min 91779 us  median 91779 us   fastest run: usr 75645 sys 16039 faults 4181   all: 91779"
+          },
+          {
+            "wall_us": 87187.0,
+            "timer_output": "wall min 87187 us  median 87187 us   fastest run: usr 75281 sys 11817 faults 4181   all: 87187"
+          },
+          {
+            "wall_us": 87541.0,
+            "timer_output": "wall min 87541 us  median 87541 us   fastest run: usr 75521 sys 11934 faults 4181   all: 87541"
+          },
+          {
+            "wall_us": 90475.0,
+            "timer_output": "wall min 90475 us  median 90475 us   fastest run: usr 55342 sys 34994 faults 4181   all: 90475"
+          },
+          {
+            "wall_us": 88152.0,
+            "timer_output": "wall min 88152 us  median 88152 us   fastest run: usr 63974 sys 24075 faults 4181   all: 88152"
+          }
+        ],
+        "st:4": [
+          {
+            "wall_us": 42416.0,
+            "timer_output": "wall min 42416 us  median 42416 us   fastest run: usr 103568 sys 26289 faults 4265   all: 42416"
+          },
+          {
+            "wall_us": 53590.0,
+            "timer_output": "wall min 53590 us  median 53590 us   fastest run: usr 161693 sys 15098 faults 4265   all: 53590"
+          },
+          {
+            "wall_us": 39743.0,
+            "timer_output": "wall min 39743 us  median 39743 us   fastest run: usr 109885 sys 11752 faults 4264   all: 39743"
+          },
+          {
+            "wall_us": 44708.0,
+            "timer_output": "wall min 44708 us  median 44708 us   fastest run: usr 120100 sys 27160 faults 4262   all: 44708"
+          },
+          {
+            "wall_us": 39426.0,
+            "timer_output": "wall min 39426 us  median 39426 us   fastest run: usr 105583 sys 16277 faults 4262   all: 39426"
+          },
+          {
+            "wall_us": 39830.0,
+            "timer_output": "wall min 39830 us  median 39830 us   fastest run: usr 93631 sys 27473 faults 4264   all: 39830"
+          },
+          {
+            "wall_us": 57459.0,
+            "timer_output": "wall min 57459 us  median 57459 us   fastest run: usr 162884 sys 33442 faults 4265   all: 57459"
+          },
+          {
+            "wall_us": 42873.0,
+            "timer_output": "wall min 42873 us  median 42873 us   fastest run: usr 115655 sys 23162 faults 4265   all: 42873"
+          },
+          {
+            "wall_us": 39104.0,
+            "timer_output": "wall min 39104 us  median 39104 us   fastest run: usr 98929 sys 25726 faults 4264   all: 39104"
+          },
+          {
+            "wall_us": 71439.0,
+            "timer_output": "wall min 71439 us  median 71439 us   fastest run: usr 211562 sys 42370 faults 4265   all: 71439"
+          },
+          {
+            "wall_us": 53691.0,
+            "timer_output": "wall min 53691 us  median 53691 us   fastest run: usr 149257 sys 26127 faults 4265   all: 53691"
+          },
+          {
+            "wall_us": 39616.0,
+            "timer_output": "wall min 39616 us  median 39616 us   fastest run: usr 113657 sys 11022 faults 4262   all: 39616"
+          },
+          {
+            "wall_us": 70333.0,
+            "timer_output": "wall min 70333 us  median 70333 us   fastest run: usr 210303 sys 38515 faults 4263   all: 70333"
+          },
+          {
+            "wall_us": 39540.0,
+            "timer_output": "wall min 39540 us  median 39540 us   fastest run: usr 98760 sys 30570 faults 4265   all: 39540"
+          },
+          {
+            "wall_us": 113240.0,
+            "timer_output": "wall min 113240 us  median 113240 us   fastest run: usr 374901 sys 16510 faults 4265   all: 113240"
+          }
+        ],
+        "st:all": [
+          {
+            "wall_us": 48781.0,
+            "timer_output": "wall min 48781 us  median 48781 us   fastest run: usr 295877 sys 11171 faults 4314   all: 48781"
+          },
+          {
+            "wall_us": 43972.0,
+            "timer_output": "wall min 43972 us  median 43972 us   fastest run: usr 257333 sys 18664 faults 4314   all: 43972"
+          },
+          {
+            "wall_us": 55940.0,
+            "timer_output": "wall min 55940 us  median 55940 us   fastest run: usr 328422 sys 37369 faults 4316   all: 55940"
+          },
+          {
+            "wall_us": 34776.0,
+            "timer_output": "wall min 34776 us  median 34776 us   fastest run: usr 127874 sys 74296 faults 4314   all: 34776"
+          },
+          {
+            "wall_us": 49565.0,
+            "timer_output": "wall min 49565 us  median 49565 us   fastest run: usr 282144 sys 19925 faults 4314   all: 49565"
+          },
+          {
+            "wall_us": 50157.0,
+            "timer_output": "wall min 50157 us  median 50157 us   fastest run: usr 313576 sys 18456 faults 4315   all: 50157"
+          },
+          {
+            "wall_us": 52567.0,
+            "timer_output": "wall min 52567 us  median 52567 us   fastest run: usr 301414 sys 23632 faults 4315   all: 52567"
+          },
+          {
+            "wall_us": 52737.0,
+            "timer_output": "wall min 52737 us  median 52737 us   fastest run: usr 270983 sys 45891 faults 4314   all: 52737"
+          },
+          {
+            "wall_us": 43902.0,
+            "timer_output": "wall min 43902 us  median 43902 us   fastest run: usr 271932 sys 15587 faults 4315   all: 43902"
+          },
+          {
+            "wall_us": 53955.0,
+            "timer_output": "wall min 53955 us  median 53955 us   fastest run: usr 321302 sys 27214 faults 4313   all: 53955"
+          },
+          {
+            "wall_us": 86730.0,
+            "timer_output": "wall min 86730 us  median 86730 us   fastest run: usr 563534 sys 21129 faults 4315   all: 86730"
+          },
+          {
+            "wall_us": 48278.0,
+            "timer_output": "wall min 48278 us  median 48278 us   fastest run: usr 280491 sys 26233 faults 4314   all: 48278"
+          },
+          {
+            "wall_us": 44375.0,
+            "timer_output": "wall min 44375 us  median 44375 us   fastest run: usr 255582 sys 31011 faults 4316   all: 44375"
+          },
+          {
+            "wall_us": 64230.0,
+            "timer_output": "wall min 64230 us  median 64230 us   fastest run: usr 419700 sys 15418 faults 4316   all: 64230"
+          },
+          {
+            "wall_us": 45416.0,
+            "timer_output": "wall min 45416 us  median 45416 us   fastest run: usr 248149 sys 29182 faults 4313   all: 45416"
+          }
+        ],
+        "persistent:1": [
+          {
+            "wall_us": 58394.0,
+            "timer_output": "wall min 58394 us  median 58394 us   fastest run: usr 37348 sys 20946 faults 4290   all: 58394"
+          },
+          {
+            "wall_us": 58572.0,
+            "timer_output": "wall min 58572 us  median 58572 us   fastest run: usr 46767 sys 11722 faults 4291   all: 58572"
+          },
+          {
+            "wall_us": 59169.0,
+            "timer_output": "wall min 59169 us  median 59169 us   fastest run: usr 27577 sys 31516 faults 4289   all: 59169"
+          },
+          {
+            "wall_us": 58655.0,
+            "timer_output": "wall min 58655 us  median 58655 us   fastest run: usr 35145 sys 23430 faults 4287   all: 58655"
+          },
+          {
+            "wall_us": 57724.0,
+            "timer_output": "wall min 57724 us  median 57724 us   fastest run: usr 38263 sys 19377 faults 4288   all: 57724"
+          },
+          {
+            "wall_us": 53032.0,
+            "timer_output": "wall min 53032 us  median 53032 us   fastest run: usr 40715 sys 12214 faults 4289   all: 53032"
+          },
+          {
+            "wall_us": 57807.0,
+            "timer_output": "wall min 57807 us  median 57807 us   fastest run: usr 30783 sys 26935 faults 4289   all: 57807"
+          },
+          {
+            "wall_us": 57247.0,
+            "timer_output": "wall min 57247 us  median 57247 us   fastest run: usr 44904 sys 12256 faults 4290   all: 57247"
+          },
+          {
+            "wall_us": 58223.0,
+            "timer_output": "wall min 58223 us  median 58223 us   fastest run: usr 31440 sys 26689 faults 4292   all: 58223"
+          },
+          {
+            "wall_us": 60795.0,
+            "timer_output": "wall min 60795 us  median 60795 us   fastest run: usr 28837 sys 31835 faults 4290   all: 60795"
+          },
+          {
+            "wall_us": 52313.0,
+            "timer_output": "wall min 52313 us  median 52313 us   fastest run: usr 36164 sys 16073 faults 4286   all: 52313"
+          },
+          {
+            "wall_us": 55484.0,
+            "timer_output": "wall min 55484 us  median 55484 us   fastest run: usr 25556 sys 29816 faults 4290   all: 55484"
+          },
+          {
+            "wall_us": 52171.0,
+            "timer_output": "wall min 52171 us  median 52171 us   fastest run: usr 48072 sys 4006 faults 4287   all: 52171"
+          },
+          {
+            "wall_us": 57391.0,
+            "timer_output": "wall min 57391 us  median 57391 us   fastest run: usr 44978 sys 12330 faults 4284   all: 57391"
+          },
+          {
+            "wall_us": 56267.0,
+            "timer_output": "wall min 56267 us  median 56267 us   fastest run: usr 24103 sys 32081 faults 4291   all: 56267"
+          }
+        ],
+        "persistent:4": [
+          {
+            "wall_us": 31003.0,
+            "timer_output": "wall min 31003 us  median 31003 us   fastest run: usr 74234 sys 16498 faults 4299   all: 31003"
+          },
+          {
+            "wall_us": 56009.0,
+            "timer_output": "wall min 56009 us  median 56009 us   fastest run: usr 167661 sys 15571 faults 4299   all: 56009"
+          },
+          {
+            "wall_us": 30160.0,
+            "timer_output": "wall min 30160 us  median 30160 us   fastest run: usr 71549 sys 15771 faults 4300   all: 30160"
+          },
+          {
+            "wall_us": 46892.0,
+            "timer_output": "wall min 46892 us  median 46892 us   fastest run: usr 126722 sys 29852 faults 4302   all: 46892"
+          },
+          {
+            "wall_us": 38290.0,
+            "timer_output": "wall min 38290 us  median 38290 us   fastest run: usr 105881 sys 15785 faults 4299   all: 38290"
+          },
+          {
+            "wall_us": 39229.0,
+            "timer_output": "wall min 39229 us  median 39229 us   fastest run: usr 102802 sys 22029 faults 4296   all: 39229"
+          },
+          {
+            "wall_us": 34703.0,
+            "timer_output": "wall min 34703 us  median 34703 us   fastest run: usr 85897 sys 15793 faults 4301   all: 34703"
+          },
+          {
+            "wall_us": 29987.0,
+            "timer_output": "wall min 29987 us  median 29987 us   fastest run: usr 64081 sys 18866 faults 4300   all: 29987"
+          },
+          {
+            "wall_us": 34996.0,
+            "timer_output": "wall min 34996 us  median 34996 us   fastest run: usr 93768 sys 14465 faults 4300   all: 34996"
+          },
+          {
+            "wall_us": 29393.0,
+            "timer_output": "wall min 29393 us  median 29393 us   fastest run: usr 73041 sys 11542 faults 4301   all: 29393"
+          },
+          {
+            "wall_us": 31705.0,
+            "timer_output": "wall min 31705 us  median 31705 us   fastest run: usr 75256 sys 17827 faults 4297   all: 31705"
+          },
+          {
+            "wall_us": 45542.0,
+            "timer_output": "wall min 45542 us  median 45542 us   fastest run: usr 128321 sys 14703 faults 4301   all: 45542"
+          },
+          {
+            "wall_us": 56497.0,
+            "timer_output": "wall min 56497 us  median 56497 us   fastest run: usr 144978 sys 34420 faults 4300   all: 56497"
+          },
+          {
+            "wall_us": 37348.0,
+            "timer_output": "wall min 37348 us  median 37348 us   fastest run: usr 108006 sys 11636 faults 4303   all: 37348"
+          },
+          {
+            "wall_us": 48189.0,
+            "timer_output": "wall min 48189 us  median 48189 us   fastest run: usr 134551 sys 19907 faults 4301   all: 48189"
+          }
+        ],
+        "persistent:all": [
+          {
+            "wall_us": 46379.0,
+            "timer_output": "wall min 46379 us  median 46379 us   fastest run: usr 203876 sys 35368 faults 4306   all: 46379"
+          },
+          {
+            "wall_us": 39808.0,
+            "timer_output": "wall min 39808 us  median 39808 us   fastest run: usr 174211 sys 22715 faults 4310   all: 39808"
+          },
+          {
+            "wall_us": 23876.0,
+            "timer_output": "wall min 23876 us  median 23876 us   fastest run: usr 89958 sys 23382 faults 4301   all: 23876"
+          },
+          {
+            "wall_us": 23647.0,
+            "timer_output": "wall min 23647 us  median 23647 us   fastest run: usr 86990 sys 31316 faults 4310   all: 23647"
+          },
+          {
+            "wall_us": 40351.0,
+            "timer_output": "wall min 40351 us  median 40351 us   fastest run: usr 203853 sys 27441 faults 4309   all: 40351"
+          },
+          {
+            "wall_us": 47369.0,
+            "timer_output": "wall min 47369 us  median 47369 us   fastest run: usr 227062 sys 26229 faults 4303   all: 47369"
+          },
+          {
+            "wall_us": 24065.0,
+            "timer_output": "wall min 24065 us  median 24065 us   fastest run: usr 46836 sys 50460 faults 4303   all: 24065"
+          },
+          {
+            "wall_us": 22533.0,
+            "timer_output": "wall min 22533 us  median 22533 us   fastest run: usr 74901 sys 18000 faults 4303   all: 22533"
+          },
+          {
+            "wall_us": 41248.0,
+            "timer_output": "wall min 41248 us  median 41248 us   fastest run: usr 227004 sys 18429 faults 4302   all: 41248"
+          },
+          {
+            "wall_us": 39802.0,
+            "timer_output": "wall min 39802 us  median 39802 us   fastest run: usr 202590 sys 18648 faults 4309   all: 39802"
+          },
+          {
+            "wall_us": 34672.0,
+            "timer_output": "wall min 34672 us  median 34672 us   fastest run: usr 149982 sys 19826 faults 4304   all: 34672"
+          },
+          {
+            "wall_us": 36678.0,
+            "timer_output": "wall min 36678 us  median 36678 us   fastest run: usr 169768 sys 10536 faults 4302   all: 36678"
+          },
+          {
+            "wall_us": 40407.0,
+            "timer_output": "wall min 40407 us  median 40407 us   fastest run: usr 204279 sys 23194 faults 4308   all: 40407"
+          },
+          {
+            "wall_us": 24140.0,
+            "timer_output": "wall min 24140 us  median 24140 us   fastest run: usr 92171 sys 15963 faults 4306   all: 24140"
+          },
+          {
+            "wall_us": 35175.0,
+            "timer_output": "wall min 35175 us  median 35175 us   fastest run: usr 132078 sys 38883 faults 4308   all: 35175"
+          }
+        ],
+        "dual:1": [
+          {
+            "wall_us": 59921.0,
+            "timer_output": "wall min 59921 us  median 59921 us   fastest run: usr 43108 sys 16712 faults 4397   all: 59921"
+          },
+          {
+            "wall_us": 59909.0,
+            "timer_output": "wall min 59909 us  median 59909 us   fastest run: usr 39862 sys 19956 faults 4396   all: 59909"
+          },
+          {
+            "wall_us": 62620.0,
+            "timer_output": "wall min 62620 us  median 62620 us   fastest run: usr 45403 sys 17128 faults 4398   all: 62620"
+          },
+          {
+            "wall_us": 59632.0,
+            "timer_output": "wall min 59632 us  median 59632 us   fastest run: usr 47630 sys 11907 faults 4398   all: 59632"
+          },
+          {
+            "wall_us": 59872.0,
+            "timer_output": "wall min 59872 us  median 59872 us   fastest run: usr 31949 sys 27828 faults 4400   all: 59872"
+          },
+          {
+            "wall_us": 59330.0,
+            "timer_output": "wall min 59330 us  median 59330 us   fastest run: usr 50776 sys 8462 faults 4400   all: 59330"
+          },
+          {
+            "wall_us": 59117.0,
+            "timer_output": "wall min 59117 us  median 59117 us   fastest run: usr 39358 sys 19660 faults 4402   all: 59117"
+          },
+          {
+            "wall_us": 59611.0,
+            "timer_output": "wall min 59611 us  median 59611 us   fastest run: usr 43838 sys 15689 faults 4402   all: 59611"
+          },
+          {
+            "wall_us": 55667.0,
+            "timer_output": "wall min 55667 us  median 55667 us   fastest run: usr 35734 sys 19842 faults 4397   all: 55667"
+          },
+          {
+            "wall_us": 58936.0,
+            "timer_output": "wall min 58936 us  median 58936 us   fastest run: usr 39278 sys 19535 faults 4402   all: 58936"
+          },
+          {
+            "wall_us": 57606.0,
+            "timer_output": "wall min 57606 us  median 57606 us   fastest run: usr 40982 sys 16537 faults 4402   all: 57606"
+          },
+          {
+            "wall_us": 54572.0,
+            "timer_output": "wall min 54572 us  median 54572 us   fastest run: usr 46096 sys 8399 faults 4395   all: 54572"
+          },
+          {
+            "wall_us": 59869.0,
+            "timer_output": "wall min 59869 us  median 59869 us   fastest run: usr 43822 sys 15940 faults 4396   all: 59869"
+          },
+          {
+            "wall_us": 60615.0,
+            "timer_output": "wall min 60615 us  median 60615 us   fastest run: usr 44226 sys 16288 faults 4400   all: 60615"
+          },
+          {
+            "wall_us": 57568.0,
+            "timer_output": "wall min 57568 us  median 57568 us   fastest run: usr 48997 sys 8491 faults 4398   all: 57568"
+          }
+        ],
+        "dual:4": [
+          {
+            "wall_us": 24463.0,
+            "timer_output": "wall min 24463 us  median 24463 us   fastest run: usr 43107 sys 21257 faults 4414   all: 24463"
+          },
+          {
+            "wall_us": 35652.0,
+            "timer_output": "wall min 35652 us  median 35652 us   fastest run: usr 74173 sys 33346 faults 4413   all: 35652"
+          },
+          {
+            "wall_us": 39289.0,
+            "timer_output": "wall min 39289 us  median 39289 us   fastest run: usr 91098 sys 21723 faults 4407   all: 39289"
+          },
+          {
+            "wall_us": 35921.0,
+            "timer_output": "wall min 35921 us  median 35921 us   fastest run: usr 83298 sys 23226 faults 4415   all: 35921"
+          },
+          {
+            "wall_us": 23401.0,
+            "timer_output": "wall min 23401 us  median 23401 us   fastest run: usr 53319 sys 6679 faults 4414   all: 23401"
+          },
+          {
+            "wall_us": 22372.0,
+            "timer_output": "wall min 22372 us  median 22372 us   fastest run: usr 38224 sys 15289 faults 4415   all: 22372"
+          },
+          {
+            "wall_us": 29335.0,
+            "timer_output": "wall min 29335 us  median 29335 us   fastest run: usr 61173 sys 22939 faults 4409   all: 29335"
+          },
+          {
+            "wall_us": 23614.0,
+            "timer_output": "wall min 23614 us  median 23614 us   fastest run: usr 50763 sys 14506 faults 4410   all: 23614"
+          },
+          {
+            "wall_us": 43666.0,
+            "timer_output": "wall min 43666 us  median 43666 us   fastest run: usr 97457 sys 27402 faults 4409   all: 43666"
+          },
+          {
+            "wall_us": 47228.0,
+            "timer_output": "wall min 47228 us  median 47228 us   fastest run: usr 80612 sys 51256 faults 4414   all: 47228"
+          },
+          {
+            "wall_us": 40308.0,
+            "timer_output": "wall min 40308 us  median 40308 us   fastest run: usr 109112 sys 11690 faults 4414   all: 40308"
+          },
+          {
+            "wall_us": 48197.0,
+            "timer_output": "wall min 48197 us  median 48197 us   fastest run: usr 99018 sys 38011 faults 4411   all: 48197"
+          },
+          {
+            "wall_us": 42008.0,
+            "timer_output": "wall min 42008 us  median 42008 us   fastest run: usr 93374 sys 22447 faults 4412   all: 42008"
+          },
+          {
+            "wall_us": 23330.0,
+            "timer_output": "wall min 23330 us  median 23330 us   fastest run: usr 28737 sys 25195 faults 4411   all: 23330"
+          },
+          {
+            "wall_us": 30008.0,
+            "timer_output": "wall min 30008 us  median 30008 us   fastest run: usr 73757 sys 17496 faults 4413   all: 30008"
+          }
+        ],
+        "dual:all": [
+          {
+            "wall_us": 20310.0,
+            "timer_output": "wall min 20310 us  median 20310 us   fastest run: usr 56543 sys 29974 faults 4421   all: 20310"
+          },
+          {
+            "wall_us": 37950.0,
+            "timer_output": "wall min 37950 us  median 37950 us   fastest run: usr 146639 sys 48987 faults 4417   all: 37950"
+          },
+          {
+            "wall_us": 39123.0,
+            "timer_output": "wall min 39123 us  median 39123 us   fastest run: usr 168790 sys 14068 faults 4422   all: 39123"
+          },
+          {
+            "wall_us": 41434.0,
+            "timer_output": "wall min 41434 us  median 41434 us   fastest run: usr 143827 sys 61126 faults 4420   all: 41434"
+          },
+          {
+            "wall_us": 32968.0,
+            "timer_output": "wall min 32968 us  median 32968 us   fastest run: usr 110769 sys 33508 faults 4422   all: 32968"
+          },
+          {
+            "wall_us": 25950.0,
+            "timer_output": "wall min 25950 us  median 25950 us   fastest run: usr 50855 sys 38141 faults 4420   all: 25950"
+          },
+          {
+            "wall_us": 30138.0,
+            "timer_output": "wall min 30138 us  median 30138 us   fastest run: usr 131281 sys 17625 faults 4422   all: 30138"
+          },
+          {
+            "wall_us": 36043.0,
+            "timer_output": "wall min 36043 us  median 36043 us   fastest run: usr 147318 sys 24616 faults 4422   all: 36043"
+          },
+          {
+            "wall_us": 29798.0,
+            "timer_output": "wall min 29798 us  median 29798 us   fastest run: usr 107710 sys 27041 faults 4421   all: 29798"
+          },
+          {
+            "wall_us": 21112.0,
+            "timer_output": "wall min 21112 us  median 21112 us   fastest run: usr 63700 sys 33705 faults 4418   all: 21112"
+          },
+          {
+            "wall_us": 36730.0,
+            "timer_output": "wall min 36730 us  median 36730 us   fastest run: usr 144055 sys 35030 faults 4416   all: 36730"
+          },
+          {
+            "wall_us": 40034.0,
+            "timer_output": "wall min 40034 us  median 40034 us   fastest run: usr 128083 sys 46702 faults 4422   all: 40034"
+          },
+          {
+            "wall_us": 30260.0,
+            "timer_output": "wall min 30260 us  median 30260 us   fastest run: usr 100594 sys 29685 faults 4419   all: 30260"
+          },
+          {
+            "wall_us": 24113.0,
+            "timer_output": "wall min 24113 us  median 24113 us   fastest run: usr 65983 sys 18649 faults 4423   all: 24113"
+          },
+          {
+            "wall_us": 40310.0,
+            "timer_output": "wall min 40310 us  median 40310 us   fastest run: usr 143135 sys 35630 faults 4420   all: 40310"
+          }
+        ]
+      },
+      "binary_sha256": {
+        "c": "7af64d266cf323231cb5987f643f617482e19fcca3981fd5d83ebf07f89c18b3",
+        "omp": "da29cba1de5371f78b90cf733354e1d89b27ae06897a51ba45e9bb0d294af9a3",
+        "hand": "b80868cafa5a472af5e49e02ee4f6c5227d41be05375dd667773b9264c7cd749",
+        "st": "0aef9d0f6686d7d467410bb8ce7d562f6abc6d2b52413f8015a112967a3a8c8a",
+        "persistent": "afe2f961e9e732ffeffd3d73600bc49ffead12e94a01036655e478e21e9b9275",
+        "dual": "d7ba15a1b0aa0b2f0453282abe1d3d62c0e9f57a65ca11f9150bea52fe14a31f"
+      }
+    }
+  }
+}

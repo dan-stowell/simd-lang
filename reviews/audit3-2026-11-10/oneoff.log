@@ -1,0 +1,11 @@
+| program | input | Strand: compile + run, ms | gcc -O3 base.c + run, ms | gcc -O3 -fopenmp base_omp.c + run, ms |
+|---|---|---|---|---|
+| words | 1 MiB | 5.2 | 56.0 | 69.3 |
+| words | 16 MiB | 7.9 | 59.0 | 72.9 |
+| words | 256 MiB | 35.7 | 92.2 | 105.9 |
+| strip | 1 MiB | 4.7 | 49.1 | 93.3 |
+| strip | 16 MiB | 9.9 | 68.1 | 108.1 |
+| strip | 256 MiB | 85.8 | 335.1 | 351.7 |
+| json | 1 MiB | 3.8 | 52.5 | 89.4 |
+| json | 16 MiB | 9.6 | 81.8 | 120.0 |
+| json | 256 MiB | 92.0 | 527.4 | 566.7 |

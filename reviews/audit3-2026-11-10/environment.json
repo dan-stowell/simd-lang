@@ -1,0 +1,53 @@
+{
+  "started_utc": "2026-11-10T20:29:19.259102+00:00",
+  "work": "/home/exedev/simd-lang/build/audit3/fresh-j6nu59sc",
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "revision": "af3ecc935319a4698b499c66044faff95ef0663d",
+  "uname": "Linux ssimd 6.12.115 #1 SMP Tue Nov  3 05:28:18 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           46 bits physical, 57 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  8\nOn-line CPU(s) list:                     0-7\nVendor ID:                               AuthenticAMD\nModel name:                              AMD EPYC 9554P 64-Core Processor\nCPU family:                              25\nModel:                                   17\nThread(s) per core:                      1\nCore(s) per socket:                      8\nSocket(s):                               1\nStepping:                                1\nBogoMIPS:                                6190.69\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext perfctr_core ssbd perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr wbnoinvd arat npt lbrv nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload vgif vnmi avx512vbmi umip pku avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm flush_l1d arch_capabilities\nVirtualization:                          AMD-V\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               128 KiB (4 instances)\nL1i cache:                               128 KiB (4 instances)\nL2 cache:                                4 MiB (4 instances)\nL3 cache:                                32 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-7\nVulnerability Gather data sampling:      Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Mitigation; Safe RET\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP disabled; PBRSB-eIBRS Not affected; BHI Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Mitigation; Clear CPU buffers\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+  "sources_sha256": {
+    "bench/run.py": "459c5b9b7720aefdc40401bc3af9aef70629b32c4ac951b8d7df983911b797b0",
+    "bench/oneoff.py": "6e3f8e84d7f98b8a09b237485b94372d047a77a81b3575ef67d45e2d7b08d3be",
+    "bench/gen.c": "d455684ae69951fd8e1e2299163a9bdb97df6d3abdbd6c42bfa40970deaec26d",
+    "bench/jsongen.py": "ede28f224dd689c18e65be187b4a10007b14350dd8cad6c898c01b1d16b6f305",
+    "bench/base.c": "00be7663b7439f04ae9b7b1a9c931cfce2bc34cafdaf3bc293ed9e86c03b567e",
+    "bench/base_omp.c": "d67c66f98528ac80b076ef0602041d287a49e6a31c66a48f30d52c547c99e909",
+    "bench/hand.c": "1dce4899a1d7c65a968fbce835a7c4f488da29062c2439789c2622b10aa841dc",
+    "bench/programs.txt": "bb5ae10bbff31da00569fa12220520dfcaf606ebc57b01b787d3919a26a58a7a",
+    "bench/xlat.h": "86b03167babc04ba34dd01a8c7c51dad78d7e1d8f01e7bbf87d9ae1cd9971773",
+    "tools/bench.c": "6df1c7949de5022bd335519289c1228b5ed09956cedd5c8aad1fa4bd0418875e",
+    "build/stage2": "b3a84702ef866973b462375aac041f5f805c61a6ba74cd3973bc058cfaf391dd"
+  },
+  "fixtures": {
+    "text256-b7ac6fee": {
+      "bytes": 268435456,
+      "sha256": "2981ae483dc82c4b81c8cedbbf5b17abdbd20550f0a7cbfb978089915375a74b"
+    },
+    "ints256-b7ac6fee": {
+      "bytes": 268435456,
+      "sha256": "05bf0dc81ded7b3f74326dd58f15eea9b523cc0a0aedf2ea50f01dd978debc6b"
+    },
+    "code256-b7ac6fee": {
+      "bytes": 268435456,
+      "sha256": "1c87da95bd668a405668068a4678c0318826e79d60a3538bce06f06cbeb43a1a"
+    },
+    "csv256-b7ac6fee": {
+      "bytes": 268435456,
+      "sha256": "bcfa464d75c0010adecb888b764ebf9ad610944f621e2e082ddeadeab0595aec"
+    },
+    "json256-b7ac6fee": {
+      "bytes": 268435936,
+      "sha256": "b6cc4371c7a9b7ef5da2cdf50baf068fc900d4ce2525cda56f138bcadcc8d803"
+    }
+  },
+  "ended_utc": "2026-11-10T20:32:38.022993+00:00"
+}

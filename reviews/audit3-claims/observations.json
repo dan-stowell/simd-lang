@@ -1,0 +1,121 @@
+{
+  "revision": "af3ecc935319a4698b499c66044faff95ef0663d",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "allowed_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "checks": {
+    "original": {
+      "exit": 0,
+      "stdout": "probe check: ok\n",
+      "stderr": ""
+    },
+    "missing": {
+      "exit": 1,
+      "stdout": "p_512bf16: probe missing from the binary\np_512bitalg: probe missing from the binary\np_512bw: probe missing from the binary\np_512cd: probe missing from the binary\np_512dq: probe missing from the binary\np_512f: probe missing from the binary\np_512f_compress: probe missing from the binary\np_512f_gather: probe missing from the binary\np_512f_k: probe missing from the binary\np_512f_scatter: probe missing from the binary\np_512ifma: probe missing from the binary\np_512vbmi: probe missing from the binary\np_512vbmi2: probe missing from the binary\np_512vl: probe missing from the binary\np_512vnni: probe missing from the binary\np_512vpopcnt: probe missing from the binary\np_adx: probe missing from the binary\np_aes: probe missing from the binary\np_amx: probe missing from the binary\np_apx: probe missing from the binary\np_avx: probe missing from the binary\np_avx2: probe missing from the binary\np_avxvnni: probe missing from the binary\np_bmi1: probe missing from the binary\np_bmi2: probe missing from the binary\np_f16c: probe missing from the binary\np_fma: probe missing from the binary\np_fp16: probe missing from the binary\np_gfni: probe missing from the binary\np_lzcnt: probe missing from the binary\np_movbe: probe missing from the binary\np_pclmul: probe missing from the binary\np_popcnt: probe missing from the binary\np_sha: probe missing from the binary\np_sse2: probe missing from the binary\np_sse41: probe missing from the binary\np_sse42: probe missing from the binary\np_sse4a: probe missing from the binary\np_ssse3: probe missing from the binary\np_vaes: probe missing from the binary\np_vp2i: probe missing from the binary\np_vpclmul: probe missing from the binary\nprobe check: 42 problems\n",
+      "stderr": ""
+    },
+    "unreachable": {
+      "exit": 0,
+      "stdout": "probe check: ok\n",
+      "stderr": ""
+    },
+    "wrong_vnni_encoding": {
+      "exit": 0,
+      "stdout": "probe check: ok\n",
+      "stderr": ""
+    }
+  },
+  "iotest_touch_has_input_load_and_sum_store": true,
+  "semantic_examples": [
+    {
+      "program": "json",
+      "input": "{\"x\":1}\n",
+      "exit": 0,
+      "output_hex": "7b3a7d",
+      "python_json_accepts": true
+    },
+    {
+      "program": "json",
+      "input": "{\"different\":false}\n",
+      "exit": 0,
+      "output_hex": "7b3a7d",
+      "python_json_accepts": true
+    },
+    {
+      "program": "json",
+      "input": "{\"x\":}\n",
+      "exit": 0,
+      "output_hex": "7b3a7d",
+      "python_json_accepts": false
+    },
+    {
+      "program": "json",
+      "input": "[\"unterminated]\n",
+      "exit": 0,
+      "output_hex": "5b",
+      "python_json_accepts": false
+    },
+    {
+      "program": "json",
+      "input": "[1,2]\n[3,4]\n",
+      "exit": 0,
+      "output_hex": "5b2c5d5b2c5d",
+      "python_json_accepts": false
+    },
+    {
+      "program": "csv",
+      "input": "\"a,b\",c\r\n",
+      "exit": 0,
+      "output_hex": "02000000"
+    },
+    {
+      "program": "idents",
+      "input": "abc 123\n",
+      "exit": 0,
+      "output_hex": "02000000"
+    }
+  ],
+  "position_controls": [
+    {
+      "label": "byte_store",
+      "source": "bytes 32 > >mask\nmask idx swap outif4\n",
+      "compile_exit": 8
+    },
+    {
+      "label": "persistent_byte_tee",
+      "source": "bytes 32 > :mask end\nmask idx swap outif4\n",
+      "compile_exit": 9
+    },
+    {
+      "label": "dword_positions",
+      "source": "input 32 > dup prev 1 ^ & idx swap outif4\n",
+      "compile_exit": 0,
+      "input": "one two\n",
+      "exit": 0,
+      "output_hex": "0000000004000000"
+    },
+    {
+      "label": "byte_idx",
+      "source": "bytes idx out\n",
+      "compile_exit": 8
+    }
+  ],
+  "binaries": {
+    "strand-idents": "523dc1cf5202bf8029028e9bc2d9a5b9131c8959b7d12da6654262241473ac5b",
+    "probe-return-before-instruction": "f086fa3e3d5ad1de45a4140d47b6be0522b37a23d0860ca77455de34b6e9702b",
+    "iotest": "481580064fe41cb050ccc660b6f00bb9f6523359f5a2f964f1fbba0f85541217",
+    "dword_positions": "863e1a454af8a19dfe657299ba97c6163bfdee4b171194eb68340c05f33b07f8",
+    "strand-json": "0aef9d0f6686d7d467410bb8ce7d562f6abc6d2b52413f8015a112967a3a8c8a",
+    "strand-csv": "38cceb7d04a80507965d56794e0da22ba1a2dc3e317cf0ad18b5103a5fc03a7a",
+    "probe-wrong-vnni-encoding": "266bbee1eb010d6bcc2120e42406c8a129eaa7c87dcf39e68c2e4298c037911c",
+    "probe": "f2437c9856757baf96250349f508ab6d66fb9841d2ddb80675ed63c08e86bd3a"
+  }
+}

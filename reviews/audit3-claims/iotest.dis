@@ -1,0 +1,147 @@
+<touch>:
+    16f0:	endbr64
+    16f4:	mov    0x29ed(%rip),%rsi        # 40e8 <per>
+    16fb:	test   %rsi,%rsi
+    16fe:	je     1740 <touch+0x50>
+    1700:	mov    %rdi,%r8
+    1703:	xor    %eax,%eax
+    1705:	xor    %edx,%edx
+    1707:	imul   %rsi,%r8
+    170b:	add    0x29de(%rip),%r8        # 40f0 <base>
+    1712:	nopw   0x0(%rax,%rax,1)
+    1718:	movzbl (%r8,%rax,1),%ecx
+    171d:	add    $0x1000,%rax
+    1723:	add    %rcx,%rdx
+    1726:	cmp    %rsi,%rax
+    1729:	jb     1718 <touch+0x28>
+    172b:	lea    0x292e(%rip),%rax        # 4060 <sums>
+    1732:	mov    %rdx,(%rax,%rdi,8)
+    1736:	xor    %eax,%eax
+    1738:	ret
+    1739:	nopl   0x0(%rax)
+    1740:	xor    %edx,%edx
+    1742:	lea    0x2917(%rip),%rax        # 4060 <sums>
+    1749:	mov    %rdx,(%rax,%rdi,8)
+    174d:	xor    %eax,%eax
+    174f:	ret
+
+<par>:
+    17f0:	push   %r14
+    17f2:	mov    %rdi,%r14
+    17f5:	mov    $0x1,%edi
+    17fa:	push   %r13
+    17fc:	push   %r12
+    17fe:	push   %rbp
+    17ff:	movslq %esi,%rbp
+    1802:	push   %rbx
+    1803:	sub    $0xb0,%rsp
+    180a:	mov    %fs:0x28,%rax
+    1813:	mov    %rax,0xa8(%rsp)
+    181b:	mov    %rdx,%rax
+    181e:	xor    %edx,%edx
+    1820:	lea    0x10(%rsp),%r13
+    1825:	mov    %r13,%rsi
+    1828:	div    %rbp
+    182b:	mov    %rax,0x28b6(%rip)        # 40e8 <per>
+    1832:	call   1120 <clock_gettime@plt>
+    1837:	pxor   %xmm1,%xmm1
+    183b:	pxor   %xmm0,%xmm0
+    183f:	cvtsi2sdq 0x10(%rsp),%xmm1
+    1846:	mulsd  0x892(%rip),%xmm1        # 20e0 <_IO_stdin_used+0xe0>
+    184e:	cvtsi2sdq 0x18(%rsp),%xmm0
+    1855:	mulsd  0x88b(%rip),%xmm0        # 20e8 <_IO_stdin_used+0xe8>
+    185d:	addsd  %xmm0,%xmm1
+    1861:	movsd  %xmm1,0x8(%rsp)
+    1867:	test   %ebp,%ebp
+    1869:	jle    18bf <par+0xcf>
+    186b:	xor    %ebx,%ebx
+    186d:	lea    0x20(%rsp),%r12
+    1872:	nopw   0x0(%rax,%rax,1)
+    1878:	lea    (%r12,%rbx,8),%rdi
+    187c:	mov    %rbx,%rcx
+    187f:	mov    %r14,%rdx
+    1882:	xor    %esi,%esi
+    1884:	call   1170 <pthread_create@plt>
+    1889:	add    $0x1,%rbx
+    188d:	cmp    %rbx,%rbp
+    1890:	jne    1878 <par+0x88>
+    1892:	shl    $0x3,%rbp
+    1896:	xor    %ebx,%ebx
+    1898:	lea    0x27c1(%rip),%r14        # 4060 <sums>
+    189f:	nop
+    18a0:	mov    (%r12,%rbx,1),%rdi
+    18a4:	xor    %esi,%esi
+    18a6:	call   11a0 <pthread_join@plt>
+    18ab:	mov    (%r14,%rbx,1),%rax
+    18af:	add    $0x8,%rbx
+    18b3:	add    %rax,0x2786(%rip)        # 4040 <check>
+    18ba:	cmp    %rbx,%rbp
+    18bd:	jne    18a0 <par+0xb0>
+    18bf:	mov    %r13,%rsi
+    18c2:	mov    $0x1,%edi
+    18c7:	call   1120 <clock_gettime@plt>
+    18cc:	pxor   %xmm0,%xmm0
+    18d0:	pxor   %xmm1,%xmm1
+    18d4:	cvtsi2sdq 0x10(%rsp),%xmm0
+    18db:	mulsd  0x7fd(%rip),%xmm0        # 20e0 <_IO_stdin_used+0xe0>
+    18e3:	cvtsi2sdq 0x18(%rsp),%xmm1
+    18ea:	mulsd  0x7f6(%rip),%xmm1        # 20e8 <_IO_stdin_used+0xe8>
+    18f2:	addsd  %xmm1,%xmm0
+    18f6:	subsd  0x8(%rsp),%xmm0
+    18fc:	mov    0xa8(%rsp),%rax
+    1904:	sub    %fs:0x28,%rax
+    190d:	jne    191f <par+0x12f>
+    190f:	add    $0xb0,%rsp
+    1916:	pop    %rbx
+    1917:	pop    %rbp
+    1918:	pop    %r12
+    191a:	pop    %r13
+    191c:	pop    %r14
+    191e:	ret
+    191f:	call   1130 <__stack_chk_fail@plt>
+
+<rd>:
+    1750:	endbr64
+    1754:	mov    0x298d(%rip),%rcx        # 40e8 <per>
+    175b:	push   %r14
+    175d:	push   %r13
+    175f:	push   %r12
+    1761:	push   %rbp
+    1762:	mov    %rdi,%rbp
+    1765:	push   %rbx
+    1766:	test   %rcx,%rcx
+    1769:	je     17e0 <rd+0x90>
+    176b:	mov    %fs:0x0,%rax
+    1774:	lea    0xfffffffffffc0000,%r13
+    177c:	xor    %r14d,%r14d
+    177f:	xor    %ebx,%ebx
+    1781:	lea    (%rax,%r13,1),%r12
+    1785:	nopl   (%rax)
+    1788:	imul   %rbp,%rcx
+    178c:	mov    0x294e(%rip),%edi        # 40e0 <fd>
+    1792:	mov    $0x40000,%edx
+    1797:	mov    %r12,%rsi
+    179a:	add    %r14,%rcx
+    179d:	add    $0x40000,%r14
+    17a4:	call   1190 <pread@plt>
+    17a9:	mov    0x2938(%rip),%rcx        # 40e8 <per>
+    17b0:	mov    %rax,%rdx
+    17b3:	movzbl %fs:0x0(%r13),%eax
+    17b9:	add    %rdx,%rax
+    17bc:	add    %rax,%rbx
+    17bf:	cmp    %rcx,%r14
+    17c2:	jb     1788 <rd+0x38>
+    17c4:	lea    0x2895(%rip),%rax        # 4060 <sums>
+    17cb:	mov    %rbx,(%rax,%rbp,8)
+    17cf:	xor    %eax,%eax
+    17d1:	pop    %rbx
+    17d2:	pop    %rbp
+    17d3:	pop    %r12
+    17d5:	pop    %r13
+    17d7:	pop    %r14
+    17d9:	ret
+    17da:	nopw   0x0(%rax,%rax,1)
+    17e0:	xor    %ebx,%ebx
+    17e2:	jmp    17c4 <rd+0x74>
+    17e4:	data16 cs nopw 0x0(%rax,%rax,1)
+    17ef:	nop

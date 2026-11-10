@@ -1,0 +1,1110 @@
+{
+  "claimed": {
+    "metadata_revision": "e5c673c800410f4aa503611beb35f2b339a40f1a",
+    "metadata_dirty": true,
+    "ratios": {
+      "lines": {
+        "ordinary:1": {
+          "ratio": 0.9519306347022991,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.316317485898469,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.194003241491086,
+          "best_C_config": "omp:all"
+        }
+      },
+      "lines32": {
+        "ordinary:1": {
+          "ratio": 0.7221634088245302,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.8967620314925704,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.9180873866446826,
+          "best_C_config": "omp:all"
+        }
+      },
+      "words": {
+        "ordinary:1": {
+          "ratio": 1.0869731702958672,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.181725370086779,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.087274096385542,
+          "best_C_config": "omp:all"
+        }
+      },
+      "sum": {
+        "ordinary:1": {
+          "ratio": 1.056769281694803,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.2012778330400185,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.1555348758512753,
+          "best_C_config": "omp:all"
+        }
+      },
+      "pairs": {
+        "ordinary:1": {
+          "ratio": 1.0222024427631904,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1136011141708606,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0226533545117615,
+          "best_C_config": "omp:all"
+        }
+      },
+      "nonascii": {
+        "ordinary:1": {
+          "ratio": 1.0619188088214637,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0293230935228967,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.056231771339685,
+          "best_C_config": "omp:all"
+        }
+      },
+      "upper": {
+        "ordinary:1": {
+          "ratio": 0.8973022034258348,
+          "best_C_config": "c:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9317234652558153,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0443585621943294,
+          "best_C_config": "omp:all"
+        }
+      },
+      "rot13": {
+        "ordinary:1": {
+          "ratio": 0.9598547258393126,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0387833120948529,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.8148682697717654,
+          "best_C_config": "omp:all"
+        }
+      },
+      "swapcase": {
+        "ordinary:1": {
+          "ratio": 1.0054872736036187,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1139080095619365,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.1267457270039756,
+          "best_C_config": "omp:all"
+        }
+      },
+      "xlat": {
+        "ordinary:1": {
+          "ratio": 2.3340043547923255,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.927447516535886,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.7481766157989227,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.759734066427289,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.6384244266737162,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.8949507633335536,
+          "best_C_config": "hand:4"
+        }
+      },
+      "maxline": {
+        "ordinary:1": {
+          "ratio": 1.9361792783013605,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.8639610844401431,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.9972574050064825,
+          "best_C_config": "omp:all"
+        }
+      },
+      "letters": {
+        "ordinary:1": {
+          "ratio": 3.784862709259336,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.923399659369418,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 2.510378421607474,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.7999200261732524,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 2.5682337191904874,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.8664068036853295,
+          "best_C_config": "hand:4"
+        }
+      },
+      "sum4": {
+        "ordinary:1": {
+          "ratio": 0.9838897454453919,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0842760437962837,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.2040869115364718,
+          "best_C_config": "omp:all"
+        }
+      },
+      "sumpos4": {
+        "ordinary:1": {
+          "ratio": 0.9639366784275767,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0352808236377333,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0741252302025783,
+          "best_C_config": "omp:all"
+        }
+      },
+      "maxgap4": {
+        "ordinary:1": {
+          "ratio": 0.9663356666124043,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.3102748282323549,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0378742127512726,
+          "best_C_config": "omp:all"
+        }
+      },
+      "scale4": {
+        "ordinary:1": {
+          "ratio": 0.9692170538570455,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0487272206508897,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.1470254037821606,
+          "best_C_config": "omp:all"
+        }
+      },
+      "filter4": {
+        "ordinary:1": {
+          "ratio": 1.658242479968475,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.9310915539209247,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.5448959117130674,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 1.1672519020148817,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.4021702014645065,
+          "best_C_config": "omp:4"
+        },
+        "hand:all": {
+          "ratio": 0.9728724816936677,
+          "best_C_config": "hand:all"
+        }
+      },
+      "prefix4": {
+        "ordinary:1": {
+          "ratio": 1.2930696678361506,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1182249828291575,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.030948502693898,
+          "best_C_config": "omp:all"
+        }
+      },
+      "strip": {
+        "ordinary:1": {
+          "ratio": 3.0404453345900095,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.7961828463713477,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 4.346126641966992,
+          "best_C_config": "omp:1"
+        },
+        "hand:4": {
+          "ratio": 0.8489053553384978,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 4.270349637514912,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.9371616041112233,
+          "best_C_config": "hand:all"
+        }
+      },
+      "csv": {
+        "ordinary:1": {
+          "ratio": 4.054856483854434,
+          "best_C_config": "c:1"
+        },
+        "hand:1": {
+          "ratio": 0.41809328549461816,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 2.215695393699195,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.38443806365511385,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 2.2296122994652405,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.5295231729055259,
+          "best_C_config": "hand:4"
+        }
+      },
+      "idents": {
+        "ordinary:1": {
+          "ratio": 4.1113459587419685,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.8385308469008165,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 3.5819690184274284,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.4903017399603553,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 3.6230406866607434,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.5597894419205043,
+          "best_C_config": "hand:4"
+        }
+      },
+      "strings": {
+        "ordinary:1": {
+          "ratio": 3.439227854789931,
+          "best_C_config": "c:1"
+        },
+        "hand:1": {
+          "ratio": 0.7638593769323305,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 5.560924450602317,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.9404995574029172,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 3.7150246391500366,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.693356166777339,
+          "best_C_config": "hand:all"
+        }
+      },
+      "json": {
+        "ordinary:1": {
+          "ratio": 5.57593547868246,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.6410886823451017,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 7.285613451309587,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 1.1906778592855882,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 3.1918649534233414,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.4446998679041361,
+          "best_C_config": "hand:all"
+        }
+      }
+    },
+    "ranges": {
+      "maps/reductions/neighbours/prefix": {
+        "ordinary": {
+          "min": [
+            "lines32",
+            "ordinary:1",
+            0.7221634088245302
+          ],
+          "max": [
+            "lines",
+            "ordinary:4",
+            1.316317485898469
+          ]
+        }
+      },
+      "xlat": {
+        "ordinary": {
+          "min": [
+            "xlat",
+            "ordinary:all",
+            1.6384244266737162
+          ],
+          "max": [
+            "xlat",
+            "ordinary:1",
+            2.3340043547923255
+          ]
+        },
+        "hand": {
+          "min": [
+            "xlat",
+            "hand:4",
+            0.759734066427289
+          ],
+          "max": [
+            "xlat",
+            "hand:1",
+            0.927447516535886
+          ]
+        }
+      },
+      "filters": {
+        "ordinary": {
+          "min": [
+            "filter4",
+            "ordinary:all",
+            1.4021702014645065
+          ],
+          "max": [
+            "letters",
+            "ordinary:1",
+            3.784862709259336
+          ]
+        },
+        "hand": {
+          "min": [
+            "letters",
+            "hand:4",
+            0.7999200261732524
+          ],
+          "max": [
+            "filter4",
+            "hand:4",
+            1.1672519020148817
+          ]
+        }
+      },
+      "same-technique automata": {
+        "ordinary": {
+          "min": [
+            "strip",
+            "ordinary:1",
+            3.0404453345900095
+          ],
+          "max": [
+            "strings",
+            "ordinary:4",
+            5.560924450602317
+          ]
+        },
+        "hand": {
+          "min": [
+            "idents",
+            "hand:4",
+            0.4903017399603553
+          ],
+          "max": [
+            "strings",
+            "hand:4",
+            0.9404995574029172
+          ]
+        }
+      },
+      "CSV/JSON": {
+        "ordinary": {
+          "min": [
+            "csv",
+            "ordinary:4",
+            2.215695393699195
+          ],
+          "max": [
+            "json",
+            "ordinary:4",
+            7.285613451309587
+          ]
+        },
+        "hand": {
+          "min": [
+            "csv",
+            "hand:4",
+            0.38443806365511385
+          ],
+          "max": [
+            "json",
+            "hand:4",
+            1.1906778592855882
+          ]
+        }
+      },
+      "one CPU same-technique hand": {
+        "min": [
+          "strings",
+          0.7638593769323305
+        ],
+        "max": [
+          "filter4",
+          0.9310915539209247
+        ]
+      }
+    }
+  },
+  "fresh": {
+    "metadata_revision": "af3ecc935319a4698b499c66044faff95ef0663d",
+    "metadata_dirty": false,
+    "ratios": {
+      "lines": {
+        "ordinary:1": {
+          "ratio": 1.0969994244100203,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.147201472722767,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0872331519464211,
+          "best_C_config": "omp:all"
+        }
+      },
+      "lines32": {
+        "ordinary:1": {
+          "ratio": 0.7257709635734991,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9202665441176471,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.9180008790104853,
+          "best_C_config": "omp:all"
+        }
+      },
+      "words": {
+        "ordinary:1": {
+          "ratio": 1.020382910751648,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0831566634987937,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0556439968901559,
+          "best_C_config": "omp:all"
+        }
+      },
+      "sum": {
+        "ordinary:1": {
+          "ratio": 1.0924112938122026,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1202945990180033,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.119865461425268,
+          "best_C_config": "omp:all"
+        }
+      },
+      "pairs": {
+        "ordinary:1": {
+          "ratio": 1.1003202759300321,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.0439723809838448,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.055108807500286,
+          "best_C_config": "omp:all"
+        }
+      },
+      "nonascii": {
+        "ordinary:1": {
+          "ratio": 1.0927366313983415,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.158263253436076,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.2296227725063642,
+          "best_C_config": "omp:all"
+        }
+      },
+      "upper": {
+        "ordinary:1": {
+          "ratio": 0.8303143669714264,
+          "best_C_config": "c:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9733618921201882,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.9899512486319769,
+          "best_C_config": "omp:all"
+        }
+      },
+      "rot13": {
+        "ordinary:1": {
+          "ratio": 1.0178112237180457,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.978125,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.05442459493145,
+          "best_C_config": "omp:all"
+        }
+      },
+      "swapcase": {
+        "ordinary:1": {
+          "ratio": 1.0688503457166296,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1282894736842106,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.0647378516624042,
+          "best_C_config": "omp:all"
+        }
+      },
+      "xlat": {
+        "ordinary:1": {
+          "ratio": 2.276833792030633,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.8801204578995653,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.7124762313684598,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.7190087713917683,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.7660881533451946,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.7870019134579879,
+          "best_C_config": "hand:4"
+        }
+      },
+      "maxline": {
+        "ordinary:1": {
+          "ratio": 1.9280619319825616,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.797014845740353,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.8213809821958933,
+          "best_C_config": "omp:all"
+        }
+      },
+      "letters": {
+        "ordinary:1": {
+          "ratio": 3.6389419949937913,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.8945148510948617,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 2.58437701281042,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.7885922851213054,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 2.4846244825547013,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.8145328208160851,
+          "best_C_config": "hand:4"
+        }
+      },
+      "sum4": {
+        "ordinary:1": {
+          "ratio": 1.0176268573030558,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9077857005203315,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.9263975613353655,
+          "best_C_config": "omp:4"
+        }
+      },
+      "sumpos4": {
+        "ordinary:1": {
+          "ratio": 0.9656320767283868,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9310411885963207,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.8376987409245473,
+          "best_C_config": "omp:all"
+        }
+      },
+      "maxgap4": {
+        "ordinary:1": {
+          "ratio": 0.9667635493246709,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1986311136460859,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.009843139017484,
+          "best_C_config": "omp:all"
+        }
+      },
+      "scale4": {
+        "ordinary:1": {
+          "ratio": 0.9369714285714286,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.1236860692176658,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.073793133687026,
+          "best_C_config": "omp:all"
+        }
+      },
+      "filter4": {
+        "ordinary:1": {
+          "ratio": 1.7081429876656007,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.9124600274097762,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 1.5002029595188013,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.9033174655891362,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 1.3733118971061093,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.9097266881028939,
+          "best_C_config": "hand:all"
+        }
+      },
+      "prefix4": {
+        "ordinary:1": {
+          "ratio": 1.2692335775306058,
+          "best_C_config": "omp:1"
+        },
+        "ordinary:4": {
+          "ratio": 0.9363513474646956,
+          "best_C_config": "omp:4"
+        },
+        "ordinary:all": {
+          "ratio": 0.8757377314253375,
+          "best_C_config": "omp:all"
+        }
+      },
+      "strip": {
+        "ordinary:1": {
+          "ratio": 2.887092853670394,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.7958191541079241,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 6.066561418986372,
+          "best_C_config": "omp:1"
+        },
+        "hand:4": {
+          "ratio": 0.9749727207299236,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 5.041480966988868,
+          "best_C_config": "omp:1"
+        },
+        "hand:all": {
+          "ratio": 0.8102293993941849,
+          "best_C_config": "hand:4"
+        }
+      },
+      "csv": {
+        "ordinary:1": {
+          "ratio": 4.038849252603399,
+          "best_C_config": "c:1"
+        },
+        "hand:1": {
+          "ratio": 0.44865571082732386,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 2.3469078202100495,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.5058080371714379,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 2.098938043652276,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.5366881904050376,
+          "best_C_config": "hand:all"
+        }
+      },
+      "idents": {
+        "ordinary:1": {
+          "ratio": 3.8589579688691518,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.8251805499484143,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 5.413260943912449,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.7602385430916553,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 2.755363476703743,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.6124005647577396,
+          "best_C_config": "hand:4"
+        }
+      },
+      "strings": {
+        "ordinary:1": {
+          "ratio": 3.2589298274089704,
+          "best_C_config": "c:1"
+        },
+        "hand:1": {
+          "ratio": 0.7684575014878537,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 5.517624212223362,
+          "best_C_config": "c:1"
+        },
+        "hand:4": {
+          "ratio": 0.9178147442473985,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 4.0306732956939415,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.7271930563748209,
+          "best_C_config": "hand:all"
+        }
+      },
+      "json": {
+        "ordinary:1": {
+          "ratio": 5.523979801672531,
+          "best_C_config": "omp:1"
+        },
+        "hand:1": {
+          "ratio": 0.6539551249828635,
+          "best_C_config": "hand:1"
+        },
+        "ordinary:4": {
+          "ratio": 5.516404968361846,
+          "best_C_config": "omp:4"
+        },
+        "hand:4": {
+          "ratio": 0.5782165455823763,
+          "best_C_config": "hand:4"
+        },
+        "ordinary:all": {
+          "ratio": 4.41475954229015,
+          "best_C_config": "omp:all"
+        },
+        "hand:all": {
+          "ratio": 0.5922821477154517,
+          "best_C_config": "hand:4"
+        }
+      }
+    },
+    "ranges": {
+      "maps/reductions/neighbours/prefix": {
+        "ordinary": {
+          "min": [
+            "lines32",
+            "ordinary:1",
+            0.7257709635734991
+          ],
+          "max": [
+            "prefix4",
+            "ordinary:1",
+            1.2692335775306058
+          ]
+        }
+      },
+      "xlat": {
+        "ordinary": {
+          "min": [
+            "xlat",
+            "ordinary:4",
+            1.7124762313684598
+          ],
+          "max": [
+            "xlat",
+            "ordinary:1",
+            2.276833792030633
+          ]
+        },
+        "hand": {
+          "min": [
+            "xlat",
+            "hand:4",
+            0.7190087713917683
+          ],
+          "max": [
+            "xlat",
+            "hand:1",
+            0.8801204578995653
+          ]
+        }
+      },
+      "filters": {
+        "ordinary": {
+          "min": [
+            "filter4",
+            "ordinary:all",
+            1.3733118971061093
+          ],
+          "max": [
+            "letters",
+            "ordinary:1",
+            3.6389419949937913
+          ]
+        },
+        "hand": {
+          "min": [
+            "letters",
+            "hand:4",
+            0.7885922851213054
+          ],
+          "max": [
+            "filter4",
+            "hand:1",
+            0.9124600274097762
+          ]
+        }
+      },
+      "same-technique automata": {
+        "ordinary": {
+          "min": [
+            "idents",
+            "ordinary:all",
+            2.755363476703743
+          ],
+          "max": [
+            "strip",
+            "ordinary:4",
+            6.066561418986372
+          ]
+        },
+        "hand": {
+          "min": [
+            "idents",
+            "hand:all",
+            0.6124005647577396
+          ],
+          "max": [
+            "strip",
+            "hand:4",
+            0.9749727207299236
+          ]
+        }
+      },
+      "CSV/JSON": {
+        "ordinary": {
+          "min": [
+            "csv",
+            "ordinary:all",
+            2.098938043652276
+          ],
+          "max": [
+            "json",
+            "ordinary:1",
+            5.523979801672531
+          ]
+        },
+        "hand": {
+          "min": [
+            "csv",
+            "hand:1",
+            0.44865571082732386
+          ],
+          "max": [
+            "json",
+            "hand:1",
+            0.6539551249828635
+          ]
+        }
+      },
+      "one CPU same-technique hand": {
+        "min": [
+          "strings",
+          0.7684575014878537
+        ],
+        "max": [
+          "filter4",
+          0.9124600274097762
+        ]
+      }
+    }
+  }
+}
