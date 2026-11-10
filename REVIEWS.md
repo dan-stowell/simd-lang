@@ -94,3 +94,31 @@ What I take from it: I explained a measurement with a general claim about compil
 did not try to break the claim. The benchmark harness now makes the cheap version of that
 mistake hard (outputs are checked per configuration, failures stop the run), and the
 baselines were each tried in several formulations before being timed.
+
+## Review 5 — second audit, of the response to the first (2026-11-10)
+
+Again commissioned by the repository owner (astra, x-high); the text is AUDIT_FOLLOWUP.md, the
+verdict and its backlog are at the top of AUDIT.md, the evidence is in
+`reviews/reaudit-2026-11-10/`. It reviewed `17e317d`.
+
+| finding | verdict | action |
+|---|---|---|
+| Tests, the 21 output checks and the automaton gains over the supplied C reproduce | — | none needed |
+| **1. `explore/iotest.c`: my race fix left the per-thread sums unused, so GCC deleted the page touches** | correct; I broke the probe while fixing it | the sums are folded into a printed checksum; the disassembly of `touch` has its load again. SWEETSPOT.md no longer leans on this probe for any number. |
+| **2. `swapcase` in C is arithmetic, not a table**; written that way it vectorises and the lead shrinks to 1.1-1.6x | correct. The second time a "C cannot" turned out to be "this spelling does not". | `swapcase` is arithmetic on both sides now and is reported as the tie it is. The table claim moved to a table that is not arithmetic: `xlat`, EBCDIC to Latin-1 (`bench/xlat.h`). |
+| "Best C" is not an upper bound on C; compare with the intrinsics prototype under the same conditions | correct, and the most useful request | new `bench/hand.c`: AVX-512 intrinsics + OpenMP for the seven programs where ordinary C loses, using the same techniques as the stencils and, for CSV and JSON, the better-known algorithm (carry-less multiply, as simdjson). The table has a "Strand / best hand C" column. Result: Strand is level with or behind hand-written intrinsics; the advantage is over what a compiler makes of ordinary source. SWEETSPOT.md is rewritten to say that. |
+| "Best C at n CPUs" was OpenMP at exactly n threads | correct | best C for a budget is now the fastest C configuration on at most that many CPUs |
+| **3. Chained `prev` falls back to one thread** (`scan dup prev dup prev + +`); tests pass regardless | correct. Cause found: the check compared the whole carry vector of a `prev`, of which only the last element is ever read; the other elements legitimately differ. | fixed (compare the element that is used). Then the real limit behind it, carries that depend on carries, was addressed: the pool retries with carries derived from the real pass (sums by difference, automata by starting from a permutation that can be peeled off, maxima by one pass from -inf), bounded by the thread count. `tests/pool.py` now asserts the path taken, with a copy of each binary whose fallback entry exits 77 (the audit's own detector), for 20 programs at 2, 3, 4 and 8 CPUs. README and DESIGN no longer say "every line can be split". |
+| **4. The automaton examples are a toy grammar, not Python lexing** | correct | README, SWEETSPOT and REPORT say "'#' comments and "..." strings" and call it a simplified grammar. A real grammar was added where four states are enough: `json` (structural characters outside strings), checked against a skeleton rebuilt from Python's `json` parser, not against another scanner. |
+| **5. `check_probe.py` accepts `/bin/true`; weak APX and VL patterns; HARDWARE.md contradicts its own corrections** | correct on all three | the checker fails on a missing probe (42 problems for `/bin/true`) and names the instruction for VL and APX; the prefix-sum row says 2-4x with the reason (0.85 or 1.69 ticks per element for the scalar loop, by build flags); the gather row and conclusion 2 are rewritten instead of footnoted |
+| Fixtures are reused by file name across generator changes | correct | fixture names carry a hash of the generators; `results.json` records input hashes, compiler version, source revision and CPU sets |
+| Exercise all 256 four-state functions and their compositions | done | `tests/fsm_all.py`, in `test.sh` |
+
+Not done from its backlog: an independent interpreter; varying input size, distribution and
+output destination; uncertainty estimates beyond median and best; a real-language lexer
+against an independent lexer (needs more than four states, see SWEETSPOT.md).
+
+What I take from it: the first audit's lesson was "try other spellings of the baseline", and
+I then did not try the most obvious other spelling of `swapcase`. The structural fix is the
+hand-C column: instead of arguing about how strong the C is, the table now brackets Strand
+between what a compiler does with ordinary source and what an expert does with intrinsics.
