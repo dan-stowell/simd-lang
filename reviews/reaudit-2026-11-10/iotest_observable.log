@@ -1,0 +1,5 @@
+| strategy | 1 thread | 2 | 4 | 8 |
+|---|---|---|---|---|
+| mmap, fault on touch | 23.5 (+16.4 unmap) | 16.2 (+14.5 unmap) | 10.3 (+14.6 unmap) | 5.5 (+10.4 unmap) |
+| mmap MAP_POPULATE (serial prefault) | 13.3 (+6.1 unmap) | 12.4 (+6.4 unmap) | 11.8 (+5.9 unmap) | 12.2 (+5.9 unmap) |
+| pread into a reused 256 KiB buffer | 45.2 | 25.3 | 15.5 | 8.0 |

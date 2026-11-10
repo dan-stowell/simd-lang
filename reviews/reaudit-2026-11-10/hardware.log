@@ -1,0 +1,98 @@
+brand: AMD EPYC 9554P 64-Core Processor
+hypervisor bit: 1
+XCR0 supported mask (cpuid.0xd): 0x2e7 ; XCR0 enabled: 0xe7 (opmask/zmm_hi256/hi16_zmm = bits 5,6,7: enabled)
+
+## execution probes
+| extension | CPUID/flags says | actually executes |
+|---|---|---|
+| SSE2 | yes | yes |
+| SSSE3 | yes | yes |
+| SSE4.1 | yes | yes |
+| SSE4.2 (crc32) | yes | yes |
+| SSE4a (extrq) | yes | yes |
+| POPCNT | yes | yes |
+| LZCNT | yes | yes |
+| BMI1 | yes | yes |
+| BMI2 (pext/pdep/bzhi) | yes | yes |
+| ADX | yes | yes |
+| MOVBE | yes | yes |
+| PCLMULQDQ | yes | yes |
+| AES-NI | yes | yes |
+| SHA-NI | yes | yes |
+| AVX | yes | yes |
+| AVX2 | yes | yes |
+| FMA3 | yes | yes |
+| F16C | yes | yes |
+| AVX-512F (zmm add) | yes | yes |
+| AVX-512F (k-mask compare) | yes | yes |
+| AVX-512F vpcompressd | yes | yes |
+| AVX-512F vpgatherdd | yes | yes |
+| AVX-512F vpscatterdd | yes | yes |
+| AVX-512DQ | yes | yes |
+| AVX-512BW | yes | yes |
+| AVX-512VL | yes | yes |
+| AVX-512CD (vpconflictd, vplzcntd) | yes | yes |
+| AVX-512IFMA | yes | yes |
+| AVX-512VBMI (vpermb) | yes | yes |
+| AVX-512VBMI2 (vpcompressb) | yes | yes |
+| AVX-512VNNI | yes | yes |
+| AVX-512BITALG | yes | yes |
+| AVX-512VPOPCNTDQ | yes | yes |
+| AVX-512BF16 | yes | yes |
+| GFNI (zmm) | yes | yes |
+| VAES (zmm) | yes | yes |
+| VPCLMULQDQ (zmm) | yes | yes |
+| AVX-512FP16 | no | SIGILL |
+| AVX-512VP2INTERSECT | no | SIGILL |
+| AVX-VNNI (VEX) | no | SIGILL |
+| AMX (tilerelease) | no | SIGILL |
+| APX (REX2) | no | SIGILL |
+
+TSC: 3.0953 ticks/ns (3095 MHz)
+scalar spin before 512-bit heat: 27.4 ms; right after 300ms of zmm mullo: 27.1 ms (ratio 0.991)
+
+## kernel costs (L1-resident, 4 KiB arrays; best of 7)
+| kernel | TSC ticks/unit | ns/unit |
+|---|---|---|
+| add i32, zmm (per 16-elt vector)                           |    1.90 |   0.615 |
+| add i32, ymm (per 8-elt vector)                            |    0.90 |   0.291 |
+| add i32, scalar (per element)                              |    1.10 |   0.355 |
+| add i32, zmm, dst 4K-ALIASED with src (+64B mod 4096)      |    1.92 |   0.619 |
+| mullo i32 zmm (per vector)                                 |    1.91 |   0.618 |
+| cmp->k + blend zmm (per vector)                            |    2.78 |   0.900 |
+| min/max i32 zmm (per vector)                               |    1.89 |   0.612 |
+| vpternlogd zmm (per vector)                                |    2.82 |   0.912 |
+| variable shift vpsrlvd zmm (per vector)                    |    1.95 |   0.631 |
+| vpopcntd zmm (per vector)                                  |    1.74 |   0.562 |
+| test->k, kmov->gpr, popcnt (per vector)                    |    1.91 |   0.616 |
+| masked store vmovdqu32 [m]{k} (per vector)                 |    1.84 |   0.594 |
+| vpcompressd zmm{k}{z} reg + full store (per vector)        |    4.31 |   1.392 |
+| vpcompressd [mem]{k} direct (per vector)                   |   71.02 |  22.944 |
+| compress scalar, branchy, 50% random (per element)         |    2.40 |   0.777 |
+| compress scalar, branchless (per element)                  |    0.86 |   0.278 |
+| vpcompressb zmm reg + full store (per 64-byte vector)      |    4.90 |   1.584 |
+| vpcompressb [mem]{k} direct (per 64-byte vector)           |  143.59 |  46.390 |
+| vpexpandd from mem (per vector)                            |    4.25 |   1.372 |
+| vpgatherdd zmm, L1 table (per vector)                      |   18.38 |   5.940 |
+| gather scalar (per element)                                |    1.16 |   0.374 |
+| vpgatherdd zmm, 64 MiB table random (per vector)           |  143.49 |  46.358 |
+| vpscatterdd zmm, L1 (per vector)                           |   20.46 |   6.611 |
+| scatter scalar (per element)                               |    1.08 |   0.349 |
+| vpconflictd zmm (per vector)                               |    1.79 |   0.577 |
+| prefix-sum i32 in-register log-step + carry (per vector)   |    6.73 |   2.174 |
+| prefix-sum scalar (per element)                            |    1.69 |   0.545 |
+| prefix-xor via pclmulqdq (per 64 bits)                     |    2.27 |   0.732 |
+| pext r64 (per op)                                          |    0.87 |   0.281 |
+| vpermb zmm (per 64-byte vector)                            |    1.74 |   0.563 |
+| vpshufb zmm (per 64-byte vector)                           |    1.74 |   0.563 |
+| classify bytes: 2x vpshufb nibble tables (per 64 bytes)    |    2.63 |   0.850 |
+| classify bytes: vpermi2b 128-entry table (per 64 bytes)    |    1.76 |   0.568 |
+| classify as dwords: widen + gather (per 16 bytes)          |   17.54 |   5.666 |
+| vpmovzxbd widen (per 16 elements)                          |    1.69 |   0.547 |
+| vpmovdb narrow (per 16 elements)                           |    1.76 |   0.569 |
+
+## memory-bound (64 MiB array, read+add+write)
+| kernel | TSC ticks/unit | ns/unit |
+|---|---|---|
+| zmm stream (per 64 bytes)                                  |    5.73 |   1.851 |
+| ymm stream (per 64 bytes)                                  |    5.73 |   1.852 |

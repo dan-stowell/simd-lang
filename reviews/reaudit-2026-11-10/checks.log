@@ -1,0 +1,47 @@
+PASS depth1 4097
+PASS depth2 4097
+PASS depth3 4097
+PASS depth4 4097
+PASS depth5 4097
+PASS depth6 4097
+PASS depth7 4097
+PASS depth8 4097
+PASS permutation 524289
+PASS prev 524289
+PASS prev2 524289
+PASS dependent automata 524289
+PASS boundary0 0
+PASS boundary1 1
+PASS boundary3 3
+PASS boundary4 4
+PASS boundary15 15
+PASS boundary16 16
+PASS boundary17 17
+PASS boundary63 63
+PASS boundary64 64
+PASS boundary65 65
+PASS boundary127 127
+PASS boundary128 128
+PASS boundary129 129
+PASS boundary513 513
+PATH scan-prev 1 CPUs: 0
+PATH scan-prev 2 CPUs: 0
+PATH scan-prev 3 CPUs: 0
+PATH scan-prev 4 CPUs: 0
+PATH scan-prev 8 CPUs: 0
+PATH scan-prev-prev 1 CPUs: 0
+PATH scan-prev-prev 2 CPUs: 77
+PATH scan-prev-prev 3 CPUs: 77
+PATH scan-prev-prev 4 CPUs: 77
+PATH scan-prev-prev 8 CPUs: 77
+PATH DFA 1 CPUs: 0
+PATH DFA 2 CPUs: 0
+PATH DFA 3 CPUs: 0
+PATH DFA 4 CPUs: 0
+PATH DFA 8 CPUs: 0
+PATH DFA-prev 1 CPUs: 0
+PATH DFA-prev 2 CPUs: 0
+PATH DFA-prev 3 CPUs: 0
+PATH DFA-prev 4 CPUs: 0
+PATH DFA-prev 8 CPUs: 0
+Saved /home/exedev/simd-lang/build/reaudit-checks/checks.json

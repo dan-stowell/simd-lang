@@ -1,0 +1,5 @@
+/home/exedev/simd-lang/build/reaudit-reproduction/run-rpxf0e1o/swap_arithmetic.c:107:55: optimized: loop vectorized using 64 byte vectors
+/home/exedev/simd-lang/build/reaudit-reproduction/run-rpxf0e1o/swap_arithmetic.c:107:55: optimized:  loop versioned for vectorization because of possible aliasing
+/home/exedev/simd-lang/build/reaudit-reproduction/run-rpxf0e1o/swap_arithmetic.c:107:55: optimized: loop vectorized using 32 byte vectors
+/home/exedev/simd-lang/build/reaudit-reproduction/run-rpxf0e1o/swap_arithmetic.c:106:13: optimized: basic block part vectorized using 64 byte vectors
+/home/exedev/simd-lang/build/reaudit-reproduction/run-rpxf0e1o/swap_arithmetic.c:106:13: optimized: basic block part vectorized using 64 byte vectors

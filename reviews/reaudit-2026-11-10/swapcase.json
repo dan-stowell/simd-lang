@@ -1,0 +1,482 @@
+[
+  {
+    "variant": "C table",
+    "cpus": [
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 110959.0,
+        "raw": "wall min 110959 us  median 110959 us   fastest run: usr 90298 sys 20564 faults 5206   all: 110959"
+      },
+      {
+        "wall_us": 113725.0,
+        "raw": "wall min 113725 us  median 113725 us   fastest run: usr 90122 sys 23520 faults 5202   all: 113725"
+      },
+      {
+        "wall_us": 111533.0,
+        "raw": "wall min 111533 us  median 111533 us   fastest run: usr 99469 sys 11962 faults 5206   all: 111533"
+      },
+      {
+        "wall_us": 113994.0,
+        "raw": "wall min 113994 us  median 113994 us   fastest run: usr 85383 sys 28500 faults 5204   all: 113994"
+      },
+      {
+        "wall_us": 142729.0,
+        "raw": "wall min 142729 us  median 142729 us   fastest run: usr 126483 sys 16137 faults 5206   all: 142729"
+      },
+      {
+        "wall_us": 111215.0,
+        "raw": "wall min 111215 us  median 111215 us   fastest run: usr 99106 sys 12018 faults 5203   all: 111215"
+      },
+      {
+        "wall_us": 111704.0,
+        "raw": "wall min 111704 us  median 111704 us   fastest run: usr 83690 sys 27896 faults 5202   all: 111704"
+      },
+      {
+        "wall_us": 116992.0,
+        "raw": "wall min 116992 us  median 116992 us   fastest run: usr 80339 sys 36553 faults 5204   all: 116992"
+      },
+      {
+        "wall_us": 113036.0,
+        "raw": "wall min 113036 us  median 113036 us   fastest run: usr 92856 sys 20086 faults 5208   all: 113036"
+      }
+    ],
+    "median_gbps": 2.3747784422661806,
+    "best_gbps": 2.419231031281825
+  },
+  {
+    "variant": "C arithmetic",
+    "cpus": [
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 54459.0,
+        "raw": "wall min 54459 us  median 54459 us   fastest run: usr 37644 sys 16730 faults 5204   all: 54459"
+      },
+      {
+        "wall_us": 55035.0,
+        "raw": "wall min 55035 us  median 55035 us   fastest run: usr 21145 sys 33803 faults 5204   all: 55035"
+      },
+      {
+        "wall_us": 51833.0,
+        "raw": "wall min 51833 us  median 51833 us   fastest run: usr 35767 sys 15976 faults 5202   all: 51833"
+      },
+      {
+        "wall_us": 61373.0,
+        "raw": "wall min 61373 us  median 61373 us   fastest run: usr 37980 sys 23290 faults 5205   all: 61373"
+      },
+      {
+        "wall_us": 59531.0,
+        "raw": "wall min 59531 us  median 59531 us   fastest run: usr 35081 sys 24337 faults 5203   all: 59531"
+      },
+      {
+        "wall_us": 55032.0,
+        "raw": "wall min 55032 us  median 55032 us   fastest run: usr 15890 sys 39052 faults 5203   all: 55032"
+      },
+      {
+        "wall_us": 52198.0,
+        "raw": "wall min 52198 us  median 52198 us   fastest run: usr 23912 sys 28206 faults 5206   all: 52198"
+      },
+      {
+        "wall_us": 50695.0,
+        "raw": "wall min 50695 us  median 50695 us   fastest run: usr 25152 sys 25448 faults 5207   all: 50695"
+      },
+      {
+        "wall_us": 52202.0,
+        "raw": "wall min 52202 us  median 52202 us   fastest run: usr 36100 sys 16018 faults 5204   all: 52202"
+      }
+    ],
+    "median_gbps": 4.929129363374281,
+    "best_gbps": 5.295107130880758
+  },
+  {
+    "variant": "Strand",
+    "cpus": [
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 44776.0,
+        "raw": "wall min 44776 us  median 44776 us   fastest run: usr 22408 sys 22287 faults 4177   all: 44776"
+      },
+      {
+        "wall_us": 51106.0,
+        "raw": "wall min 51106 us  median 51106 us   fastest run: usr 19620 sys 31392 faults 4179   all: 51106"
+      },
+      {
+        "wall_us": 46582.0,
+        "raw": "wall min 46582 us  median 46582 us   fastest run: usr 23244 sys 23244 faults 4178   all: 46582"
+      },
+      {
+        "wall_us": 51313.0,
+        "raw": "wall min 51313 us  median 51313 us   fastest run: usr 35389 sys 15830 faults 4179   all: 51313"
+      },
+      {
+        "wall_us": 48900.0,
+        "raw": "wall min 48900 us  median 48900 us   fastest run: usr 32590 sys 16228 faults 4178   all: 48900"
+      },
+      {
+        "wall_us": 47171.0,
+        "raw": "wall min 47171 us  median 47171 us   fastest run: usr 11768 sys 35304 faults 4180   all: 47171"
+      },
+      {
+        "wall_us": 49352.0,
+        "raw": "wall min 49352 us  median 49352 us   fastest run: usr 22737 sys 26534 faults 4178   all: 49352"
+      },
+      {
+        "wall_us": 50325.0,
+        "raw": "wall min 50325 us  median 50325 us   fastest run: usr 34752 sys 15494 faults 4178   all: 50325"
+      },
+      {
+        "wall_us": 47516.0,
+        "raw": "wall min 47516 us  median 47516 us   fastest run: usr 27628 sys 19797 faults 4179   all: 47516"
+      }
+    ],
+    "median_gbps": 5.48947762781186,
+    "best_gbps": 5.995074504198677
+  },
+  {
+    "variant": "C table",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 33782.0,
+        "raw": "wall min 33782 us  median 33782 us   fastest run: usr 80934 sys 23194 faults 5209   all: 33782"
+      },
+      {
+        "wall_us": 49798.0,
+        "raw": "wall min 49798 us  median 49798 us   fastest run: usr 138191 sys 23175 faults 5216   all: 49798"
+      },
+      {
+        "wall_us": 47500.0,
+        "raw": "wall min 47500 us  median 47500 us   fastest run: usr 128404 sys 23822 faults 5208   all: 47500"
+      },
+      {
+        "wall_us": 63909.0,
+        "raw": "wall min 63909 us  median 63909 us   fastest run: usr 192972 sys 30840 faults 5208   all: 63909"
+      },
+      {
+        "wall_us": 64915.0,
+        "raw": "wall min 64915 us  median 64915 us   fastest run: usr 192306 sys 31002 faults 5213   all: 64915"
+      },
+      {
+        "wall_us": 38399.0,
+        "raw": "wall min 38399 us  median 38399 us   fastest run: usr 95693 sys 19430 faults 5214   all: 38399"
+      },
+      {
+        "wall_us": 37574.0,
+        "raw": "wall min 37574 us  median 37574 us   fastest run: usr 91346 sys 23000 faults 5216   all: 37574"
+      },
+      {
+        "wall_us": 40183.0,
+        "raw": "wall min 40183 us  median 40183 us   fastest run: usr 84561 sys 33085 faults 5214   all: 40183"
+      },
+      {
+        "wall_us": 47909.0,
+        "raw": "wall min 47909 us  median 47909 us   fastest run: usr 122161 sys 33542 faults 5214   all: 47909"
+      }
+    ],
+    "median_gbps": 5.651272757894737,
+    "best_gbps": 7.946109052157953
+  },
+  {
+    "variant": "C arithmetic",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 37487.0,
+        "raw": "wall min 37487 us  median 37487 us   fastest run: usr 72148 sys 34248 faults 5211   all: 37487"
+      },
+      {
+        "wall_us": 22036.0,
+        "raw": "wall min 22036 us  median 22036 us   fastest run: usr 34550 sys 19380 faults 5216   all: 22036"
+      },
+      {
+        "wall_us": 36309.0,
+        "raw": "wall min 36309 us  median 36309 us   fastest run: usr 64834 sys 33961 faults 5212   all: 36309"
+      },
+      {
+        "wall_us": 23438.0,
+        "raw": "wall min 23438 us  median 23438 us   fastest run: usr 32467 sys 21937 faults 5217   all: 23438"
+      },
+      {
+        "wall_us": 28113.0,
+        "raw": "wall min 28113 us  median 28113 us   fastest run: usr 51673 sys 24005 faults 5215   all: 28113"
+      },
+      {
+        "wall_us": 40992.0,
+        "raw": "wall min 40992 us  median 40992 us   fastest run: usr 67566 sys 37487 faults 5217   all: 40992"
+      },
+      {
+        "wall_us": 36641.0,
+        "raw": "wall min 36641 us  median 36641 us   fastest run: usr 89247 sys 22311 faults 5218   all: 36641"
+      },
+      {
+        "wall_us": 22150.0,
+        "raw": "wall min 22150 us  median 22150 us   fastest run: usr 28197 sys 24637 faults 5220   all: 22150"
+      },
+      {
+        "wall_us": 36518.0,
+        "raw": "wall min 36518 us  median 36518 us   fastest run: usr 66436 sys 33220 faults 5212   all: 36518"
+      }
+    ],
+    "median_gbps": 7.393083147429012,
+    "best_gbps": 12.181677981484842
+  },
+  {
+    "variant": "Strand",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 59297.0,
+        "raw": "wall min 59297 us  median 59297 us   fastest run: usr 133120 sys 14862 faults 5144   all: 59297"
+      },
+      {
+        "wall_us": 20546.0,
+        "raw": "wall min 20546 us  median 20546 us   fastest run: usr 29447 sys 16250 faults 5144   all: 20546"
+      },
+      {
+        "wall_us": 16492.0,
+        "raw": "wall min 16492 us  median 16492 us   fastest run: usr 17885 sys 17885 faults 5143   all: 16492"
+      },
+      {
+        "wall_us": 30635.0,
+        "raw": "wall min 30635 us  median 30635 us   fastest run: usr 32154 sys 43702 faults 5143   all: 30635"
+      },
+      {
+        "wall_us": 29982.0,
+        "raw": "wall min 29982 us  median 29982 us   fastest run: usr 46887 sys 30213 faults 5142   all: 29982"
+      },
+      {
+        "wall_us": 18359.0,
+        "raw": "wall min 18359 us  median 18359 us   fastest run: usr 15359 sys 23038 faults 5143   all: 18359"
+      },
+      {
+        "wall_us": 20791.0,
+        "raw": "wall min 20791 us  median 20791 us   fastest run: usr 20668 sys 25161 faults 5143   all: 20791"
+      },
+      {
+        "wall_us": 26922.0,
+        "raw": "wall min 26922 us  median 26922 us   fastest run: usr 47640 sys 17067 faults 5144   all: 26922"
+      },
+      {
+        "wall_us": 22292.0,
+        "raw": "wall min 22292 us  median 22292 us   fastest run: usr 25559 sys 25561 faults 5144   all: 22292"
+      }
+    ],
+    "median_gbps": 12.041784317243856,
+    "best_gbps": 16.27670725200097
+  },
+  {
+    "variant": "C table",
+    "cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 49740.0,
+        "raw": "wall min 49740 us  median 49740 us   fastest run: usr 245707 sys 33740 faults 5216   all: 49740"
+      },
+      {
+        "wall_us": 44950.0,
+        "raw": "wall min 44950 us  median 44950 us   fastest run: usr 219662 sys 38859 faults 5222   all: 44950"
+      },
+      {
+        "wall_us": 44064.0,
+        "raw": "wall min 44064 us  median 44064 us   fastest run: usr 241046 sys 29843 faults 5217   all: 44064"
+      },
+      {
+        "wall_us": 43573.0,
+        "raw": "wall min 43573 us  median 43573 us   fastest run: usr 240846 sys 25983 faults 5220   all: 43573"
+      },
+      {
+        "wall_us": 34314.0,
+        "raw": "wall min 34314 us  median 34314 us   fastest run: usr 141136 sys 39043 faults 5222   all: 34314"
+      },
+      {
+        "wall_us": 49415.0,
+        "raw": "wall min 49415 us  median 49415 us   fastest run: usr 231612 sys 32725 faults 5218   all: 49415"
+      },
+      {
+        "wall_us": 39603.0,
+        "raw": "wall min 39603 us  median 39603 us   fastest run: usr 219511 sys 11871 faults 5219   all: 39603"
+      },
+      {
+        "wall_us": 33750.0,
+        "raw": "wall min 33750 us  median 33750 us   fastest run: usr 154916 sys 20099 faults 5220   all: 33750"
+      },
+      {
+        "wall_us": 46563.0,
+        "raw": "wall min 46563 us  median 46563 us   fastest run: usr 242522 sys 48175 faults 5219   all: 46563"
+      }
+    ],
+    "median_gbps": 6.09194480755265,
+    "best_gbps": 7.95364314074074
+  },
+  {
+    "variant": "C arithmetic",
+    "cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 134108.0,
+        "raw": "wall min 134108 us  median 134108 us   fastest run: usr 761618 sys 32893 faults 5219   all: 134108"
+      },
+      {
+        "wall_us": 17074.0,
+        "raw": "wall min 17074 us  median 17074 us   fastest run: usr 50462 sys 14457 faults 5224   all: 17074"
+      },
+      {
+        "wall_us": 30711.0,
+        "raw": "wall min 30711 us  median 30711 us   fastest run: usr 55073 sys 68899 faults 5228   all: 30711"
+      },
+      {
+        "wall_us": 31224.0,
+        "raw": "wall min 31224 us  median 31224 us   fastest run: usr 71042 sys 44028 faults 5226   all: 31224"
+      },
+      {
+        "wall_us": 33707.0,
+        "raw": "wall min 33707 us  median 33707 us   fastest run: usr 76611 sys 43387 faults 5227   all: 33707"
+      },
+      {
+        "wall_us": 20090.0,
+        "raw": "wall min 20090 us  median 20090 us   fastest run: usr 41216 sys 24097 faults 5223   all: 20090"
+      },
+      {
+        "wall_us": 35485.0,
+        "raw": "wall min 35485 us  median 35485 us   fastest run: usr 86745 sys 62717 faults 5228   all: 35485"
+      },
+      {
+        "wall_us": 34490.0,
+        "raw": "wall min 34490 us  median 34490 us   fastest run: usr 113288 sys 18276 faults 5224   all: 34490"
+      },
+      {
+        "wall_us": 23333.0,
+        "raw": "wall min 23333 us  median 23333 us   fastest run: usr 67375 sys 24822 faults 5224   all: 23333"
+      }
+    ],
+    "median_gbps": 8.597087368690751,
+    "best_gbps": 15.721884502752724
+  },
+  {
+    "variant": "Strand",
+    "cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "output": {
+      "sha256": "87e69df2dd2ef004da443bfd36c711aebea8d576dc51e9c63eb00982bf26c0d1",
+      "bytes": 268435456
+    },
+    "samples": [
+      {
+        "wall_us": 26932.0,
+        "raw": "wall min 26932 us  median 26932 us   fastest run: usr 66878 sys 26751 faults 5148   all: 26932"
+      },
+      {
+        "wall_us": 28131.0,
+        "raw": "wall min 28131 us  median 28131 us   fastest run: usr 24982 sys 62573 faults 5147   all: 28131"
+      },
+      {
+        "wall_us": 24524.0,
+        "raw": "wall min 24524 us  median 24524 us   fastest run: usr 40853 sys 59333 faults 5146   all: 24524"
+      },
+      {
+        "wall_us": 28173.0,
+        "raw": "wall min 28173 us  median 28173 us   fastest run: usr 42714 sys 42798 faults 5146   all: 28173"
+      },
+      {
+        "wall_us": 28450.0,
+        "raw": "wall min 28450 us  median 28450 us   fastest run: usr 37061 sys 57289 faults 5146   all: 28450"
+      },
+      {
+        "wall_us": 27851.0,
+        "raw": "wall min 27851 us  median 27851 us   fastest run: usr 73393 sys 67052 faults 5147   all: 27851"
+      },
+      {
+        "wall_us": 16695.0,
+        "raw": "wall min 16695 us  median 16695 us   fastest run: usr 25545 sys 25508 faults 5147   all: 16695"
+      },
+      {
+        "wall_us": 27104.0,
+        "raw": "wall min 27104 us  median 27104 us   fastest run: usr 62784 sys 36968 faults 5147   all: 27104"
+      },
+      {
+        "wall_us": 22957.0,
+        "raw": "wall min 22957 us  median 22957 us   fastest run: usr 30124 sys 41388 faults 5148   all: 22957"
+      }
+    ],
+    "median_gbps": 9.903905548996457,
+    "best_gbps": 16.07879341120096
+  }
+]

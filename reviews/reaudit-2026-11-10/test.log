@@ -1,0 +1,26 @@
+stencils: 433 bodies + 95 prologues, 15942 bytes; stub 5376 bytes; tables.strand 88863 bytes
+stage1 == stage2 (SIMD compiler reproduces the scalar reference)
+stage2 == stage3 (fixed point)
+6628ace0fed1aa587853d7caa3655e3a3c80e727eaa5bb50d7f651b2f7de309f  build/stage1
+6628ace0fed1aa587853d7caa3655e3a3c80e727eaa5bb50d7f651b2f7de309f  build/stage2
+6628ace0fed1aa587853d7caa3655e3a3c80e727eaa5bb50d7f651b2f7de309f  build/stage3
+--- stencils vs scalar interpreter (reference compiler emits, interpreter judges)
+PASS {'ok': 1227, 'fail99': 1058, 'halt': 69, 'cerr': 0, 'runs': 2354, 'toobig': 46}
+--- stage1
+PASS build/stage1 110 cases
+PASS build/stage1 by reference status: {0: 254, 1: 12, 2: 40, 3: 2, 6: 30, 7: 10, 8: 40, 9: 1, 10: 1, 12: 10}
+PASS {'ok': 1312, 'fail99': 981, 'halt': 55, 'cerr': 0, 'runs': 2348, 'toobig': 52}
+--- stage2
+PASS build/stage2 110 cases
+PASS build/stage2 by reference status: {0: 254, 1: 12, 2: 40, 3: 2, 6: 30, 7: 10, 8: 40, 9: 1, 10: 1, 12: 10}
+PASS {'ok': 1312, 'fail99': 981, 'halt': 55, 'cerr': 0, 'runs': 2348, 'toobig': 52}
+--- stage3
+PASS build/stage3 110 cases
+PASS build/stage3 by reference status: {0: 254, 1: 12, 2: 40, 3: 2, 6: 30, 7: 10, 8: 40, 9: 1, 10: 1, 12: 10}
+PASS {'ok': 1312, 'fail99': 981, 'halt': 55, 'cerr': 0, 'runs': 2348, 'toobig': 52}
+--- thread pool at production block sizes, 2..all CPUs, file and pipe
+PASS build/stage2 32 programs, 3968 pool runs
+--- big inputs: the three compilers agree
+PASS big8
+PASS many
+ALL PASS
