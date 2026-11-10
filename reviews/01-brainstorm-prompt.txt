@@ -1,0 +1,10 @@
+Design brainstorm; no code needed, don't touch files. Answer in under 900 words, dense, concrete.
+
+Problem: design a NEW programming language and a compiler for it such that the compiler itself runs as SIMD code (target: one x86-64 machine, AMD Zen 4, AVX-512 incl. VBMI/VBMI2/BITALG/GFNI/CD): every compiler phase data-parallel, masks instead of branches, scans instead of loops, flat arrays instead of pointer trees. The compiler must then be rewritten in its own language and reach a bootstrap fixed point (stage2 == stage3 byte for byte). The language may be bent arbitrarily to make its own compiler more parallel. Prior art (Co-dfns, Pareas, simdjson, Hillis-Steele scans) is the baseline to beat, not a template.
+
+I want your most original ideas, especially:
+1. Language-design moves that make whole compiler phases (lexing, parsing, name resolution, type checking, register allocation, instruction selection/encoding, layout/linking) disappear or become a single scan/gather/scatter. What would you design AWAY?
+2. Where the known algorithm is sequential (symbol tables, sorting/grouping, dependency order, x86 variable-length encoding, branch offsets), what would you invent instead?
+3. What does the self-hosted compiler's source look like if the language has no loops/branches at all? Is that viable?
+4. The biggest traps you foresee (things that look parallel but aren't; fixed-point/determinism hazards; testing blind spots).
+Rank ideas by boldness x plausibility. Be opinionated.

@@ -1,0 +1,82 @@
+I would build **a language of typed, ranked array circuits**, with an explicitly bounded execution model. Its compiler would transform flat tables into executable tiles. The strongest move is to change the compilation contract: programs supply structural information that conventional compilers discover.
+
+“Every phase is data-parallel” is viable. “Every phase is one SIMD operation, with no iteration anywhere” is not: scans themselves require communication rounds, and input larger than the machine requires repeated execution. Permit repetition inside a small, specified bulk-operation runtime; prohibit data-dependent scalar traversal in the compiler.
+
+Ranked by **boldness × plausibility**:
+
+**1. Make source a proof-carrying instruction table. Highest combined score.**
+
+The canonical language has fixed-width records:
+
+`result-id | operation | type/shape | operand-ids | payload`
+
+Names are editor annotations. Operands use module-local numeric IDs; exported interfaces assign explicit slots. Dependencies must point to lower **ranks**, with ranks recorded in source.
+
+This designs away:
+
+- Grammar recovery and recursive parsing: record validation replaces parsing.
+- Symbol tables: operands resolve by indexed gathers.
+- Type inference and overload resolution: every operation selects an exact typed signature.
+- Dependency discovery: ranks expose the schedule; parallel edge checks verify it.
+- Implicit conversions, templates, macros, destructors, exceptions and ambient namespaces.
+
+Use a canonical ASCII transport with fixed-size hexadecimal fields if human-readable source matters. Arbitrary strings live in length-delimited payload sections. Lexing becomes byte classification plus field decoding.
+
+The editor can offer pleasant notation, but **that notation is not another required compiler frontend**. Otherwise the difficulty merely moved.
+
+**2. Replace register allocation with a vector execution ABI. Extremely plausible, genuinely consequential.**
+
+Every SSA result owns a numbered, aligned memory slot. Each operation tile gathers its inputs into prescribed scratch registers and stores its result. No liveness analysis, interference graph, spilling or allocation.
+
+The language’s values are principally arrays, masks and scalars broadcast into arrays. Native tile loops process array blocks, so memory-resident intermediates can still amortize dispatch and address calculation.
+
+For performance, admit explicitly authored **fusion capsules**: small straight-line expressions with declared scratch-register assignments. Verify register ownership and operand availability in parallel over a bounded capsule.
+
+This trades general optimization for predictable compilation. The compiler should itself be written mostly in capsules plus bulk primitives. Expect bandwidth costs; this is not a free replacement for allocation.
+
+**3. Encode into executable “tiles,” not packed instructions. High plausibility.**
+
+Assign each native operation a fixed-size slot, or one of a few statically known size classes. Instruction selection is a table lookup indexed by operation, operand form and target profile. Encoding copies a template and patches fixed fields.
+
+Addresses are arithmetic on tile indices; mixed tile sizes require one prefix sum. Use uniform long branch forms, eliminating relaxation. Reserve bounded images for `rel32`; route farther transfers through fixed-format indirect stubs.
+
+Linking becomes verification and relocation scatter into disjoint destinations. Padding costs instruction-cache capacity, so prefer **tiles containing whole array kernels**, not one padded slot per elementary instruction.
+
+Compiler output includes deterministic padding and a frozen executable-header template.
+
+**4. Replace symbol grouping with owned address spaces. Bolder than parallel hashing, more plausible.**
+
+Each module owns an explicit interval of IDs; each output has exactly one writer. Imports reference `(module-slot, export-slot)`. A build manifest supplies module slots and interface shapes.
+
+Do not sort symbols. Do not hash names. Do not perform discovery-driven loading.
+
+Where grouping is unavoidable, require bounded integer keys and expose histogram/prefix/segmented operations. AVX-512 conflict detection helps identify collisions **within a vector**; it does not solve global contention. Prefer partitioned local histograms followed by deterministic reduction.
+
+The original move is making **collision freedom part of program validity**, rather than a compiler implementation problem.
+
+**5. Replace general recursion with bounded expansion algebra. Boldest; narrower applicability.**
+
+Allow maps, scans, reductions, gathers, unique scatters, stable compaction and segmented variants. Allow fixed-count composition with counts derived from public sizes. Forbid unrestricted recursion and convergence-dependent compilation passes.
+
+A compiler pipeline might look like:
+
+```text
+records = decode_fixed(source)
+errors  = validate(records, gather(records, records.inputs))
+forms   = select_forms(records)
+sizes   = gather(tile_sizes, forms)
+offsets = exclusive_sum(sizes)
+image   = scatter_tiles(offsets, instantiate(forms, records, offsets))
+```
+
+These are equations, not control flow. Masks represent optional work. Compaction handles variable cardinality.
+
+Viable? Yes, for this deliberately restricted compiler. General graph optimization would reintroduce iterative dependencies. Design it out of the bootstrap core.
+
+**The traps that decide whether this succeeds**
+
+- **Parallel work is not shallow work.** Rank-by-rank execution can have linear depth. Arbitrary dependency chains cannot be scanned away without an associative summary of manageable size.
+- **Masks do not erase hazards.** Invalid gathers, conflicting scatters and cross-vector dependencies require precise semantics.
+- **Zen 4 rewards measurement.** Its 512-bit operations use 256-bit execution resources; wider vectors do not imply twice the throughput.
+- **Determinism needs a specification:** canonical IDs, diagnostic order, padding, metadata, reduction trees and feature selection. Never let allocation addresses, hash iteration or host timestamps affect output.
+- **Stage2 == stage3 proves stability, not correctness.** Require independent scalar interpretation, differential kernel tests, malformed-input tests and executable-output tests. A consistently miscompiled compiler can reach a perfect fixed point.
