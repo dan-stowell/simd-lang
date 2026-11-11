@@ -1,0 +1,144 @@
+{
+  "ref_o2": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o3": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_full": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_stream": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_1": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_all": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_fingerprint": {
+    "pass_count": 90,
+    "total": 92,
+    "failures": [
+      "duplicate_fingerprint",
+      "ungrouped_relocations"
+    ]
+  },
+  "link_1": {
+    "pass_count": 92,
+    "total": 92,
+    "failures": []
+  },
+  "link_eager_all": {
+    "pass_count": 92,
+    "total": 92,
+    "failures": []
+  },
+  "link2_1": {
+    "pass_count": 89,
+    "total": 92,
+    "failures": [
+      "five_unique_four_round_collision",
+      "five_unique_unused_four_round_collision",
+      "duplicate_fingerprint"
+    ]
+  },
+  "link2_eager_all": {
+    "pass_count": 89,
+    "total": 92,
+    "failures": [
+      "five_unique_four_round_collision",
+      "five_unique_unused_four_round_collision",
+      "duplicate_fingerprint"
+    ]
+  },
+  "ref_o2_bytes": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o2_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o3_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_full_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_checked_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_stream_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_fingerprint_nf": {
+    "pass_count": 90,
+    "total": 92,
+    "failures": [
+      "duplicate_fingerprint",
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_nf_all": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  }
+}

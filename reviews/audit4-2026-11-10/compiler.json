@@ -1,0 +1,4453 @@
+{
+  "revision": "b591f699daa4bc4d7994c2b16f1891cb538ba113",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "seed": 20261110,
+  "compiler": [
+    {
+      "source": "build/strandc.strand",
+      "source_bytes": 128591,
+      "source_sha256": "3d049fe949c181c98d794cb1f35ce6f84206e63d2b7b34fd10dfefaad87faf14",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 257745,
+      "output_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "samples": [
+        {
+          "wall_ms": 4.874889,
+          "user_ms": 0.0,
+          "system_ms": 4.81,
+          "maxrss_kib": 6592,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.598871,
+          "user_ms": 4.537,
+          "system_ms": 0.0,
+          "maxrss_kib": 6604,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.740887,
+          "user_ms": 0.0,
+          "system_ms": 4.648,
+          "maxrss_kib": 6520,
+          "minor_faults": 1405,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.910644,
+          "user_ms": 4.846,
+          "system_ms": 0.0,
+          "maxrss_kib": 6624,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.397435,
+          "user_ms": 2.159,
+          "system_ms": 2.159,
+          "maxrss_kib": 6524,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 10.886234,
+          "user_ms": 3.569,
+          "system_ms": 7.167,
+          "maxrss_kib": 6476,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.139258,
+          "user_ms": 3.705,
+          "system_ms": 7.295,
+          "maxrss_kib": 6524,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.717701,
+          "user_ms": 4.647,
+          "system_ms": 0.0,
+          "maxrss_kib": 6520,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 6.152768,
+          "user_ms": 0.0,
+          "system_ms": 6.089,
+          "maxrss_kib": 6624,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.000901,
+          "user_ms": 0.0,
+          "system_ms": 4.887,
+          "maxrss_kib": 6632,
+          "minor_faults": 1409,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.680114,
+          "user_ms": 0.0,
+          "system_ms": 4.608,
+          "maxrss_kib": 6604,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.416824,
+          "user_ms": 0.0,
+          "system_ms": 4.345,
+          "maxrss_kib": 6576,
+          "minor_faults": 1405,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.793972,
+          "user_ms": 7.707,
+          "system_ms": 3.908,
+          "maxrss_kib": 6604,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 10.534831,
+          "user_ms": 6.917,
+          "system_ms": 3.47,
+          "maxrss_kib": 6568,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.577688,
+          "user_ms": 0.0,
+          "system_ms": 4.499,
+          "maxrss_kib": 6604,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 4.874889,
+        "user_ms": 2.159,
+        "system_ms": 4.499,
+        "maxrss_kib": 6592,
+        "minor_faults": 1406,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/strandc.strand",
+      "source_bytes": 128591,
+      "source_sha256": "3d049fe949c181c98d794cb1f35ce6f84206e63d2b7b34fd10dfefaad87faf14",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 257745,
+      "output_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "samples": [
+        {
+          "wall_ms": 8.666494,
+          "user_ms": 8.567,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1263,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.582744,
+          "user_ms": 2.707,
+          "system_ms": 2.813,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.477225,
+          "user_ms": 5.407,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.252243,
+          "user_ms": 0.0,
+          "system_ms": 5.192,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.365164,
+          "user_ms": 5.3,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.182968,
+          "user_ms": 6.04,
+          "system_ms": 3.02,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.517605,
+          "user_ms": 0.0,
+          "system_ms": 5.428,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.51405,
+          "user_ms": 0.0,
+          "system_ms": 5.446,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.26401,
+          "user_ms": 2.602,
+          "system_ms": 2.602,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 12.980894,
+          "user_ms": 8.926,
+          "system_ms": 3.907,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.259534,
+          "user_ms": 4.643,
+          "system_ms": 4.521,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.485316,
+          "user_ms": 5.41,
+          "system_ms": 0.0,
+          "maxrss_kib": 5160,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.023317,
+          "user_ms": 8.93,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 15.077986,
+          "user_ms": 7.167,
+          "system_ms": 7.129,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.526678,
+          "user_ms": 0.0,
+          "system_ms": 5.408,
+          "maxrss_kib": 5224,
+          "minor_faults": 1263,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 5.526678,
+        "user_ms": 5.3,
+        "system_ms": 3.02,
+        "maxrss_kib": 5224,
+        "minor_faults": 1261,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/strandc.strand",
+      "source_bytes": 128591,
+      "source_sha256": "3d049fe949c181c98d794cb1f35ce6f84206e63d2b7b34fd10dfefaad87faf14",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 257745,
+      "output_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "samples": [
+        {
+          "wall_ms": 5.129286,
+          "user_ms": 0.0,
+          "system_ms": 4.968,
+          "maxrss_kib": 6568,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 12.660526,
+          "user_ms": 8.028,
+          "system_ms": 4.545,
+          "maxrss_kib": 6524,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 8.012853,
+          "user_ms": 0.0,
+          "system_ms": 7.941,
+          "maxrss_kib": 6624,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.184726,
+          "user_ms": 5.477,
+          "system_ms": 5.501,
+          "maxrss_kib": 6476,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.972643,
+          "user_ms": 3.035,
+          "system_ms": 8.827,
+          "maxrss_kib": 6568,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.667621,
+          "user_ms": 7.689,
+          "system_ms": 3.824,
+          "maxrss_kib": 6604,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.895841,
+          "user_ms": 4.826,
+          "system_ms": 0.0,
+          "maxrss_kib": 6612,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 8.633074,
+          "user_ms": 4.272,
+          "system_ms": 4.29,
+          "maxrss_kib": 6604,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 10.878072,
+          "user_ms": 0.0,
+          "system_ms": 10.787,
+          "maxrss_kib": 6628,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.155054,
+          "user_ms": 0.0,
+          "system_ms": 5.077,
+          "maxrss_kib": 6576,
+          "minor_faults": 1409,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 6.121963,
+          "user_ms": 0.0,
+          "system_ms": 5.957,
+          "maxrss_kib": 6596,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 11.055099,
+          "user_ms": 0.0,
+          "system_ms": 10.903,
+          "maxrss_kib": 6620,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.033149,
+          "user_ms": 4.912,
+          "system_ms": 0.0,
+          "maxrss_kib": 6592,
+          "minor_faults": 1406,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.189558,
+          "user_ms": 5.079,
+          "system_ms": 0.0,
+          "maxrss_kib": 6624,
+          "minor_faults": 1407,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.545978,
+          "user_ms": 5.389,
+          "system_ms": 0.0,
+          "maxrss_kib": 6520,
+          "minor_faults": 1408,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 8.012853,
+        "user_ms": 4.272,
+        "system_ms": 4.968,
+        "maxrss_kib": 6596,
+        "minor_faults": 1407,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/strandc.strand",
+      "source_bytes": 128591,
+      "source_sha256": "3d049fe949c181c98d794cb1f35ce6f84206e63d2b7b34fd10dfefaad87faf14",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 257745,
+      "output_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "samples": [
+        {
+          "wall_ms": 13.258715,
+          "user_ms": 8.751,
+          "system_ms": 4.375,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.482365,
+          "user_ms": 7.941,
+          "system_ms": 3.86,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.010097,
+          "user_ms": 8.818,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.767404,
+          "user_ms": 5.696,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 14.359205,
+          "user_ms": 6.865,
+          "system_ms": 7.416,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.459988,
+          "user_ms": 5.388,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.900486,
+          "user_ms": 0.0,
+          "system_ms": 5.754,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.178243,
+          "user_ms": 8.713,
+          "system_ms": 4.384,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.216842,
+          "user_ms": 8.731,
+          "system_ms": 4.365,
+          "maxrss_kib": 5224,
+          "minor_faults": 1259,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.408031,
+          "user_ms": 8.838,
+          "system_ms": 4.506,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 6.00207,
+          "user_ms": 2.895,
+          "system_ms": 2.895,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 12.994763,
+          "user_ms": 8.495,
+          "system_ms": 4.247,
+          "maxrss_kib": 5224,
+          "minor_faults": 1262,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.75126,
+          "user_ms": 5.668,
+          "system_ms": 0.0,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 14.201977,
+          "user_ms": 7.255,
+          "system_ms": 6.853,
+          "maxrss_kib": 5224,
+          "minor_faults": 1261,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.950341,
+          "user_ms": 0.0,
+          "system_ms": 5.711,
+          "maxrss_kib": 5224,
+          "minor_faults": 1260,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 12.994763,
+        "user_ms": 7.255,
+        "system_ms": 4.365,
+        "maxrss_kib": 5224,
+        "minor_faults": 1261,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big8.strand",
+      "source_bytes": 1033565,
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 1919888,
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 41.47916,
+          "user_ms": 30.072,
+          "system_ms": 11.315,
+          "maxrss_kib": 42956,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.366717,
+          "user_ms": 11.425,
+          "system_ms": 26.858,
+          "maxrss_kib": 42972,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.210007,
+          "user_ms": 21.597,
+          "system_ms": 21.503,
+          "maxrss_kib": 42984,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 47.867707,
+          "user_ms": 23.711,
+          "system_ms": 23.93,
+          "maxrss_kib": 42932,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 33.797019,
+          "user_ms": 7.491,
+          "system_ms": 26.212,
+          "maxrss_kib": 42956,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 47.957903,
+          "user_ms": 25.203,
+          "system_ms": 22.65,
+          "maxrss_kib": 42920,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 45.354583,
+          "user_ms": 12.58,
+          "system_ms": 32.646,
+          "maxrss_kib": 42976,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.025906,
+          "user_ms": 21.631,
+          "system_ms": 17.299,
+          "maxrss_kib": 42980,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.384003,
+          "user_ms": 14.922,
+          "system_ms": 22.383,
+          "maxrss_kib": 42876,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.353858,
+          "user_ms": 20.714,
+          "system_ms": 16.561,
+          "maxrss_kib": 42828,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.539346,
+          "user_ms": 24.361,
+          "system_ms": 15.1,
+          "maxrss_kib": 42980,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 57.516011,
+          "user_ms": 20.487,
+          "system_ms": 36.866,
+          "maxrss_kib": 42948,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 49.854793,
+          "user_ms": 23.061,
+          "system_ms": 26.645,
+          "maxrss_kib": 42972,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.286864,
+          "user_ms": 22.804,
+          "system_ms": 15.39,
+          "maxrss_kib": 42872,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.147836,
+          "user_ms": 22.448,
+          "system_ms": 18.574,
+          "maxrss_kib": 42828,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 41.147836,
+        "user_ms": 21.631,
+        "system_ms": 22.383,
+        "maxrss_kib": 42956,
+        "minor_faults": 10599,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big8.strand",
+      "source_bytes": 1033565,
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 1919888,
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 45.36588,
+          "user_ms": 36.662,
+          "system_ms": 8.616,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.097828,
+          "user_ms": 23.01,
+          "system_ms": 18.995,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 44.130594,
+          "user_ms": 28.018,
+          "system_ms": 16.01,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 44.670163,
+          "user_ms": 28.893,
+          "system_ms": 15.435,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.602527,
+          "user_ms": 26.332,
+          "system_ms": 15.182,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.555887,
+          "user_ms": 28.991,
+          "system_ms": 12.459,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 61.563555,
+          "user_ms": 38.37,
+          "system_ms": 23.046,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.107111,
+          "user_ms": 29.969,
+          "system_ms": 13.053,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 47.966537,
+          "user_ms": 35.656,
+          "system_ms": 12.229,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 48.102022,
+          "user_ms": 31.767,
+          "system_ms": 16.118,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 48.743316,
+          "user_ms": 32.078,
+          "system_ms": 16.262,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.693007,
+          "user_ms": 24.442,
+          "system_ms": 16.165,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.012871,
+          "user_ms": 38.027,
+          "system_ms": 3.809,
+          "maxrss_kib": 37788,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 53.126559,
+          "user_ms": 26.396,
+          "system_ms": 26.188,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 55.441252,
+          "user_ms": 35.588,
+          "system_ms": 19.755,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 44.670163,
+        "user_ms": 29.969,
+        "system_ms": 16.01,
+        "maxrss_kib": 37852,
+        "minor_faults": 9198,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big8.strand",
+      "source_bytes": 1033565,
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 1919888,
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 55.716641,
+          "user_ms": 28.809,
+          "system_ms": 26.769,
+          "maxrss_kib": 42920,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 35.749803,
+          "user_ms": 22.073,
+          "system_ms": 13.417,
+          "maxrss_kib": 42980,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 67.79955,
+          "user_ms": 33.731,
+          "system_ms": 33.874,
+          "maxrss_kib": 42952,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 71.305323,
+          "user_ms": 45.235,
+          "system_ms": 25.874,
+          "maxrss_kib": 42952,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.066734,
+          "user_ms": 19.978,
+          "system_ms": 15.982,
+          "maxrss_kib": 42976,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 50.695779,
+          "user_ms": 29.129,
+          "system_ms": 21.393,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 53.902256,
+          "user_ms": 16.519,
+          "system_ms": 36.853,
+          "maxrss_kib": 42920,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 58.520406,
+          "user_ms": 34.891,
+          "system_ms": 23.211,
+          "maxrss_kib": 42972,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 57.539097,
+          "user_ms": 31.691,
+          "system_ms": 25.589,
+          "maxrss_kib": 42872,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 53.666619,
+          "user_ms": 24.692,
+          "system_ms": 28.791,
+          "maxrss_kib": 42928,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 57.693681,
+          "user_ms": 33.697,
+          "system_ms": 23.37,
+          "maxrss_kib": 42876,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 55.858045,
+          "user_ms": 23.921,
+          "system_ms": 31.733,
+          "maxrss_kib": 42984,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 56.32897,
+          "user_ms": 20.296,
+          "system_ms": 35.794,
+          "maxrss_kib": 42872,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 58.090544,
+          "user_ms": 26.519,
+          "system_ms": 31.413,
+          "maxrss_kib": 42932,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 56.296491,
+          "user_ms": 44.27,
+          "system_ms": 11.738,
+          "maxrss_kib": 42828,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 56.296491,
+        "user_ms": 28.809,
+        "system_ms": 25.874,
+        "maxrss_kib": 42932,
+        "minor_faults": 10599,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big8.strand",
+      "source_bytes": 1033565,
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 1919888,
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 48.23826,
+          "user_ms": 53.623,
+          "system_ms": 20.744,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 62.446786,
+          "user_ms": 63.794,
+          "system_ms": 23.984,
+          "maxrss_kib": 37980,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 61.505577,
+          "user_ms": 44.999,
+          "system_ms": 45.184,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 59.772608,
+          "user_ms": 39.944,
+          "system_ms": 43.16,
+          "maxrss_kib": 37980,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 62.16607,
+          "user_ms": 64.747,
+          "system_ms": 18.544,
+          "maxrss_kib": 37980,
+          "minor_faults": 9302,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 48.591315,
+          "user_ms": 46.588,
+          "system_ms": 25.779,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 58.730466,
+          "user_ms": 68.347,
+          "system_ms": 17.117,
+          "maxrss_kib": 37980,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 66.13217,
+          "user_ms": 51.714,
+          "system_ms": 40.215,
+          "maxrss_kib": 37980,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 47.593191,
+          "user_ms": 65.248,
+          "system_ms": 13.771,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 46.745743,
+          "user_ms": 29.422,
+          "system_ms": 41.67,
+          "maxrss_kib": 37856,
+          "minor_faults": 9302,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 44.02924,
+          "user_ms": 56.028,
+          "system_ms": 10.704,
+          "maxrss_kib": 37980,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 77.638063,
+          "user_ms": 83.318,
+          "system_ms": 22.268,
+          "maxrss_kib": 37856,
+          "minor_faults": 9302,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 60.455634,
+          "user_ms": 63.292,
+          "system_ms": 25.123,
+          "maxrss_kib": 37916,
+          "minor_faults": 9304,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 64.596258,
+          "user_ms": 51.803,
+          "system_ms": 39.451,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 63.986173,
+          "user_ms": 49.003,
+          "system_ms": 39.672,
+          "maxrss_kib": 37980,
+          "minor_faults": 9303,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 60.455634,
+        "user_ms": 53.623,
+        "system_ms": 25.123,
+        "maxrss_kib": 37980,
+        "minor_faults": 9303,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big64.strand",
+      "source_bytes": 8292332,
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 15217032,
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 370.832426,
+          "user_ms": 197.4,
+          "system_ms": 173.311,
+          "maxrss_kib": 333000,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 385.801316,
+          "user_ms": 213.217,
+          "system_ms": 172.431,
+          "maxrss_kib": 332976,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 358.229285,
+          "user_ms": 218.467,
+          "system_ms": 139.651,
+          "maxrss_kib": 333032,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 373.520075,
+          "user_ms": 201.2,
+          "system_ms": 172.167,
+          "maxrss_kib": 333004,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 337.42007,
+          "user_ms": 196.808,
+          "system_ms": 140.466,
+          "maxrss_kib": 333024,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 341.465651,
+          "user_ms": 194.451,
+          "system_ms": 146.901,
+          "maxrss_kib": 332876,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 367.438484,
+          "user_ms": 219.887,
+          "system_ms": 147.371,
+          "maxrss_kib": 333028,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 356.492149,
+          "user_ms": 214.732,
+          "system_ms": 141.637,
+          "maxrss_kib": 333020,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 359.520735,
+          "user_ms": 205.738,
+          "system_ms": 153.567,
+          "maxrss_kib": 333024,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 360.605933,
+          "user_ms": 208.128,
+          "system_ms": 152.086,
+          "maxrss_kib": 332980,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 352.428721,
+          "user_ms": 215.633,
+          "system_ms": 136.627,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 383.170622,
+          "user_ms": 234.65,
+          "system_ms": 147.641,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 355.627365,
+          "user_ms": 204.106,
+          "system_ms": 151.37,
+          "maxrss_kib": 332992,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 368.864247,
+          "user_ms": 220.153,
+          "system_ms": 148.548,
+          "maxrss_kib": 333020,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 359.983397,
+          "user_ms": 211.658,
+          "system_ms": 147.688,
+          "maxrss_kib": 332980,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 359.983397,
+        "user_ms": 211.658,
+        "system_ms": 147.688,
+        "maxrss_kib": 333004,
+        "minor_faults": 84137,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big64.strand",
+      "source_bytes": 8292332,
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        3
+      ],
+      "output_bytes": 15217032,
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 399.631529,
+          "user_ms": 285.634,
+          "system_ms": 113.847,
+          "maxrss_kib": 298380,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 409.71151,
+          "user_ms": 272.987,
+          "system_ms": 136.224,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 393.664884,
+          "user_ms": 282.934,
+          "system_ms": 108.113,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 385.185982,
+          "user_ms": 262.92,
+          "system_ms": 121.992,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 516.065702,
+          "user_ms": 360.089,
+          "system_ms": 155.816,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 366.191201,
+          "user_ms": 274.588,
+          "system_ms": 91.486,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 401.651614,
+          "user_ms": 282.718,
+          "system_ms": 114.625,
+          "maxrss_kib": 298316,
+          "minor_faults": 72659,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 381.96907,
+          "user_ms": 282.583,
+          "system_ms": 99.239,
+          "maxrss_kib": 298316,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 385.612068,
+          "user_ms": 262.266,
+          "system_ms": 123.14,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 395.71346,
+          "user_ms": 279.777,
+          "system_ms": 115.392,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 387.720288,
+          "user_ms": 271.181,
+          "system_ms": 115.979,
+          "maxrss_kib": 298380,
+          "minor_faults": 72655,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 371.957693,
+          "user_ms": 251.665,
+          "system_ms": 119.827,
+          "maxrss_kib": 298380,
+          "minor_faults": 72655,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 394.710839,
+          "user_ms": 286.308,
+          "system_ms": 107.893,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 414.907844,
+          "user_ms": 302.043,
+          "system_ms": 112.64,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 399.392174,
+          "user_ms": 271.833,
+          "system_ms": 127.346,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 394.710839,
+        "user_ms": 279.777,
+        "system_ms": 115.392,
+        "maxrss_kib": 298316,
+        "minor_faults": 72657,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big64.strand",
+      "source_bytes": 8292332,
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "compiler": "strandc_scalar",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 15217032,
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 350.229543,
+          "user_ms": 200.4,
+          "system_ms": 148.6,
+          "maxrss_kib": 333024,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 355.811947,
+          "user_ms": 215.781,
+          "system_ms": 139.336,
+          "maxrss_kib": 333024,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 347.776269,
+          "user_ms": 223.121,
+          "system_ms": 124.039,
+          "maxrss_kib": 332980,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 413.674524,
+          "user_ms": 232.424,
+          "system_ms": 180.263,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 368.400324,
+          "user_ms": 196.65,
+          "system_ms": 171.593,
+          "maxrss_kib": 333000,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 364.505712,
+          "user_ms": 230.792,
+          "system_ms": 132.923,
+          "maxrss_kib": 332976,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 391.380865,
+          "user_ms": 223.375,
+          "system_ms": 166.458,
+          "maxrss_kib": 332992,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 377.710254,
+          "user_ms": 203.627,
+          "system_ms": 173.766,
+          "maxrss_kib": 332980,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 381.902839,
+          "user_ms": 220.745,
+          "system_ms": 160.618,
+          "maxrss_kib": 332920,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 357.800243,
+          "user_ms": 217.033,
+          "system_ms": 140.458,
+          "maxrss_kib": 333000,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 368.736512,
+          "user_ms": 210.857,
+          "system_ms": 157.588,
+          "maxrss_kib": 332876,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 398.32892,
+          "user_ms": 208.899,
+          "system_ms": 189.223,
+          "maxrss_kib": 332992,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 361.748066,
+          "user_ms": 206.514,
+          "system_ms": 154.872,
+          "maxrss_kib": 332920,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 392.997708,
+          "user_ms": 218.145,
+          "system_ms": 173.475,
+          "maxrss_kib": 332980,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 377.403308,
+          "user_ms": 225.189,
+          "system_ms": 151.992,
+          "maxrss_kib": 333004,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 368.736512,
+        "user_ms": 217.033,
+        "system_ms": 157.588,
+        "maxrss_kib": 332992,
+        "minor_faults": 84138,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "source": "build/audit4/big64.strand",
+      "source_bytes": 8292332,
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "compiler": "stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "output_bytes": 15217032,
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 327.245918,
+          "user_ms": 687.935,
+          "system_ms": 169.077,
+          "maxrss_kib": 301900,
+          "minor_faults": 73660,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 306.000909,
+          "user_ms": 736.197,
+          "system_ms": 203.589,
+          "maxrss_kib": 301960,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 348.367467,
+          "user_ms": 805.931,
+          "system_ms": 186.528,
+          "maxrss_kib": 301800,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 322.516578,
+          "user_ms": 665.642,
+          "system_ms": 232.154,
+          "maxrss_kib": 301772,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 311.50891,
+          "user_ms": 676.106,
+          "system_ms": 154.495,
+          "maxrss_kib": 301900,
+          "minor_faults": 73663,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 283.618987,
+          "user_ms": 660.135,
+          "system_ms": 193.391,
+          "maxrss_kib": 301904,
+          "minor_faults": 73660,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 313.720847,
+          "user_ms": 699.957,
+          "system_ms": 169.21,
+          "maxrss_kib": 301772,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 293.244758,
+          "user_ms": 663.638,
+          "system_ms": 154.274,
+          "maxrss_kib": 301900,
+          "minor_faults": 73660,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 301.178739,
+          "user_ms": 630.215,
+          "system_ms": 201.632,
+          "maxrss_kib": 301960,
+          "minor_faults": 73658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 280.798255,
+          "user_ms": 627.671,
+          "system_ms": 160.316,
+          "maxrss_kib": 301900,
+          "minor_faults": 73659,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 305.780974,
+          "user_ms": 698.932,
+          "system_ms": 197.717,
+          "maxrss_kib": 301900,
+          "minor_faults": 73662,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 338.281587,
+          "user_ms": 762.102,
+          "system_ms": 168.713,
+          "maxrss_kib": 301964,
+          "minor_faults": 73660,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 330.520887,
+          "user_ms": 722.126,
+          "system_ms": 199.283,
+          "maxrss_kib": 301900,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 310.015302,
+          "user_ms": 653.432,
+          "system_ms": 199.855,
+          "maxrss_kib": 301900,
+          "minor_faults": 73660,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 332.393178,
+          "user_ms": 670.297,
+          "system_ms": 209.347,
+          "maxrss_kib": 301900,
+          "minor_faults": 73661,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 311.50891,
+        "user_ms": 676.106,
+        "system_ms": 193.391,
+        "maxrss_kib": 301900,
+        "minor_faults": 73661,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    }
+  ],
+  "prefix_controls": [
+    {
+      "line": 19,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 2.077714,
+          "user_ms": 2.017,
+          "system_ms": 0.0,
+          "maxrss_kib": 3652,
+          "minor_faults": 681,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.189183,
+          "user_ms": 2.128,
+          "system_ms": 0.0,
+          "maxrss_kib": 3628,
+          "minor_faults": 681,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.201301,
+          "user_ms": 2.131,
+          "system_ms": 0.0,
+          "maxrss_kib": 3668,
+          "minor_faults": 681,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.16799,
+          "user_ms": 2.109,
+          "system_ms": 0.0,
+          "maxrss_kib": 3676,
+          "minor_faults": 679,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.156654,
+          "user_ms": 2.095,
+          "system_ms": 0.0,
+          "maxrss_kib": 3636,
+          "minor_faults": 679,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.394445,
+          "user_ms": 2.335,
+          "system_ms": 0.0,
+          "maxrss_kib": 3632,
+          "minor_faults": 681,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.069131,
+          "user_ms": 2.014,
+          "system_ms": 0.0,
+          "maxrss_kib": 3556,
+          "minor_faults": 679,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 3.38013,
+          "user_ms": 3.318,
+          "system_ms": 0.0,
+          "maxrss_kib": 3556,
+          "minor_faults": 679,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.105045,
+          "user_ms": 2.036,
+          "system_ms": 0.0,
+          "maxrss_kib": 3560,
+          "minor_faults": 678,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 2.16799,
+        "user_ms": 2.109,
+        "system_ms": 0.0,
+        "maxrss_kib": 3632,
+        "minor_faults": 679,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 19,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 2.373943,
+          "user_ms": 2.322,
+          "system_ms": 0.0,
+          "maxrss_kib": 4692,
+          "minor_faults": 935,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.675551,
+          "user_ms": 2.607,
+          "system_ms": 0.0,
+          "maxrss_kib": 4584,
+          "minor_faults": 936,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.455948,
+          "user_ms": 2.392,
+          "system_ms": 0.0,
+          "maxrss_kib": 4684,
+          "minor_faults": 937,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.600156,
+          "user_ms": 2.534,
+          "system_ms": 0.0,
+          "maxrss_kib": 4700,
+          "minor_faults": 936,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.568909,
+          "user_ms": 2.505,
+          "system_ms": 0.0,
+          "maxrss_kib": 4580,
+          "minor_faults": 937,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.670404,
+          "user_ms": 0.0,
+          "system_ms": 2.582,
+          "maxrss_kib": 4704,
+          "minor_faults": 935,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.627248,
+          "user_ms": 0.0,
+          "system_ms": 2.566,
+          "maxrss_kib": 4664,
+          "minor_faults": 937,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.545153,
+          "user_ms": 0.0,
+          "system_ms": 2.478,
+          "maxrss_kib": 4680,
+          "minor_faults": 934,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 2.609381,
+          "user_ms": 2.531,
+          "system_ms": 0.0,
+          "maxrss_kib": 4580,
+          "minor_faults": 935,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 2.600156,
+        "user_ms": 2.392,
+        "system_ms": 0.0,
+        "maxrss_kib": 4680,
+        "minor_faults": 936,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 32,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 4.225383,
+          "user_ms": 4.153,
+          "system_ms": 0.0,
+          "maxrss_kib": 7208,
+          "minor_faults": 1576,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.250251,
+          "user_ms": 0.0,
+          "system_ms": 4.191,
+          "maxrss_kib": 7264,
+          "minor_faults": 1574,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 3.988353,
+          "user_ms": 3.934,
+          "system_ms": 0.0,
+          "maxrss_kib": 7144,
+          "minor_faults": 1574,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.523887,
+          "user_ms": 0.0,
+          "system_ms": 4.437,
+          "maxrss_kib": 7264,
+          "minor_faults": 1576,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.39437,
+          "user_ms": 4.333,
+          "system_ms": 0.0,
+          "maxrss_kib": 7256,
+          "minor_faults": 1576,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 6.478954,
+          "user_ms": 2.821,
+          "system_ms": 3.596,
+          "maxrss_kib": 7236,
+          "minor_faults": 1578,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.478838,
+          "user_ms": 0.0,
+          "system_ms": 4.405,
+          "maxrss_kib": 7236,
+          "minor_faults": 1576,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.389503,
+          "user_ms": 4.319,
+          "system_ms": 0.0,
+          "maxrss_kib": 7256,
+          "minor_faults": 1577,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.21652,
+          "user_ms": 0.0,
+          "system_ms": 4.153,
+          "maxrss_kib": 7140,
+          "minor_faults": 1574,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 4.389503,
+        "user_ms": 2.821,
+        "system_ms": 3.596,
+        "maxrss_kib": 7236,
+        "minor_faults": 1576,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 32,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 7.035429,
+          "user_ms": 0.0,
+          "system_ms": 6.95,
+          "maxrss_kib": 8492,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.902461,
+          "user_ms": 0.0,
+          "system_ms": 4.841,
+          "maxrss_kib": 8424,
+          "minor_faults": 1897,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.158349,
+          "user_ms": 0.0,
+          "system_ms": 5.095,
+          "maxrss_kib": 8512,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.845484,
+          "user_ms": 4.773,
+          "system_ms": 0.0,
+          "maxrss_kib": 8544,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 5.980508,
+          "user_ms": 0.0,
+          "system_ms": 5.908,
+          "maxrss_kib": 8520,
+          "minor_faults": 1901,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.857683,
+          "user_ms": 2.388,
+          "system_ms": 2.408,
+          "maxrss_kib": 8500,
+          "minor_faults": 1899,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.591118,
+          "user_ms": 4.527,
+          "system_ms": 0.0,
+          "maxrss_kib": 8528,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 4.918455,
+          "user_ms": 2.423,
+          "system_ms": 2.432,
+          "maxrss_kib": 8532,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 6.254865,
+          "user_ms": 3.502,
+          "system_ms": 2.673,
+          "maxrss_kib": 8520,
+          "minor_faults": 1898,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 4.918455,
+        "user_ms": 2.388,
+        "system_ms": 2.673,
+        "maxrss_kib": 8520,
+        "minor_faults": 1898,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 37,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 7.894083,
+          "user_ms": 0.0,
+          "system_ms": 7.824,
+          "maxrss_kib": 12336,
+          "minor_faults": 2861,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.718485,
+          "user_ms": 0.0,
+          "system_ms": 7.648,
+          "maxrss_kib": 12384,
+          "minor_faults": 2860,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.710113,
+          "user_ms": 3.828,
+          "system_ms": 3.817,
+          "maxrss_kib": 12360,
+          "minor_faults": 2861,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.725156,
+          "user_ms": 0.0,
+          "system_ms": 7.662,
+          "maxrss_kib": 12372,
+          "minor_faults": 2862,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.494426,
+          "user_ms": 0.0,
+          "system_ms": 7.436,
+          "maxrss_kib": 12340,
+          "minor_faults": 2861,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.835703,
+          "user_ms": 0.0,
+          "system_ms": 7.767,
+          "maxrss_kib": 12336,
+          "minor_faults": 2859,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.743594,
+          "user_ms": 7.643,
+          "system_ms": 0.0,
+          "maxrss_kib": 12336,
+          "minor_faults": 2860,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.451992,
+          "user_ms": 3.693,
+          "system_ms": 3.693,
+          "maxrss_kib": 12376,
+          "minor_faults": 2861,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 7.639055,
+          "user_ms": 7.574,
+          "system_ms": 0.0,
+          "maxrss_kib": 12344,
+          "minor_faults": 2861,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 7.718485,
+        "user_ms": 0.0,
+        "system_ms": 7.436,
+        "maxrss_kib": 12344,
+        "minor_faults": 2861,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 37,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 13.879447,
+          "user_ms": 3.347,
+          "system_ms": 10.451,
+          "maxrss_kib": 23864,
+          "minor_faults": 5751,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.019292,
+          "user_ms": 4.316,
+          "system_ms": 8.633,
+          "maxrss_kib": 23852,
+          "minor_faults": 5750,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.002195,
+          "user_ms": 0.0,
+          "system_ms": 12.926,
+          "maxrss_kib": 23860,
+          "minor_faults": 5751,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.07729,
+          "user_ms": 4.361,
+          "system_ms": 8.642,
+          "maxrss_kib": 23856,
+          "minor_faults": 5750,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.639192,
+          "user_ms": 4.466,
+          "system_ms": 9.1,
+          "maxrss_kib": 23904,
+          "minor_faults": 5749,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.077831,
+          "user_ms": 0.0,
+          "system_ms": 13.005,
+          "maxrss_kib": 23856,
+          "minor_faults": 5752,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 12.936226,
+          "user_ms": 0.0,
+          "system_ms": 12.86,
+          "maxrss_kib": 23896,
+          "minor_faults": 5752,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.151883,
+          "user_ms": 8.714,
+          "system_ms": 4.357,
+          "maxrss_kib": 23860,
+          "minor_faults": 5750,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 13.38702,
+          "user_ms": 8.871,
+          "system_ms": 4.435,
+          "maxrss_kib": 23876,
+          "minor_faults": 5752,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 13.077831,
+        "user_ms": 4.316,
+        "system_ms": 9.1,
+        "maxrss_kib": 23860,
+        "minor_faults": 5751,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 42,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 9.474972,
+          "user_ms": 3.124,
+          "system_ms": 6.249,
+          "maxrss_kib": 14916,
+          "minor_faults": 3504,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 10.235406,
+          "user_ms": 10.16,
+          "system_ms": 0.0,
+          "maxrss_kib": 14948,
+          "minor_faults": 3502,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.654714,
+          "user_ms": 4.777,
+          "system_ms": 4.81,
+          "maxrss_kib": 14920,
+          "minor_faults": 3502,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.873267,
+          "user_ms": 4.844,
+          "system_ms": 4.962,
+          "maxrss_kib": 14908,
+          "minor_faults": 3503,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.675807,
+          "user_ms": 4.803,
+          "system_ms": 4.803,
+          "maxrss_kib": 14948,
+          "minor_faults": 3502,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.540071,
+          "user_ms": 3.139,
+          "system_ms": 6.326,
+          "maxrss_kib": 14928,
+          "minor_faults": 3503,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 10.467788,
+          "user_ms": 3.558,
+          "system_ms": 6.828,
+          "maxrss_kib": 14900,
+          "minor_faults": 3502,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.469133,
+          "user_ms": 0.0,
+          "system_ms": 9.406,
+          "maxrss_kib": 14896,
+          "minor_faults": 3502,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 9.099082,
+          "user_ms": 9.041,
+          "system_ms": 0.0,
+          "maxrss_kib": 14936,
+          "minor_faults": 3503,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 9.654714,
+        "user_ms": 4.777,
+        "system_ms": 4.962,
+        "maxrss_kib": 14920,
+        "minor_faults": 3502,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 42,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 16.27935,
+          "user_ms": 4.078,
+          "system_ms": 12.11,
+          "maxrss_kib": 29020,
+          "minor_faults": 7035,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.3653,
+          "user_ms": 4.073,
+          "system_ms": 12.22,
+          "maxrss_kib": 28976,
+          "minor_faults": 7037,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.076362,
+          "user_ms": 8.004,
+          "system_ms": 8.004,
+          "maxrss_kib": 29012,
+          "minor_faults": 7035,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.383087,
+          "user_ms": 8.174,
+          "system_ms": 8.132,
+          "maxrss_kib": 29024,
+          "minor_faults": 7034,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 15.966626,
+          "user_ms": 4.003,
+          "system_ms": 11.893,
+          "maxrss_kib": 28984,
+          "minor_faults": 7036,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.572666,
+          "user_ms": 8.23,
+          "system_ms": 8.263,
+          "maxrss_kib": 28972,
+          "minor_faults": 7035,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 17.164172,
+          "user_ms": 3.891,
+          "system_ms": 13.191,
+          "maxrss_kib": 29016,
+          "minor_faults": 7035,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.237086,
+          "user_ms": 8.076,
+          "system_ms": 8.076,
+          "maxrss_kib": 29016,
+          "minor_faults": 7038,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.874803,
+          "user_ms": 4.196,
+          "system_ms": 12.59,
+          "maxrss_kib": 29012,
+          "minor_faults": 7037,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 16.3653,
+        "user_ms": 4.196,
+        "system_ms": 11.893,
+        "maxrss_kib": 29012,
+        "minor_faults": 7035,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 59,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 16.18783,
+          "user_ms": 4.046,
+          "system_ms": 12.049,
+          "maxrss_kib": 22616,
+          "minor_faults": 5430,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.682923,
+          "user_ms": 8.328,
+          "system_ms": 8.269,
+          "maxrss_kib": 22632,
+          "minor_faults": 5429,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.011404,
+          "user_ms": 3.892,
+          "system_ms": 12.04,
+          "maxrss_kib": 22616,
+          "minor_faults": 5431,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.294883,
+          "user_ms": 8.027,
+          "system_ms": 8.154,
+          "maxrss_kib": 22612,
+          "minor_faults": 5432,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.542109,
+          "user_ms": 3.312,
+          "system_ms": 13.143,
+          "maxrss_kib": 22640,
+          "minor_faults": 5431,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.72101,
+          "user_ms": 8.051,
+          "system_ms": 8.6,
+          "maxrss_kib": 22588,
+          "minor_faults": 5430,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.166058,
+          "user_ms": 12.322,
+          "system_ms": 3.773,
+          "maxrss_kib": 22640,
+          "minor_faults": 5429,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 16.581879,
+          "user_ms": 8.302,
+          "system_ms": 8.198,
+          "maxrss_kib": 22640,
+          "minor_faults": 5431,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 15.922378,
+          "user_ms": 0.0,
+          "system_ms": 15.846,
+          "maxrss_kib": 22628,
+          "minor_faults": 5432,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 16.294883,
+        "user_ms": 8.027,
+        "system_ms": 8.6,
+        "maxrss_kib": 22628,
+        "minor_faults": 5431,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 59,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 21.357508,
+          "user_ms": 4.211,
+          "system_ms": 17.058,
+          "maxrss_kib": 33052,
+          "minor_faults": 7998,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.572845,
+          "user_ms": 7.237,
+          "system_ms": 14.259,
+          "maxrss_kib": 32972,
+          "minor_faults": 8001,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 22.717011,
+          "user_ms": 4.521,
+          "system_ms": 18.025,
+          "maxrss_kib": 32972,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.054508,
+          "user_ms": 12.58,
+          "system_ms": 8.386,
+          "maxrss_kib": 32960,
+          "minor_faults": 8001,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.339511,
+          "user_ms": 8.558,
+          "system_ms": 12.691,
+          "maxrss_kib": 32956,
+          "minor_faults": 7999,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.955776,
+          "user_ms": 13.069,
+          "system_ms": 8.809,
+          "maxrss_kib": 33052,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 22.235631,
+          "user_ms": 17.652,
+          "system_ms": 4.492,
+          "maxrss_kib": 32968,
+          "minor_faults": 8001,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.593426,
+          "user_ms": 8.735,
+          "system_ms": 12.761,
+          "maxrss_kib": 33052,
+          "minor_faults": 8001,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.28023,
+          "user_ms": 12.736,
+          "system_ms": 8.455,
+          "maxrss_kib": 32984,
+          "minor_faults": 8001,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 21.572845,
+        "user_ms": 8.735,
+        "system_ms": 12.691,
+        "maxrss_kib": 32972,
+        "minor_faults": 8001,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 70,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 23.422463,
+          "user_ms": 7.638,
+          "system_ms": 15.681,
+          "maxrss_kib": 26464,
+          "minor_faults": 6394,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 22.191784,
+          "user_ms": 12.779,
+          "system_ms": 9.326,
+          "maxrss_kib": 26436,
+          "minor_faults": 6395,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 19.385815,
+          "user_ms": 15.528,
+          "system_ms": 3.751,
+          "maxrss_kib": 26444,
+          "minor_faults": 6394,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 18.734437,
+          "user_ms": 3.731,
+          "system_ms": 14.927,
+          "maxrss_kib": 26468,
+          "minor_faults": 6393,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 19.095034,
+          "user_ms": 9.53,
+          "system_ms": 9.484,
+          "maxrss_kib": 26472,
+          "minor_faults": 6393,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 19.644989,
+          "user_ms": 14.625,
+          "system_ms": 4.933,
+          "maxrss_kib": 26432,
+          "minor_faults": 6394,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 19.034903,
+          "user_ms": 7.59,
+          "system_ms": 11.367,
+          "maxrss_kib": 26424,
+          "minor_faults": 6393,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 18.892396,
+          "user_ms": 7.507,
+          "system_ms": 11.302,
+          "maxrss_kib": 26468,
+          "minor_faults": 6393,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 18.640444,
+          "user_ms": 7.495,
+          "system_ms": 11.067,
+          "maxrss_kib": 26452,
+          "minor_faults": 6393,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 19.095034,
+        "user_ms": 7.638,
+        "system_ms": 11.067,
+        "maxrss_kib": 26452,
+        "minor_faults": 6393,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 70,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 22.131142,
+          "user_ms": 7.364,
+          "system_ms": 14.686,
+          "maxrss_kib": 33052,
+          "minor_faults": 7998,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 22.891135,
+          "user_ms": 9.036,
+          "system_ms": 13.76,
+          "maxrss_kib": 32992,
+          "minor_faults": 7998,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 23.055234,
+          "user_ms": 4.52,
+          "system_ms": 18.418,
+          "maxrss_kib": 32940,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 23.014283,
+          "user_ms": 11.403,
+          "system_ms": 11.513,
+          "maxrss_kib": 32960,
+          "minor_faults": 7999,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.680969,
+          "user_ms": 8.666,
+          "system_ms": 12.945,
+          "maxrss_kib": 32952,
+          "minor_faults": 7999,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 23.203149,
+          "user_ms": 7.842,
+          "system_ms": 15.281,
+          "maxrss_kib": 32956,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 23.425907,
+          "user_ms": 15.824,
+          "system_ms": 7.524,
+          "maxrss_kib": 32992,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 22.007194,
+          "user_ms": 13.144,
+          "system_ms": 8.782,
+          "maxrss_kib": 32976,
+          "minor_faults": 7998,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 21.807881,
+          "user_ms": 8.612,
+          "system_ms": 13.112,
+          "maxrss_kib": 32956,
+          "minor_faults": 8000,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 22.891135,
+        "user_ms": 8.666,
+        "system_ms": 13.112,
+        "maxrss_kib": 32960,
+        "minor_faults": 7999,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 100,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 24.293574,
+          "user_ms": 12.117,
+          "system_ms": 12.035,
+          "maxrss_kib": 30532,
+          "minor_faults": 7421,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 26.154129,
+          "user_ms": 12.723,
+          "system_ms": 13.298,
+          "maxrss_kib": 30532,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 25.052977,
+          "user_ms": 14.222,
+          "system_ms": 10.666,
+          "maxrss_kib": 30516,
+          "minor_faults": 7420,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.513678,
+          "user_ms": 12.147,
+          "system_ms": 12.284,
+          "maxrss_kib": 30584,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.90293,
+          "user_ms": 16.482,
+          "system_ms": 8.339,
+          "maxrss_kib": 30524,
+          "minor_faults": 7421,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 26.250344,
+          "user_ms": 13.012,
+          "system_ms": 13.158,
+          "maxrss_kib": 30500,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.832822,
+          "user_ms": 17.676,
+          "system_ms": 7.079,
+          "maxrss_kib": 30552,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.008766,
+          "user_ms": 18.667,
+          "system_ms": 8.261,
+          "maxrss_kib": 30524,
+          "minor_faults": 7421,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.801265,
+          "user_ms": 8.269,
+          "system_ms": 16.454,
+          "maxrss_kib": 30552,
+          "minor_faults": 7422,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 24.90293,
+        "user_ms": 13.012,
+        "system_ms": 12.035,
+        "maxrss_kib": 30532,
+        "minor_faults": 7420,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 100,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 29.163106,
+          "user_ms": 18.204,
+          "system_ms": 10.862,
+          "maxrss_kib": 37052,
+          "minor_faults": 9024,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.905197,
+          "user_ms": 11.914,
+          "system_ms": 15.908,
+          "maxrss_kib": 37068,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.378257,
+          "user_ms": 19.575,
+          "system_ms": 7.725,
+          "maxrss_kib": 37068,
+          "minor_faults": 9026,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 28.268788,
+          "user_ms": 16.05,
+          "system_ms": 12.139,
+          "maxrss_kib": 37048,
+          "minor_faults": 9026,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.9146,
+          "user_ms": 11.826,
+          "system_ms": 16.009,
+          "maxrss_kib": 37068,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 29.024335,
+          "user_ms": 12.431,
+          "system_ms": 16.516,
+          "maxrss_kib": 37064,
+          "minor_faults": 9024,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 30.19377,
+          "user_ms": 14.212,
+          "system_ms": 15.62,
+          "maxrss_kib": 37068,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 28.393007,
+          "user_ms": 12.182,
+          "system_ms": 16.12,
+          "maxrss_kib": 37056,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 29.202505,
+          "user_ms": 12.486,
+          "system_ms": 16.629,
+          "maxrss_kib": 37044,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 28.393007,
+        "user_ms": 12.486,
+        "system_ms": 15.908,
+        "maxrss_kib": 37064,
+        "minor_faults": 9025,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 106,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 30.49033,
+          "user_ms": 12.439,
+          "system_ms": 17.963,
+          "maxrss_kib": 30520,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 25.043262,
+          "user_ms": 12.395,
+          "system_ms": 12.573,
+          "maxrss_kib": 30564,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 25.185308,
+          "user_ms": 17.911,
+          "system_ms": 7.147,
+          "maxrss_kib": 30552,
+          "minor_faults": 7420,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.777459,
+          "user_ms": 16.467,
+          "system_ms": 8.233,
+          "maxrss_kib": 30520,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 25.39093,
+          "user_ms": 12.525,
+          "system_ms": 12.787,
+          "maxrss_kib": 30548,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 25.306072,
+          "user_ms": 16.865,
+          "system_ms": 8.354,
+          "maxrss_kib": 30556,
+          "minor_faults": 7422,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.641823,
+          "user_ms": 20.464,
+          "system_ms": 4.097,
+          "maxrss_kib": 30532,
+          "minor_faults": 7422,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 24.836749,
+          "user_ms": 16.54,
+          "system_ms": 8.206,
+          "maxrss_kib": 30544,
+          "minor_faults": 7421,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 26.173879,
+          "user_ms": 14.893,
+          "system_ms": 11.199,
+          "maxrss_kib": 30568,
+          "minor_faults": 7419,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 25.185308,
+        "user_ms": 16.467,
+        "system_ms": 8.354,
+        "maxrss_kib": 30548,
+        "minor_faults": 7419,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 106,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 28.524215,
+          "user_ms": 12.323,
+          "system_ms": 16.108,
+          "maxrss_kib": 37076,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 28.619831,
+          "user_ms": 16.18,
+          "system_ms": 12.321,
+          "maxrss_kib": 37080,
+          "minor_faults": 9026,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.972419,
+          "user_ms": 15.923,
+          "system_ms": 11.942,
+          "maxrss_kib": 37044,
+          "minor_faults": 9026,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 29.33733,
+          "user_ms": 16.795,
+          "system_ms": 12.457,
+          "maxrss_kib": 37072,
+          "minor_faults": 9026,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.450347,
+          "user_ms": 18.984,
+          "system_ms": 12.383,
+          "maxrss_kib": 37088,
+          "minor_faults": 9024,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 28.55295,
+          "user_ms": 8.179,
+          "system_ms": 20.282,
+          "maxrss_kib": 37052,
+          "minor_faults": 9027,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 29.062002,
+          "user_ms": 7.317,
+          "system_ms": 21.653,
+          "maxrss_kib": 37048,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 27.854279,
+          "user_ms": 15.874,
+          "system_ms": 11.905,
+          "maxrss_kib": 37068,
+          "minor_faults": 9024,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 28.030426,
+          "user_ms": 7.976,
+          "system_ms": 19.973,
+          "maxrss_kib": 37060,
+          "minor_faults": 9025,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 28.55295,
+        "user_ms": 15.874,
+        "system_ms": 12.457,
+        "maxrss_kib": 37068,
+        "minor_faults": 9025,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 128,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 31.788792,
+          "user_ms": 11.794,
+          "system_ms": 19.914,
+          "maxrss_kib": 37092,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.663371,
+          "user_ms": 15.86,
+          "system_ms": 15.723,
+          "maxrss_kib": 37124,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.712135,
+          "user_ms": 15.75,
+          "system_ms": 15.856,
+          "maxrss_kib": 37000,
+          "minor_faults": 9028,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 32.070949,
+          "user_ms": 7.986,
+          "system_ms": 23.992,
+          "maxrss_kib": 37044,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.996857,
+          "user_ms": 11.999,
+          "system_ms": 19.915,
+          "maxrss_kib": 37064,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.741999,
+          "user_ms": 19.796,
+          "system_ms": 11.867,
+          "maxrss_kib": 37068,
+          "minor_faults": 9028,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 32.432578,
+          "user_ms": 24.197,
+          "system_ms": 8.136,
+          "maxrss_kib": 37072,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.894912,
+          "user_ms": 23.86,
+          "system_ms": 7.899,
+          "maxrss_kib": 37084,
+          "minor_faults": 9028,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 32.405347,
+          "user_ms": 20.084,
+          "system_ms": 12.056,
+          "maxrss_kib": 37124,
+          "minor_faults": 9027,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 31.894912,
+        "user_ms": 15.86,
+        "system_ms": 15.723,
+        "maxrss_kib": 37072,
+        "minor_faults": 9029,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 128,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 32.141577,
+          "user_ms": 15.991,
+          "system_ms": 16.052,
+          "maxrss_kib": 37064,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 34.10051,
+          "user_ms": 13.63,
+          "system_ms": 20.385,
+          "maxrss_kib": 37052,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.587917,
+          "user_ms": 19.667,
+          "system_ms": 11.837,
+          "maxrss_kib": 37036,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.743603,
+          "user_ms": 23.735,
+          "system_ms": 7.929,
+          "maxrss_kib": 37044,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 32.12427,
+          "user_ms": 16.098,
+          "system_ms": 15.949,
+          "maxrss_kib": 37060,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.491089,
+          "user_ms": 22.446,
+          "system_ms": 8.952,
+          "maxrss_kib": 37048,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.645824,
+          "user_ms": 15.781,
+          "system_ms": 15.781,
+          "maxrss_kib": 37084,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 31.454574,
+          "user_ms": 19.59,
+          "system_ms": 11.784,
+          "maxrss_kib": 37072,
+          "minor_faults": 9030,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 32.414622,
+          "user_ms": 24.234,
+          "system_ms": 8.078,
+          "maxrss_kib": 37056,
+          "minor_faults": 9029,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 31.743603,
+        "user_ms": 19.59,
+        "system_ms": 11.837,
+        "maxrss_kib": 37056,
+        "minor_faults": 9030,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 164,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 39.537522,
+          "user_ms": 18.803,
+          "system_ms": 20.647,
+          "maxrss_kib": 37332,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.753327,
+          "user_ms": 16.066,
+          "system_ms": 20.594,
+          "maxrss_kib": 37456,
+          "minor_faults": 9106,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.404233,
+          "user_ms": 20.886,
+          "system_ms": 17.148,
+          "maxrss_kib": 37348,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.391438,
+          "user_ms": 28.227,
+          "system_ms": 8.078,
+          "maxrss_kib": 37456,
+          "minor_faults": 9109,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.397818,
+          "user_ms": 20.164,
+          "system_ms": 16.153,
+          "maxrss_kib": 37456,
+          "minor_faults": 9106,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.056134,
+          "user_ms": 21.258,
+          "system_ms": 16.705,
+          "maxrss_kib": 37456,
+          "minor_faults": 9108,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.836634,
+          "user_ms": 28.435,
+          "system_ms": 8.199,
+          "maxrss_kib": 37456,
+          "minor_faults": 9108,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.573224,
+          "user_ms": 12.123,
+          "system_ms": 24.366,
+          "maxrss_kib": 37456,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.322371,
+          "user_ms": 28.956,
+          "system_ms": 8.273,
+          "maxrss_kib": 37456,
+          "minor_faults": 9109,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 36.836634,
+        "user_ms": 20.886,
+        "system_ms": 16.705,
+        "maxrss_kib": 37456,
+        "minor_faults": 9107,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 164,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 35.387964,
+          "user_ms": 22.05,
+          "system_ms": 13.23,
+          "maxrss_kib": 37404,
+          "minor_faults": 9106,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.542898,
+          "user_ms": 24.244,
+          "system_ms": 12.222,
+          "maxrss_kib": 37468,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.132635,
+          "user_ms": 23.962,
+          "system_ms": 12.034,
+          "maxrss_kib": 37468,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 35.76085,
+          "user_ms": 27.774,
+          "system_ms": 7.9,
+          "maxrss_kib": 37404,
+          "minor_faults": 9106,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.134958,
+          "user_ms": 19.971,
+          "system_ms": 16.078,
+          "maxrss_kib": 37468,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 35.999402,
+          "user_ms": 31.933,
+          "system_ms": 3.991,
+          "maxrss_kib": 37468,
+          "minor_faults": 9108,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.33378,
+          "user_ms": 20.172,
+          "system_ms": 16.083,
+          "maxrss_kib": 37468,
+          "minor_faults": 9106,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 44.144646,
+          "user_ms": 30.322,
+          "system_ms": 7.502,
+          "maxrss_kib": 37468,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.779646,
+          "user_ms": 29.168,
+          "system_ms": 7.292,
+          "maxrss_kib": 37344,
+          "minor_faults": 9107,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 36.134958,
+        "user_ms": 24.244,
+        "system_ms": 12.034,
+        "maxrss_kib": 37468,
+        "minor_faults": 9107,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 177,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 37.41416,
+          "user_ms": 24.836,
+          "system_ms": 12.495,
+          "maxrss_kib": 37524,
+          "minor_faults": 9120,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.967192,
+          "user_ms": 28.761,
+          "system_ms": 8.114,
+          "maxrss_kib": 37588,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.216838,
+          "user_ms": 29.738,
+          "system_ms": 8.329,
+          "maxrss_kib": 37464,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.635206,
+          "user_ms": 20.975,
+          "system_ms": 16.577,
+          "maxrss_kib": 37588,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.000972,
+          "user_ms": 24.765,
+          "system_ms": 12.16,
+          "maxrss_kib": 37476,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.452027,
+          "user_ms": 29.131,
+          "system_ms": 8.24,
+          "maxrss_kib": 37588,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.60552,
+          "user_ms": 22.594,
+          "system_ms": 14.931,
+          "maxrss_kib": 37588,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.541192,
+          "user_ms": 25.076,
+          "system_ms": 12.384,
+          "maxrss_kib": 37468,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.843604,
+          "user_ms": 24.495,
+          "system_ms": 12.247,
+          "maxrss_kib": 37524,
+          "minor_faults": 9120,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 37.452027,
+        "user_ms": 24.836,
+        "system_ms": 12.247,
+        "maxrss_kib": 37524,
+        "minor_faults": 9121,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 177,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 36.659845,
+          "user_ms": 24.383,
+          "system_ms": 12.191,
+          "maxrss_kib": 37596,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.520982,
+          "user_ms": 29.066,
+          "system_ms": 8.37,
+          "maxrss_kib": 37596,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.716399,
+          "user_ms": 30.04,
+          "system_ms": 7.511,
+          "maxrss_kib": 37596,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.366429,
+          "user_ms": 20.086,
+          "system_ms": 16.198,
+          "maxrss_kib": 37596,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.65675,
+          "user_ms": 28.442,
+          "system_ms": 8.128,
+          "maxrss_kib": 37596,
+          "minor_faults": 9121,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.85869,
+          "user_ms": 18.825,
+          "system_ms": 20.944,
+          "maxrss_kib": 37532,
+          "minor_faults": 9120,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.186021,
+          "user_ms": 21.081,
+          "system_ms": 17.014,
+          "maxrss_kib": 37596,
+          "minor_faults": 9123,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.33558,
+          "user_ms": 20.565,
+          "system_ms": 16.47,
+          "maxrss_kib": 37596,
+          "minor_faults": 9122,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.034544,
+          "user_ms": 24.705,
+          "system_ms": 12.252,
+          "maxrss_kib": 37532,
+          "minor_faults": 9120,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 37.33558,
+        "user_ms": 24.383,
+        "system_ms": 12.252,
+        "maxrss_kib": 37596,
+        "minor_faults": 9122,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 192,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 41.296643,
+          "user_ms": 28.736,
+          "system_ms": 12.457,
+          "maxrss_kib": 37528,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.044855,
+          "user_ms": 19.571,
+          "system_ms": 19.395,
+          "maxrss_kib": 37592,
+          "minor_faults": 9124,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.756899,
+          "user_ms": 29.989,
+          "system_ms": 12.61,
+          "maxrss_kib": 37592,
+          "minor_faults": 9126,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.440526,
+          "user_ms": 27.446,
+          "system_ms": 11.714,
+          "maxrss_kib": 37592,
+          "minor_faults": 9123,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.222184,
+          "user_ms": 19.509,
+          "system_ms": 19.636,
+          "maxrss_kib": 37592,
+          "minor_faults": 9124,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.164544,
+          "user_ms": 28.084,
+          "system_ms": 11.985,
+          "maxrss_kib": 37592,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.560558,
+          "user_ms": 30.624,
+          "system_ms": 8.854,
+          "maxrss_kib": 37592,
+          "minor_faults": 9127,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.436851,
+          "user_ms": 25.569,
+          "system_ms": 12.784,
+          "maxrss_kib": 37592,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.206775,
+          "user_ms": 25.447,
+          "system_ms": 16.654,
+          "maxrss_kib": 37472,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 39.560558,
+        "user_ms": 27.446,
+        "system_ms": 12.61,
+        "maxrss_kib": 37592,
+        "minor_faults": 9125,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 192,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 38.987458,
+          "user_ms": 15.557,
+          "system_ms": 23.338,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.394476,
+          "user_ms": 19.809,
+          "system_ms": 19.441,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.347119,
+          "user_ms": 24.545,
+          "system_ms": 16.621,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.683244,
+          "user_ms": 23.778,
+          "system_ms": 15.818,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.552535,
+          "user_ms": 31.504,
+          "system_ms": 7.973,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.674782,
+          "user_ms": 27.694,
+          "system_ms": 11.905,
+          "maxrss_kib": 37596,
+          "minor_faults": 9125,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.030649,
+          "user_ms": 22.583,
+          "system_ms": 18.343,
+          "maxrss_kib": 37472,
+          "minor_faults": 9124,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.511971,
+          "user_ms": 21.754,
+          "system_ms": 18.574,
+          "maxrss_kib": 37596,
+          "minor_faults": 9126,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.923701,
+          "user_ms": 30.207,
+          "system_ms": 8.63,
+          "maxrss_kib": 37596,
+          "minor_faults": 9126,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 39.674782,
+        "user_ms": 23.778,
+        "system_ms": 16.621,
+        "maxrss_kib": 37596,
+        "minor_faults": 9125,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 202,
+      "kind": "prefix",
+      "samples": [
+        {
+          "wall_ms": 41.831815,
+          "user_ms": 41.732,
+          "system_ms": 0.0,
+          "maxrss_kib": 37472,
+          "minor_faults": 9130,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.988302,
+          "user_ms": 33.478,
+          "system_ms": 8.414,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.346586,
+          "user_ms": 33.774,
+          "system_ms": 8.482,
+          "maxrss_kib": 37596,
+          "minor_faults": 9131,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.779145,
+          "user_ms": 19.048,
+          "system_ms": 22.643,
+          "maxrss_kib": 37596,
+          "minor_faults": 9130,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 45.257335,
+          "user_ms": 25.424,
+          "system_ms": 19.751,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.86371,
+          "user_ms": 29.939,
+          "system_ms": 13.841,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.189908,
+          "user_ms": 22.744,
+          "system_ms": 19.338,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.831334,
+          "user_ms": 26.428,
+          "system_ms": 15.101,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.860544,
+          "user_ms": 23.015,
+          "system_ms": 20.6,
+          "maxrss_kib": 37596,
+          "minor_faults": 9131,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 42.189908,
+        "user_ms": 26.428,
+        "system_ms": 15.101,
+        "maxrss_kib": 37596,
+        "minor_faults": 9132,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    },
+    {
+      "line": 202,
+      "kind": "stopped_full",
+      "samples": [
+        {
+          "wall_ms": 42.789219,
+          "user_ms": 27.242,
+          "system_ms": 15.453,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.475042,
+          "user_ms": 26.935,
+          "system_ms": 15.452,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.559339,
+          "user_ms": 19.196,
+          "system_ms": 23.137,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.945948,
+          "user_ms": 33.488,
+          "system_ms": 8.378,
+          "maxrss_kib": 37596,
+          "minor_faults": 9131,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.761513,
+          "user_ms": 23.522,
+          "system_ms": 20.163,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.879597,
+          "user_ms": 33.422,
+          "system_ms": 8.372,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.334681,
+          "user_ms": 26.273,
+          "system_ms": 14.979,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.123237,
+          "user_ms": 22.984,
+          "system_ms": 19.053,
+          "maxrss_kib": 37596,
+          "minor_faults": 9133,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 46.579722,
+          "user_ms": 27.977,
+          "system_ms": 18.5,
+          "maxrss_kib": 37596,
+          "minor_faults": 9132,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "medians": {
+        "wall_ms": 42.475042,
+        "user_ms": 26.935,
+        "system_ms": 15.453,
+        "maxrss_kib": 37596,
+        "minor_faults": 9133,
+        "major_faults": 0,
+        "wait_status": 0
+      }
+    }
+  ]
+}

@@ -139,3 +139,25 @@ evidence under `reviews/audit3*`.
 | The phase map misdescribes the compiler: positions and decimal literals were already built; liveness is not a gen/kill scan; "everything after the lexer is outside the model" is too broad | correct | rows rewritten (and overtaken: the lexer has since moved to byte lanes with a new bridge, see DESIGN.md) |
 | `check_probe.py` checks `avxvnni` with a pattern that AVX-512 VNNI also satisfies | correct | **not yet done** |
 | Measure retries, not only their existence | fair | **not yet done**: no benchmark of dependent-carry lines exists |
+
+## Review 7 — fourth audit, unfinished (2026-11-10)
+
+Started by me against `b591f69` (astra, x-high, through the shelley CLI). The model request
+stalled before the report was complete: AUDIT_4.md has placeholders where three measurement
+tables and the memory section were to go, and the auditor never committed it. I have added
+the file and its evidence (`reviews/audit4-*`) as they were left. What it had established:
+
+| finding | verdict | action |
+|---|---|---|
+| **A line could read the vector it was copying slices into, and compiled code and interpreter disagreed** (status 0, different output) | correct; my fuzzer found the same thing an hour later | a line may not read its slice destination, and all slices of a line go to one vector (`E_ALIAS`), in all three compilers |
+| **The new name fingerprint is a symmetric function of a name's four dwords**: permuting them collides; 24 colliding ASCII names constructed without a search | correct, and embarrassing | each dword position has its own multiplier (`HA1J`, `HA2J` in `boot/spec.py`). The exact comparison had kept this from being a miscompile; it was a way to make valid programs fail with `E_COLLISION`. |
+| A five-name `E_RACE` witness exists | noted | the fixture in `tests/cases.py` is now searched for from the hash definition instead of being a list of names that breaks whenever the hash changes |
+| `boot/strand.py map` and `tools/where.py` report lines one too low since the prelude went | correct | the map is 1-based again |
+| Front end: no divergence in 10,141 generated cases plus boundary sources; SWAR decimals exhaustively right | — | none needed |
+| Compiler speed: 44.7 ms against 41.1 for scalar C at 1 MB; 395 against 360 at 8.3 MB on one core; 312 against 369 on eight. Peak memory 298 MB against 333 | so my "level at 7.7 MB" was a favourable run; **on one core Strand is about 10% slower** | the claim is corrected here; REPORT.md gets the audit's figures |
+| The C linker reference called a fortified `memcpy` per relocation | correct | four byte assignments; the reference went from 266 to 238 ms. Strand's linker: 303 ms on one core, 295 on eight. |
+| Prefix differences are not a per-line profile | fair: vectors die earlier in a prefix and classes change (a tee becomes chunk-local) | I saw the same when profiling the Go lexer. `tools/lineprof.py` keeps its caveat; the instruction counts from `tools/simdratio.c` are exact. |
+| Review 6 was not a complete account of AUDIT_3's backlog | correct | still open, listed there and here: the packed-transition C baseline in the benchmark table, the `avxvnni` probe pattern, a retry-cost benchmark, `jsongen.skeleton` on duplicate keys, `bench/oneoff.py` provenance, stale sentences in blog 04 and the SWEETSPOT phase row |
+
+Not established, because the audit stopped: its memory-safety section. That is the part I
+most wanted, with eleven new primitives that write through computed addresses.

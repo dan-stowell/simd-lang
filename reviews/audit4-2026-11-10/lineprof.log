@@ -1,0 +1,47 @@
+line      ms  faults  source      (user + system; the split between them is too coarse to print per line)
+  17    1.04     201  0 1 - >Neg
+  19    3.29     663  bytes :text :c @lcls /ldfa :s s 2 = c 32 > s 0 = & | :tc dup prev :ptc 1 ^ & c 10 = | %ev ptc tc 1 ^ & %te0 dup prev 2 = c 10 = c 35 = | & c
+  22    1.66      -1  Eq2 Qn 1 & + 0 > halt
+  23   -1.37     250  &text >N
+  26    0.72     640  ev dup dup [text 10 = :isnl scan isnl 1 ^ :ist %ln0 ist %start end
+  36    2.08     962  tend start - :len 1 > c0 @sigtab :s0 0 > & start 1 + Tm min [text 127 min @opctab :o1 dup 0 > swap 4 < & & :sig s0 * :sgi sig o1 o0 sel :opc
+  37    0.34     324  ~NT 1 + NTm min @first idx NTm = | >last
+  42    2.08     642  ns Tm min {text Neg 4 nlen 4 min - 8 * >> :m0 & :w0 ns 4 + Tm min {text Neg 4 nlen 4 - 0 max 4 min - 8 * >> :m1 & :w1 ns 8 + Tm min {text Ne
+  52    1.92     642  nlen 9 min :dl @lm1 ga * dl @ls1 >> dl @lm2 gb * dl @ls2 >> + dl @lm3 gc * dl @ls3 >> + lit * :val lit nlen Maxdig > dk0 dk1 & dk2 & 1 ^ | &
+  54    0.67     316  isname nlen Maxname > & $En
+  57    3.02     962  w0 Ha1 * dup Hs1 >> ^ Hb1 * w1 1 + Ha1 * dup Hs1 >> ^ Hb1 * + w2 2 + Ha1 * dup Hs1 >> ^ Hb1 * + w3 3 + Ha1 * dup Hs1 >> ^ Hb1 * + :h1 w0 Ha2
+  59    1.49       3  h1 Kwshift >> 255 & @kwidx :ki @kwh0 16 << ki @kwl0 | w0 = ki @kwh1 16 << ki @kwl1 | w1 = & ki @kwh2 16 << ki @kwl2 | w2 = & ki @kwh3 16 << 
+  65    0.96     640  lit str len 2 - * + :un scan un - >pidx
+  68    0.58     324  start 1 + pidx - str len 2 > & pidx Neg sel !pmark
+  78    1.94    1024  ~Tabm 0 * >tab
+  83    0.85       0  key 0 max @tab dup @h1 h1 = over @h2 h2 = & act & :ok0 swap rep sel >rep
+  99    0.99      -3  rep @w0 w0 != rep @w1 w1 != | rep @w2 w2 != | rep @w3 w3 != | nm & $Ec
+ 109    2.88     960  kw 0 > sgi 0 > & Cerr kw 0 > sgi 0 = & kw 1 - sgi 5 * opc + @clstab sel sel dup @leadof over - first * + :cls4 Cerr = $Et
+ 113    1.28     642  cls4 last ln1 Neg sel !lsk
+ 125    0.85      -1  slot @tdef :td1 1 - 0 max :td @clso @istee td1 0 > & isname & td @rep @ln1 td @ln1 = & ln1 td @ln1 = & :loc clso @localof clso - * clso + >c
+ 134    0.99       2  Es 0 > 9 * halt
+ 138    1.16      74  ~Ct 0 * >ctab
+ 145    1.12      -4  last cls @isscat & slot * last ln1 Neg sel !lss
+ 151    0.95       4  slot @def 0 = cls @uses & isname & $Eu
+ 170    1.51       2  S1 16 * >Si
+ 186    0.86      -3  code tid @qlen * :psz scan :sp psz - :spx code sl * :asz scan :sa asz - :sax dying Rell * :bsz scan bsz - :sbx drop drop end
+ 188    0.85       0  ~NT first ln1 Neg sel !lft
+ 191    1.17       8  ln1 @lft :tf @sbx :fb tf @sax + spx + :offp ln1 @llt :tl @sp :lp fb + sax + :offa lp tl @sa + sbx + :offb drop drop end
+ 199    1.28       0  tid dup @qstart psz offp (stenb )cb dup @sstart code sl * offa )cb dup 0 * Rels + dying Rell * offb )cb end
+ 206    0.99      -1  ~8 8 * dup 0 * F + swap >> 255 & >f8
+ 208    0.83      -1  f8 out
+
+     ms  faults  section
+   5.26    1755  lexing, on byte lanes
+   2.65    1286  tokens
+   9.70    2572  a token's name is four dwords
+   0.97     962  the constant pool
+   7.38    1028  names
+  -0.26       0  slots by one scan
+   6.60    1609  token classes
+   5.41      78  stack depth = register allocation, by one scan
+   0.79      13  data image
+   1.22       6  code layout
+   2.84       6  code bytes
+   0.66      65  ELF, by concatenation
+  43.21    9380  total (23.6 user, 19.6 system)

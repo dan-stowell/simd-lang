@@ -1,0 +1,2130 @@
+{
+  "cpu": 3,
+  "seed": 20261111,
+  "commands": [
+    [
+      "gcc",
+      "-O2",
+      "-Ibuild",
+      "boot/strandc.c",
+      "-o",
+      "/home/exedev/simd-lang/build/audit4/c_o2"
+    ],
+    [
+      "gcc",
+      "-O3",
+      "-march=native",
+      "-Ibuild",
+      "boot/strandc.c",
+      "-o",
+      "/home/exedev/simd-lang/build/audit4/c_o3"
+    ],
+    [
+      "gcc",
+      "-O2",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-Ibuild",
+      "boot/strandc.c",
+      "-o",
+      "/home/exedev/simd-lang/build/audit4/c_o2_nf"
+    ],
+    [
+      "gcc",
+      "-O3",
+      "-march=native",
+      "-U_FORTIFY_SOURCE",
+      "-D_FORTIFY_SOURCE=0",
+      "-Ibuild",
+      "boot/strandc.c",
+      "-o",
+      "/home/exedev/simd-lang/build/audit4/c_o3_nf"
+    ]
+  ],
+  "rows": [
+    {
+      "name": "c_o2",
+      "source": "build/audit4/big8.strand",
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "exe": "build/audit4/c_o2",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 41.689437,
+          "user_ms": 29.125,
+          "system_ms": 12.482,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.802824,
+          "user_ms": 16.228,
+          "system_ms": 24.465,
+          "maxrss_kib": 42956,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.564379,
+          "user_ms": 17.11,
+          "system_ms": 21.367,
+          "maxrss_kib": 42948,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 49.236162,
+          "user_ms": 27.147,
+          "system_ms": 21.966,
+          "maxrss_kib": 42972,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.174371,
+          "user_ms": 16.02,
+          "system_ms": 24.03,
+          "maxrss_kib": 42932,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.098493,
+          "user_ms": 32.722,
+          "system_ms": 8.206,
+          "maxrss_kib": 42976,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.669725,
+          "user_ms": 31.148,
+          "system_ms": 11.424,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.750405,
+          "user_ms": 20.324,
+          "system_ms": 20.324,
+          "maxrss_kib": 42956,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.432193,
+          "user_ms": 12.104,
+          "system_ms": 28.243,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.638505,
+          "user_ms": 14.988,
+          "system_ms": 25.561,
+          "maxrss_kib": 42948,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.869109,
+          "user_ms": 11.82,
+          "system_ms": 27.796,
+          "maxrss_kib": 42948,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.735987,
+          "user_ms": 11.563,
+          "system_ms": 30.79,
+          "maxrss_kib": 42972,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.1033,
+          "user_ms": 20.522,
+          "system_ms": 20.498,
+          "maxrss_kib": 42876,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.467176,
+          "user_ms": 21.21,
+          "system_ms": 22.141,
+          "maxrss_kib": 42928,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.800736,
+          "user_ms": 31.049,
+          "system_ms": 11.582,
+          "maxrss_kib": 42980,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 41.098493,
+      "wall_min_ms": 38.564379,
+      "wall_max_ms": 49.236162
+    },
+    {
+      "name": "c_o3",
+      "source": "build/audit4/big8.strand",
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "exe": "build/audit4/c_o3",
+      "exe_sha256": "2fd9b521820e3a808f6b9804a49505c86f8ec739607d6cd6d95169a62bf2c67b",
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 40.057273,
+          "user_ms": 19.972,
+          "system_ms": 19.972,
+          "maxrss_kib": 42980,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.231786,
+          "user_ms": 15.807,
+          "system_ms": 24.273,
+          "maxrss_kib": 42872,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.508,
+          "user_ms": 15.707,
+          "system_ms": 23.709,
+          "maxrss_kib": 42828,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.998885,
+          "user_ms": 23.918,
+          "system_ms": 15.98,
+          "maxrss_kib": 42956,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.427498,
+          "user_ms": 19.604,
+          "system_ms": 19.67,
+          "maxrss_kib": 42948,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.304282,
+          "user_ms": 29.451,
+          "system_ms": 12.739,
+          "maxrss_kib": 42956,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.345083,
+          "user_ms": 34.501,
+          "system_ms": 7.76,
+          "maxrss_kib": 42876,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.918484,
+          "user_ms": 20.077,
+          "system_ms": 19.757,
+          "maxrss_kib": 42952,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 41.139846,
+          "user_ms": 20.527,
+          "system_ms": 20.527,
+          "maxrss_kib": 42944,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.294993,
+          "user_ms": 20.247,
+          "system_ms": 22.931,
+          "maxrss_kib": 42920,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 47.429193,
+          "user_ms": 23.283,
+          "system_ms": 24.063,
+          "maxrss_kib": 42872,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.849556,
+          "user_ms": 16.306,
+          "system_ms": 24.459,
+          "maxrss_kib": 42944,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 44.626514,
+          "user_ms": 19.874,
+          "system_ms": 24.647,
+          "maxrss_kib": 42876,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.85002,
+          "user_ms": 29.939,
+          "system_ms": 12.823,
+          "maxrss_kib": 42920,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.710735,
+          "user_ms": 20.315,
+          "system_ms": 20.315,
+          "maxrss_kib": 42956,
+          "minor_faults": 10596,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 40.849556,
+      "wall_min_ms": 39.427498,
+      "wall_max_ms": 47.429193
+    },
+    {
+      "name": "c_o2_nf",
+      "source": "build/audit4/big8.strand",
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "exe": "build/audit4/c_o2_nf",
+      "exe_sha256": "92dab21dc8f87420a434a293af942133bb4f35ad2b7fa54e8b8e1259b769fa0f",
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 36.46816,
+          "user_ms": 16.165,
+          "system_ms": 20.207,
+          "maxrss_kib": 42872,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.764116,
+          "user_ms": 26.195,
+          "system_ms": 11.215,
+          "maxrss_kib": 42972,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.233585,
+          "user_ms": 8.032,
+          "system_ms": 28.113,
+          "maxrss_kib": 42828,
+          "minor_faults": 10596,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.702332,
+          "user_ms": 20.993,
+          "system_ms": 16.608,
+          "maxrss_kib": 42876,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.089524,
+          "user_ms": 12.364,
+          "system_ms": 24.63,
+          "maxrss_kib": 42952,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.687691,
+          "user_ms": 29.235,
+          "system_ms": 8.353,
+          "maxrss_kib": 42872,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.920818,
+          "user_ms": 14.795,
+          "system_ms": 22.043,
+          "maxrss_kib": 42876,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.185314,
+          "user_ms": 25.359,
+          "system_ms": 12.729,
+          "maxrss_kib": 42980,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.640495,
+          "user_ms": 15.422,
+          "system_ms": 23.133,
+          "maxrss_kib": 42948,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.444047,
+          "user_ms": 22.977,
+          "system_ms": 15.355,
+          "maxrss_kib": 42932,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.332896,
+          "user_ms": 12.082,
+          "system_ms": 24.165,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.610067,
+          "user_ms": 15.855,
+          "system_ms": 23.669,
+          "maxrss_kib": 42972,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.048271,
+          "user_ms": 12.123,
+          "system_ms": 27.845,
+          "maxrss_kib": 42980,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.173437,
+          "user_ms": 26.648,
+          "system_ms": 11.444,
+          "maxrss_kib": 42920,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.414803,
+          "user_ms": 25.53,
+          "system_ms": 12.765,
+          "maxrss_kib": 42876,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 37.764116,
+      "wall_min_ms": 36.233585,
+      "wall_max_ms": 40.048271
+    },
+    {
+      "name": "c_o3_nf",
+      "source": "build/audit4/big8.strand",
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "exe": "build/audit4/c_o3_nf",
+      "exe_sha256": "bde606d232ef4c4e2d17ff0a945829972da028862c2e97b125d5f935c2e44220",
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 35.78235,
+          "user_ms": 19.842,
+          "system_ms": 15.853,
+          "maxrss_kib": 42976,
+          "minor_faults": 10597,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.527491,
+          "user_ms": 20.229,
+          "system_ms": 16.183,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.500122,
+          "user_ms": 16.989,
+          "system_ms": 21.405,
+          "maxrss_kib": 42956,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.522067,
+          "user_ms": 29.934,
+          "system_ms": 8.475,
+          "maxrss_kib": 42944,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.043828,
+          "user_ms": 19.963,
+          "system_ms": 15.97,
+          "maxrss_kib": 42944,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.196328,
+          "user_ms": 15.552,
+          "system_ms": 23.553,
+          "maxrss_kib": 42956,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.183986,
+          "user_ms": 19.969,
+          "system_ms": 20.102,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.105461,
+          "user_ms": 20.003,
+          "system_ms": 16.003,
+          "maxrss_kib": 42944,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.912666,
+          "user_ms": 24.562,
+          "system_ms": 12.246,
+          "maxrss_kib": 42948,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.280094,
+          "user_ms": 28.915,
+          "system_ms": 8.276,
+          "maxrss_kib": 42984,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 36.261188,
+          "user_ms": 24.106,
+          "system_ms": 12.073,
+          "maxrss_kib": 42956,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 39.402612,
+          "user_ms": 16.354,
+          "system_ms": 22.949,
+          "maxrss_kib": 42980,
+          "minor_faults": 10599,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 37.940455,
+          "user_ms": 11.358,
+          "system_ms": 26.502,
+          "maxrss_kib": 42948,
+          "minor_faults": 10598,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 40.771478,
+          "user_ms": 28.596,
+          "system_ms": 12.077,
+          "maxrss_kib": 42932,
+          "minor_faults": 10600,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 38.792006,
+          "user_ms": 25.836,
+          "system_ms": 12.866,
+          "maxrss_kib": 42804,
+          "minor_faults": 10601,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 37.940455,
+      "wall_min_ms": 35.78235,
+      "wall_max_ms": 40.771478
+    },
+    {
+      "name": "strand",
+      "source": "build/audit4/big8.strand",
+      "source_sha256": "366e95f81930cd22bbb0f9991e5946a552749110cc19de1487802e4189905839",
+      "exe": "build/stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "output_sha256": "c5336c39b3fa27bd8edd80ea2b4cbea8ceaec9f9b29b3e1e181515977d22739d",
+      "samples": [
+        {
+          "wall_ms": 42.057015,
+          "user_ms": 22.898,
+          "system_ms": 19.081,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.452331,
+          "user_ms": 34.658,
+          "system_ms": 8.702,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.408484,
+          "user_ms": 19.692,
+          "system_ms": 23.628,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.777118,
+          "user_ms": 25.599,
+          "system_ms": 17.066,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.901656,
+          "user_ms": 34.231,
+          "system_ms": 8.57,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 45.23786,
+          "user_ms": 24.524,
+          "system_ms": 20.616,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.792779,
+          "user_ms": 31.921,
+          "system_ms": 11.783,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.255884,
+          "user_ms": 23.435,
+          "system_ms": 19.703,
+          "maxrss_kib": 37852,
+          "minor_faults": 9197,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.551513,
+          "user_ms": 31.603,
+          "system_ms": 11.851,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.908398,
+          "user_ms": 27.237,
+          "system_ms": 15.576,
+          "maxrss_kib": 37852,
+          "minor_faults": 9199,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.54124,
+          "user_ms": 19.3,
+          "system_ms": 23.161,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.79704,
+          "user_ms": 31.068,
+          "system_ms": 11.65,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 43.290978,
+          "user_ms": 15.705,
+          "system_ms": 27.484,
+          "maxrss_kib": 37728,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 46.864037,
+          "user_ms": 33.774,
+          "system_ms": 12.961,
+          "maxrss_kib": 37852,
+          "minor_faults": 9196,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 42.978966,
+          "user_ms": 19.543,
+          "system_ms": 23.345,
+          "maxrss_kib": 37852,
+          "minor_faults": 9198,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 43.255884,
+      "wall_min_ms": 42.057015,
+      "wall_max_ms": 46.864037
+    },
+    {
+      "name": "c_o2",
+      "source": "build/audit4/big64.strand",
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "exe": "build/audit4/c_o2",
+      "exe_sha256": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c",
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 379.849792,
+          "user_ms": 242.333,
+          "system_ms": 137.29,
+          "maxrss_kib": 333028,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 428.057014,
+          "user_ms": 252.584,
+          "system_ms": 175.327,
+          "maxrss_kib": 332980,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 407.286902,
+          "user_ms": 264.652,
+          "system_ms": 140.732,
+          "maxrss_kib": 332924,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 393.594961,
+          "user_ms": 243.548,
+          "system_ms": 149.836,
+          "maxrss_kib": 332976,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 417.262372,
+          "user_ms": 225.321,
+          "system_ms": 191.795,
+          "maxrss_kib": 332976,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 501.246771,
+          "user_ms": 308.172,
+          "system_ms": 192.948,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 401.710352,
+          "user_ms": 261.565,
+          "system_ms": 139.92,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 401.02808,
+          "user_ms": 246.328,
+          "system_ms": 154.469,
+          "maxrss_kib": 333020,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 406.47423,
+          "user_ms": 236.828,
+          "system_ms": 169.494,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 396.144508,
+          "user_ms": 227.22,
+          "system_ms": 168.811,
+          "maxrss_kib": 333032,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 399.532798,
+          "user_ms": 219.71,
+          "system_ms": 179.604,
+          "maxrss_kib": 332980,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 399.873356,
+          "user_ms": 251.844,
+          "system_ms": 147.896,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 393.994493,
+          "user_ms": 237.066,
+          "system_ms": 156.824,
+          "maxrss_kib": 332976,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 419.282071,
+          "user_ms": 270.042,
+          "system_ms": 149.005,
+          "maxrss_kib": 333020,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 400.441844,
+          "user_ms": 237.175,
+          "system_ms": 158.131,
+          "maxrss_kib": 333024,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 401.02808,
+      "wall_min_ms": 379.849792,
+      "wall_max_ms": 501.246771
+    },
+    {
+      "name": "c_o3",
+      "source": "build/audit4/big64.strand",
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "exe": "build/audit4/c_o3",
+      "exe_sha256": "2fd9b521820e3a808f6b9804a49505c86f8ec739607d6cd6d95169a62bf2c67b",
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 394.85862,
+          "user_ms": 246.94,
+          "system_ms": 147.624,
+          "maxrss_kib": 332996,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 397.827825,
+          "user_ms": 241.243,
+          "system_ms": 156.438,
+          "maxrss_kib": 332968,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 406.765049,
+          "user_ms": 249.784,
+          "system_ms": 156.816,
+          "maxrss_kib": 333012,
+          "minor_faults": 84141,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 407.804286,
+          "user_ms": 270.805,
+          "system_ms": 136.829,
+          "maxrss_kib": 332992,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 398.493811,
+          "user_ms": 219.018,
+          "system_ms": 179.209,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 423.207438,
+          "user_ms": 241.295,
+          "system_ms": 181.742,
+          "maxrss_kib": 332924,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 387.541887,
+          "user_ms": 228.948,
+          "system_ms": 158.126,
+          "maxrss_kib": 332876,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 402.867679,
+          "user_ms": 249.287,
+          "system_ms": 153.431,
+          "maxrss_kib": 333024,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 392.140564,
+          "user_ms": 212.94,
+          "system_ms": 179.032,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 393.202075,
+          "user_ms": 219.862,
+          "system_ms": 172.96,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 403.692705,
+          "user_ms": 251.783,
+          "system_ms": 151.583,
+          "maxrss_kib": 333004,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 401.325598,
+          "user_ms": 249.673,
+          "system_ms": 150.712,
+          "maxrss_kib": 332976,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 389.812681,
+          "user_ms": 230.883,
+          "system_ms": 158.736,
+          "maxrss_kib": 332924,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 413.959211,
+          "user_ms": 265.238,
+          "system_ms": 148.441,
+          "maxrss_kib": 332976,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 395.829759,
+          "user_ms": 239.364,
+          "system_ms": 156.113,
+          "maxrss_kib": 332876,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 398.493811,
+      "wall_min_ms": 387.541887,
+      "wall_max_ms": 423.207438
+    },
+    {
+      "name": "c_o2_nf",
+      "source": "build/audit4/big64.strand",
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "exe": "build/audit4/c_o2_nf",
+      "exe_sha256": "92dab21dc8f87420a434a293af942133bb4f35ad2b7fa54e8b8e1259b769fa0f",
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 363.452317,
+          "user_ms": 211.627,
+          "system_ms": 151.7,
+          "maxrss_kib": 333032,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 385.46542,
+          "user_ms": 229.042,
+          "system_ms": 156.186,
+          "maxrss_kib": 332920,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 377.714698,
+          "user_ms": 241.346,
+          "system_ms": 136.117,
+          "maxrss_kib": 333004,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 417.179543,
+          "user_ms": 258.826,
+          "system_ms": 158.21,
+          "maxrss_kib": 333004,
+          "minor_faults": 84135,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 393.233876,
+          "user_ms": 271.36,
+          "system_ms": 121.678,
+          "maxrss_kib": 332968,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 484.935114,
+          "user_ms": 316.964,
+          "system_ms": 167.768,
+          "maxrss_kib": 332924,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 382.918036,
+          "user_ms": 248.991,
+          "system_ms": 133.753,
+          "maxrss_kib": 332876,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 383.218953,
+          "user_ms": 245.277,
+          "system_ms": 137.712,
+          "maxrss_kib": 333004,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 374.59005,
+          "user_ms": 234.401,
+          "system_ms": 140.044,
+          "maxrss_kib": 333032,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 379.412485,
+          "user_ms": 252.547,
+          "system_ms": 126.641,
+          "maxrss_kib": 333020,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 403.876083,
+          "user_ms": 241.763,
+          "system_ms": 161.574,
+          "maxrss_kib": 332976,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 381.616449,
+          "user_ms": 234.246,
+          "system_ms": 147.109,
+          "maxrss_kib": 332876,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 378.060751,
+          "user_ms": 226.099,
+          "system_ms": 151.228,
+          "maxrss_kib": 333024,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 386.673361,
+          "user_ms": 248.1,
+          "system_ms": 138.034,
+          "maxrss_kib": 332980,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 368.21268,
+          "user_ms": 240.732,
+          "system_ms": 127.313,
+          "maxrss_kib": 333012,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 382.918036,
+      "wall_min_ms": 363.452317,
+      "wall_max_ms": 484.935114
+    },
+    {
+      "name": "c_o3_nf",
+      "source": "build/audit4/big64.strand",
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "exe": "build/audit4/c_o3_nf",
+      "exe_sha256": "bde606d232ef4c4e2d17ff0a945829972da028862c2e97b125d5f935c2e44220",
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 346.301139,
+          "user_ms": 214.633,
+          "system_ms": 131.164,
+          "maxrss_kib": 333000,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 378.629693,
+          "user_ms": 248.441,
+          "system_ms": 130.012,
+          "maxrss_kib": 333032,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 370.139411,
+          "user_ms": 222.561,
+          "system_ms": 147.271,
+          "maxrss_kib": 332996,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 409.425154,
+          "user_ms": 281.462,
+          "system_ms": 127.83,
+          "maxrss_kib": 332924,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 370.403714,
+          "user_ms": 233.461,
+          "system_ms": 136.78,
+          "maxrss_kib": 332924,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 416.25871,
+          "user_ms": 276.544,
+          "system_ms": 139.343,
+          "maxrss_kib": 332996,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 378.135201,
+          "user_ms": 232.118,
+          "system_ms": 145.653,
+          "maxrss_kib": 332876,
+          "minor_faults": 84136,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 367.464273,
+          "user_ms": 231.218,
+          "system_ms": 135.911,
+          "maxrss_kib": 332920,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 399.034467,
+          "user_ms": 247.198,
+          "system_ms": 151.692,
+          "maxrss_kib": 333032,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 372.430617,
+          "user_ms": 235.861,
+          "system_ms": 136.434,
+          "maxrss_kib": 332976,
+          "minor_faults": 84140,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 375.09495,
+          "user_ms": 235.662,
+          "system_ms": 139.285,
+          "maxrss_kib": 332976,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 374.385474,
+          "user_ms": 245.482,
+          "system_ms": 128.675,
+          "maxrss_kib": 332976,
+          "minor_faults": 84138,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 368.128638,
+          "user_ms": 223.93,
+          "system_ms": 144.053,
+          "maxrss_kib": 333000,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 384.123776,
+          "user_ms": 234.569,
+          "system_ms": 149.267,
+          "maxrss_kib": 332996,
+          "minor_faults": 84139,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 369.379459,
+          "user_ms": 224.695,
+          "system_ms": 144.532,
+          "maxrss_kib": 332976,
+          "minor_faults": 84137,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 374.385474,
+      "wall_min_ms": 346.301139,
+      "wall_max_ms": 416.25871
+    },
+    {
+      "name": "strand",
+      "source": "build/audit4/big64.strand",
+      "source_sha256": "7d86f6d77dc1a93eeba630c42de57788130ea00cc6c032d04e596e3b31612fab",
+      "exe": "build/stage2",
+      "exe_sha256": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+      "output_sha256": "8f470d288f48a2ca069e72505f195855b9bd3440852a424232f78fd49acb7e48",
+      "samples": [
+        {
+          "wall_ms": 419.343179,
+          "user_ms": 313.168,
+          "system_ms": 105.894,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 400.034722,
+          "user_ms": 285.912,
+          "system_ms": 113.975,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 386.112652,
+          "user_ms": 262.566,
+          "system_ms": 123.278,
+          "maxrss_kib": 298380,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 385.63501,
+          "user_ms": 274.023,
+          "system_ms": 111.116,
+          "maxrss_kib": 298316,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 413.162374,
+          "user_ms": 267.648,
+          "system_ms": 145.207,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 394.287173,
+          "user_ms": 274.166,
+          "system_ms": 119.378,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 397.810909,
+          "user_ms": 261.416,
+          "system_ms": 136.134,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 392.652359,
+          "user_ms": 281.356,
+          "system_ms": 111.153,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 416.396627,
+          "user_ms": 283.494,
+          "system_ms": 132.354,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 392.680745,
+          "user_ms": 251.872,
+          "system_ms": 140.523,
+          "maxrss_kib": 298316,
+          "minor_faults": 72657,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 390.406037,
+          "user_ms": 259.008,
+          "system_ms": 131.297,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 404.581315,
+          "user_ms": 268.412,
+          "system_ms": 135.903,
+          "maxrss_kib": 298380,
+          "minor_faults": 72656,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 389.190858,
+          "user_ms": 284.539,
+          "system_ms": 104.372,
+          "maxrss_kib": 298380,
+          "minor_faults": 72655,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 394.32164,
+          "user_ms": 285.831,
+          "system_ms": 108.231,
+          "maxrss_kib": 298316,
+          "minor_faults": 72658,
+          "major_faults": 0,
+          "wait_status": 0
+        },
+        {
+          "wall_ms": 383.827108,
+          "user_ms": 263.728,
+          "system_ms": 119.9,
+          "maxrss_kib": 298380,
+          "minor_faults": 72655,
+          "major_faults": 0,
+          "wait_status": 0
+        }
+      ],
+      "wall_median_ms": 394.287173,
+      "wall_min_ms": 383.827108,
+      "wall_max_ms": 419.343179
+    }
+  ],
+  "order": [
+    {
+      "trial": 0,
+      "row": 6
+    },
+    {
+      "trial": 0,
+      "row": 8
+    },
+    {
+      "trial": 0,
+      "row": 9
+    },
+    {
+      "trial": 0,
+      "row": 0
+    },
+    {
+      "trial": 0,
+      "row": 2
+    },
+    {
+      "trial": 0,
+      "row": 3
+    },
+    {
+      "trial": 0,
+      "row": 1
+    },
+    {
+      "trial": 0,
+      "row": 5
+    },
+    {
+      "trial": 0,
+      "row": 4
+    },
+    {
+      "trial": 0,
+      "row": 7
+    },
+    {
+      "trial": 1,
+      "row": 3
+    },
+    {
+      "trial": 1,
+      "row": 5
+    },
+    {
+      "trial": 1,
+      "row": 9
+    },
+    {
+      "trial": 1,
+      "row": 4
+    },
+    {
+      "trial": 1,
+      "row": 6
+    },
+    {
+      "trial": 1,
+      "row": 1
+    },
+    {
+      "trial": 1,
+      "row": 2
+    },
+    {
+      "trial": 1,
+      "row": 8
+    },
+    {
+      "trial": 1,
+      "row": 7
+    },
+    {
+      "trial": 1,
+      "row": 0
+    },
+    {
+      "trial": 2,
+      "row": 9
+    },
+    {
+      "trial": 2,
+      "row": 2
+    },
+    {
+      "trial": 2,
+      "row": 6
+    },
+    {
+      "trial": 2,
+      "row": 4
+    },
+    {
+      "trial": 2,
+      "row": 0
+    },
+    {
+      "trial": 2,
+      "row": 7
+    },
+    {
+      "trial": 2,
+      "row": 5
+    },
+    {
+      "trial": 2,
+      "row": 1
+    },
+    {
+      "trial": 2,
+      "row": 3
+    },
+    {
+      "trial": 2,
+      "row": 8
+    },
+    {
+      "trial": 3,
+      "row": 0
+    },
+    {
+      "trial": 3,
+      "row": 6
+    },
+    {
+      "trial": 3,
+      "row": 4
+    },
+    {
+      "trial": 3,
+      "row": 2
+    },
+    {
+      "trial": 3,
+      "row": 8
+    },
+    {
+      "trial": 3,
+      "row": 7
+    },
+    {
+      "trial": 3,
+      "row": 3
+    },
+    {
+      "trial": 3,
+      "row": 5
+    },
+    {
+      "trial": 3,
+      "row": 9
+    },
+    {
+      "trial": 3,
+      "row": 1
+    },
+    {
+      "trial": 4,
+      "row": 8
+    },
+    {
+      "trial": 4,
+      "row": 3
+    },
+    {
+      "trial": 4,
+      "row": 0
+    },
+    {
+      "trial": 4,
+      "row": 4
+    },
+    {
+      "trial": 4,
+      "row": 1
+    },
+    {
+      "trial": 4,
+      "row": 6
+    },
+    {
+      "trial": 4,
+      "row": 5
+    },
+    {
+      "trial": 4,
+      "row": 2
+    },
+    {
+      "trial": 4,
+      "row": 9
+    },
+    {
+      "trial": 4,
+      "row": 7
+    },
+    {
+      "trial": 5,
+      "row": 9
+    },
+    {
+      "trial": 5,
+      "row": 4
+    },
+    {
+      "trial": 5,
+      "row": 0
+    },
+    {
+      "trial": 5,
+      "row": 8
+    },
+    {
+      "trial": 5,
+      "row": 6
+    },
+    {
+      "trial": 5,
+      "row": 1
+    },
+    {
+      "trial": 5,
+      "row": 3
+    },
+    {
+      "trial": 5,
+      "row": 7
+    },
+    {
+      "trial": 5,
+      "row": 2
+    },
+    {
+      "trial": 5,
+      "row": 5
+    },
+    {
+      "trial": 6,
+      "row": 6
+    },
+    {
+      "trial": 6,
+      "row": 5
+    },
+    {
+      "trial": 6,
+      "row": 8
+    },
+    {
+      "trial": 6,
+      "row": 2
+    },
+    {
+      "trial": 6,
+      "row": 0
+    },
+    {
+      "trial": 6,
+      "row": 1
+    },
+    {
+      "trial": 6,
+      "row": 3
+    },
+    {
+      "trial": 6,
+      "row": 7
+    },
+    {
+      "trial": 6,
+      "row": 4
+    },
+    {
+      "trial": 6,
+      "row": 9
+    },
+    {
+      "trial": 7,
+      "row": 2
+    },
+    {
+      "trial": 7,
+      "row": 9
+    },
+    {
+      "trial": 7,
+      "row": 0
+    },
+    {
+      "trial": 7,
+      "row": 3
+    },
+    {
+      "trial": 7,
+      "row": 8
+    },
+    {
+      "trial": 7,
+      "row": 4
+    },
+    {
+      "trial": 7,
+      "row": 7
+    },
+    {
+      "trial": 7,
+      "row": 5
+    },
+    {
+      "trial": 7,
+      "row": 1
+    },
+    {
+      "trial": 7,
+      "row": 6
+    },
+    {
+      "trial": 8,
+      "row": 8
+    },
+    {
+      "trial": 8,
+      "row": 4
+    },
+    {
+      "trial": 8,
+      "row": 3
+    },
+    {
+      "trial": 8,
+      "row": 0
+    },
+    {
+      "trial": 8,
+      "row": 1
+    },
+    {
+      "trial": 8,
+      "row": 2
+    },
+    {
+      "trial": 8,
+      "row": 9
+    },
+    {
+      "trial": 8,
+      "row": 6
+    },
+    {
+      "trial": 8,
+      "row": 7
+    },
+    {
+      "trial": 8,
+      "row": 5
+    },
+    {
+      "trial": 9,
+      "row": 6
+    },
+    {
+      "trial": 9,
+      "row": 3
+    },
+    {
+      "trial": 9,
+      "row": 2
+    },
+    {
+      "trial": 9,
+      "row": 9
+    },
+    {
+      "trial": 9,
+      "row": 1
+    },
+    {
+      "trial": 9,
+      "row": 5
+    },
+    {
+      "trial": 9,
+      "row": 0
+    },
+    {
+      "trial": 9,
+      "row": 4
+    },
+    {
+      "trial": 9,
+      "row": 7
+    },
+    {
+      "trial": 9,
+      "row": 8
+    },
+    {
+      "trial": 10,
+      "row": 6
+    },
+    {
+      "trial": 10,
+      "row": 5
+    },
+    {
+      "trial": 10,
+      "row": 1
+    },
+    {
+      "trial": 10,
+      "row": 9
+    },
+    {
+      "trial": 10,
+      "row": 7
+    },
+    {
+      "trial": 10,
+      "row": 3
+    },
+    {
+      "trial": 10,
+      "row": 0
+    },
+    {
+      "trial": 10,
+      "row": 4
+    },
+    {
+      "trial": 10,
+      "row": 8
+    },
+    {
+      "trial": 10,
+      "row": 2
+    },
+    {
+      "trial": 11,
+      "row": 4
+    },
+    {
+      "trial": 11,
+      "row": 7
+    },
+    {
+      "trial": 11,
+      "row": 3
+    },
+    {
+      "trial": 11,
+      "row": 9
+    },
+    {
+      "trial": 11,
+      "row": 2
+    },
+    {
+      "trial": 11,
+      "row": 8
+    },
+    {
+      "trial": 11,
+      "row": 5
+    },
+    {
+      "trial": 11,
+      "row": 1
+    },
+    {
+      "trial": 11,
+      "row": 0
+    },
+    {
+      "trial": 11,
+      "row": 6
+    },
+    {
+      "trial": 12,
+      "row": 3
+    },
+    {
+      "trial": 12,
+      "row": 6
+    },
+    {
+      "trial": 12,
+      "row": 5
+    },
+    {
+      "trial": 12,
+      "row": 0
+    },
+    {
+      "trial": 12,
+      "row": 8
+    },
+    {
+      "trial": 12,
+      "row": 4
+    },
+    {
+      "trial": 12,
+      "row": 9
+    },
+    {
+      "trial": 12,
+      "row": 7
+    },
+    {
+      "trial": 12,
+      "row": 2
+    },
+    {
+      "trial": 12,
+      "row": 1
+    },
+    {
+      "trial": 13,
+      "row": 7
+    },
+    {
+      "trial": 13,
+      "row": 1
+    },
+    {
+      "trial": 13,
+      "row": 5
+    },
+    {
+      "trial": 13,
+      "row": 3
+    },
+    {
+      "trial": 13,
+      "row": 0
+    },
+    {
+      "trial": 13,
+      "row": 8
+    },
+    {
+      "trial": 13,
+      "row": 9
+    },
+    {
+      "trial": 13,
+      "row": 4
+    },
+    {
+      "trial": 13,
+      "row": 6
+    },
+    {
+      "trial": 13,
+      "row": 2
+    },
+    {
+      "trial": 14,
+      "row": 6
+    },
+    {
+      "trial": 14,
+      "row": 3
+    },
+    {
+      "trial": 14,
+      "row": 0
+    },
+    {
+      "trial": 14,
+      "row": 7
+    },
+    {
+      "trial": 14,
+      "row": 8
+    },
+    {
+      "trial": 14,
+      "row": 1
+    },
+    {
+      "trial": 14,
+      "row": 9
+    },
+    {
+      "trial": 14,
+      "row": 5
+    },
+    {
+      "trial": 14,
+      "row": 4
+    },
+    {
+      "trial": 14,
+      "row": 2
+    }
+  ],
+  "source_sha256": "376532c480fd839def280b52930312a7fa808dcc54793e6dede6dc6d9415afc0",
+  "headers_sha256": "dcb26167dd6d7b5b6ab625cf8079ef1f3dc933afc3a5df65bfd2fc4f5ceca2ef"
+}

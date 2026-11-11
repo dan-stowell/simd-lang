@@ -1,0 +1,169 @@
+generated 92 independently-oracled cases in /home/exedev/simd-lang/build/audit4-linkjob/cases
+{"case": "five_unique_four_round_collision", "category": "core", "variant": "link2_1", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2"], "affinity": [0], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "five_unique_four_round_collision", "category": "core", "variant": "link2_eager_all", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2", "eager"], "affinity": [0, 1, 2, 3, 4, 5, 6, 7], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "five_unique_unused_four_round_collision", "category": "core", "variant": "link2_1", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2"], "affinity": [0], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "five_unique_unused_four_round_collision", "category": "core", "variant": "link2_eager_all", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2", "eager"], "affinity": [0, 1, 2, 3, 4, 5, 6, 7], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "duplicate_fingerprint", "category": "collision", "variant": "c_fingerprint", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "fingerprint"], "affinity": [0], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "duplicate_fingerprint", "category": "collision", "variant": "link2_1", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "7890dca5fe149e515fa5c884fe3255ddd52c191cc825bce2c7c9efd2f75f6a0b", "output_bytes": 64, "stderr": "", "first_difference": 0}
+{"case": "duplicate_fingerprint", "category": "collision", "variant": "link2_eager_all", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/link2", "eager"], "affinity": [0, 1, 2, 3, 4, 5, 6, 7], "exit": 0, "match": false, "output_sha256": "7890dca5fe149e515fa5c884fe3255ddd52c191cc825bce2c7c9efd2f75f6a0b", "output_bytes": 64, "stderr": "", "first_difference": 0}
+{"case": "duplicate_fingerprint", "category": "collision", "variant": "c_fingerprint_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "fingerprint"], "affinity": [0], "exit": 9, "match": false, "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "output_bytes": 0, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "ref_o2", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/ref_o2", "ref"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "ref_o3", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/ref_o3", "ref"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_full", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "full"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_stream", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "stream"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_parallel_1", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "parallel"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "9b2badac96abcea89940372da29edc7d5795dde11a6ff830e4352d8550611181", "output_bytes": 128, "stderr": "", "first_difference": 64}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_parallel_all", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "parallel"], "affinity": [0, 1, 2, 3, 4, 5, 6, 7], "exit": 0, "match": false, "output_sha256": "9b2badac96abcea89940372da29edc7d5795dde11a6ff830e4352d8550611181", "output_bytes": 128, "stderr": "", "first_difference": 64}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_fingerprint", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants", "fingerprint"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "ref_o2_bytes", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/ref_o2_bytes", "ref"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "ref_o2_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/ref_o2_nf", "ref"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "ref_o3_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/ref_o3_nf", "ref"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_full_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "full"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_checked_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "checked"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_stream_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "stream"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_parallel_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "parallel"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "9b2badac96abcea89940372da29edc7d5795dde11a6ff830e4352d8550611181", "output_bytes": 128, "stderr": "", "first_difference": 64}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_fingerprint_nf", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "fingerprint"], "affinity": [0], "exit": 0, "match": false, "output_sha256": "c351102eabf7a4df1884e12658802e3f598a8adb7010b4a646187afe176afc39", "output_bytes": 128, "stderr": "", "first_difference": 0}
+{"case": "ungrouped_relocations", "category": "unordered", "variant": "c_parallel_nf_all", "argv": ["/home/exedev/simd-lang/build/audit4-linkjob/variants_nf", "parallel"], "affinity": [0, 1, 2, 3, 4, 5, 6, 7], "exit": 0, "match": false, "output_sha256": "9b2badac96abcea89940372da29edc7d5795dde11a6ff830e4352d8550611181", "output_bytes": 128, "stderr": "", "first_difference": 64}
+{
+  "ref_o2": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o3": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_full": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_stream": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_1": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_all": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_fingerprint": {
+    "pass_count": 90,
+    "total": 92,
+    "failures": [
+      "duplicate_fingerprint",
+      "ungrouped_relocations"
+    ]
+  },
+  "link_1": {
+    "pass_count": 92,
+    "total": 92,
+    "failures": []
+  },
+  "link_eager_all": {
+    "pass_count": 92,
+    "total": 92,
+    "failures": []
+  },
+  "link2_1": {
+    "pass_count": 89,
+    "total": 92,
+    "failures": [
+      "five_unique_four_round_collision",
+      "five_unique_unused_four_round_collision",
+      "duplicate_fingerprint"
+    ]
+  },
+  "link2_eager_all": {
+    "pass_count": 89,
+    "total": 92,
+    "failures": [
+      "five_unique_four_round_collision",
+      "five_unique_unused_four_round_collision",
+      "duplicate_fingerprint"
+    ]
+  },
+  "ref_o2_bytes": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o2_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "ref_o3_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_full_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_checked_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_stream_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_nf": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  },
+  "c_fingerprint_nf": {
+    "pass_count": 90,
+    "total": 92,
+    "failures": [
+      "duplicate_fingerprint",
+      "ungrouped_relocations"
+    ]
+  },
+  "c_parallel_nf_all": {
+    "pass_count": 91,
+    "total": 92,
+    "failures": [
+      "ungrouped_relocations"
+    ]
+  }
+}

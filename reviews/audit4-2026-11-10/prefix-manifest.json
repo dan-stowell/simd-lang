@@ -1,0 +1,197 @@
+[
+  {
+    "line": 19,
+    "source": "bytes :text :c @lcls /ldfa :s s 2 = c 32 > s 0 = & | :tc dup prev :ptc 1 ^ & c 10 = | %ev ptc tc 1 ^ & %te0 dup prev 2 = c 10 = c 35 = | & c 34 = :isq s 2 = & ptc & | 0 isq s 0 = & prev c 32 > & s 1 != & | | swap drop $Eq2",
+    "prefix": {
+      "path": "build/audit4/prefix-19",
+      "sha256": "bebe4bf8612668eb622beaa601325443d07c0ab1078b087b3fc053c34ff65ff3",
+      "bytes": 181261
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-19",
+      "sha256": "c0b045321d1b9d54723c16db4b04939bee5b0cc4ea96ffab86499098f565ca0b",
+      "bytes": 257745
+    },
+    "stop_file_offset": 189271
+  },
+  {
+    "line": 32,
+    "source": "te0 idx !tend",
+    "prefix": {
+      "path": "build/audit4/prefix-32",
+      "sha256": "90726c6fd46d87b3ccabf10fd761d54796759292951a3a6eb1431ed74411d8fe",
+      "bytes": 186206
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-32",
+      "sha256": "eacb2a8f9762e71980f0615234894b524c1ba3758582c095647834053d957b7c",
+      "bytes": 257745
+    },
+    "stop_file_offset": 193256
+  },
+  {
+    "line": 37,
+    "source": "~NT 1 + NTm min @first idx NTm = | >last",
+    "prefix": {
+      "path": "build/audit4/prefix-37",
+      "sha256": "233c9077cfc5477d49f923303e1cdfeb9f3cd169425f885f0968f384ea33dbad",
+      "bytes": 189563
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-37",
+      "sha256": "09706529934d047ba6260151963cf8e101a856202b95bd6d486be56777b5f117",
+      "bytes": 257745
+    },
+    "stop_file_offset": 196422
+  },
+  {
+    "line": 42,
+    "source": "ns Tm min {text Neg 4 nlen 4 min - 8 * >> :m0 & :w0 ns 4 + Tm min {text Neg 4 nlen 4 - 0 max 4 min - 8 * >> :m1 & :w1 ns 8 + Tm min {text Neg 4 nlen 8 - 0 max 4 min - 8 * >> :m2 & :w2 ns 12 + Tm min {text Neg 4 nlen 12 - 0 max 4 min - 8 * >> & :w3 drop drop drop end",
+    "prefix": {
+      "path": "build/audit4/prefix-42",
+      "sha256": "a4866c612dc4788c323d68adf7bcfba6521b579dd022f3a21ac186fadca3ef4c",
+      "bytes": 191700
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-42",
+      "sha256": "d047ae83f5603358744522c41f009908aebc0c2d94c45f601af0ef0626f4bfa0",
+      "bytes": 257745
+    },
+    "stop_file_offset": 198397
+  },
+  {
+    "line": 59,
+    "source": "h1 Kwshift >> 255 & @kwidx :ki @kwh0 16 << ki @kwl0 | w0 = ki @kwh1 16 << ki @kwl1 | w1 = & ki @kwh2 16 << ki @kwl2 | w2 = & ki @kwh3 16 << ki @kwl3 | w3 = & ki * isname * :kw 0 = isname & :nm end",
+    "prefix": {
+      "path": "build/audit4/prefix-59",
+      "sha256": "5138e79822e6f87e99d52ac8bbd6d9db1d422140d90680398123d0d467990072",
+      "bytes": 201775
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-59",
+      "sha256": "74a0742e304e7f815040b882ab81225013d1d87923581c26d69211bde95fe624",
+      "bytes": 257745
+    },
+    "stop_file_offset": 206910
+  },
+  {
+    "line": 70,
+    "source": "val lit pidx Neg sel !pool",
+    "prefix": {
+      "path": "build/audit4/prefix-70",
+      "sha256": "9824dc6a78813783e1249f819d90a60854986a9fff26863509f33238c06a3cf0",
+      "bytes": 205147
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-70",
+      "sha256": "578e36f1075892f54389c03c193c77b8a379fe6dcab9392f03e1455d32ab462d",
+      "bytes": 257745
+    },
+    "stop_file_offset": 209665
+  },
+  {
+    "line": 100,
+    "source": "Ec 0 > 5 * halt",
+    "prefix": {
+      "path": "build/audit4/prefix-100",
+      "sha256": "b6ddeb34a4a9e63cb38379e6496c44b1e4fdfec6891900def2c21498a8ce4db2",
+      "bytes": 216507
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-100",
+      "sha256": "490ed300494319582efe4bf4db603782adbea454c525f8c1662314b3f6c51401",
+      "bytes": 257745
+    },
+    "stop_file_offset": 220135
+  },
+  {
+    "line": 106,
+    "source": "S 1 + >S1",
+    "prefix": {
+      "path": "build/audit4/prefix-106",
+      "sha256": "c80294679826668a0793abb3ca5f281ae34eb1af10ead168124676317b0ef146",
+      "bytes": 218361
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-106",
+      "sha256": "deec426cb80ab0df0d69ca5fdb5e629ff6aee295db4d4a4126face574f8e2216",
+      "bytes": 257745
+    },
+    "stop_file_offset": 221665
+  },
+  {
+    "line": 128,
+    "source": "td1 0 > isname & idx td != & ln1 td @ln1 = & loc 1 ^ & clsl Cvec = & Cvect Cvec - * clsl + >cls",
+    "prefix": {
+      "path": "build/audit4/prefix-128",
+      "sha256": "e20b4f9442c02262fcf87c6c8bcb5da70723163d3e53b0a43ea7aab13e60c412",
+      "bytes": 227653
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-128",
+      "sha256": "ba3547ba1c46cb209d8fd0aaea67e38bc71b1f370dba3c92cd21eaa839eee96f",
+      "bytes": 257745
+    },
+    "stop_file_offset": 229579
+  },
+  {
+    "line": 164,
+    "source": "Ety 0 > 14 * halt",
+    "prefix": {
+      "path": "build/audit4/prefix-164",
+      "sha256": "1935f58dd322dc225ca528a37fa90d582959bc8d7ced3c92a9536cff3d86a5f7",
+      "bytes": 240206
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-164",
+      "sha256": "69c5d06e76a66cf6b5421e64000d459d8b2ea355da61ebcdc05a31244f0bc64e",
+      "bytes": 257745
+    },
+    "stop_file_offset": 241280
+  },
+  {
+    "line": 177,
+    "source": "~1 S1 Slot * + 2 !simg",
+    "prefix": {
+      "path": "build/audit4/prefix-177",
+      "sha256": "7c42b280648842a91c83fffe3199c67f88f3d588bd42c12f47a11d09c65bccf5",
+      "bytes": 244620
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-177",
+      "sha256": "5c3bc8e47671698c88bb4e95344a388992a63c640a36c13e70e9e1e03890bf3a",
+      "bytes": 257745
+    },
+    "stop_file_offset": 245176
+  },
+  {
+    "line": 192,
+    "source": "code tid @qlen * code sl * + dying Rell * + $C",
+    "prefix": {
+      "path": "build/audit4/prefix-192",
+      "sha256": "c5efbc55e0edc403191fc2f500ec9481660b30ce634ce7e55e897a1862e5581e",
+      "bytes": 250685
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-192",
+      "sha256": "9573bda42b4bb96fc39e667c8681315cd18a3cd0772ad80e5b7021ddfcb01f6f",
+      "bytes": 257745
+    },
+    "stop_file_offset": 250448
+  },
+  {
+    "line": 202,
+    "source": "slot Slot * dying offb Relp + 1 - Neg sel }cb",
+    "prefix": {
+      "path": "build/audit4/prefix-202",
+      "sha256": "2d1c8e0c67146e740cbba82d4e405dbbc2cd755f513ea77a1143232cd29dd254",
+      "bytes": 254867
+    },
+    "stopped_full": {
+      "path": "build/audit4/stopped_full-202",
+      "sha256": "7d0bce9bccf834ec56edd37aa20b5358b5a77af24b0315598e98aaa78436c84a",
+      "bytes": 257745
+    },
+    "stop_file_offset": 254709
+  }
+]

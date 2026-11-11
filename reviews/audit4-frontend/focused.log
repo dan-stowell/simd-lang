@@ -1,0 +1,138 @@
+{
+  "head": "b591f699daa4bc4d7994c2b16f1891cb538ba113",
+  "map_regression": {
+    "source": "~1 @missing out\n=missing\n",
+    "map_tuples": [
+      [
+        4200615,
+        0,
+        "~1"
+      ],
+      [
+        4200666,
+        0,
+        "@missing"
+      ],
+      [
+        4200716,
+        0,
+        "out"
+      ]
+    ],
+    "runtime": {
+      "status": 99,
+      "stdout": "",
+      "stderr": "strand: runtime check failed at 0x00000000004018f6\n"
+    },
+    "map_cli": "4018a7 line 0  ~1\n4018da line 0  @missing\n40190c line 0  out\n",
+    "where_cli": "token @missing on line 0 : \n",
+    "where_status": 0
+  },
+  "historical_deltas": {
+    "old_maxname": 64,
+    "new_maxname": 16,
+    "old_prelude_token_count": 34,
+    "old_collision_pair_hashes": [
+      [
+        3341220918,
+        939569415
+      ],
+      [
+        2195121061,
+        644233891
+      ]
+    ],
+    "new_collision_pair_hashes": [
+      [
+        3044233960,
+        2705037177
+      ],
+      [
+        3044233960,
+        2705037177
+      ]
+    ]
+  },
+  "keyword_permutations": {
+    "attempts": 816,
+    "different_raw_names": 782,
+    "lexically_valid_different_names": [],
+    "note": "No full keyword-fingerprint collision found. This is only an exhaustive permutation-family check, not a general collision proof."
+  },
+  "boundary_checks": 2272,
+  "boundary_mismatches": [],
+  "stage_reproductions": [
+    {
+      "compiler": "build/stage1",
+      "case": "collision",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage1",
+      "case": "collision-family",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage1",
+      "case": "race",
+      "status": 4,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage2",
+      "case": "collision",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage2",
+      "case": "collision-family",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage2",
+      "case": "race",
+      "status": 4,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage3",
+      "case": "collision",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage3",
+      "case": "collision-family",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/stage3",
+      "case": "race",
+      "status": 4,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/strandc_scalar",
+      "case": "collision",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/strandc_scalar",
+      "case": "collision-family",
+      "status": 5,
+      "stdout_len": 0
+    },
+    {
+      "compiler": "build/strandc_scalar",
+      "case": "race",
+      "status": 4,
+      "stdout_len": 0
+    }
+  ]
+}

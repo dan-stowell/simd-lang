@@ -1,0 +1,61 @@
+checked 1000 mismatches 0
+checked 2000 mismatches 0
+checked 3000 mismatches 0
+checked 4000 mismatches 0
+checked 5000 mismatches 0
+checked 6000 mismatches 0
+checked 7000 mismatches 0
+checked 8000 mismatches 0
+checked 9000 mismatches 0
+checked 10000 mismatches 0
+{
+  "compiler_sha256": {
+    "build/stage2": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+    "build/strandc_scalar": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c"
+  },
+  "counts": {
+    "alignment": 780,
+    "constructed": 11,
+    "decimal-byte": 2304,
+    "decimal-length": 30,
+    "decimal-pair": 343,
+    "decimal-valid-batch": 19,
+    "keyword-impostors": 256,
+    "keyword-nearmiss": 102,
+    "keywords": 748,
+    "lexer-exhaustive": 4681,
+    "name-byte": 256,
+    "name-length": 60,
+    "priority": 195,
+    "string-byte": 256,
+    "string-length": 88,
+    "token-count": 12
+  },
+  "elapsed_seconds": 17.736,
+  "expected_mismatches": [],
+  "head": "b591f699daa4bc4d7994c2b16f1891cb538ba113",
+  "mismatches": [],
+  "runtime_checks": 19,
+  "statuses": {
+    "0": 2556,
+    "1": 1628,
+    "2": 2285,
+    "3": 35,
+    "4": 22,
+    "5": 21,
+    "6": 1734,
+    "7": 273,
+    "8": 1434,
+    "9": 14,
+    "10": 9,
+    "11": 7,
+    "12": 119,
+    "13": 3,
+    "14": 1
+  },
+  "stencils_sha256": "02ce824d8dd4396afb5cdd1b4c307f06ccf01c1bc10e44344cd50dd0e70ad927",
+  "swar_arithmetic": {
+    "four_digit_groups_exhausted": 10000,
+    "reciprocal_scalings": "all 1110 reachable 1/2/3-digit prefixes"
+  }
+}

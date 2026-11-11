@@ -1,0 +1,118 @@
+=== Original gcc -O2: dynamic object-size arithmetic and memcpy_chk per relocation ===
+    14c2:	48 01 c3             	add    rbx,rax
+    14c5:	4d 39 e9             	cmp    r9,r13
+    14c8:	4d 0f 43 e9          	cmovae r13,r9
+    14cc:	4c 89 e8             	mov    rax,r13
+    14cf:	49 89 dd             	mov    r13,rbx
+    14d2:	4c 89 f3             	mov    rbx,r14
+    14d5:	41 89 ee             	mov    r14d,ebp
+    14d8:	48 89 c5             	mov    rbp,rax
+    14db:	eb 75                	jmp    1552 <main+0x3d2>
+    14dd:	0f 1f 00             	nop    DWORD PTR [rax]
+    14e0:	41 8b 7d 00          	mov    edi,DWORD PTR [r13+0x0]
+    14e4:	8b 74 24 10          	mov    esi,DWORD PTR [rsp+0x10]
+    14e8:	8b 03                	mov    eax,DWORD PTR [rbx]
+    14ea:	48 8b 4c 24 28       	mov    rcx,QWORD PTR [rsp+0x28]
+    14ef:	8d 14 3e             	lea    edx,[rsi+rdi*1]
+    14f2:	48 8b 74 24 38       	mov    rsi,QWORD PTR [rsp+0x38]
+    14f7:	8b 04 86             	mov    eax,DWORD PTR [rsi+rax*4]
+    14fa:	48 8b 74 24 18       	mov    rsi,QWORD PTR [rsp+0x18]
+    14ff:	29 d0                	sub    eax,edx
+    1501:	48 29 f1             	sub    rcx,rsi
+    1504:	48 8b 54 24 20       	mov    rdx,QWORD PTR [rsp+0x20]
+    1509:	48 8b 74 24 40       	mov    rsi,QWORD PTR [rsp+0x40]
+    150e:	89 84 24 ac 00 00 00 	mov    DWORD PTR [rsp+0xac],eax
+    1515:	48 8d 04 2f          	lea    rax,[rdi+rbp*1]
+    1519:	48 01 c1             	add    rcx,rax
+    151c:	48 39 e9             	cmp    rcx,rbp
+    151f:	48 0f 42 cd          	cmovb  rcx,rbp
+    1523:	48 29 c2             	sub    rdx,rax
+    1526:	48 8b 44 24 30       	mov    rax,QWORD PTR [rsp+0x30]
+    152b:	41 83 c6 01          	add    r14d,0x1
+    152f:	49 83 c4 04          	add    r12,0x4
+    1533:	48 83 c3 04          	add    rbx,0x4
+    1537:	49 83 c5 04          	add    r13,0x4
+    153b:	48 01 d1             	add    rcx,rdx
+    153e:	48 01 c7             	add    rdi,rax
+    1541:	ba 04 00 00 00       	mov    edx,0x4
+    1546:	e8 f5 fb ff ff       	call   1140 <__memcpy_chk@plt>
+    154b:	44 39 74 24 08       	cmp    DWORD PTR [rsp+0x8],r14d
+    1550:	74 06                	je     1558 <main+0x3d8>
+    1552:	45 39 3c 24          	cmp    DWORD PTR [r12],r15d
+    1556:	74 88                	je     14e0 <main+0x360>
+    1558:	44 89 f5             	mov    ebp,r14d
+    155b:	49 83 c7 01          	add    r15,0x1
+    155f:	4c 39 7c 24 50       	cmp    QWORD PTR [rsp+0x50],r15
+=== Exact same gcc -O2: source-only byte stores combined into a dword mov ===
+    14b0:	48 8b 44 24 28       	mov    rax,QWORD PTR [rsp+0x28]
+    14b5:	8b 34 a8             	mov    esi,DWORD PTR [rax+rbp*4]
+    14b8:	48 8b 44 24 30       	mov    rax,QWORD PTR [rsp+0x30]
+    14bd:	48 01 c6             	add    rsi,rax
+    14c0:	4c 01 ee             	add    rsi,r13
+    14c3:	e8 78 fc ff ff       	call   1140 <__memcpy_chk@plt>
+    14c8:	44 39 f3             	cmp    ebx,r14d
+    14cb:	4c 8b 4c 24 08       	mov    r9,QWORD PTR [rsp+0x8]
+    14d0:	4c 8b 5c 24 10       	mov    r11,QWORD PTR [rsp+0x10]
+    14d5:	48 89 c7             	mov    rdi,rax
+    14d8:	73 36                	jae    1510 <main+0x390>
+    14da:	89 d8                	mov    eax,ebx
+    14dc:	48 c1 e0 02          	shl    rax,0x2
+    14e0:	eb 28                	jmp    150a <main+0x38a>
+    14e2:	66 0f 1f 44 00 00    	nop    WORD PTR [rax+rax*1+0x0]
+    14e8:	41 8b 4c 05 00       	mov    ecx,DWORD PTR [r13+rax*1+0x0]
+    14ed:	41 8b 14 01          	mov    edx,DWORD PTR [r9+rax*1]
+    14f1:	83 c3 01             	add    ebx,0x1
+    14f4:	48 83 c0 04          	add    rax,0x4
+    14f8:	41 8b 0c 8b          	mov    ecx,DWORD PTR [r11+rcx*4]
+    14fc:	41 8d 34 14          	lea    esi,[r12+rdx*1]
+    1500:	29 f1                	sub    ecx,esi
+    1502:	89 0c 17             	mov    DWORD PTR [rdi+rdx*1],ecx
+    1505:	41 39 de             	cmp    r14d,ebx
+    1508:	74 06                	je     1510 <main+0x390>
+    150a:	41 39 2c 07          	cmp    DWORD PTR [r15+rax*1],ebp
+    150e:	74 d8                	je     14e8 <main+0x368>
+    1510:	48 8b 44 24 18       	mov    rax,QWORD PTR [rsp+0x18]
+    1515:	48 83 c5 01          	add    rbp,0x1
+    1519:	48 39 c5             	cmp    rbp,rax
+    151c:	0f 85 56 ff ff ff    	jne    1478 <main+0x2f8>
+    1522:	44 8b 64 24 50       	mov    r12d,DWORD PTR [rsp+0x50]
+    1527:	48 8b 7c 24 20       	mov    rdi,QWORD PTR [rsp+0x20]
+    152c:	44 89 e6             	mov    esi,r12d
+=== No-fortify original gcc -O2: memcpy(4) becomes a dword mov ===
+    14ae:	4c 01 c6             	add    rsi,r8
+    14b1:	e8 8a fc ff ff       	call   1140 <memcpy@plt>
+    14b6:	44 39 fb             	cmp    ebx,r15d
+    14b9:	4c 8b 44 24 08       	mov    r8,QWORD PTR [rsp+0x8]
+    14be:	4c 8b 54 24 10       	mov    r10,QWORD PTR [rsp+0x10]
+    14c3:	48 89 c7             	mov    rdi,rax
+    14c6:	73 32                	jae    14fa <main+0x37a>
+    14c8:	89 d8                	mov    eax,ebx
+    14ca:	48 c1 e0 02          	shl    rax,0x2
+    14ce:	eb 24                	jmp    14f4 <main+0x374>
+    14d0:	41 8b 74 05 00       	mov    esi,DWORD PTR [r13+rax*1+0x0]
+    14d5:	41 8b 0c 00          	mov    ecx,DWORD PTR [r8+rax*1]
+    14d9:	83 c3 01             	add    ebx,0x1
+    14dc:	48 83 c0 04          	add    rax,0x4
+    14e0:	41 8b 0c 8a          	mov    ecx,DWORD PTR [r10+rcx*4]
+    14e4:	48 89 f2             	mov    rdx,rsi
+    14e7:	44 01 e2             	add    edx,r12d
+    14ea:	29 d1                	sub    ecx,edx
+    14ec:	89 0c 37             	mov    DWORD PTR [rdi+rsi*1],ecx
+    14ef:	41 39 df             	cmp    r15d,ebx
+    14f2:	74 06                	je     14fa <main+0x37a>
+    14f4:	41 39 2c 06          	cmp    DWORD PTR [r14+rax*1],ebp
+    14f8:	74 d6                	je     14d0 <main+0x350>
+    14fa:	48 83 c5 01          	add    rbp,0x1
+    14fe:	48 39 6c 24 18       	cmp    QWORD PTR [rsp+0x18],rbp
+    1503:	0f 85 6f ff ff ff    	jne    1478 <main+0x2f8>
+    1509:	44 8b 64 24 48       	mov    r12d,DWORD PTR [rsp+0x48]
+    150e:	4c 8b 5c 24 28       	mov    r11,QWORD PTR [rsp+0x28]
+    1513:	44 89 e6             	mov    esi,r12d
+    1516:	4c 89 df             	mov    rdi,r11
+    1519:	e8 02 08 00 00       	call   1d20 <put>
+    151e:	31 c0                	xor    eax,eax
+    1520:	e9 bb fc ff ff       	jmp    11e0 <main+0x60>
+    1525:	48 8b 7b 10          	mov    rdi,QWORD PTR [rbx+0x10]
+    1529:	ba 0a 00 00 00       	mov    edx,0xa
+    152e:	31 f6                	xor    esi,esi
+    1530:	e8 1b fc ff ff       	call   1150 <__isoc23_strtol@plt>

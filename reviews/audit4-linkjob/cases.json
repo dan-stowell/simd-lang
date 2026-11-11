@@ -1,0 +1,1474 @@
+[
+  {
+    "name": "empty",
+    "category": "core",
+    "description": "zero units/exports/imports/relocations",
+    "header": {
+      "U": 0,
+      "NE": 0,
+      "NI": 0,
+      "NR": 0,
+      "NC": 0
+    },
+    "job_sha256": "de47c9b27eb8d300dbb5f2c353e632c393262cf06340c4fa7f1b40c4cbd36f90",
+    "image_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "job_bytes": 20,
+    "image_bytes": 0
+  },
+  {
+    "name": "zero_units",
+    "category": "core",
+    "description": "zero-sized units",
+    "header": {
+      "U": 3,
+      "NE": 0,
+      "NI": 0,
+      "NR": 0,
+      "NC": 0
+    },
+    "job_sha256": "635aed846fd398659b05b1ed51b001948820d3ff20446f3ff2ff3a3619db4a23",
+    "image_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "job_bytes": 44,
+    "image_bytes": 0
+  },
+  {
+    "name": "size_1",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 0,
+      "NC": 1
+    },
+    "job_sha256": "238c8a2a098a6837610d6557c16fca0fc2a793c6fc355d88ea695babc91472e3",
+    "image_sha256": "366179850d940c6c635ad3aeb4d3c053d0fe415cd3b02e0fcb30f4e564ae73da",
+    "job_bytes": 61,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_3",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 0,
+      "NC": 3
+    },
+    "job_sha256": "03f9bbba4e5ee2fd59cf90b6fbf74c8a3584abe3cec37b0097f1bb824fe434f8",
+    "image_sha256": "e4fc1feb9332712b8b5be0a07457e3e3ac35ac5cf9fbfabfbf46ad5b304e3fd4",
+    "job_bytes": 63,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_4",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 4
+    },
+    "job_sha256": "be5ea3a394c2bf0686fe6ee40443a981c5a89c70d2efaaef50a6458e7ebdd814",
+    "image_sha256": "e7b4bb67551dde9589c1553dfda37a942a18caf184f9cc1629d25cf5c60be416",
+    "job_bytes": 76,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_15",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 15
+    },
+    "job_sha256": "61ed9e762b644917a5780f63ba698e5cd820f4a54211f76880ca11d4a462a113",
+    "image_sha256": "b82c029874285f98fc344aa6bcf9209d469d3f503ae985866dcf177e3f60879c",
+    "job_bytes": 87,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_16",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 16
+    },
+    "job_sha256": "134760c4a512ec721e330bc49744d561042d3a4765908244bcc9e9bf0a372255",
+    "image_sha256": "123bb07835f7ace596794f75eeac5b52b95de9d4e96fa6dda0a28494685cd483",
+    "job_bytes": 88,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_17",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 17
+    },
+    "job_sha256": "a73c8656d1a2d0b1046e9e62bff69c0af333949bd110350320ebeb843a931094",
+    "image_sha256": "96666df457f71bc99a5e97916a79c06a4cb66deb85656b51ba75b6de9d500c98",
+    "job_bytes": 89,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_63",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 63
+    },
+    "job_sha256": "18614f1d28aac5881324ee5843304ec31aed97e32a63165833221e9a64f54c28",
+    "image_sha256": "ba912cf707ac06658f7cbaf289682c9d12235e9b4d3405fa470b52be91e21311",
+    "job_bytes": 135,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_64",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 64
+    },
+    "job_sha256": "23ef1e1c616b5429d414c1f04145c0626213045fbf04d208102d51f433d15124",
+    "image_sha256": "2554b8bca1583734b29864dfad1cae0b8000d040799cb50506af67dd644b127d",
+    "job_bytes": 136,
+    "image_bytes": 64
+  },
+  {
+    "name": "size_65",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 65
+    },
+    "job_sha256": "ac27abefd97da77874544a0c0b137b068b23aa484bfb52d4600b43a89ad39e15",
+    "image_sha256": "079d1aad3ad524cb03e89206d3e212076496c4bfe48d606119fa1f30962fa833",
+    "job_bytes": 137,
+    "image_bytes": 128
+  },
+  {
+    "name": "size_127",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 127
+    },
+    "job_sha256": "d57ecdd94ff42541c9c68181a33787547c0ed8e0f93091a8b031b97f696875e6",
+    "image_sha256": "18d4ea183baba6e9d9a3b2a112720872bc397d11a693c3e5783f31943f8fc836",
+    "job_bytes": 199,
+    "image_bytes": 128
+  },
+  {
+    "name": "size_128",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 128
+    },
+    "job_sha256": "03a88db370d7085ba499cd44461da36b349de3dc6d0b074b4b6a696f1c7b6a8e",
+    "image_sha256": "993b08935825cd7e1c479cd6b570be14c70dbee780c2ca66e6430c592402a2f5",
+    "job_bytes": 200,
+    "image_bytes": 128
+  },
+  {
+    "name": "size_129",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 129
+    },
+    "job_sha256": "dc3ce83e242d3361e05a803c88a0286c4d12cc447640d17633bbc8af8a38d7c1",
+    "image_sha256": "9b877a79cdd61da1350b039a7368c88c7e56419747ae74960b0c75e658880c36",
+    "job_bytes": 201,
+    "image_bytes": 192
+  },
+  {
+    "name": "size_4095",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 4095
+    },
+    "job_sha256": "a2c9229c0c4ee9c99b27677a6c62c32fe9f65f59be89be832bf8012c11dff78d",
+    "image_sha256": "5647f921c808ce6a411e5214091933e8f9514c6bf94e2226825681a6bb01c0fb",
+    "job_bytes": 4167,
+    "image_bytes": 4096
+  },
+  {
+    "name": "size_4096",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 4096
+    },
+    "job_sha256": "072f89e07d78b22140b5573b76001ab969443a2b1d38c7af5b040dba05007129",
+    "image_sha256": "f19405d30375c97471bd0bc3c1ec56501a08b28021c86104ed1db7197f90c2b8",
+    "job_bytes": 4168,
+    "image_bytes": 4096
+  },
+  {
+    "name": "size_4097",
+    "category": "core",
+    "description": "alignment/tail boundary; full-width fingerprint",
+    "header": {
+      "U": 1,
+      "NE": 1,
+      "NI": 1,
+      "NR": 1,
+      "NC": 4097
+    },
+    "job_sha256": "731be2964b2b78821da0220c1a2a777bdff7cf8f15ad41bb4ada8b8c260cb17c",
+    "image_sha256": "67729ff030373490fc941aa46ed71bcf8c588b26bc21811a4591322bbe6cfb48",
+    "job_bytes": 4169,
+    "image_bytes": 4160
+  },
+  {
+    "name": "variable_exports",
+    "category": "core",
+    "description": "0/1/2/3 exports; unused exports/units; signed displacements; high fingerprint bits",
+    "header": {
+      "U": 8,
+      "NE": 8,
+      "NI": 16,
+      "NR": 11,
+      "NC": 453
+    },
+    "job_sha256": "8bc1c309e7f5b9ebd644da17657298b3d4be5af4aadf015fe7f063e391320a43",
+    "image_sha256": "56056dba1ede7a857dbacddefbf4ff355f5e44b66ee300007b7ec8b3c6fe3550",
+    "job_bytes": 1053,
+    "image_bytes": 640
+  },
+  {
+    "name": "no_imports",
+    "category": "core",
+    "description": "exports without imports",
+    "header": {
+      "U": 2,
+      "NE": 1,
+      "NI": 0,
+      "NR": 0,
+      "NC": 129
+    },
+    "job_sha256": "3b48323c4c74af83fb917adbf317b2bdcc288acd0eab5362be80aa9454b8daa5",
+    "image_sha256": "5eca7948e3f06c72a64e873d57a3eb039e2f09cf090cf4ebdae1af6d4e22f4c6",
+    "job_bytes": 181,
+    "image_bytes": 192
+  },
+  {
+    "name": "no_exports",
+    "category": "core",
+    "description": "code without exports",
+    "header": {
+      "U": 3,
+      "NE": 0,
+      "NI": 0,
+      "NR": 0,
+      "NC": 130
+    },
+    "job_sha256": "090c6d76719643ffdca1c7285c11f85e4470c0b60b5071bc916c1965ae6f4917",
+    "image_sha256": "b57e47e7dc5d308659c2ffded0482f948bfe90a45339c4b7e04e70ab95e7ebd4",
+    "job_bytes": 174,
+    "image_bytes": 256
+  },
+  {
+    "name": "five_unique_four_round_collision",
+    "category": "core",
+    "description": "unique fingerprints; all four keys zero; four slots cannot place five exports",
+    "header": {
+      "U": 1,
+      "NE": 5,
+      "NI": 5,
+      "NR": 5,
+      "NC": 64
+    },
+    "job_sha256": "d3eb799b6862f7bdc4c20a53c01aa27ad7fb50674698124dad94db2387ab01db",
+    "image_sha256": "cec3ad1ed2343bcce4d140eaa49d571b11414413c316f218c7173788228675cb",
+    "job_bytes": 312,
+    "image_bytes": 64
+  },
+  {
+    "name": "five_unique_unused_four_round_collision",
+    "category": "core",
+    "description": "same placement failure even with no imports or relocations",
+    "header": {
+      "U": 1,
+      "NE": 5,
+      "NI": 0,
+      "NR": 0,
+      "NC": 64
+    },
+    "job_sha256": "4eac0679ce0061379114e019aa893d1269f4c79617ef221417d9952088e50639",
+    "image_sha256": "e8d2974810e893d5fd5c031442930c892cdae582fac44e6b0987fdda30b9145f",
+    "job_bytes": 172,
+    "image_bytes": 64
+  },
+  {
+    "name": "duplicate_fingerprint",
+    "category": "collision",
+    "description": "different definitions share a fingerprint; ambiguity is not diagnosed",
+    "header": {
+      "U": 1,
+      "NE": 2,
+      "NI": 2,
+      "NR": 2,
+      "NC": 64
+    },
+    "job_sha256": "bcb80911b81bac831130a15f56062ce961ffed2ead952f39105dd6adf7e04bc7",
+    "image_sha256": "7e4db8c5cf2d8d99c7d3c5dc35bfa25bf7af8326bbe7bac02d22fcb39170d10f",
+    "job_bytes": 180,
+    "image_bytes": 64
+  },
+  {
+    "name": "sorted_overlap_0",
+    "category": "overlap",
+    "description": "sorted in-range relocations overlap; file-order overwrite oracle",
+    "header": {
+      "U": 1,
+      "NE": 2,
+      "NI": 2,
+      "NR": 65,
+      "NC": 256
+    },
+    "job_sha256": "6be0b7082e02f070e014e17a258b4b15c941888653f02226ede3b8d3bcf12566",
+    "image_sha256": "090b5b838b4573334524da874a1c48bdbb03bbd2453a585ac1515dd62fd54fe0",
+    "job_bytes": 1128,
+    "image_bytes": 256
+  },
+  {
+    "name": "sorted_overlap_1",
+    "category": "overlap",
+    "description": "sorted in-range relocations overlap; file-order overwrite oracle",
+    "header": {
+      "U": 1,
+      "NE": 2,
+      "NI": 2,
+      "NR": 65,
+      "NC": 256
+    },
+    "job_sha256": "9e81818c163b058f1239d2929b944ae9ec5f5315f5c1e24f8a5a2e412c35d94f",
+    "image_sha256": "ddb4b11969e5017b1235c8a557a85e726f00ba32e656b581a0ba4c47b6228be0",
+    "job_bytes": 1128,
+    "image_bytes": 256
+  },
+  {
+    "name": "sorted_overlap_2",
+    "category": "overlap",
+    "description": "sorted in-range relocations overlap; file-order overwrite oracle",
+    "header": {
+      "U": 1,
+      "NE": 2,
+      "NI": 2,
+      "NR": 65,
+      "NC": 256
+    },
+    "job_sha256": "07ff681213d0d8d546599c0ce1e51c23607643c53ea18dbb5e608a9d76062ac1",
+    "image_sha256": "9eb767d242434aec7cdb818ac4de1ce5610a46fefaee64373015463e75cc55d1",
+    "job_bytes": 1128,
+    "image_bytes": 256
+  },
+  {
+    "name": "sorted_overlap_3",
+    "category": "overlap",
+    "description": "sorted in-range relocations overlap; file-order overwrite oracle",
+    "header": {
+      "U": 1,
+      "NE": 2,
+      "NI": 2,
+      "NR": 65,
+      "NC": 256
+    },
+    "job_sha256": "e13ad111a0d26a32cf82278becc9fa7b36b1abe5965b4dd2f88bdfb2fc28e518",
+    "image_sha256": "2771621adf19371cfa49c99c9297e3478dd3d5a67f95876e734e5e49c59348c6",
+    "job_bytes": 1128,
+    "image_bytes": 256
+  },
+  {
+    "name": "ungrouped_relocations",
+    "category": "unordered",
+    "description": "format comments do not require unit grouping; LINKING benchmark does",
+    "header": {
+      "U": 2,
+      "NE": 2,
+      "NI": 2,
+      "NR": 3,
+      "NC": 128
+    },
+    "job_sha256": "5f7a858b50e8ed949825a0234abf32b91c4191af8221c3d95d4aec5990b875dc",
+    "image_sha256": "ccc8f0b875a82b4f53c68dfefeeace530cdd61d0c4575b622b37b4fa11b56869",
+    "job_bytes": 264,
+    "image_bytes": 128
+  },
+  {
+    "name": "random_00",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 3,
+      "NE": 20,
+      "NI": 83,
+      "NR": 1,
+      "NC": 24
+    },
+    "job_sha256": "1d8968253cefcf0b1b04288d39a226761ff56a505cbea70204e0655a6b0894db",
+    "image_sha256": "670b05c161650f90cd3ae0d36879f0764de9f68d1fbd65996b21d6af1a704f75",
+    "job_bytes": 1728,
+    "image_bytes": 192
+  },
+  {
+    "name": "random_01",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 7,
+      "NE": 26,
+      "NI": 96,
+      "NR": 53,
+      "NC": 577
+    },
+    "job_sha256": "fd7fa486218ce40763831b3202fd651d64535e86fb498ae1d86a256b33a0605c",
+    "image_sha256": "73940dd35b8931f744f66845c0a813e1e465d331af158bd7a8985591db1f0c28",
+    "job_bytes": 3241,
+    "image_bytes": 768
+  },
+  {
+    "name": "random_02",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 3,
+      "NE": 5,
+      "NI": 59,
+      "NR": 36,
+      "NC": 388
+    },
+    "job_sha256": "15fd1a3caa909b36fba4052d16f9b80bb81ae08818d257535b2c154a64761f99",
+    "image_sha256": "57a9f83bd596d696e7d58f87c58ad82bd10db9fc3c28e6954df067cd1f8879ef",
+    "job_bytes": 1888,
+    "image_bytes": 512
+  },
+  {
+    "name": "random_03",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 69,
+      "NI": 90,
+      "NR": 55,
+      "NC": 634
+    },
+    "job_sha256": "b9d09920c8678eed4767c0c2f4a86f513a26b5944be39b758aa61b1986dee6d0",
+    "image_sha256": "64905dc3a31c1c878dae16506f82dfafce06e0e4b06f24176e8f141ba374e93e",
+    "job_bytes": 4010,
+    "image_bytes": 1344
+  },
+  {
+    "name": "random_04",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 14,
+      "NE": 37,
+      "NI": 45,
+      "NR": 49,
+      "NC": 593
+    },
+    "job_sha256": "cd569112855143f339671ee4dde8f47b1a8881bfaf4f4169e50ffe3e03e3e15b",
+    "image_sha256": "8ed1a4d19f3a32b907a72db0a8d8d57dab2d1c8e4069e435232f7d1f7840a8f9",
+    "job_bytes": 2625,
+    "image_bytes": 1280
+  },
+  {
+    "name": "random_05",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 15,
+      "NE": 48,
+      "NI": 42,
+      "NR": 107,
+      "NC": 1268
+    },
+    "job_sha256": "88219d13b1f81b7242d9b62eb3da96e891c7b4d3f66194f3f9f49638df487303",
+    "image_sha256": "c4e0c764fd07b84ee3724294cd48a5708e94da07ad1981c0eccbc1df11e3dac8",
+    "job_bytes": 4132,
+    "image_bytes": 1728
+  },
+  {
+    "name": "random_06",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 8,
+      "NE": 27,
+      "NI": 90,
+      "NR": 30,
+      "NC": 331
+    },
+    "job_sha256": "6dfae15b1f736ec5191037e69c533184c8e51943b8fe72ec7e7141080ba1a5f5",
+    "image_sha256": "292ddb8d55e920201013ebab919b2893c59da2f1e2088f9c30063ec8855a70c9",
+    "job_bytes": 2647,
+    "image_bytes": 576
+  },
+  {
+    "name": "random_07",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 5,
+      "NE": 17,
+      "NI": 71,
+      "NR": 41,
+      "NC": 453
+    },
+    "job_sha256": "f00b5c86e0f46c73af5d8c51714ecd2549ed5ae6291eba486413fed3022d760e",
+    "image_sha256": "1538a29aa9ab6c009f3d959e0c1129f1f7b61aa5d5f5bbd389e1f6e4c25be434",
+    "job_bytes": 2413,
+    "image_bytes": 576
+  },
+  {
+    "name": "random_08",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 18,
+      "NE": 62,
+      "NI": 91,
+      "NR": 83,
+      "NC": 1044
+    },
+    "job_sha256": "f5ddd3ac1b9513504998d1546e13076b4dad961fc14f788ddabec51fc8ebbad8",
+    "image_sha256": "8cd982c7009864052bc655704b972dff0ad34e52a1623b1898888cf983737640",
+    "job_bytes": 4652,
+    "image_bytes": 1664
+  },
+  {
+    "name": "random_09",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 64,
+      "NI": 86,
+      "NR": 83,
+      "NC": 936
+    },
+    "job_sha256": "9ae5e3b47289ae2a7f8abb3ccdbb27fd13008b4f4a15a44015d0ad35bab5ec7b",
+    "image_sha256": "7f28e4553d3a9363d74179ed1598dde7424125b709ce578c91eea84bf84a170d",
+    "job_bytes": 4504,
+    "image_bytes": 1600
+  },
+  {
+    "name": "random_10",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 17,
+      "NE": 60,
+      "NI": 30,
+      "NR": 83,
+      "NC": 960
+    },
+    "job_sha256": "ae8f760d4ae4845f7461e730c2905a33dd7cd41dc855378bcdd13f8ad12832c9",
+    "image_sha256": "921d5e693c7f0b15a65ca6f65fa105ae17b06b8b2d80530209698431ea750f00",
+    "job_bytes": 3552,
+    "image_bytes": 1728
+  },
+  {
+    "name": "random_11",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 67,
+      "NI": 40,
+      "NR": 95,
+      "NC": 1137
+    },
+    "job_sha256": "7000acc13f7513e91a9b13da5b216f2124c14afadb18ae5538d01a06122a015b",
+    "image_sha256": "877a9d8576aee5f4a8692d7dd3a924edeaccda54148c40e2b92c2d98e02f87ec",
+    "job_bytes": 4161,
+    "image_bytes": 1920
+  },
+  {
+    "name": "random_12",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 42,
+      "NI": 80,
+      "NR": 126,
+      "NC": 1400
+    },
+    "job_sha256": "7873cb682edef74c35571045b974af0bc5c2a52dfbf4d1b1c3ff2152c177cbbe",
+    "image_sha256": "b5184d8a0c608297e71c993fa64e3c7f208a1114996451e98272dadb75f2a24f",
+    "job_bytes": 5036,
+    "image_bytes": 2112
+  },
+  {
+    "name": "random_13",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 7,
+      "NE": 20,
+      "NI": 26,
+      "NR": 43,
+      "NC": 479
+    },
+    "job_sha256": "1864f810a18c64d13fd0ea6078491c02e5acca79b29aaedcc833c125e4f23333",
+    "image_sha256": "fa1fb805b87e9a4ab8105f5faea53d19e1ec93597c247b5f159755987a272e3c",
+    "job_bytes": 1807,
+    "image_bytes": 640
+  },
+  {
+    "name": "random_14",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 9,
+      "NE": 17,
+      "NI": 32,
+      "NR": 56,
+      "NC": 627
+    },
+    "job_sha256": "f4508b21ba4d1f3b21814b49f54bd57645a146cafc30c4785facb519b238bf83",
+    "image_sha256": "0ccb5aa35a64c78484681ad22a859ec354847b8f098ba4d865ee4e8c39ea4e70",
+    "job_bytes": 2175,
+    "image_bytes": 960
+  },
+  {
+    "name": "random_15",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 18,
+      "NE": 44,
+      "NI": 6,
+      "NR": 52,
+      "NC": 572
+    },
+    "job_sha256": "6003d112add5d04807389f8c47f3489122436ade79a8bb0dc0cf12fa70d6f0c9",
+    "image_sha256": "a8c54a9cdd95abaccfb230c977ff496f26099f2012da4c3dd2bd23118f76a55d",
+    "job_bytes": 2160,
+    "image_bytes": 1280
+  },
+  {
+    "name": "random_16",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 56,
+      "NI": 91,
+      "NR": 117,
+      "NC": 1295
+    },
+    "job_sha256": "24cc196c11ad1027450abbc6892ada5ce126f2c61d6f7ff43d1d1d800042233c",
+    "image_sha256": "a8031059426c9d72a6b9ad30bfd07325b1f89b56a28b5966f11ae6df48fb5f0f",
+    "job_bytes": 5223,
+    "image_bytes": 2112
+  },
+  {
+    "name": "random_17",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 20,
+      "NE": 68,
+      "NI": 67,
+      "NR": 103,
+      "NC": 1220
+    },
+    "job_sha256": "6a180d75af9f846644a9e6a051e9feb30e1a1e62a6dbbf8c146b6b7e57f6127a",
+    "image_sha256": "ece727cb3e3042ef30672bbec6d0e9f8eeaea9395a3d1a4825f24a5a1713989f",
+    "job_bytes": 4796,
+    "image_bytes": 2112
+  },
+  {
+    "name": "random_18",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 23,
+      "NE": 92,
+      "NI": 10,
+      "NR": 131,
+      "NC": 1458
+    },
+    "job_sha256": "0263bdabd3b5decd91c5233b6ce5c96540e5ba5515ee63a1e40688ab28106e55",
+    "image_sha256": "7f7d158f959879a14c864e18ea4f00c604f21d03e7bfc1d84bfb2fe2da3934e0",
+    "job_bytes": 4866,
+    "image_bytes": 2304
+  },
+  {
+    "name": "random_19",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 5,
+      "NE": 30,
+      "NI": 67,
+      "NR": 51,
+      "NC": 593
+    },
+    "job_sha256": "29a1655719c55a7e884c0a071c68d5df1a24afb39fc9ac89f2655a2642526af7",
+    "image_sha256": "84028a064bdd333aa92fe60207b57cbd0594147f1c0d2a2f4c552c6ccc7ff344",
+    "job_bytes": 2817,
+    "image_bytes": 704
+  },
+  {
+    "name": "random_20",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 18,
+      "NE": 56,
+      "NI": 81,
+      "NR": 99,
+      "NC": 1136
+    },
+    "job_sha256": "97207a6bf391dd5060fba5089e00675f1d18f1c1e9ad9931bd29be792ef5dea3",
+    "image_sha256": "05a127ca665545f6c0ec0990a7bd0e946cf93628a90ad7f4ff2ad06dcc692c33",
+    "job_bytes": 4680,
+    "image_bytes": 1920
+  },
+  {
+    "name": "random_21",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 11,
+      "NE": 33,
+      "NI": 37,
+      "NR": 76,
+      "NC": 934
+    },
+    "job_sha256": "5f3db0607d02fdb52911c5c83aed3a59a4dbe8fdd62d31c77496f5e7750089da",
+    "image_sha256": "d971be35391c5a5d845c61c14db79ef2cf44ebcd9130fa5d6a7d68ef40a1bd87",
+    "job_bytes": 3074,
+    "image_bytes": 1408
+  },
+  {
+    "name": "random_22",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 21,
+      "NE": 54,
+      "NI": 20,
+      "NR": 141,
+      "NC": 1662
+    },
+    "job_sha256": "2c30cf604d254887dd6a41b4f8936f57f082a463dee2d5f14b6129177c180e4a",
+    "image_sha256": "b97082430509aec9da78ad7c981771ffa5ba160fb59e75739ea4444f7b8ff569",
+    "job_bytes": 4726,
+    "image_bytes": 2304
+  },
+  {
+    "name": "random_23",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 12,
+      "NE": 44,
+      "NI": 66,
+      "NR": 53,
+      "NC": 570
+    },
+    "job_sha256": "8419ae3501b370582fd33f35c8334029293c7f7023756cd836f3e1df0ae2833e",
+    "image_sha256": "85cf61a1a11cc93522ae67e2b8a9f839d3110684f0241b9147bf0553027d8d6c",
+    "job_bytes": 3082,
+    "image_bytes": 1088
+  },
+  {
+    "name": "random_24",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 14,
+      "NE": 30,
+      "NI": 80,
+      "NR": 42,
+      "NC": 504
+    },
+    "job_sha256": "15d4b7957238778df6fcb32d1933798e9a2991b17b6e4c3cb875db5d6b3dd572",
+    "image_sha256": "ca83be26bf24c443ede7a6579b5b2aab434b6d8b222cfefb986a947706ec4926",
+    "job_bytes": 2900,
+    "image_bytes": 1024
+  },
+  {
+    "name": "random_25",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 57,
+      "NI": 55,
+      "NR": 135,
+      "NC": 1445
+    },
+    "job_sha256": "ae3fc1e281af8da63db02f9d6206bfb52ca3b2eb8d4b652ba79863df2a19934a",
+    "image_sha256": "b6d0ee1c5aeae55ee82c6eb6be3f3bcec4687caa263ae072419c5bc991b39414",
+    "job_bytes": 5029,
+    "image_bytes": 2240
+  },
+  {
+    "name": "random_26",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 3,
+      "NE": 5,
+      "NI": 30,
+      "NR": 35,
+      "NC": 385
+    },
+    "job_sha256": "a9fdad3f664ad0278d22f1a805a112145183b2880c98b700c1084ff86577d58e",
+    "image_sha256": "0ffcdc78b932098ececcfec815ed7fd897021f4bcc1efae92eeb9476a4138756",
+    "job_bytes": 1409,
+    "image_bytes": 448
+  },
+  {
+    "name": "random_27",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 15,
+      "NE": 53,
+      "NI": 3,
+      "NR": 105,
+      "NC": 1318
+    },
+    "job_sha256": "dcef87952c799a701265ccef7315fd54a8be76aaf73bd80feb21058edaf4ffe5",
+    "image_sha256": "cc1d5e13c9b3eb6ae9066e409eb572d1fa9252ab4287ef5c90e76b1a227b810f",
+    "job_bytes": 3614,
+    "image_bytes": 1728
+  },
+  {
+    "name": "random_28",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 12,
+      "NE": 46,
+      "NI": 38,
+      "NR": 102,
+      "NC": 1138
+    },
+    "job_sha256": "92b277b956d1b1cb6952abefd8b99ea9bff9b6b894ef271943c0b17e4083919f",
+    "image_sha256": "ebfd09c2e96eb54d44d320ce91437b4797200bab0e48ee9189ece15e21fdb942",
+    "job_bytes": 3822,
+    "image_bytes": 1536
+  },
+  {
+    "name": "random_29",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 14,
+      "NE": 49,
+      "NI": 14,
+      "NR": 96,
+      "NC": 1066
+    },
+    "job_sha256": "f513a05dd7b4bff88135c655c6bb6d334ef4865f164ce0e4b514f0d7da4d3b19",
+    "image_sha256": "a554571153eb4ec7776ba9e3dcf3e768910d844cfd8fbfb3e0b577b0bff9e1fe",
+    "job_bytes": 3358,
+    "image_bytes": 1536
+  },
+  {
+    "name": "random_30",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 70,
+      "NI": 70,
+      "NR": 49,
+      "NC": 583
+    },
+    "job_sha256": "fb6f406a624a41a5a515f2ef7d44c1ab42f999e368072e4fce18f07e3bd6a5aa",
+    "image_sha256": "58fc61437595609b109c5aa5e62cebeb405f5b88696b777ba1e9f4d01abf2623",
+    "job_bytes": 3583,
+    "image_bytes": 1344
+  },
+  {
+    "name": "random_31",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 5,
+      "NE": 22,
+      "NI": 22,
+      "NR": 37,
+      "NC": 371
+    },
+    "job_sha256": "bf2fd5b467c14bab983d1ae838cb03b57c4914788d7623f6d113d7ca6f77ed85",
+    "image_sha256": "43d0c805bc35eecce12c695a20a95400364dc2ccafbe8cd8964f96e9dd4e5d24",
+    "job_bytes": 1579,
+    "image_bytes": 640
+  },
+  {
+    "name": "random_32",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 13,
+      "NE": 55,
+      "NI": 33,
+      "NR": 51,
+      "NC": 658
+    },
+    "job_sha256": "ed79e6cf76fa780203af2c521d8fa4dbc29408169a26db0e8fedeaadfc807bb6",
+    "image_sha256": "3ecca51e0bc7d9d070af37fffce6138b834249aef1b43dba1eb6127a0fff28f4",
+    "job_bytes": 2802,
+    "image_bytes": 1088
+  },
+  {
+    "name": "random_33",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 78,
+      "NI": 95,
+      "NR": 60,
+      "NC": 726
+    },
+    "job_sha256": "b083d66ae53c3bd97b1da1b7e39820149bd53358a0283b2e54339ce071254fed",
+    "image_sha256": "54a32244bab2dea0199411ea606af47889dcb64757a7be7547f11da5312e16ad",
+    "job_bytes": 4386,
+    "image_bytes": 1536
+  },
+  {
+    "name": "random_34",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 12,
+      "NE": 44,
+      "NI": 10,
+      "NR": 79,
+      "NC": 883
+    },
+    "job_sha256": "e7f2db4ffacf621de1d9d663ab544ad2ed6ee41932b1ec44ab19249c508dc6e3",
+    "image_sha256": "f0c48134e00c9907fe601609e94cc3cb2b5c26a19dbee0fdf07018ce41afa753",
+    "job_bytes": 2811,
+    "image_bytes": 1216
+  },
+  {
+    "name": "random_35",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 20,
+      "NE": 74,
+      "NI": 13,
+      "NR": 141,
+      "NC": 1485
+    },
+    "job_sha256": "9953036efbbc6ed878081372fcf645a7c82e7a64f814c7da53a9f30e1bb53693",
+    "image_sha256": "17f32b1e30b2d3046aab769eacd540f1472c5070c849149baed86904ca19602e",
+    "job_bytes": 4749,
+    "image_bytes": 1792
+  },
+  {
+    "name": "random_36",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 2,
+      "NE": 10,
+      "NI": 13,
+      "NR": 3,
+      "NC": 21
+    },
+    "job_sha256": "224165854b4050bb08d01603aaef25615a5cc624950ae8e455fef42982ae1d7d",
+    "image_sha256": "911732690ae12cd2eb408a30c0ede910aa9f0e1076c2ffba71ad984df6b3c141",
+    "job_bytes": 461,
+    "image_bytes": 128
+  },
+  {
+    "name": "random_37",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 18,
+      "NE": 50,
+      "NI": 7,
+      "NR": 112,
+      "NC": 1292
+    },
+    "job_sha256": "2139e67d30358e5abb84ca259740a93fe8e61a31a589588a11f7db4ce75bafb1",
+    "image_sha256": "d6346be79ef665083990c07f67d88ff2459ef37dbb172a2794218a77189ec5d3",
+    "job_bytes": 3712,
+    "image_bytes": 1920
+  },
+  {
+    "name": "random_38",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 7,
+      "NE": 30,
+      "NI": 34,
+      "NR": 18,
+      "NC": 215
+    },
+    "job_sha256": "b3dffaa39b63a29538dbe45d696e6c7bbfbab450f35d678a69b8e96849dfbe7d",
+    "image_sha256": "df2d398b55323b35d24db5b2f85df7420eb8d93e175cfcdfcb753fab6239c1ef",
+    "job_bytes": 1531,
+    "image_bytes": 512
+  },
+  {
+    "name": "random_39",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 10,
+      "NE": 32,
+      "NI": 78,
+      "NR": 18,
+      "NC": 192
+    },
+    "job_sha256": "40d856c4a13eec026e3a8f1814a43afc4a1dde50c3ad80cbf16c6b5d6afdc266",
+    "image_sha256": "493e00bccfd9448953aea415ee2d05fb9c8e952bb3dfa24261f296751627a0fa",
+    "job_bytes": 2268,
+    "image_bytes": 640
+  },
+  {
+    "name": "random_40",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 9,
+      "NE": 26,
+      "NI": 87,
+      "NR": 66,
+      "NC": 788
+    },
+    "job_sha256": "61cd71a84efd899c519ccca4fa26227324089868f65f14108be7453b310b063d",
+    "image_sha256": "b8f34142c89fd8505e707a96b53db9d68b6a6075054b18f8255341e2fc9df654",
+    "job_bytes": 3480,
+    "image_bytes": 1088
+  },
+  {
+    "name": "random_41",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 52,
+      "NI": 48,
+      "NR": 158,
+      "NC": 1669
+    },
+    "job_sha256": "7e6c485ce13552b2a2d27404bed935be938d284f83ada23a20db40a085a8f59b",
+    "image_sha256": "1c47b02bd8ff65547e7f3d610a4d5f8c6b6324168164e6a52d8db3d1dc3bc937",
+    "job_bytes": 5337,
+    "image_bytes": 2368
+  },
+  {
+    "name": "random_42",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 16,
+      "NE": 51,
+      "NI": 68,
+      "NR": 109,
+      "NC": 1276
+    },
+    "job_sha256": "4fcee9edc26c698a424173cda89928e841b5ae37eeaf8938412e83b1efe5533a",
+    "image_sha256": "d8774e89060abaccbe2b695541b45bea6c279c98f5c621d54ad597affcc07a5a",
+    "job_bytes": 4636,
+    "image_bytes": 1856
+  },
+  {
+    "name": "random_43",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 23,
+      "NE": 81,
+      "NI": 77,
+      "NR": 133,
+      "NC": 1647
+    },
+    "job_sha256": "526bd0ea65aab56f606afc606a31c7b62232fd546533d9b6c725ae905f82045e",
+    "image_sha256": "442a5ac0987a7e31c54b17786700cd028851ae82fdb1bf3e91ce1d5133c8fa7c",
+    "job_bytes": 5975,
+    "image_bytes": 2688
+  },
+  {
+    "name": "random_44",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 18,
+      "NE": 65,
+      "NI": 11,
+      "NR": 142,
+      "NC": 1531
+    },
+    "job_sha256": "91cb08a0e5d2ca1c4a678ba9cddc22fa4e5d9f51790d86539d3757d4ebf2f40d",
+    "image_sha256": "f85480b907da758d2dd179e09495faf870d8c6804017ed7a80ef541cfd83cf6d",
+    "job_bytes": 4615,
+    "image_bytes": 2112
+  },
+  {
+    "name": "random_45",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 1,
+      "NE": 6,
+      "NI": 2,
+      "NR": 0,
+      "NC": 1
+    },
+    "job_sha256": "2e3d470706014a72352d3ce9a869b288bedad7950a71eb0af52652fec6094ac8",
+    "image_sha256": "a2ef1f714afe34337e8a58bc583fc5b51876838a85bce8697fe7e1daa961b0b2",
+    "job_bytes": 157,
+    "image_bytes": 64
+  },
+  {
+    "name": "random_46",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 9,
+      "NE": 32,
+      "NI": 43,
+      "NR": 40,
+      "NC": 487
+    },
+    "job_sha256": "23f60f05c62b88bdcdadf2b8e9aacc162f65396ceb6015fbbea1af0073dfdef7",
+    "image_sha256": "e86c2a6ed793fed1b1a0d7fd9b8c7159f333bf142efff519518a24d6bacece7d",
+    "job_bytes": 2259,
+    "image_bytes": 832
+  },
+  {
+    "name": "random_47",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 14,
+      "NE": 46,
+      "NI": 41,
+      "NR": 53,
+      "NC": 607
+    },
+    "job_sha256": "9ef1e8a42e38bc3cc8ddaf6cc5b7290990cb00486e82cc63290beb48dc3473f3",
+    "image_sha256": "8dda9d3f7266deee6cf56148b3ab737250a953ab00b50f6f42388e246308eaf9",
+    "job_bytes": 2767,
+    "image_bytes": 1280
+  },
+  {
+    "name": "random_48",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 2,
+      "NE": 6,
+      "NI": 35,
+      "NR": 1,
+      "NC": 20
+    },
+    "job_sha256": "465263fede578149138fadff7895fe7e736082bd2edda224cab43b05f5dce7ba",
+    "image_sha256": "ba0101b35be1fb20db1b982ba6d41d02149f8583f36415cb44282f43348cca1b",
+    "job_bytes": 724,
+    "image_bytes": 128
+  },
+  {
+    "name": "random_49",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 22,
+      "NE": 51,
+      "NI": 66,
+      "NR": 79,
+      "NC": 850
+    },
+    "job_sha256": "d57b740f7c3904c8864b3a35d120ea6f442423b0c6d5810e90950ac094887c07",
+    "image_sha256": "763df632cce603d11953a8caf801d27b64be9c0923e1cd85c136839093147c7b",
+    "job_bytes": 3866,
+    "image_bytes": 1472
+  },
+  {
+    "name": "random_50",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 1,
+      "NE": 0,
+      "NI": 0,
+      "NR": 0,
+      "NC": 0
+    },
+    "job_sha256": "895c607361d12436b3c82f8e233278f594d1de2ac032fd9534670a26f9bd5ce5",
+    "image_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "job_bytes": 28,
+    "image_bytes": 0
+  },
+  {
+    "name": "random_51",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 15,
+      "NE": 57,
+      "NI": 29,
+      "NR": 79,
+      "NC": 954
+    },
+    "job_sha256": "97502883bc33814cad252481cf41f2728e11a3d0ded24dcf511d339fceab9fc8",
+    "image_sha256": "5e6f304a701d0746d02402e88b34369223049c269edb3c245fdfd296b37c5fcb",
+    "job_bytes": 3418,
+    "image_bytes": 1536
+  },
+  {
+    "name": "random_52",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 9,
+      "NE": 28,
+      "NI": 46,
+      "NR": 52,
+      "NC": 644
+    },
+    "job_sha256": "08a43cbd78ec92a3cdc548d9b9e58cb0ed3b2915d6e2aa86261afa6fe2beaa9e",
+    "image_sha256": "802257fb2026b63fe3233f33baf38e7562693418793ef8af8a8e1f0985764299",
+    "job_bytes": 2544,
+    "image_bytes": 960
+  },
+  {
+    "name": "random_53",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 3,
+      "NE": 7,
+      "NI": 73,
+      "NR": 28,
+      "NC": 337
+    },
+    "job_sha256": "046011f9c20faafd0ef5f9c1e9df0d9f3556ec7472191bd851ad5bb715dcbb30",
+    "image_sha256": "dfd080f74dea66e177ba87f725ec605cd156f780c435df96f2c51c199ef08e04",
+    "job_bytes": 1997,
+    "image_bytes": 448
+  },
+  {
+    "name": "random_54",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 1,
+      "NE": 3,
+      "NI": 52,
+      "NR": 12,
+      "NC": 128
+    },
+    "job_sha256": "34b47dca43b3cdcbb0062aedfdc87d5587affd46ea4c296e2b072e9349c8be33",
+    "image_sha256": "3ba740988e1956baa90a9796c353bea71bd936c570a3b6be1da1ebf972b514c8",
+    "job_bytes": 1180,
+    "image_bytes": 128
+  },
+  {
+    "name": "random_55",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 10,
+      "NE": 47,
+      "NI": 54,
+      "NR": 71,
+      "NC": 780
+    },
+    "job_sha256": "74cdbd7eb780c38e0042eabc970a1e7d2011bc7c00c71e96856a4eb77d5c8182",
+    "image_sha256": "188322881f5366508226913649323376debd0aa10e4e978ed90ae45b48985dd6",
+    "job_bytes": 3348,
+    "image_bytes": 1216
+  },
+  {
+    "name": "random_56",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 10,
+      "NE": 33,
+      "NI": 97,
+      "NR": 49,
+      "NC": 542
+    },
+    "job_sha256": "cc621237f5b93a9b002421b6ee3763de7ad6ba30c24cc6daf05edafdf7d5569f",
+    "image_sha256": "32006bc373d20d00f79305af6a70f0dd8c4b84ad1060e10d0f568d7e9a5637fe",
+    "job_bytes": 3310,
+    "image_bytes": 1024
+  },
+  {
+    "name": "random_57",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 3,
+      "NE": 13,
+      "NI": 41,
+      "NR": 33,
+      "NC": 387
+    },
+    "job_sha256": "7e6ef6c1730a9a1ad67febbb8102b9cde12a6008738d3d3121067a4c0c49fa38",
+    "image_sha256": "c4eadab0708b38bace1f58401500a43d81cfc516a4f9ab39bf9d56f7908dc6b5",
+    "job_bytes": 1691,
+    "image_bytes": 576
+  },
+  {
+    "name": "random_58",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 4,
+      "NE": 9,
+      "NI": 52,
+      "NR": 11,
+      "NC": 136
+    },
+    "job_sha256": "080951f928ee890dca1e26d38438094d1fd2c4390761c2c67e683e4a0bb66738",
+    "image_sha256": "a18ff49e51aceb14647c1a0ab288411f873606b7e0b72975c15266fdc472f8d7",
+    "job_bytes": 1296,
+    "image_bytes": 384
+  },
+  {
+    "name": "random_59",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 19,
+      "NE": 59,
+      "NI": 8,
+      "NR": 159,
+      "NC": 1782
+    },
+    "job_sha256": "10f1e679f42f04f22dbc83ccb853a1936e6c12dc8a9792daa8f1ede9dd67c9b9",
+    "image_sha256": "974a9599973b0abbcb0a8f3a09de9659b3e594a2a787f4e3f034a69ec82423c0",
+    "job_bytes": 4934,
+    "image_bytes": 2432
+  },
+  {
+    "name": "random_60",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 12,
+      "NE": 43,
+      "NI": 46,
+      "NR": 72,
+      "NC": 825
+    },
+    "job_sha256": "f653c8a06e5541c5f39b5f536febd1b9ce235d1cbacc87816f5e1e2a2f228f84",
+    "image_sha256": "b6323e2201987df826e6f0d770b0d1133b15bfc76c67eb26d19dd8b2a1439806",
+    "job_bytes": 3229,
+    "image_bytes": 1408
+  },
+  {
+    "name": "random_61",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 13,
+      "NE": 33,
+      "NI": 33,
+      "NR": 56,
+      "NC": 679
+    },
+    "job_sha256": "f7551631fdb8a8a9db2628c43761ac24d53628839528e068f65b03539d735dab",
+    "image_sha256": "1fc51f9db13931f746141dda762c0b289ad32f88070007cc60f9d03b385c2a23",
+    "job_bytes": 2531,
+    "image_bytes": 1024
+  },
+  {
+    "name": "random_62",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 7,
+      "NE": 24,
+      "NI": 72,
+      "NR": 12,
+      "NC": 132
+    },
+    "job_sha256": "db03af5c3a5738019b3050179f77f2e60bf1baf5fff0eb44fe235fd34620734f",
+    "image_sha256": "9f59bec6ee1519e809d584addd886329902ac90d33940903a59a794a39d57608",
+    "job_bytes": 1888,
+    "image_bytes": 384
+  },
+  {
+    "name": "random_63",
+    "category": "core",
+    "description": "seeded small job; variable counts, full64 fingerprints, sorted disjoint relocations",
+    "header": {
+      "U": 20,
+      "NE": 58,
+      "NI": 84,
+      "NR": 177,
+      "NC": 2028
+    },
+    "job_sha256": "ad27db8a406d440bb66d335e364af27e4b126145fe03b39d4d18a246abef83bf",
+    "image_sha256": "b6e1f92e4dba8a52dcf4578aa5f3710e01c098021ced7de759c1dcba02574df8",
+    "job_bytes": 6604,
+    "image_bytes": 2752
+  }
+]

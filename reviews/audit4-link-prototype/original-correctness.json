@@ -1,0 +1,26 @@
+[
+  {
+    "variant": "original-check",
+    "returncode": 0,
+    "stdout": "2000 units, 1000000 symbols (56 MB of names), 3000000 references by name, 12000000 relocations, 250 MB of code\n\n(reference strings: 168 MB, read in order; definition strings are compared at random)\njoin by name (hash string, probe, compare)            0.0 ms     0.0 ns per name\n  of which: fingerprinting every name, in order         0.0 ms     0.0 ns per name   (inf GB/s; checksum f14f8afd64be03f2)\njoin by 64-bit fingerprint (probe only)                 0.0 ms     0.0 ns per name   same result\njoin by fingerprint, scatter race + SIMD gathers        0.0 ms     0.0 ns per name   0 definitions lost all 4 rounds, 0 references unresolved\njoin by (unit, ordinal)                                 0.0 ms   (the compiler resolved the name when it read the interface)\n\nlayout (prefix sums, one address per symbol)            0.0 ms\n\nimport addresses (one read per reference)               0.0 ms     0.0 ns per reference\n\nrelocation: copy, then patch each site                  0.0 ms   (0.0 ms of it the copy; 0.0 ns per relocation)\nrelocation: gather values, expand into the holes        0.0 ms   (0.0 ms of it the gathers)   same bytes\nAUDIT_CHECK names=0 race=0 bytes=0\n",
+    "stderr": ""
+  },
+  {
+    "variant": "original-tail-check",
+    "returncode": 1,
+    "stdout": "3 units, 411 symbols (0 MB of names), 579 references by name, 771 relocations, 0 MB of code\n\n(reference strings: 0 MB, read in order; definition strings are compared at random)\njoin by name (hash string, probe, compare)            0.0 ms     0.0 ns per name\n  of which: fingerprinting every name, in order         0.0 ms     0.0 ns per name   (inf GB/s; checksum 68f245c25ac85327)\njoin by 64-bit fingerprint (probe only)                 0.0 ms     0.0 ns per name   same result\njoin by fingerprint, scatter race + SIMD gathers        0.0 ms     0.0 ns per name   0 definitions lost all 4 rounds, 0 references unresolved\njoin by (unit, ordinal)                                 0.0 ms   (the compiler resolved the name when it read the interface)\n\nlayout (prefix sums, one address per symbol)            0.0 ms\n\nimport addresses (one read per reference)               0.0 ms     0.0 ns per reference\n\nrelocation: copy, then patch each site                  0.0 ms   (0.0 ms of it the copy; 0.0 ns per relocation)\nrelocation: gather values, expand into the holes        0.0 ms   (0.0 ms of it the gathers)   same bytes\nAUDIT_CHECK names=0 race=3 bytes=0\n",
+    "stderr": ""
+  },
+  {
+    "variant": "original-store-check",
+    "returncode": 0,
+    "stdout": "2000 units, 1000000 symbols (56 MB of names), 3000000 references by name, 12000000 relocations, 250 MB of code\n\n(reference strings: 168 MB, read in order; definition strings are compared at random)\njoin by name (hash string, probe, compare)            0.0 ms     0.0 ns per name\n  of which: fingerprinting every name, in order         0.0 ms     0.0 ns per name   (inf GB/s; checksum f14f8afd64be03f2)\njoin by 64-bit fingerprint (probe only)                 0.0 ms     0.0 ns per name   same result\njoin by fingerprint, scatter race + SIMD gathers        0.0 ms     0.0 ns per name   0 definitions lost all 4 rounds, 0 references unresolved\njoin by (unit, ordinal)                                 0.0 ms   (the compiler resolved the name when it read the interface)\n\nlayout (prefix sums, one address per symbol)            0.0 ms\n\nimport addresses (one read per reference)               0.0 ms     0.0 ns per reference\n\nrelocation: copy, then patch each site                  0.0 ms   (0.0 ms of it the copy; 0.0 ns per relocation)\nrelocation: gather values, expand into the holes        0.0 ms   (0.0 ms of it the gathers)   same bytes\nAUDIT_CHECK names=0 race=0 bytes=0\n",
+    "stderr": ""
+  },
+  {
+    "variant": "original-store-tail-check",
+    "returncode": 0,
+    "stdout": "2000 units, 1000000 symbols (56 MB of names), 3000000 references by name, 12000000 relocations, 250 MB of code\n\n(reference strings: 168 MB, read in order; definition strings are compared at random)\njoin by name (hash string, probe, compare)            0.0 ms     0.0 ns per name\n  of which: fingerprinting every name, in order         0.0 ms     0.0 ns per name   (inf GB/s; checksum f14f8afd64be03f2)\njoin by 64-bit fingerprint (probe only)                 0.0 ms     0.0 ns per name   same result\njoin by fingerprint, scatter race + SIMD gathers        0.0 ms     0.0 ns per name   0 definitions lost all 4 rounds, 0 references unresolved\njoin by (unit, ordinal)                                 0.0 ms   (the compiler resolved the name when it read the interface)\n\nlayout (prefix sums, one address per symbol)            0.0 ms\n\nimport addresses (one read per reference)               0.0 ms     0.0 ns per reference\n\nrelocation: copy, then patch each site                  0.0 ms   (0.0 ms of it the copy; 0.0 ns per relocation)\nrelocation: gather values, expand into the holes        0.0 ms   (0.0 ms of it the gathers)   same bytes\nAUDIT_CHECK names=0 race=0 bytes=0\n",
+    "stderr": ""
+  }
+]

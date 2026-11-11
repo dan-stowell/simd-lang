@@ -1,0 +1,77 @@
+{
+  "collision_pair": [
+    "bbbbdddd",
+    "edddabbb"
+  ],
+  "collision_hash": [
+    3044233960,
+    2705037177
+  ],
+  "collision_family": [
+    "ddddhhhhllllpppp",
+    "ddddhhhhqpppklll",
+    "ddddmlllghhhpppp",
+    "ddddmlllqpppfhhh",
+    "ddddrpppghhhklll",
+    "ddddrpppllllfhhh",
+    "ihhhcdddllllpppp",
+    "ihhhcdddqpppklll",
+    "ihhhmlllbdddpppp",
+    "ihhhmlllqpppaddd",
+    "ihhhrpppbdddklll",
+    "ihhhrppplllladdd",
+    "nlllcdddghhhpppp",
+    "nlllcdddqpppfhhh",
+    "nlllhhhhbdddpppp",
+    "nlllhhhhqpppaddd",
+    "nlllrpppbdddfhhh",
+    "nlllrpppghhhaddd",
+    "spppcdddghhhklll",
+    "spppcdddllllfhhh",
+    "sppphhhhbdddklll",
+    "sppphhhhlllladdd",
+    "spppmlllbdddfhhh",
+    "spppmlllghhhaddd"
+  ],
+  "family_hash": [
+    2379663428,
+    3773337374
+  ],
+  "race_names": [
+    "n0001511",
+    "n0004546",
+    "n0011514",
+    "n0014549",
+    "n0021513"
+  ],
+  "race_hashes": [
+    [
+      3426629547,
+      1887422850
+    ],
+    [
+      3339127775,
+      1379732174
+    ],
+    [
+      1701115819,
+      3299428738
+    ],
+    [
+      1559448543,
+      1786464974
+    ],
+    [
+      4283512747,
+      3847817602
+    ]
+  ],
+  "race_mask": 31,
+  "race_keys": [
+    13,
+    26,
+    16,
+    13
+  ],
+  "race_search_candidates": 21514
+}

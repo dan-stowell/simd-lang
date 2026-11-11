@@ -1,0 +1,57 @@
+# Authorized full-job timings
+
+Whole processes; cached regular-file stdin; `/dev/null` stdout; seven
+randomized/interleaved rounds. Real outputs checked before and after
+against the independent full-job oracle. Times are medians in ms.
+
+| implementation | allowed CPUs | wall | user | system | min–max wall | minor faults | max RSS KiB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ref_o2 | 1 | 267.54 | 117.04 | 161.05 | 259.73–302.09 | 74938 | 711428 |
+| ref_o2 | 8 | 269.10 | 117.02 | 156.34 | 260.65–281.66 | 74936 | 711432 |
+| ref_o2_bytes | 1 | 233.38 | 76.28 | 159.77 | 217.44–256.82 | 74939 | 711480 |
+| ref_o2_bytes | 8 | 234.08 | 76.65 | 153.95 | 224.13–247.10 | 74937 | 711440 |
+| ref_o3 | 1 | 262.64 | 110.83 | 152.36 | 257.35–290.16 | 74939 | 711412 |
+| ref_o3 | 8 | 271.57 | 120.75 | 160.05 | 262.19–296.50 | 74938 | 711436 |
+| ref_o2_nf | 1 | 229.65 | 74.91 | 153.91 | 222.58–235.44 | 74938 | 711532 |
+| ref_o2_nf | 8 | 232.63 | 80.74 | 156.72 | 222.24–242.45 | 74938 | 711424 |
+| ref_o3_nf | 1 | 238.29 | 75.32 | 159.01 | 221.76–245.38 | 74939 | 711412 |
+| ref_o3_nf | 8 | 227.96 | 80.77 | 153.16 | 220.90–253.77 | 74939 | 711428 |
+| c_full_nf | 1 | 245.42 | 85.35 | 158.84 | 224.32–255.81 | 74953 | 712088 |
+| c_full_nf | 8 | 237.19 | 84.45 | 160.45 | 225.91–245.90 | 74951 | 712040 |
+| c_checked_nf | 1 | 230.67 | 87.29 | 156.40 | 228.23–252.60 | 74953 | 712040 |
+| c_checked_nf | 8 | 239.06 | 75.99 | 154.01 | 222.56–285.89 | 74950 | 712040 |
+| c_stream_nf | 1 | 90.13 | 51.78 | 36.00 | 86.94–106.65 | 10141 | 452832 |
+| c_stream_nf | 8 | 89.20 | 53.90 | 32.92 | 86.58–93.91 | 10141 | 452800 |
+| c_parallel_nf | 1 | 231.10 | 74.60 | 158.71 | 227.87–253.02 | 74953 | 712032 |
+| c_parallel_nf | 8 | 83.98 | 187.75 | 247.49 | 75.74–92.08 | 74990 | 711464 |
+| c_fingerprint_nf | 1 | 352.84 | 185.09 | 160.64 | 338.73–356.29 | 79169 | 719652 |
+| c_fingerprint_nf | 8 | 341.14 | 188.65 | 156.20 | 325.76–355.97 | 79169 | 719720 |
+| link | 1 | 294.02 | 163.82 | 135.80 | 288.75–314.57 | 75929 | 714196 |
+| link | 8 | 286.88 | 218.24 | 176.82 | 274.47–306.72 | 76908 | 717780 |
+| link2 | 1 | 420.90 | 260.97 | 158.78 | 394.92–441.62 | 91777 | 784864 |
+| link2 | 8 | 330.72 | 506.35 | 212.24 | 327.67–347.81 | 92750 | 788064 |
+
+## Comparisons
+
+- Ordinal Strand / original C: 1.099× (ratio of medians).
+- Ordinal Strand / same-O2 explicit-byte-store C: 1.260× (ratio of medians).
+- Original C / same-O2 byte stores: 1.146× (ratio of medians).
+- Original C / same-source O2 no-fortify: 1.165× (ratio of medians).
+- Ordinal Strand one / eight CPUs: 1.025× (ratio of medians).
+- Fingerprint Strand one / eight CPUs: 1.273× (ratio of medians).
+- Full-image C serial / unit-parallel eight CPUs: 2.922× (ratio of medians).
+- Strand fingerprint minus ordinal, one CPU: 126.89 ms difference of medians; 127.37 ms median within-round difference (all paired differences: 89.14, 147.30, 123.58, 104.67, 142.76, 127.37, 129.41).
+- C fingerprint minus ordinal, one CPU (matched full-image path): 107.42 ms difference of medians; 102.45 ms median within-round difference (all paired differences: 108.94, 93.16, 87.93, 130.50, 93.76, 102.45, 130.45).
+- Strand fingerprint minus ordinal, eight CPUs: 43.84 ms difference of medians; 44.76 ms median within-round difference (all paired differences: 32.81, 65.86, 43.84, 44.76, 54.82, 37.33, 53.20).
+
+These are whole-process differences, not isolated phase instrumentation.
+The affinity column is not a thread count: all reference C variants,
+C full/checked/stream/fingerprint remain single-threaded at affinity eight.
+The bounded-buffer streaming row does not materialize a full image and is
+not directly comparable as a memory-image API. Parallel system time is
+summed across threads; it can exceed elapsed time. No claim about real
+output-device I/O follows from a `/dev/null` benchmark.
+
+Input SHA-256: `32571e91737f9ce7cb4ee43077087b46bd09f183833cdacb50bcb48e240b8588`.
+Output SHA-256: `69e3ce48007c19a0aee9a78c9aeee96ce76743e2b09344228fa4f02fe6181ba6`.
+

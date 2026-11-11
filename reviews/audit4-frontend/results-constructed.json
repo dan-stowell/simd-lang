@@ -1,0 +1,24 @@
+{
+  "compiler_sha256": {
+    "build/stage2": "818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730",
+    "build/strandc_scalar": "4ae8006dd5060e24ff757a059c2ccaa4b22cca349cfb3a53857edb5ff01f676c"
+  },
+  "counts": {
+    "constructed": 11
+  },
+  "elapsed_seconds": 0.327,
+  "expected_mismatches": [],
+  "head": "b591f699daa4bc4d7994c2b16f1891cb538ba113",
+  "mismatches": [],
+  "runtime_checks": 0,
+  "statuses": {
+    "0": 7,
+    "4": 2,
+    "5": 2
+  },
+  "stencils_sha256": "02ce824d8dd4396afb5cdd1b4c307f06ccf01c1bc10e44344cd50dd0e70ad927",
+  "swar_arithmetic": {
+    "four_digit_groups_exhausted": 10000,
+    "reciprocal_scalings": "all 1110 reachable 1/2/3-digit prefixes"
+  }
+}

@@ -1,0 +1,3746 @@
+{
+  "warm-prefaulted/controls-directtail": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 698.036142,
+          "min": 636.880586,
+          "max": 763.683759
+        },
+        "build_ms": {
+          "median": 80.927464,
+          "min": 74.459525,
+          "max": 93.663775
+        },
+        "lookup_ms": {
+          "median": 617.108678,
+          "min": 562.421061,
+          "max": 670.019984
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 327.363855,
+          "min": 286.404264,
+          "max": 342.197657
+        },
+        "build_ms": {
+          "median": 86.461682,
+          "min": 78.720275,
+          "max": 89.094657
+        },
+        "lookup_ms": {
+          "median": 238.750386,
+          "min": 207.637111,
+          "max": 256.750644
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 305.919082,
+          "min": 282.203818,
+          "max": 327.838348
+        },
+        "build_ms": {
+          "median": 16.465461,
+          "min": 15.778649,
+          "max": 22.335822
+        },
+        "lookup_ms": {
+          "median": 289.530227,
+          "min": 265.738357,
+          "max": 307.883155
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 52.300644,
+          "min": 47.591264,
+          "max": 59.127065
+        },
+        "build_ms": {
+          "median": 15.389189,
+          "min": 15.023763,
+          "max": 18.236419
+        },
+        "lookup_ms": {
+          "median": 36.911455,
+          "min": 32.260135,
+          "max": 40.895933
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 593.117407,
+          "min": 583.00305,
+          "max": 645.601922
+        },
+        "build_ms": {
+          "median": 87.656015,
+          "min": 86.674635,
+          "max": 95.098782
+        },
+        "lookup_ms": {
+          "median": 505.461392,
+          "min": 496.328415,
+          "max": 552.438186
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 349.757032,
+          "min": 317.40119,
+          "max": 375.206304
+        },
+        "build_ms": {
+          "median": 90.561637,
+          "min": 84.417087,
+          "max": 94.924098
+        },
+        "lookup_ms": {
+          "median": 259.195395,
+          "min": 232.984103,
+          "max": 280.282206
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 249.262418,
+          "min": 243.02185,
+          "max": 265.562976
+        },
+        "build_ms": {
+          "median": 19.773041,
+          "min": 19.259903,
+          "max": 21.062029
+        },
+        "lookup_ms": {
+          "median": 229.272667,
+          "min": 223.248809,
+          "max": 244.500947
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 59.30849,
+          "min": 57.817255,
+          "max": 77.078001
+        },
+        "build_ms": {
+          "median": 20.308084,
+          "min": 19.391242,
+          "max": 20.839051
+        },
+        "lookup_ms": {
+          "median": 39.097693,
+          "min": 38.16716,
+          "max": 56.728854
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 46.36313,
+          "min": 44.594135,
+          "max": 49.152413
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 41.447039,
+          "min": 40.295322,
+          "max": 46.357051
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 47.589501,
+          "min": 46.502042,
+          "max": 50.345785
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 79.307412,
+          "min": 79.035951,
+          "max": 80.454345
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 51.376571,
+          "min": 46.157197,
+          "max": 62.028036
+        },
+        "build_ms": {
+          "median": 16.841112,
+          "min": 16.27343,
+          "max": 17.959549
+        },
+        "lookup_ms": {
+          "median": 34.535459,
+          "min": 29.883767,
+          "max": 44.2881
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 113.106396,
+          "min": 90.272826,
+          "max": 165.849409
+        },
+        "build_ms": {
+          "median": 17.28117,
+          "min": 16.498301,
+          "max": 18.345465
+        },
+        "lookup_ms": {
+          "median": 95.354743,
+          "min": 73.774525,
+          "max": 147.503944
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 605.441859,
+          "min": 594.550008,
+          "max": 903.526898
+        },
+        "build_ms": {
+          "median": 56.213252,
+          "min": 45.601004,
+          "max": 76.481676
+        },
+        "lookup_ms": {
+          "median": 555.248965,
+          "min": 548.949004,
+          "max": 827.045222
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 270.688662,
+          "min": 246.888367,
+          "max": 327.341033
+        },
+        "build_ms": {
+          "median": 54.896982,
+          "min": 47.380145,
+          "max": 60.156707
+        },
+        "lookup_ms": {
+          "median": 219.31102,
+          "min": 191.991385,
+          "max": 268.789863
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 274.794481,
+          "min": 253.82852,
+          "max": 303.051642
+        },
+        "build_ms": {
+          "median": 10.715084,
+          "min": 10.082682,
+          "max": 11.670344
+        },
+        "lookup_ms": {
+          "median": 263.124137,
+          "min": 243.745838,
+          "max": 291.736117
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 44.534416,
+          "min": 41.679621,
+          "max": 53.393401
+        },
+        "build_ms": {
+          "median": 10.25833,
+          "min": 10.0335,
+          "max": 12.496477
+        },
+        "lookup_ms": {
+          "median": 34.500916,
+          "min": 31.526311,
+          "max": 40.896924
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 38.175072,
+          "min": 36.901831,
+          "max": 40.425217
+        },
+        "values_ms": {
+          "median": 14.23737,
+          "min": 14.125429,
+          "max": 15.096495
+        },
+        "expand_ms": {
+          "median": 23.391173,
+          "min": 22.720106,
+          "max": 26.142108
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 43.58895,
+          "min": 43.216396,
+          "max": 46.106822
+        },
+        "values_ms": {
+          "median": 20.381085,
+          "min": 20.109372,
+          "max": 23.262839
+        },
+        "expand_ms": {
+          "median": 23.378484,
+          "min": 22.835311,
+          "max": 24.688532
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.4217013739902678,
+        "min": 0.3041353628854556,
+        "max": 0.5005462332924028
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.9685798397497524,
+        "min": 0.7145353651662952,
+        "max": 1.0308598071346764
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.0885896447586962,
+        "min": 0.8452252619047098,
+        "max": 1.1709317789083065
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 7.320469089853887,
+        "min": 6.555254889096305,
+        "max": 8.455894823198317
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.789966968127761,
+        "min": 4.069077915799251,
+        "max": 5.87872513429732
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.205534108267972,
+        "min": 1.7223324949382568,
+        "max": 2.706682091572743
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 2.8462923463405816,
+        "min": 2.0220269553220844,
+        "max": 3.405416115254115
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.8665280118236527,
+        "min": 0.8254129715129082,
+        "max": 0.9741024811333912
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.9582735390133307,
+        "min": 0.919530242029254,
+        "max": 1.03284152947937
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 1.0518620089005803,
+        "min": 0.9719830754549077,
+        "max": 1.1442226966197218
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.9655387136373016,
+        "min": 0.9167051269690463,
+        "max": 0.9817116926025192
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.1591040614147368,
+        "min": 1.0757606075435537,
+        "max": 1.2053784656463982
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4382496452342346,
+        "min": 1.407912801057529,
+        "max": 1.5409430467138232
+      }
+    }
+  },
+  "evicted-fresh-output/controls-directtail": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 747.767771,
+          "min": 645.755428,
+          "max": 798.714555
+        },
+        "build_ms": {
+          "median": 91.608975,
+          "min": 75.081108,
+          "max": 145.85947
+        },
+        "lookup_ms": {
+          "median": 631.856561,
+          "min": 567.878614,
+          "max": 698.887107
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 294.924094,
+          "min": 276.570026,
+          "max": 332.317336
+        },
+        "build_ms": {
+          "median": 83.936571,
+          "min": 76.884475,
+          "max": 90.301591
+        },
+        "lookup_ms": {
+          "median": 210.987523,
+          "min": 199.685551,
+          "max": 247.121347
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 305.714267,
+          "min": 282.767675,
+          "max": 329.969677
+        },
+        "build_ms": {
+          "median": 17.105452,
+          "min": 14.892304,
+          "max": 20.785449
+        },
+        "lookup_ms": {
+          "median": 288.197705,
+          "min": 267.803061,
+          "max": 310.355356
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 55.104127,
+          "min": 45.310724,
+          "max": 60.592078
+        },
+        "build_ms": {
+          "median": 16.915525,
+          "min": 14.142976,
+          "max": 19.226703
+        },
+        "lookup_ms": {
+          "median": 38.744134,
+          "min": 31.167748,
+          "max": 41.365375
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 618.856648,
+          "min": 595.068414,
+          "max": 646.9132
+        },
+        "build_ms": {
+          "median": 92.080641,
+          "min": 87.591466,
+          "max": 95.9122
+        },
+        "lookup_ms": {
+          "median": 527.680499,
+          "min": 500.072896,
+          "max": 553.086188
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 350.319485,
+          "min": 319.797318,
+          "max": 371.167712
+        },
+        "build_ms": {
+          "median": 92.295157,
+          "min": 86.092301,
+          "max": 97.189296
+        },
+        "lookup_ms": {
+          "median": 253.130189,
+          "min": 230.93517,
+          "max": 275.025757
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 249.082897,
+          "min": 242.571042,
+          "max": 285.590348
+        },
+        "build_ms": {
+          "median": 19.653371,
+          "min": 19.088783,
+          "max": 20.955566
+        },
+        "lookup_ms": {
+          "median": 229.786018,
+          "min": 222.917671,
+          "max": 265.001017
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 3
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 62.52483,
+          "min": 58.562777,
+          "max": 66.751287
+        },
+        "build_ms": {
+          "median": 19.675938,
+          "min": 19.262968,
+          "max": 22.789861
+        },
+        "lookup_ms": {
+          "median": 42.722915,
+          "min": 39.236613,
+          "max": 43.961426
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 166.294965,
+          "min": 158.715436,
+          "max": 176.46579
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 162.886904,
+          "min": 156.261836,
+          "max": 165.345881
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 137.374069,
+          "min": 131.96704,
+          "max": 159.103772
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 79.399826,
+          "min": 78.927205,
+          "max": 80.708031
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 53.539723,
+          "min": 47.2512,
+          "max": 60.251471
+        },
+        "build_ms": {
+          "median": 16.706246,
+          "min": 15.811899,
+          "max": 17.835592
+        },
+        "lookup_ms": {
+          "median": 36.650298,
+          "min": 30.56352,
+          "max": 42.415879
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 125.127378,
+          "min": 81.816854,
+          "max": 170.037104
+        },
+        "build_ms": {
+          "median": 17.380481,
+          "min": 16.35873,
+          "max": 18.719753
+        },
+        "lookup_ms": {
+          "median": 107.889254,
+          "min": 65.458124,
+          "max": 151.317351
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 660.018042,
+          "min": 575.199988,
+          "max": 715.652383
+        },
+        "build_ms": {
+          "median": 55.080593,
+          "min": 43.993193,
+          "max": 65.769614
+        },
+        "lookup_ms": {
+          "median": 600.997559,
+          "min": 531.206795,
+          "max": 656.40037
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 291.971057,
+          "min": 240.877914,
+          "max": 335.689239
+        },
+        "build_ms": {
+          "median": 51.719811,
+          "min": 47.187641,
+          "max": 61.962278
+        },
+        "lookup_ms": {
+          "median": 240.251246,
+          "min": 191.122666,
+          "max": 273.726961
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 269.526525,
+          "min": 252.313532,
+          "max": 291.523848
+        },
+        "build_ms": {
+          "median": 9.992122,
+          "min": 9.622566,
+          "max": 10.978483
+        },
+        "lookup_ms": {
+          "median": 259.87744,
+          "min": 242.690966,
+          "max": 280.973715
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 46.569635,
+          "min": 40.351326,
+          "max": 54.001805
+        },
+        "build_ms": {
+          "median": 10.312021,
+          "min": 9.673323,
+          "max": 11.304598
+        },
+        "lookup_ms": {
+          "median": 36.435684,
+          "min": 30.137153,
+          "max": 43.537542
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 142.743267,
+          "min": 130.855086,
+          "max": 152.951221
+        },
+        "values_ms": {
+          "median": 14.261627,
+          "min": 14.092526,
+          "max": 15.48956
+        },
+        "expand_ms": {
+          "median": 128.537436,
+          "min": 115.378014,
+          "max": 138.777992
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 145.376814,
+          "min": 142.158077,
+          "max": 161.135119
+        },
+        "values_ms": {
+          "median": 20.271198,
+          "min": 20.030973,
+          "max": 21.790624
+        },
+        "expand_ms": {
+          "median": 123.58619,
+          "min": 121.940512,
+          "max": 140.975906
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.40735398207987245,
+        "min": 0.3961291072025163,
+        "max": 0.4395928447610358
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.9496214498936378,
+        "min": 0.9017943144174388,
+        "max": 1.061535628891564
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.1160649694923186,
+        "min": 0.9494882609675356,
+        "max": 1.235007791258519
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 7.312068877312691,
+        "min": 6.4535961860226285,
+        "max": 8.137257125780925
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.53555074601066,
+        "min": 5.323440537222971,
+        "max": 6.028035055095801
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.2614715289534244,
+        "min": 1.6949210779018749,
+        "max": 3.1759055608113624
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 2.7775242287180997,
+        "min": 2.0165855824662806,
+        "max": 4.128679963257052
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 1.1579659297557217,
+        "min": 1.03898716493032,
+        "max": 1.228430443451532
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 1.2026899747088364,
+        "min": 1.1091162188159813,
+        "max": 1.2877126792208424
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 0.886078699604675,
+        "min": 0.8597618285997702,
+        "max": 1.0248419312791823
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.8743021071623882,
+        "min": 0.830052234733528,
+        "max": 0.9385034483980499
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.001554097819549,
+        "min": 0.9378404393322036,
+        "max": 1.1552902121857918
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4304896794229793,
+        "min": 1.2931918660052317,
+        "max": 1.51526792111125
+      }
+    }
+  },
+  "evicted-prefaulted/controls": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1207.204955,
+          "min": 1037.197082,
+          "max": 1362.408398
+        },
+        "build_ms": {
+          "median": 123.501957,
+          "min": 106.517843,
+          "max": 142.524474
+        },
+        "lookup_ms": {
+          "median": 1083.702998,
+          "min": 927.362766,
+          "max": 1226.234902
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 475.49544,
+          "min": 408.633763,
+          "max": 522.593488
+        },
+        "build_ms": {
+          "median": 130.631126,
+          "min": 109.285823,
+          "max": 139.074708
+        },
+        "lookup_ms": {
+          "median": 344.864314,
+          "min": 299.34794,
+          "max": 383.861248
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 299.231832,
+          "min": 280.060744,
+          "max": 327.28339
+        },
+        "build_ms": {
+          "median": 16.484991,
+          "min": 15.174742,
+          "max": 25.727459
+        },
+        "lookup_ms": {
+          "median": 282.802303,
+          "min": 264.886002,
+          "max": 301.555931
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 55.186682,
+          "min": 45.201776,
+          "max": 57.631213
+        },
+        "build_ms": {
+          "median": 16.690444,
+          "min": 14.642704,
+          "max": 17.636108
+        },
+        "lookup_ms": {
+          "median": 38.279113,
+          "min": 30.559072,
+          "max": 39.995105
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1047.864155,
+          "min": 952.189027,
+          "max": 1098.993571
+        },
+        "build_ms": {
+          "median": 145.299275,
+          "min": 129.071243,
+          "max": 155.722778
+        },
+        "lookup_ms": {
+          "median": 902.56488,
+          "min": 823.117784,
+          "max": 943.270793
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 560.74113,
+          "min": 492.659656,
+          "max": 603.766277
+        },
+        "build_ms": {
+          "median": 146.455565,
+          "min": 133.102804,
+          "max": 163.799267
+        },
+        "lookup_ms": {
+          "median": 410.233769,
+          "min": 352.90046,
+          "max": 439.96701
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 252.695033,
+          "min": 240.221668,
+          "max": 257.926533
+        },
+        "build_ms": {
+          "median": 19.635653,
+          "min": 19.170738,
+          "max": 20.881353
+        },
+        "lookup_ms": {
+          "median": 233.05938,
+          "min": 221.05093,
+          "max": 237.04518
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 63.283162,
+          "min": 57.6762,
+          "max": 74.651347
+        },
+        "build_ms": {
+          "median": 20.399772,
+          "min": 19.180372,
+          "max": 22.51298
+        },
+        "lookup_ms": {
+          "median": 42.67968,
+          "min": 37.865712,
+          "max": 52.810757
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 47.01571,
+          "min": 45.407861,
+          "max": 49.456122
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 41.882381,
+          "min": 41.44152,
+          "max": 44.703881
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 49.839978,
+          "min": 47.902376,
+          "max": 66.083702
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 84.706949,
+          "min": 84.381544,
+          "max": 85.601978
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 55.685201,
+          "min": 47.511562,
+          "max": 74.533007
+        },
+        "build_ms": {
+          "median": 16.392681,
+          "min": 16.218075,
+          "max": 18.230841
+        },
+        "lookup_ms": {
+          "median": 38.87833,
+          "min": 31.293487,
+          "max": 56.302166
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 121.57512,
+          "min": 91.991585,
+          "max": 159.305336
+        },
+        "build_ms": {
+          "median": 16.786088,
+          "min": 16.171997,
+          "max": 19.204318
+        },
+        "lookup_ms": {
+          "median": 105.403123,
+          "min": 75.205497,
+          "max": 140.101018
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1173.234468,
+          "min": 948.574352,
+          "max": 1313.121966
+        },
+        "build_ms": {
+          "median": 113.80294,
+          "min": 90.504067,
+          "max": 136.309812
+        },
+        "lookup_ms": {
+          "median": 1060.953936,
+          "min": 858.070285,
+          "max": 1176.812154
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 501.049137,
+          "min": 352.000314,
+          "max": 539.826503
+        },
+        "build_ms": {
+          "median": 126.625674,
+          "min": 91.89658,
+          "max": 140.215533
+        },
+        "lookup_ms": {
+          "median": 373.78382,
+          "min": 260.103734,
+          "max": 409.303033
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 275.779917,
+          "min": 258.92717,
+          "max": 296.272718
+        },
+        "build_ms": {
+          "median": 10.686099,
+          "min": 9.59301,
+          "max": 14.198461
+        },
+        "lookup_ms": {
+          "median": 265.823705,
+          "min": 248.241071,
+          "max": 282.074257
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 3
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 43.585345,
+          "min": 37.871201,
+          "max": 52.633178
+        },
+        "build_ms": {
+          "median": 9.874848,
+          "min": 9.420479,
+          "max": 12.061637
+        },
+        "lookup_ms": {
+          "median": 33.446759,
+          "min": 28.412866,
+          "max": 43.212699
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 38.431311,
+          "min": 37.607461,
+          "max": 39.963006
+        },
+        "values_ms": {
+          "median": 14.448217,
+          "min": 14.164088,
+          "max": 14.891001
+        },
+        "expand_ms": {
+          "median": 23.985706,
+          "min": 22.984557,
+          "max": 25.072005
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 44.635768,
+          "min": 43.887403,
+          "max": 45.579341
+        },
+        "values_ms": {
+          "median": 20.462528,
+          "min": 20.402567,
+          "max": 21.014256
+        },
+        "expand_ms": {
+          "median": 24.163746,
+          "min": 23.484836,
+          "max": 24.565085
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.23158194588142236,
+        "min": 0.22205106712444528,
+        "max": 0.28508548584497256
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.8980346633972184,
+        "min": 0.7837942343556167,
+        "max": 1.003810639611306
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.0345920224887157,
+        "min": 0.8658845129526138,
+        "max": 1.0934272888710783
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 7.702241314322861,
+        "min": 6.1515182145878,
+        "max": 9.290250860982834
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.4424409925689705,
+        "min": 4.460764215138973,
+        "max": 5.83775976535183
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.0298340142543876,
+        "min": 1.9361936574512117,
+        "max": 3.1355506687917365
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 2.464460638202342,
+        "min": 2.3007973973860967,
+        "max": 4.071107048880303
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.8375975206088574,
+        "min": 0.6362869168558384,
+        "max": 0.9226363520598493
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.9393188796080897,
+        "min": 0.7483860695334532,
+        "max": 0.9814901457080125
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 1.0661228405328722,
+        "min": 0.9984763515275105,
+        "max": 1.0856542883773859
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.9490794472114388,
+        "min": 0.9093806425016503,
+        "max": 0.9833487421924588
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.1638687276366535,
+        "min": 1.1399807207437052,
+        "max": 1.186459888903428
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4165227416920232,
+        "min": 1.380871462373689,
+        "max": 1.443303515199849
+      }
+    }
+  },
+  "warm-prefaulted/controls": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1236.01158,
+          "min": 1073.894107,
+          "max": 1675.364903
+        },
+        "build_ms": {
+          "median": 129.385925,
+          "min": 120.508417,
+          "max": 155.962865
+        },
+        "lookup_ms": {
+          "median": 1100.424476,
+          "min": 946.004193,
+          "max": 1545.978978
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 491.241048,
+          "min": 410.892486,
+          "max": 582.595659
+        },
+        "build_ms": {
+          "median": 135.824287,
+          "min": 110.277051,
+          "max": 147.472928
+        },
+        "lookup_ms": {
+          "median": 352.42348,
+          "min": 293.791554,
+          "max": 435.299769
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 300.798569,
+          "min": 275.774466,
+          "max": 343.674819
+        },
+        "build_ms": {
+          "median": 16.505122,
+          "min": 15.258881,
+          "max": 18.031389
+        },
+        "lookup_ms": {
+          "median": 283.34602,
+          "min": 260.515585,
+          "max": 325.64343
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 52.151867,
+          "min": 46.027678,
+          "max": 65.205751
+        },
+        "build_ms": {
+          "median": 16.283185,
+          "min": 15.409935,
+          "max": 19.294926
+        },
+        "lookup_ms": {
+          "median": 35.868682,
+          "min": 30.617743,
+          "max": 45.910825
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1070.689634,
+          "min": 988.973052,
+          "max": 1120.223381
+        },
+        "build_ms": {
+          "median": 152.169842,
+          "min": 137.338796,
+          "max": 172.152358
+        },
+        "lookup_ms": {
+          "median": 911.665918,
+          "min": 851.634256,
+          "max": 970.162945
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 550.259553,
+          "min": 478.054542,
+          "max": 674.561748
+        },
+        "build_ms": {
+          "median": 151.238893,
+          "min": 132.264291,
+          "max": 172.44397
+        },
+        "lookup_ms": {
+          "median": 399.02066,
+          "min": 345.790251,
+          "max": 502.117778
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 249.970126,
+          "min": 243.902216,
+          "max": 269.986312
+        },
+        "build_ms": {
+          "median": 19.772502,
+          "min": 19.300104,
+          "max": 21.863255
+        },
+        "lookup_ms": {
+          "median": 229.243737,
+          "min": 224.300579,
+          "max": 248.517386
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 61.293072,
+          "min": 59.250991,
+          "max": 70.149384
+        },
+        "build_ms": {
+          "median": 20.611454,
+          "min": 19.530158,
+          "max": 22.12406
+        },
+        "lookup_ms": {
+          "median": 40.784212,
+          "min": 38.576561,
+          "max": 48.025324
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 46.038598,
+          "min": 44.948785,
+          "max": 48.46327
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 42.187553,
+          "min": 41.281017,
+          "max": 44.35347
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 47.445697,
+          "min": 47.027098,
+          "max": 52.051394
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 85.236763,
+          "min": 84.046806,
+          "max": 86.243341
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 52.875255,
+          "min": 47.596575,
+          "max": 58.576528
+        },
+        "build_ms": {
+          "median": 16.937698,
+          "min": 16.017255,
+          "max": 17.566973
+        },
+        "lookup_ms": {
+          "median": 35.615768,
+          "min": 31.57932,
+          "max": 41.287898
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 132.956852,
+          "min": 101.460288,
+          "max": 211.069176
+        },
+        "build_ms": {
+          "median": 17.146976,
+          "min": 16.43159,
+          "max": 19.747723
+        },
+        "lookup_ms": {
+          "median": 115.058596,
+          "min": 84.716081,
+          "max": 191.321453
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1229.640216,
+          "min": 1025.407182,
+          "max": 1369.682419
+        },
+        "build_ms": {
+          "median": 134.087506,
+          "min": 111.479436,
+          "max": 148.509621
+        },
+        "lookup_ms": {
+          "median": 1097.596134,
+          "min": 907.076618,
+          "max": 1232.385477
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 480.520193,
+          "min": 352.403384,
+          "max": 571.351583
+        },
+        "build_ms": {
+          "median": 129.810286,
+          "min": 98.249342,
+          "max": 147.925225
+        },
+        "lookup_ms": {
+          "median": 357.006304,
+          "min": 253.228825,
+          "max": 423.426358
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 273.357677,
+          "min": 255.094457,
+          "max": 325.850714
+        },
+        "build_ms": {
+          "median": 10.793933,
+          "min": 9.885594,
+          "max": 19.203748
+        },
+        "lookup_ms": {
+          "median": 262.448759,
+          "min": 245.208863,
+          "max": 306.646966
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 49.569365,
+          "min": 40.898275,
+          "max": 60.803879
+        },
+        "build_ms": {
+          "median": 10.921171,
+          "min": 10.309317,
+          "max": 12.41217
+        },
+        "lookup_ms": {
+          "median": 38.648194,
+          "min": 30.240209,
+          "max": 48.391709
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 37.513619,
+          "min": 36.395623,
+          "max": 39.349247
+        },
+        "values_ms": {
+          "median": 14.263108,
+          "min": 14.063325,
+          "max": 14.345104
+        },
+        "expand_ms": {
+          "median": 23.418265,
+          "min": 22.151973,
+          "max": 25.285922
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 43.732399,
+          "min": 42.696886,
+          "max": 44.182651
+        },
+        "values_ms": {
+          "median": 20.164776,
+          "min": 20.078506,
+          "max": 21.134488
+        },
+        "expand_ms": {
+          "median": 23.048163,
+          "min": 22.53211,
+          "max": 23.69875
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.2273471183395543,
+        "min": 0.2100101718772505,
+        "max": 0.2649967931758016
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.911017195455813,
+        "min": 0.8151336306230269,
+        "max": 0.968164844190573
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.0537381947037199,
+        "min": 0.981692131074289,
+        "max": 1.2231776357494444
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 6.92562772794341,
+        "min": 6.193509594794431,
+        "max": 8.108702654799774
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.6208941097108855,
+        "min": 5.174715448041537,
+        "max": 5.910344885330758
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.5085078181508385,
+        "min": 1.9453991853088934,
+        "max": 4.071306294535693
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 3.216410629574797,
+        "min": 2.4050574166741496,
+        "max": 5.40285937637492
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.881951457265287,
+        "min": 0.8152405486008694,
+        "max": 0.9391690319275761
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.9679599554684849,
+        "min": 0.9006553407580208,
+        "max": 1.0214471082593644
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 1.0316452872783164,
+        "min": 0.9767737901904856,
+        "max": 1.0677885926709243
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.9427186509893286,
+        "min": 0.9023823402754292,
+        "max": 0.9638371092789271
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.1669696810643624,
+        "min": 1.111391000696913,
+        "max": 1.1903438773393162
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4308370175616363,
+        "min": 1.4098108450357607,
+        "max": 1.4817589546401808
+      }
+    }
+  },
+  "evicted-fresh-output/controls": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1151.000561,
+          "min": 1035.256188,
+          "max": 1318.600444
+        },
+        "build_ms": {
+          "median": 127.995703,
+          "min": 109.646732,
+          "max": 144.816903
+        },
+        "lookup_ms": {
+          "median": 1030.163695,
+          "min": 925.609456,
+          "max": 1173.783541
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 424.673288,
+          "min": 381.57198,
+          "max": 533.501381
+        },
+        "build_ms": {
+          "median": 114.919244,
+          "min": 104.272935,
+          "max": 140.566183
+        },
+        "lookup_ms": {
+          "median": 309.754044,
+          "min": 277.299045,
+          "max": 394.609899
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 290.364754,
+          "min": 276.684162,
+          "max": 324.013571
+        },
+        "build_ms": {
+          "median": 15.318665,
+          "min": 14.453357,
+          "max": 17.095688
+        },
+        "lookup_ms": {
+          "median": 274.540787,
+          "min": 262.219758,
+          "max": 306.917883
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 51.555471,
+          "min": 46.943099,
+          "max": 58.805566
+        },
+        "build_ms": {
+          "median": 15.940666,
+          "min": 14.701464,
+          "max": 16.927233
+        },
+        "lookup_ms": {
+          "median": 35.260336,
+          "min": 31.535414,
+          "max": 42.149074
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1000.286222,
+          "min": 944.224482,
+          "max": 1059.910703
+        },
+        "build_ms": {
+          "median": 145.20837,
+          "min": 132.252095,
+          "max": 152.658577
+        },
+        "lookup_ms": {
+          "median": 857.81951,
+          "min": 811.972387,
+          "max": 907.252126
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 511.033738,
+          "min": 480.615487,
+          "max": 566.525146
+        },
+        "build_ms": {
+          "median": 140.267107,
+          "min": 135.665956,
+          "max": 153.143994
+        },
+        "lookup_ms": {
+          "median": 370.766631,
+          "min": 344.214058,
+          "max": 418.926914
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 250.286822,
+          "min": 242.248654,
+          "max": 263.052368
+        },
+        "build_ms": {
+          "median": 20.093097,
+          "min": 19.070515,
+          "max": 22.51931
+        },
+        "lookup_ms": {
+          "median": 230.397521,
+          "min": 223.178139,
+          "max": 240.533058
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 58.098934,
+          "min": 56.37114,
+          "max": 64.61341
+        },
+        "build_ms": {
+          "median": 19.523584,
+          "min": 18.643567,
+          "max": 23.92252
+        },
+        "lookup_ms": {
+          "median": 38.57535,
+          "min": 37.697547,
+          "max": 43.303446
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 165.944694,
+          "min": 157.998063,
+          "max": 174.705517
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 161.005417,
+          "min": 155.730698,
+          "max": 167.753917
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 135.492052,
+          "min": 132.473091,
+          "max": 137.611277
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 84.746349,
+          "min": 83.950813,
+          "max": 92.071065
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 53.210298,
+          "min": 47.363649,
+          "max": 59.194818
+        },
+        "build_ms": {
+          "median": 16.319901,
+          "min": 15.809736,
+          "max": 17.753768
+        },
+        "lookup_ms": {
+          "median": 37.038801,
+          "min": 31.043748,
+          "max": 41.661816
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 129.473123,
+          "min": 91.749299,
+          "max": 180.579988
+        },
+        "build_ms": {
+          "median": 17.054345,
+          "min": 15.848936,
+          "max": 17.978137
+        },
+        "lookup_ms": {
+          "median": 112.337635,
+          "min": 75.900363,
+          "max": 162.601851
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 1049.514521,
+          "min": 984.766731,
+          "max": 1275.030553
+        },
+        "build_ms": {
+          "median": 101.33825,
+          "min": 91.363183,
+          "max": 133.575445
+        },
+        "lookup_ms": {
+          "median": 948.176271,
+          "min": 888.638772,
+          "max": 1141.455108
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 464.491172,
+          "min": 349.782467,
+          "max": 512.398322
+        },
+        "build_ms": {
+          "median": 112.709818,
+          "min": 90.789502,
+          "max": 141.291403
+        },
+        "lookup_ms": {
+          "median": 351.781354,
+          "min": 258.992965,
+          "max": 371.106919
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 253.696566,
+          "min": 248.127939,
+          "max": 306.787139
+        },
+        "build_ms": {
+          "median": 9.813746,
+          "min": 9.618899,
+          "max": 12.489337
+        },
+        "lookup_ms": {
+          "median": 243.94167,
+          "min": 238.50904,
+          "max": 294.297802
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 47.142714,
+          "min": 39.68903,
+          "max": 50.738651
+        },
+        "build_ms": {
+          "median": 10.12705,
+          "min": 9.456783,
+          "max": 11.404931
+        },
+        "lookup_ms": {
+          "median": 37.359739,
+          "min": 30.232247,
+          "max": 39.33372
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 137.233012,
+          "min": 129.92284,
+          "max": 138.844647
+        },
+        "values_ms": {
+          "median": 14.262158,
+          "min": 13.963584,
+          "max": 14.528572
+        },
+        "expand_ms": {
+          "median": 123.269428,
+          "min": 115.660682,
+          "max": 124.33825
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 142.740595,
+          "min": 136.700234,
+          "max": 161.164735
+        },
+        "values_ms": {
+          "median": 20.333292,
+          "min": 20.056031,
+          "max": 22.360028
+        },
+        "expand_ms": {
+          "median": 122.469437,
+          "min": 116.644203,
+          "max": 138.804707
+        },
+        "minor_faults": {
+          "median": 64000,
+          "min": 64000,
+          "max": 64000
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.2517496225517059,
+        "min": 0.2245822058253072,
+        "max": 0.2571189120535985
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.9530942183123924,
+        "min": 0.805098923774574,
+        "max": 1.0139168907402905
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.0541520626105452,
+        "min": 0.9739104604813341,
+        "max": 1.1688052863353686
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 7.483748650156118,
+        "min": 6.063729542997713,
+        "max": 8.065329315416086
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.915518048298521,
+        "min": 5.463302689582719,
+        "max": 6.236240395208706
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.4332343149064863,
+        "min": 1.8857789670110374,
+        "max": 3.0506046661043875
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 3.0329716936571463,
+        "min": 2.2860502963814255,
+        "max": 3.9028987838648224
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 1.1974222117537463,
+        "min": 1.1316710475697422,
+        "max": 1.2257946699746396
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 1.2370177481893434,
+        "min": 1.166105765377293,
+        "max": 1.2765907072903924
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 0.8920983316505783,
+        "min": 0.8519265597132053,
+        "max": 0.9607211436976462
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.8783810617935817,
+        "min": 0.8030439272148079,
+        "max": 0.9224936783192715
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.0450912363990326,
+        "min": 0.9905970256458536,
+        "max": 1.1743875081602086
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4222596207315512,
+        "min": 1.3804543901492865,
+        "max": 1.601310093454517
+      }
+    }
+  },
+  "evicted-prefaulted/controls-directtail": {
+    "variants": {
+      "aos16_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 679.885044,
+          "min": 646.015086,
+          "max": 760.4053
+        },
+        "build_ms": {
+          "median": 83.596322,
+          "min": 74.961577,
+          "max": 88.736526
+        },
+        "lookup_ms": {
+          "median": 597.168311,
+          "min": 571.053509,
+          "max": 674.36164
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 324.139531,
+          "min": 281.861365,
+          "max": 350.168121
+        },
+        "build_ms": {
+          "median": 79.961908,
+          "min": 74.349778,
+          "max": 104.309984
+        },
+        "lookup_ms": {
+          "median": 245.386513,
+          "min": 207.164809,
+          "max": 257.947973
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 303.120989,
+          "min": 283.627,
+          "max": 328.028088
+        },
+        "build_ms": {
+          "median": 17.269712,
+          "min": 14.418274,
+          "max": 17.934782
+        },
+        "lookup_ms": {
+          "median": 288.035973,
+          "min": 268.859535,
+          "max": 310.093306
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos16_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 49.248749,
+          "min": 46.973146,
+          "max": 57.386954
+        },
+        "build_ms": {
+          "median": 15.648963,
+          "min": 14.856359,
+          "max": 16.465562
+        },
+        "lookup_ms": {
+          "median": 33.418683,
+          "min": 31.994722,
+          "max": 41.737991
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 622.069887,
+          "min": 601.297341,
+          "max": 649.078565
+        },
+        "build_ms": {
+          "median": 90.24967,
+          "min": 86.493272,
+          "max": 97.614291
+        },
+        "lookup_ms": {
+          "median": 531.820217,
+          "min": 514.804069,
+          "max": 551.464274
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 353.804997,
+          "min": 329.328723,
+          "max": 369.537852
+        },
+        "build_ms": {
+          "median": 94.448434,
+          "min": 87.089627,
+          "max": 99.626855
+        },
+        "lookup_ms": {
+          "median": 257.276024,
+          "min": 242.239096,
+          "max": 269.910997
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 250.219303,
+          "min": 243.044919,
+          "max": 260.549616
+        },
+        "build_ms": {
+          "median": 19.774944,
+          "min": 19.03333,
+          "max": 21.154449
+        },
+        "lookup_ms": {
+          "median": 230.512081,
+          "min": 224.011589,
+          "max": 239.954316
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "aos24_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 61.926101,
+          "min": 57.546855,
+          "max": 70.401557
+        },
+        "build_ms": {
+          "median": 19.380175,
+          "min": 19.113761,
+          "max": 22.933639
+        },
+        "lookup_ms": {
+          "median": 42.154813,
+          "min": 38.283818,
+          "max": 47.467918
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_block_patch": {
+        "n": 7,
+        "ms": {
+          "median": 46.072559,
+          "min": 45.145293,
+          "max": 51.004575
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_unit_patch": {
+        "n": 7,
+        "ms": {
+          "median": 41.473218,
+          "min": 41.109708,
+          "max": 45.255459
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "copy_whole_patch": {
+        "n": 7,
+        "ms": {
+          "median": 47.632507,
+          "min": 46.398815,
+          "max": 53.889955
+        },
+        "values_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "expand_ms": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "hash_only": {
+        "n": 7,
+        "ms": {
+          "median": 79.363089,
+          "min": 79.027979,
+          "max": 81.518339
+        }
+      },
+      "race_scalar": {
+        "n": 7,
+        "ms": {
+          "median": 55.841927,
+          "min": 48.699498,
+          "max": 63.615495
+        },
+        "build_ms": {
+          "median": 17.454312,
+          "min": 16.636322,
+          "max": 18.585278
+        },
+        "lookup_ms": {
+          "median": 37.884952,
+          "min": 32.033611,
+          "max": 46.161183
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "race_simd": {
+        "n": 7,
+        "ms": {
+          "median": 123.646134,
+          "min": 88.138439,
+          "max": 152.487477
+        },
+        "build_ms": {
+          "median": 17.613083,
+          "min": 16.508667,
+          "max": 18.415191
+        },
+        "lookup_ms": {
+          "median": 105.495394,
+          "min": 71.448697,
+          "max": 134.78594
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_exact": {
+        "n": 7,
+        "ms": {
+          "median": 648.39059,
+          "min": 588.338903,
+          "max": 762.67245
+        },
+        "build_ms": {
+          "median": 49.224653,
+          "min": 43.97071,
+          "max": 63.172884
+        },
+        "lookup_ms": {
+          "median": 603.274372,
+          "min": 544.368193,
+          "max": 701.46646
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_hash_fp": {
+        "n": 7,
+        "ms": {
+          "median": 284.588675,
+          "min": 240.391628,
+          "max": 311.132822
+        },
+        "build_ms": {
+          "median": 55.391404,
+          "min": 45.555293,
+          "max": 59.196648
+        },
+        "lookup_ms": {
+          "median": 229.197271,
+          "min": 193.906272,
+          "max": 252.555372
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_exact": {
+        "n": 7,
+        "ms": {
+          "median": 276.680822,
+          "min": 251.221965,
+          "max": 294.756544
+        },
+        "build_ms": {
+          "median": 10.438954,
+          "min": 9.669166,
+          "max": 11.668822
+        },
+        "lookup_ms": {
+          "median": 266.241868,
+          "min": 241.221807,
+          "max": 283.087722
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 2
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "soa_pre_fp": {
+        "n": 7,
+        "ms": {
+          "median": 48.065084,
+          "min": 39.229924,
+          "max": 72.055668
+        },
+        "build_ms": {
+          "median": 10.380165,
+          "min": 9.655125,
+          "max": 15.455248
+        },
+        "lookup_ms": {
+          "median": 37.684919,
+          "min": 29.032466,
+          "max": 56.60042
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_scalar_values": {
+        "n": 7,
+        "ms": {
+          "median": 38.787041,
+          "min": 37.727222,
+          "max": 59.810963
+        },
+        "values_ms": {
+          "median": 14.54011,
+          "min": 14.317161,
+          "max": 16.62257
+        },
+        "expand_ms": {
+          "median": 24.46988,
+          "min": 23.205301,
+          "max": 45.270853
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      },
+      "stream_simd_values": {
+        "n": 7,
+        "ms": {
+          "median": 45.590758,
+          "min": 43.521868,
+          "max": 50.040111
+        },
+        "values_ms": {
+          "median": 20.781994,
+          "min": 20.275294,
+          "max": 23.825493
+        },
+        "expand_ms": {
+          "median": 24.717276,
+          "min": 23.083547,
+          "max": 26.214618
+        },
+        "minor_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        },
+        "major_faults": {
+          "median": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    "comparisons": {
+      "soa_pre_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.4126512442256376,
+        "min": 0.3627780471157703,
+        "max": 0.4391095258686487
+      },
+      "aos24_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 0.9306387204046253,
+        "min": 0.8510580984012206,
+        "max": 1.0384327792857602
+      },
+      "aos16_hash_exact/soa_hash_exact": {
+        "field": "ms",
+        "median_paired_ratio": 1.0120205265016098,
+        "min": 0.9044037679666656,
+        "max": 1.1556010328965107
+      },
+      "soa_pre_exact/soa_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 7.201507664113595,
+        "min": 4.703885024174732,
+        "max": 9.750729476441993
+      },
+      "aos24_pre_exact/aos24_pre_fp": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 5.6603046097286045,
+        "min": 4.955094175396527,
+        "max": 6.018969573255685
+      },
+      "race_simd/race_scalar_total": {
+        "field": "ms",
+        "median_paired_ratio": 2.2142168195592533,
+        "min": 1.8098428653207064,
+        "max": 2.62549008581736
+      },
+      "race_simd/race_scalar_lookup": {
+        "field": "lookup_ms",
+        "median_paired_ratio": 2.679245395422383,
+        "min": 2.228372417005726,
+        "max": 3.266258041333815
+      },
+      "unit/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.8719651505661792,
+        "min": 0.7753145460967633,
+        "max": 0.9577238262319959
+      },
+      "block/whole": {
+        "field": "ms",
+        "median_paired_ratio": 0.9732168068996726,
+        "min": 0.8549377894266195,
+        "max": 1.0765771564613247
+      },
+      "stream_simd/unit": {
+        "field": "ms",
+        "median_paired_ratio": 1.0678696181419836,
+        "min": 1.0074090288201474,
+        "max": 1.2113096125676919
+      },
+      "stream_simd/block": {
+        "field": "ms",
+        "median_paired_ratio": 0.9768690970444717,
+        "min": 0.9625729927439022,
+        "max": 0.9913717301449689
+      },
+      "stream_simd/stream_scalar": {
+        "field": "ms",
+        "median_paired_ratio": 1.1526437366089046,
+        "min": 0.770694763767639,
+        "max": 1.2901244773995522
+      },
+      "simd_values/scalar_values": {
+        "field": "values_ms",
+        "median_paired_ratio": 1.4199128710461053,
+        "min": 1.2988487530335926,
+        "max": 1.6641213296407018
+      }
+    }
+  }
+}

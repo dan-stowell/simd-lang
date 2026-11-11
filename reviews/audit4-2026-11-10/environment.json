@@ -1,0 +1,33 @@
+{
+  "revision": "b591f699daa4bc4d7994c2b16f1891cb538ba113",
+  "base": "af3ecc935319a4698b499c66044faff95ef0663d",
+  "date": "2026-11-10T22:55:37Z",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "kernel": "Linux-6.12.115-x86_64-with-glibc2.39",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "files": {
+    "boot/spec.py": "e331e699bca925558f7b12308bad10a2dfb6ee45025cd335bf3915356294d754",
+    "boot/strand.py": "bf7942950f112a099f94a9f6062e11eaa5db0e6825b00ceb72350cbe7c12791d",
+    "boot/strandc.c": "376532c480fd839def280b52930312a7fa808dcc54793e6dede6dc6d9415afc0",
+    "src/compiler.strand": "135406c756a8820f62bed8a071344651b614f9b8df71174b3e538aad0681ded0",
+    "src/tables.strand": "b6669cd4edb4634663ebe685f6d0117b5a8b3678ff84b0468ce7529f7a66204c",
+    "tools/mkstencils.py": "a6dc36aaaf9a8af37afe42af1270f7210f3b1087251af403a030e694b09fa317",
+    "tools/lineprof.py": "2c1bb51c44f71de82adc8a0a86c25276597e480c20d940f156a1faed12e469bd",
+    "explore/link.c": "3afecebcd5c19445838ad5099d0aa463073e489db9c6b558c889e4e45be2b969",
+    "explore/linkjob.c": "1ec67bd69a57361a8c27491f9e31a15aa1be92c21807bb212aaa8e869e5ec231",
+    "examples/link.strand": "ede6b501ec80a3c6116427bea34b4ac8e37e0f97cec9118ea7b609958f79b35c",
+    "examples/link2.strand": "f7ae6583f3cf06b8fe87b51c6976f1265f2b5e56d8d893af778463fea7aa5de6",
+    "LINKING.md": "1e5d5f9a290d6d31bf78e383edf2b6a71ca5feb91e06b538f5e8c0a92fa8caf3",
+    "DESIGN.md": "d2668bb14a1698f0bbe0457466ced7843f2ca9c4801215b74b303adfbf1ce458",
+    "SWEETSPOT.md": "a65f129a7fd945d62b876550ae434ea177286aefa3a9ff0822d9e082fca423fb"
+  }
+}

@@ -1,0 +1,31 @@
+stencils: 483 bodies + 127 prologues, 22208 bytes; stub 5952 bytes; tables.strand 117012 bytes
+stage1 == stage2 (SIMD compiler reproduces the scalar reference)
+stage2 == stage3 (fixed point)
+818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730  build/stage1
+818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730  build/stage2
+818d4b7202579f00f1b154741709d1fddd3c169d6f2078579e66eb63ebc0c730  build/stage3
+--- stencils vs scalar interpreter (reference compiler emits, interpreter judges)
+PASS {'ok': 1205, 'fail99': 1060, 'halt': 19, 'cerr': 14, 'runs': 2284, 'toobig': 32}
+--- stage1
+PASS build/stage1 138 cases
+PASS build/stage1 by reference status: {0: 224, 1: 12, 2: 31, 3: 8, 6: 29, 7: 12, 8: 59, 9: 6, 10: 1, 11: 7, 12: 11}
+PASS {'ok': 1118, 'fail99': 1082, 'halt': 61, 'cerr': 15, 'runs': 2261, 'toobig': 49}
+--- stage2
+PASS build/stage2 138 cases
+PASS build/stage2 by reference status: {0: 224, 1: 12, 2: 31, 3: 8, 6: 29, 7: 12, 8: 59, 9: 6, 10: 1, 11: 7, 12: 11}
+PASS {'ok': 1118, 'fail99': 1082, 'halt': 61, 'cerr': 15, 'runs': 2261, 'toobig': 49}
+--- stage3
+PASS build/stage3 138 cases
+PASS build/stage3 by reference status: {0: 224, 1: 12, 2: 31, 3: 8, 6: 29, 7: 12, 8: 59, 9: 6, 10: 1, 11: 7, 12: 11}
+PASS {'ok': 1118, 'fail99': 1082, 'halt': 61, 'cerr': 15, 'runs': 2261, 'toobig': 49}
+--- thread pool at production block sizes, 2..all CPUs, file and pipe
+PASS build/stage2 39 programs, 4836 pool runs, 80 path checks
+--- all 256 four-state transition functions
+PASS build/stage2 256 transition functions, 103022 bytes, 48 runs
+--- a linker written in Strand against the C reference (explore/linkjob.c), both ways of resolving imports
+PASS link
+PASS link2
+--- big inputs: the three compilers agree
+PASS big8
+PASS many
+ALL PASS

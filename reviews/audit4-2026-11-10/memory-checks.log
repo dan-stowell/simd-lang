@@ -1,0 +1,2 @@
+cases 86 compiled 86
+slice_read_hazard 0 [('pipe', 0, False), ('regular_file', 0, False)]

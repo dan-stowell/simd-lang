@@ -1,0 +1,135 @@
+{
+  "failed_children_accepted": {
+    "child": "/bin/false",
+    "child_returncode": 1,
+    "profiler_measure_return": [
+      1.343,
+      0.0,
+      247
+    ]
+  },
+  "prefix_changes_earlier_classes": [
+    {
+      "kind": "prefix",
+      "first_line": [
+        {
+          "token": "input",
+          "class": 24,
+          "local": false,
+          "prologue_bytes": 90
+        },
+        {
+          "token": ":a",
+          "class": 50,
+          "local": true,
+          "prologue_bytes": 0
+        },
+        {
+          "token": "a",
+          "class": 51,
+          "local": true,
+          "prologue_bytes": 0
+        },
+        {
+          "token": "+",
+          "class": 0,
+          "local": false,
+          "prologue_bytes": 0
+        },
+        {
+          "token": "end",
+          "class": 28,
+          "local": false,
+          "prologue_bytes": 0
+        }
+      ]
+    },
+    {
+      "kind": "full",
+      "first_line": [
+        {
+          "token": "input",
+          "class": 24,
+          "local": false,
+          "prologue_bytes": 90
+        },
+        {
+          "token": ":a",
+          "class": 48,
+          "local": false,
+          "prologue_bytes": 81
+        },
+        {
+          "token": "a",
+          "class": 59,
+          "local": false,
+          "prologue_bytes": 22
+        },
+        {
+          "token": "+",
+          "class": 0,
+          "local": false,
+          "prologue_bytes": 0
+        },
+        {
+          "token": "end",
+          "class": 28,
+          "local": false,
+          "prologue_bytes": 0
+        }
+      ]
+    }
+  ],
+  "backlog_files": [
+    {
+      "file": "bench/base.c",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "00be7663b7439f04ae9b7b1a9c931cfce2bc34cafdaf3bc293ed9e86c03b567e"
+    },
+    {
+      "file": "bench/base_omp.c",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "d67c66f98528ac80b076ef0602041d287a49e6a31c66a48f30d52c547c99e909"
+    },
+    {
+      "file": "bench/hand.c",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "1dce4899a1d7c65a968fbce835a7c4f488da29062c2439789c2622b10aa841dc"
+    },
+    {
+      "file": "bench/oneoff.py",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "6e3f8e84d7f98b8a09b237485b94372d047a77a81b3575ef67d45e2d7b08d3be"
+    },
+    {
+      "file": "bench/jsongen.py",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "ede28f224dd689c18e65be187b4a10007b14350dd8cad6c898c01b1d16b6f305"
+    },
+    {
+      "file": "hw/check_probe.py",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "8e2de7c1d997077ddcabe595e364c807e83a87184fdf5478dbe3df141825d36e"
+    },
+    {
+      "file": "tests/fsm_all.py",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "8f6395ee0441195e3489b51d882e6b3b777992ab622c95ba1bfc9f07200c925a"
+    },
+    {
+      "file": "tests/pool.py",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "8ad015304241258d9f39c4916a95bab029edda1e351a306873dab8c83b348d72"
+    },
+    {
+      "file": "blog/04-between-the-compiler-and-the-expert.md",
+      "unchanged_since_af3ecc9": true,
+      "sha256": "51700d15303ceee5ce70e087d4077d5dae0d1c89be3b96c3c1c501ea199b808d"
+    }
+  ],
+  "duplicate_json_oracle": {
+    "input": "{\"x\":[],\"x\":{}}",
+    "skeleton": "{:{}}",
+    "all_members_skeleton": "{:[],:{}}"
+  }
+}

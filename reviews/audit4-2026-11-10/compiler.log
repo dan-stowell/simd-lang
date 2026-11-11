@@ -1,0 +1,38 @@
+128591 strandc_scalar [3] {'wall_ms': 4.874889, 'user_ms': 2.159, 'system_ms': 4.499, 'maxrss_kib': 6592, 'minor_faults': 1406, 'major_faults': 0, 'wait_status': 0}
+128591 stage2 [3] {'wall_ms': 5.526678, 'user_ms': 5.3, 'system_ms': 3.02, 'maxrss_kib': 5224, 'minor_faults': 1261, 'major_faults': 0, 'wait_status': 0}
+128591 strandc_scalar [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 8.012853, 'user_ms': 4.272, 'system_ms': 4.968, 'maxrss_kib': 6596, 'minor_faults': 1407, 'major_faults': 0, 'wait_status': 0}
+128591 stage2 [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 12.994763, 'user_ms': 7.255, 'system_ms': 4.365, 'maxrss_kib': 5224, 'minor_faults': 1261, 'major_faults': 0, 'wait_status': 0}
+1033565 strandc_scalar [3] {'wall_ms': 41.147836, 'user_ms': 21.631, 'system_ms': 22.383, 'maxrss_kib': 42956, 'minor_faults': 10599, 'major_faults': 0, 'wait_status': 0}
+1033565 stage2 [3] {'wall_ms': 44.670163, 'user_ms': 29.969, 'system_ms': 16.01, 'maxrss_kib': 37852, 'minor_faults': 9198, 'major_faults': 0, 'wait_status': 0}
+1033565 strandc_scalar [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 56.296491, 'user_ms': 28.809, 'system_ms': 25.874, 'maxrss_kib': 42932, 'minor_faults': 10599, 'major_faults': 0, 'wait_status': 0}
+1033565 stage2 [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 60.455634, 'user_ms': 53.623, 'system_ms': 25.123, 'maxrss_kib': 37980, 'minor_faults': 9303, 'major_faults': 0, 'wait_status': 0}
+8292332 strandc_scalar [3] {'wall_ms': 359.983397, 'user_ms': 211.658, 'system_ms': 147.688, 'maxrss_kib': 333004, 'minor_faults': 84137, 'major_faults': 0, 'wait_status': 0}
+8292332 stage2 [3] {'wall_ms': 394.710839, 'user_ms': 279.777, 'system_ms': 115.392, 'maxrss_kib': 298316, 'minor_faults': 72657, 'major_faults': 0, 'wait_status': 0}
+8292332 strandc_scalar [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 368.736512, 'user_ms': 217.033, 'system_ms': 157.588, 'maxrss_kib': 332992, 'minor_faults': 84138, 'major_faults': 0, 'wait_status': 0}
+8292332 stage2 [0, 1, 2, 3, 4, 5, 6, 7] {'wall_ms': 311.50891, 'user_ms': 676.106, 'system_ms': 193.391, 'maxrss_kib': 301900, 'minor_faults': 73661, 'major_faults': 0, 'wait_status': 0}
+prefix 19 prefix {'wall_ms': 2.16799, 'user_ms': 2.109, 'system_ms': 0.0, 'maxrss_kib': 3632, 'minor_faults': 679, 'major_faults': 0, 'wait_status': 0}
+prefix 19 stopped_full {'wall_ms': 2.600156, 'user_ms': 2.392, 'system_ms': 0.0, 'maxrss_kib': 4680, 'minor_faults': 936, 'major_faults': 0, 'wait_status': 0}
+prefix 32 prefix {'wall_ms': 4.389503, 'user_ms': 2.821, 'system_ms': 3.596, 'maxrss_kib': 7236, 'minor_faults': 1576, 'major_faults': 0, 'wait_status': 0}
+prefix 32 stopped_full {'wall_ms': 4.918455, 'user_ms': 2.388, 'system_ms': 2.673, 'maxrss_kib': 8520, 'minor_faults': 1898, 'major_faults': 0, 'wait_status': 0}
+prefix 37 prefix {'wall_ms': 7.718485, 'user_ms': 0.0, 'system_ms': 7.436, 'maxrss_kib': 12344, 'minor_faults': 2861, 'major_faults': 0, 'wait_status': 0}
+prefix 37 stopped_full {'wall_ms': 13.077831, 'user_ms': 4.316, 'system_ms': 9.1, 'maxrss_kib': 23860, 'minor_faults': 5751, 'major_faults': 0, 'wait_status': 0}
+prefix 42 prefix {'wall_ms': 9.654714, 'user_ms': 4.777, 'system_ms': 4.962, 'maxrss_kib': 14920, 'minor_faults': 3502, 'major_faults': 0, 'wait_status': 0}
+prefix 42 stopped_full {'wall_ms': 16.3653, 'user_ms': 4.196, 'system_ms': 11.893, 'maxrss_kib': 29012, 'minor_faults': 7035, 'major_faults': 0, 'wait_status': 0}
+prefix 59 prefix {'wall_ms': 16.294883, 'user_ms': 8.027, 'system_ms': 8.6, 'maxrss_kib': 22628, 'minor_faults': 5431, 'major_faults': 0, 'wait_status': 0}
+prefix 59 stopped_full {'wall_ms': 21.572845, 'user_ms': 8.735, 'system_ms': 12.691, 'maxrss_kib': 32972, 'minor_faults': 8001, 'major_faults': 0, 'wait_status': 0}
+prefix 70 prefix {'wall_ms': 19.095034, 'user_ms': 7.638, 'system_ms': 11.067, 'maxrss_kib': 26452, 'minor_faults': 6393, 'major_faults': 0, 'wait_status': 0}
+prefix 70 stopped_full {'wall_ms': 22.891135, 'user_ms': 8.666, 'system_ms': 13.112, 'maxrss_kib': 32960, 'minor_faults': 7999, 'major_faults': 0, 'wait_status': 0}
+prefix 100 prefix {'wall_ms': 24.90293, 'user_ms': 13.012, 'system_ms': 12.035, 'maxrss_kib': 30532, 'minor_faults': 7420, 'major_faults': 0, 'wait_status': 0}
+prefix 100 stopped_full {'wall_ms': 28.393007, 'user_ms': 12.486, 'system_ms': 15.908, 'maxrss_kib': 37064, 'minor_faults': 9025, 'major_faults': 0, 'wait_status': 0}
+prefix 106 prefix {'wall_ms': 25.185308, 'user_ms': 16.467, 'system_ms': 8.354, 'maxrss_kib': 30548, 'minor_faults': 7419, 'major_faults': 0, 'wait_status': 0}
+prefix 106 stopped_full {'wall_ms': 28.55295, 'user_ms': 15.874, 'system_ms': 12.457, 'maxrss_kib': 37068, 'minor_faults': 9025, 'major_faults': 0, 'wait_status': 0}
+prefix 128 prefix {'wall_ms': 31.894912, 'user_ms': 15.86, 'system_ms': 15.723, 'maxrss_kib': 37072, 'minor_faults': 9029, 'major_faults': 0, 'wait_status': 0}
+prefix 128 stopped_full {'wall_ms': 31.743603, 'user_ms': 19.59, 'system_ms': 11.837, 'maxrss_kib': 37056, 'minor_faults': 9030, 'major_faults': 0, 'wait_status': 0}
+prefix 164 prefix {'wall_ms': 36.836634, 'user_ms': 20.886, 'system_ms': 16.705, 'maxrss_kib': 37456, 'minor_faults': 9107, 'major_faults': 0, 'wait_status': 0}
+prefix 164 stopped_full {'wall_ms': 36.134958, 'user_ms': 24.244, 'system_ms': 12.034, 'maxrss_kib': 37468, 'minor_faults': 9107, 'major_faults': 0, 'wait_status': 0}
+prefix 177 prefix {'wall_ms': 37.452027, 'user_ms': 24.836, 'system_ms': 12.247, 'maxrss_kib': 37524, 'minor_faults': 9121, 'major_faults': 0, 'wait_status': 0}
+prefix 177 stopped_full {'wall_ms': 37.33558, 'user_ms': 24.383, 'system_ms': 12.252, 'maxrss_kib': 37596, 'minor_faults': 9122, 'major_faults': 0, 'wait_status': 0}
+prefix 192 prefix {'wall_ms': 39.560558, 'user_ms': 27.446, 'system_ms': 12.61, 'maxrss_kib': 37592, 'minor_faults': 9125, 'major_faults': 0, 'wait_status': 0}
+prefix 192 stopped_full {'wall_ms': 39.674782, 'user_ms': 23.778, 'system_ms': 16.621, 'maxrss_kib': 37596, 'minor_faults': 9125, 'major_faults': 0, 'wait_status': 0}
+prefix 202 prefix {'wall_ms': 42.189908, 'user_ms': 26.428, 'system_ms': 15.101, 'maxrss_kib': 37596, 'minor_faults': 9132, 'major_faults': 0, 'wait_status': 0}
+prefix 202 stopped_full {'wall_ms': 42.475042, 'user_ms': 26.935, 'system_ms': 15.453, 'maxrss_kib': 37596, 'minor_faults': 9133, 'major_faults': 0, 'wait_status': 0}
