@@ -235,3 +235,35 @@ oversubscribing back ends (the pipelined build burns about 5% more CPU than the 
 That is a pure optimization iteration; the last one was iteration 4, so the budget allows it. After it:
 the template back end's kill test 2 (shape histogram), the one cheap experiment that says whether the
 end state's back end can be stencils.
+
+## 2026-11-12 00:35 UTC — iteration 8: optimization of the compile row (budgeted). Three negatives.
+
+All measured with `tools/trace/ab.sh` (configurations run in turn, twice, page cache warm, because the
+host drifts), each binary smoke-tested.
+
+| change | wall s (two rounds) | against baseline in the same rounds |
+|---|---|---|
+| optional SSA passes off (`-d=ssa/<pass>/off` for cse, prove, sccp, fuse, dse, branchelim, memcombine, pair, licm, loop rotate, ...) | 23.9, 26.8 | 21.9, 24.1: **slower**, binary 3% bigger |
+| the same plus `nilcheckelim` off | 24.1, 25.0 | slower |
+| at most 8 / 16 / 32 back ends running, the rest paused with SIGSTOP in arrival order (`-running n`) | 22.0, 21.3 / 21.2, 23.8 / 21.7, 21.7 | 21.3, 20.8: no gain (fewer core-seconds at 8, 128-138 against 138-142, but the cores idle instead) |
+
+The optimization passes pay for themselves: the code they remove is code the register allocator and
+the assembler do not have to process. And oversubscription costs CPU but not wall clock.
+
+**Duplicate compilation, measured.** 26,052 of the 190,719 functions compiled for MinIO are copies of a
+function some other package also compiles (duplicate-allowed symbols: method wrappers through embedded
+interfaces, generic instantiations, equality functions): 3.9 MB of 48.9 MB of text, **8.1%**. One set
+of wrappers around an embedded `reflect.Type` is compiled in about 400 packages. A compiler patch could
+have the first package claim a symbol and the rest skip it; that is at most 8% of the back end, about
+5% of the build, with a cross-process protocol to get wrong. Recorded in IDEAS, not done.
+
+**Conclusion.** With the stock compiler doing the work, on these 8 cores, the compile row is at its
+floor: 139 core-seconds / 8 = 17.4 s, and the stretch takes 19 s. Every remaining cheap lever I could
+find is under 5% or negative. The next factor has to come from a different compiler, which is the
+conclusion iteration 6 reached from the profile; this iteration closes the alternatives.
+
+**Scope check.** Most ambitious: start that compiler. Tonight I can still de-risk it with two
+measurements nobody has (IDEAS, both kill tests under an hour): what a declarations-only pass over the
+whole program costs, and whether Go function bodies fall into few enough shapes for stencils. And the
+trace should say what "2 s on N cores" means for the pipeline as it stands: simulate the measured
+action graph on N cores.

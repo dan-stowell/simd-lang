@@ -158,6 +158,7 @@ func main() {
 	flag.BoolVar(&pipeline, "pipeline", false, "release a package's importers when its export data is written, before its back end runs (needs the patched compiler)")
 	workdirFlag := flag.String("workdir", "", "use exactly this work directory (for reproducible comparisons)")
 	flag.BoolVar(&noEarly, "noearly", false, "pipelining plumbing without the early export (the compiler behaves as stock): for differential tests")
+	maxRun := flag.Int("running", 0, "pipelining: most back ends running at once; the rest are paused (SIGSTOP) in arrival order. 0 = no limit")
 	maxBE := flag.Int("backends", 32, "pipelining: most compilers allowed in their back end at once (memory)")
 	planMode := flag.String("plan", "golist", "who finds the package graph: golist, or self (the driver, with Strand's declaration pass)")
 	decl := flag.String("decl", "", "Strand declaration pass binary (build/godecl), for -plan=self")
@@ -415,6 +416,9 @@ func main() {
 		}
 	}
 	done := 0
+	running := 0 // back ends not paused
+	var paused []int
+	isRunning := map[int]bool{}
 	backends := 0 // compilers past their export, running at low priority without a token
 	maxBackends := *maxBE
 	var firstErr error
@@ -490,6 +494,7 @@ func main() {
 				}
 				cond.Broadcast()
 			}
+			myPid := 0
 			u, s, cmds, err := buildPkg(p, c, goversion, extra, func(pid int) {
 				renice(pid)
 				mu.Lock()
@@ -498,6 +503,16 @@ func main() {
 				held = 0
 				backends++
 				inBackend = true
+				myPid = pid
+				if *maxRun > 0 {
+					if running >= *maxRun {
+						syscall.Kill(pid, syscall.SIGSTOP)
+						paused = append(paused, pid)
+					} else {
+						running++
+						isRunning[pid] = true
+					}
+				}
 				release()
 				mu.Unlock()
 			})
@@ -510,6 +525,26 @@ func main() {
 			tokens += held
 			if inBackend {
 				backends--
+				if *maxRun > 0 {
+					if isRunning[myPid] {
+						delete(isRunning, myPid)
+						running--
+					} else { // it was paused and yet it ended: someone else continued or killed it
+						for i, q := range paused {
+							if q == myPid {
+								paused = append(paused[:i], paused[i+1:]...)
+								break
+							}
+						}
+					}
+					for running < *maxRun && len(paused) > 0 {
+						q := paused[0]
+						paused = paused[1:]
+						syscall.Kill(q, syscall.SIGCONT)
+						running++
+						isRunning[q] = true
+					}
+				}
 			}
 			done++
 			if err != nil && firstErr == nil {

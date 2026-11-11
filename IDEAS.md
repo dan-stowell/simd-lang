@@ -46,3 +46,9 @@ Three of the four independently proposed reachability before code generation, wi
 
 **Picked for the next spike:** none of the survivors can be finished tonight, and the cheapest
 informative test is the shape histogram (template back end, kill test 2).
+
+## 2026-11-12, from the optimization iteration
+
+- **Turn optional SSA passes off.** Status: **dead** (slower: 23.9-26.8 s against 21.9-24.1 s; JOURNAL iteration 8).
+- **Pause back ends beyond a cap instead of letting hundreds run at nice 19.** Status: **dead** for wall clock (no gain); it does lower CPU and peak memory, so `-running n` stays as an option for builds that do not fit in memory.
+- **Compile each duplicate-allowed function once per build, not once per package.** Measured: 8.1% of MinIO's compiled text is copies (26,052 functions). Kill test passed in the weak sense (it is not nothing); payoff at most 5% of the build. Status: untested.
