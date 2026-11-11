@@ -421,6 +421,24 @@ def sb_section(name, L, out, stock):
     out.append(f"| **TOTAL** | **{ms(wall)}** | **{cpu / wall:.2f}** | **{cpu:,.0f}** | read {fmt_bytes(int(m['disk_read_bytes']))}, wrote {fmt_bytes(int(m['disk_written_bytes']))} (disk) | **{ftot * 1000:,.0f}** | **{wall / ftot:,.0f}x** | |")
     out.append(f"| critical path ({len(path)} actions) | {cl:,.0f} | | | | | | |")
     out.append('')
+    pj = os.path.join(T, name, 'sb-phases.json')
+    if os.path.exists(pj):
+        P = json.load(open(pj))
+        comp_cpu = next(((ph['user_ms'] + ph['sys_ms']) / 1000 for ph in tr['phases'] if ph['name'].startswith('compile')), 0)
+        w = P['work_s']
+        out.append(f"**Inside the compile row** (`tools/trace/phases.sh`: a CPU profile of every compiler process, merged; "
+                   f"{w:,.0f} s of samples for {comp_cpu:,.0f} core-s of compile, the rest being kernel time and process start):\n")
+        out.append('| compiler phase | core-s | share | the charter\'s row |')
+        out.append('|---|---|---|---|')
+        rowof = {'lex': 'lex/parse', 'type check': 'resolve/types', 'typed tree': 'resolve/types', 'export IR': 'resolve/types',
+                 'escape': 'lower/codegen', 'walk': 'lower/codegen', 'SSA': 'lower/codegen', 'emit': 'lower/codegen', 'write': 'write objects'}
+        for k, v in P['phases'].items():
+            out.append(f"| {k} | {v:,.1f} | {100 * v / w:.1f}% | {next((r for p, r in rowof.items() if k.startswith(p)), '')} |")
+        rest = w - sum(P['phases'].values())
+        out.append(f"| not under any of these (scheduler, runtime start, flag parsing) | {rest:,.1f} | {100 * rest / w:.1f}% | |")
+        out.append(f"\nAcross all phases, {P['malloc_s']:,.1f} s is the allocator and {P['memclr_s']:,.1f} s is clearing memory. "
+                   f"Lexing and parsing all of the build's Go is {P['phases'][next(iter(P['phases']))]:.2f} core-s: "
+                   f"{100 * P['phases'][next(iter(P['phases']))] / w:.1f}% of the compiler's work.\n")
     notes = [f"{ph['name'].split(' (')[0]}: {ph['note']}" for ph in tr['phases'] if ph.get('note')]
     if notes: out.append('Notes: ' + '; '.join(notes) + '.\n')
     nb = 60

@@ -645,7 +645,9 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 	if pipeline {
 		argv = append(argv, "-linkobj", p.archive)
 	}
-	argv = append(argv, extra...)
+	for _, x := range extra { // %p in a flag becomes the package's work directory name (per-package profiles)
+		argv = append(argv, strings.ReplaceAll(x, "%p", filepath.Base(p.objdir)))
+	}
 	for _, f := range p.GoFiles {
 		argv = append(argv, filepath.Join(p.Dir, f))
 	}

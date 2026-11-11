@@ -133,3 +133,66 @@ it is large, whole-program reachability before code generation removes front-end
 and its core computation (a histogram of identifier spellings over all tokens) is the first job in this
 build that is Strand-shaped and whose output would be consumed. That is the next iteration (a spike,
 with a kill test).
+
+## 2026-11-11 23:20 UTC — iteration 5: spike, "don't compile what the linker discards". Killed.
+
+**Kill test.** Built MinIO keeping the objects, listed every function symbol in the 1,312 archives
+(`go tool nm -size`) and in the linked binary. Of 44.1 MB of compiled function text, the linker discards
+**9.4 MB (21.3%)**: 45,720 of 164,648 functions. By kind: exported methods 3.2 MB, unexported methods
+2.0, exported functions 1.9, unexported functions 1.7, closures and wrappers 0.4, generic
+instantiations 0.1.
+
+**Verdict.** My threshold was a third. A name-based reachability pass can only take the functions
+(3.6 MB) and some unexported methods safely: reflection keeps exported methods of live types alive, and
+the linker already assumes that. So at best 8-10% of back-end work, about 5% of the build, for a
+whole-program analysis plus a second compiler patch. Not worth a rung. MinIO really does use four fifths
+of what it compiles.
+
+**Also measured and discarded this iteration.**
+- An aggregated CPU profile of all 1,312 compiler processes (per-package `-cpuprofile`, merged) showed
+  `runtime.asyncPreempt` at 20% flat. Building with `GODEBUG=asyncpreemptoff=1`: 144.1 against 145.0
+  core-s. It is a sampling artifact of threads parked at nice 19, not work.
+- The same profile, read by cumulative time: SSA back end about 40% of samples, allocation and clearing
+  about 15%, object writing 3%. System time is 25 of 139 compile core-seconds (page faults with the GC
+  off, process start, tmpfs writes). This kernel has no transparent huge pages to try.
+- By package size: the 8 packages over 1 MB take 28.7 core-s, the 143 between 100 kB and 1 MB take 55.8,
+  the 1,161 smaller ones 54.8. No single fat target left; the work is spread thin.
+
+**Scope check.** Most ambitious: replace type checking or code generation outright. The profile says
+that is where the work is (lexing all of MinIO is 0.2 s; the stock compiler's scan of the same bytes
+would be about 0.4 core-s of 144), so nothing short of that moves the compile row by a large factor.
+Doing: the divergence step (due now), and kube-apiserver through the driver while the subagents think.
+
+## 2026-11-11 23:45 UTC — iteration 6: second codebase, divergence step, and where the work is
+
+**kube-apiserver through the driver.** Cold, same configuration: **53.4 s** (stock 86.3 s), 2,079
+packages. `tests/kube_smoke.sh` (etcd 3.7.1 as pinned by Kubernetes, `/healthz`, then a ConfigMap
+create/get/delete) passes for the stock binary and the driver's. With `GOGC=off` the build was killed
+at the 22 GB limit of its scope (the guard worked; the session survived); with `GOGC=1000` and at most
+200 back ends at once it fits. golex equals go/scanner on its 12,526,067 tokens (`tests/sb_lex.sh`).
+The gain is smaller than MinIO's (1.6x against 2.5x): Kubernetes is front-end heavy, and the front end
+is what these rungs did not touch.
+
+**Divergence step.** Ideas appended to IDEAS.md. The useful outcome is negative: three of four
+unanchored agents proposed the reachability idea killed in iteration 5.
+
+**Where the compile row's CPU goes** (`tools/trace/phases.sh`, now in TRACE.md): a CPU profile of all
+1,312 compiler processes, merged. Of 99 s of samples: SSA passes 35%, walk and SSA construction 14%,
+emitting machine code 10%, reading the export IR back into compiler IR 9%, escape analysis and runtime
+types 9%, type checking 7%, writing objects 5%, writing export IR 5%. **Lexing and parsing: 0.6%**
+(0.6 core-s in the profile; for scale, go/parser takes 2.4 s for the same 75.5 MB on one core, so call
+it 1-2%).
+
+That last number is the one that matters for this project. The phases Strand has (lexing,
+package-level declarations) are a hundredth of the stock compiler's work on MinIO. Replacing them
+cannot move the trace. What costs is everything that happens to a function body after it is parsed,
+plus three conversions between tree representations. A faster lexer was never going to be the rung.
+
+**Scope check.** Most ambitious: the flat whole-program compiler from IDEAS (declarations pass, then
+bodies as a work list into a template back end). Why not tonight: it is a Go type checker plus a code
+generator that satisfies Go's runtime (stack maps, write barriers, defers); I can't finish a consumed
+slice of that before morning, and an unconsumed slice moves nothing. What I can finish, and what the
+end state needs anyway: the build's front door. Today the plan is `go list` (0.5 s, serial, a quarter
+of the whole 2 s budget) followed by a separate read of the same files. Rung 4: the driver finds the
+package graph itself from the sources, in the same pass that reads them, with the import lists coming
+from Strand's declaration pass, differential-tested against `go list` on both targets.
