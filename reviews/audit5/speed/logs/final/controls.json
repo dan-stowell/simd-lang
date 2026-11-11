@@ -1,0 +1,35 @@
+{
+  "date_utc": "2026-11-11T02:11:42.076832+00:00",
+  "corpus": "/home/exedev/simd-lang/build/audit5-correctness/corpus.go",
+  "bytes": 92537748,
+  "sha256": "16b788e6b994e0c214e8b7cd9b02c52640fc8e56a882eb355c4f216a7baffb91",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "reps": 9,
+  "groups": 3,
+  "seed": 250887,
+  "env_removed": [
+    "GOMAXPROCS",
+    "GOMEMLIMIT",
+    "GODEBUG",
+    "GOEXPERIMENT"
+  ],
+  "env_set": {
+    "GOGC": "100",
+    "GOTOOLCHAIN": "local"
+  },
+  "executables": {
+    ".build/scanners": "7e95dac8365e56e201c4c13f49c239e4b26744655373edd19427c9b8b2913746",
+    ".build/scanners-escape": "ac13752e9255da29d3c3338604713ad6d2013599d16236e9becbc99ec984ff8e",
+    ".build/golex-strand": "23a0296c585c91d0740b1330f933baa6ee8d8bba5ad240da0fd6f22e15f3f766",
+    ".build/golex-original": "2997ac2beb46d6bea8c9f99e7920862cacac2bcd938918bae4417228d565c601"
+  }
+}

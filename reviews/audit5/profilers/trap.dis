@@ -1,0 +1,11 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/trap:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	cc                   	int3
+  401001:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  401006:	31 ff                	xor    %edi,%edi
+  401008:	0f 05                	syscall

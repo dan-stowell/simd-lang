@@ -1,0 +1,16 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/normal:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	b9 64 00 00 00       	mov    $0x64,%ecx
+
+0000000000401005 <loop>:
+  401005:	c5 fd ef c0          	vpxor  %ymm0,%ymm0,%ymm0
+  401009:	ff c9                	dec    %ecx
+  40100b:	75 f8                	jne    401005 <loop>
+  40100d:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  401012:	31 ff                	xor    %edi,%edi
+  401014:	0f 05                	syscall

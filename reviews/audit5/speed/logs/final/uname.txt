@@ -1,0 +1,1 @@
+Linux ssimd 6.12.115 #1 SMP Tue Nov  3 05:28:18 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux

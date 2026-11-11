@@ -1,0 +1,15 @@
+
+work/outside:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000900000 <_start>:
+  900000:	b9 00 a3 e1 11       	mov    $0x11e1a300,%ecx
+
+0000000000900005 <loop>:
+  900005:	ff c9                	dec    %ecx
+  900007:	75 fc                	jne    900005 <loop>
+  900009:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  90000e:	31 ff                	xor    %edi,%edi
+  900010:	0f 05                	syscall

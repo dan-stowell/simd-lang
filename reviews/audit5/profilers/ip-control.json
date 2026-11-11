@@ -1,0 +1,72 @@
+[
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/divide",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/divide.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0234988730007899,
+    "user": 0.009138,
+    "system": 0.013947999999999999,
+    "faults": 1550,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/divide"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.004128864005906507,
+    "user": 0.0038049999999999994,
+    "system": 0.0,
+    "faults": 305,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/divide:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb9 40 4b 4c 00       \tmov    $0x4c4b40,%ecx\n  401005:\tbb 03 00 00 00       \tmov    $0x3,%ebx\n  40100a:\tb8 40 e2 01 00       \tmov    $0x1e240,%eax\n\n000000000040100f <loop>:\n  40100f:\t31 d2                \txor    %edx,%edx\n  401011:\tf7 f3                \tdiv    %ebx\n\n0000000000401013 <after_divide>:\n  401013:\t90                   \tnop\n  401014:\tff c9                \tdec    %ecx\n  401016:\t75 f7                \tjne    40100f <loop>\n  401018:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  40101d:\t31 ff                \txor    %edi,%edi\n  40101f:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/divide"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.028585930995177478,
+    "user": 0.028104,
+    "system": 0.0,
+    "faults": 86,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/divide"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.026833643001737073,
+    "user": 0.026084999999999997,
+    "system": 0.0,
+    "faults": 4263,
+    "stdout": "",
+    "stderr": "54 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401011": 54
+    }
+  }
+]

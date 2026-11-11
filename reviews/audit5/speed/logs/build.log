@@ -1,0 +1,6 @@
+go version go1.27.3 linux/amd64
+?   	audit5speed	[no test files]
+ok  	audit5speed/syntax	0.003s
+7e95dac8365e56e201c4c13f49c239e4b26744655373edd19427c9b8b2913746  .build/scanners
+2997ac2beb46d6bea8c9f99e7920862cacac2bcd938918bae4417228d565c601  .build/golex-original
+23a0296c585c91d0740b1330f933baa6ee8d8bba5ad240da0fd6f22e15f3f766  .build/golex-strand

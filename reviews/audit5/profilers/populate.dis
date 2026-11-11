@@ -1,0 +1,27 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/populate:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	b8 09 00 00 00       	mov    $0x9,%eax
+  401005:	31 ff                	xor    %edi,%edi
+  401007:	be 00 00 00 10       	mov    $0x10000000,%esi
+  40100c:	ba 03 00 00 00       	mov    $0x3,%edx
+  401011:	41 ba 22 80 00 00    	mov    $0x8022,%r10d
+  401017:	49 c7 c0 ff ff ff ff 	mov    $0xffffffffffffffff,%r8
+  40101e:	45 31 c9             	xor    %r9d,%r9d
+
+0000000000401021 <population_syscall>:
+  401021:	0f 05                	syscall
+
+0000000000401023 <after_population>:
+  401023:	b9 00 87 93 03       	mov    $0x3938700,%ecx
+
+0000000000401028 <busy_loop>:
+  401028:	ff c9                	dec    %ecx
+  40102a:	75 fc                	jne    401028 <busy_loop>
+  40102c:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  401031:	31 ff                	xor    %edi,%edi
+  401033:	0f 05                	syscall

@@ -1,0 +1,15 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/busy:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	b9 00 a3 e1 11       	mov    $0x11e1a300,%ecx
+
+0000000000401005 <loop>:
+  401005:	ff c9                	dec    %ecx
+  401007:	75 fc                	jne    401005 <loop>
+  401009:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  40100e:	31 ff                	xor    %edi,%edi
+  401010:	0f 05                	syscall

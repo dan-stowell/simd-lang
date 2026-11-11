@@ -1,0 +1,122 @@
+syntax/audit.go:20:17: can inline (*Counter).Init.func1 with cost 4 as: func(uint, uint, string) { c.errors++ }
+syntax/audit.go:24:6: can inline (*Counter).Count with cost 74 as: method(*Counter) func() (int, int) { for loop; return n, c.errors }
+syntax/audit.go:80:6: can inline (*Visitor).Errors with cost 4 as: method(*Visitor) func() int { return v.c.errors }
+syntax/audit.go:20:17: func literal escapes to heap in (*Counter).Init:
+syntax/audit.go:20:17: func literal escapes to heap
+syntax/audit.go:36:6: c escapes to heap in Scan:
+syntax/audit.go:52:21: append(v.starts, i + 1) escapes to heap in NewVisitor:
+syntax/audit.go:49:7: &Visitor{...} escapes to heap in NewVisitor:
+syntax/audit.go:49:39: []int{...} escapes to heap in NewVisitor:
+syntax/audit.go:49:7: &Visitor{...} escapes to heap
+syntax/audit.go:49:39: []int{...} escapes to heap
+syntax/audit.go:52:21: append escapes to heap
+syntax/audit.go:130:9: "invalid increment operator" escapes to heap in normalized:
+syntax/audit.go:133:21: fmt.Sprintf("unmapped compiler token %d", ... argument...) escapes to heap in normalized:
+syntax/audit.go:133:53: s.tok escapes to heap in normalized:
+syntax/audit.go:130:9: "invalid increment operator" escapes to heap
+syntax/audit.go:133:21: fmt.Sprintf("unmapped compiler token %d", ... argument...) escapes to heap
+syntax/audit.go:133:53: s.tok escapes to heap
+syntax/audit.go:73:10: "multiline semicolon without newline" escapes to heap in (*Visitor).Next:
+syntax/audit.go:73:10: "multiline semicolon without newline" escapes to heap
+./main.go:22:6: cannot inline scan: function too complex: cost 328 exceeds budget 80
+./main.go:26:20: can inline scan.func1 with cost 3 as: func(token.Position, string) { errs++ }
+./main.go:40:6: cannot inline direct: function too complex: cost 244 exceeds budget 80
+./main.go:45:8: can inline direct.func1 with cost 3 as: func(token.Position, string) { errs++ }
+./main.go:58:6: cannot inline reuse: function too complex: cost 141 exceeds budget 80
+./main.go:165:6: can inline must with cost 7 as: func(error) { if err != nil { panic(err) } }
+./main.go:116:8: can inline main.func1 with cost 71 as: func() (int, int) { return int(.autotmp_2), .autotmp_3 }
+./main.go:118:8: can inline main.func2 with cost 71 as: func() (int, int) { return int(.autotmp_2), .autotmp_3 }
+./main.go:120:8: can inline main.func3 with cost 71 as: func() (int, int) { return int(.autotmp_2), .autotmp_3 }
+./main.go:126:8: can inline main.func4 with cost 73 as: func() (int, int) { return int(.autotmp_2), .autotmp_3 }
+./main.go:128:8: can inline main.func5 with cost 70 as: func() (int, int) { return int(.autotmp_2), .autotmp_3 }
+./main.go:134:8: can inline main.func6 with cost 148 as: func() (int, int) { (*syntax.Counter).Init(c, src); return int(.autotmp_2), .autotmp_3 }
+./main.go:26:20: func literal escapes to heap in scan:
+./main.go:22:68: errs escapes to heap in scan:
+./main.go:23:26: &token.FileSet{...} escapes to heap in scan:
+./main.go:23:26: &token.FileSet{...} escapes to heap
+./main.go:26:20: func literal escapes to heap
+./main.go:41:26: &token.FileSet{...} escapes to heap in direct:
+./main.go:45:8: func literal escapes to heap in direct:
+./main.go:40:43: errs escapes to heap in direct:
+./main.go:41:26: &token.FileSet{...} escapes to heap
+./main.go:45:8: func literal escapes to heap
+./main.go:230:39: len(src) escapes to heap in check:
+./main.go:230:56: n escapes to heap in check:
+./main.go:230:74: s.ErrorCount escapes to heap in check:
+./main.go:230:112: ~r0 escapes to heap in check:
+./main.go:231:22: kinds escapes to heap in check:
+./main.go:231:54: rawOffsets escapes to heap in check:
+./main.go:231:97: canonicalOffsets escapes to heap in check:
+./main.go:232:23: first escapes to heap in check:
+./main.go:232:72: ~r0 escapes to heap in check:
+./main.go:233:48: ~r0 escapes to heap in check:
+./main.go:197:23: &token.FileSet{...} escapes to heap in check:
+./main.go:217:94: n escapes to heap in check:
+./main.go:217:97: stdOff escapes to heap in check:
+./main.go:217:105: tok escapes to heap in check:
+./main.go:217:110: raw escapes to heap in check:
+./main.go:217:115: off escapes to heap in check:
+./main.go:217:120: other escapes to heap in check:
+./main.go:230:26: map[string]any{...} escapes to heap in check:
+./main.go:233:48: string(hex.dst) escapes to heap in check:
+./main.go:232:72: string(hex.dst) escapes to heap in check:
+./main.go:196:19: []string{} escapes to heap in check:
+./main.go:217:18: append(first, fmt.Sprintf("index=%d std=(%d,%s) syntax=(raw:%d canonical:%d,%s)", ... argument...)) escapes to heap in check:
+./main.go:196:19: []string{} escapes to heap
+./main.go:197:23: &token.FileSet{...} escapes to heap
+./main.go:217:94: n escapes to heap
+./main.go:217:97: stdOff escapes to heap
+./main.go:217:105: tok escapes to heap
+./main.go:217:110: raw escapes to heap
+./main.go:217:115: off escapes to heap
+./main.go:217:120: other escapes to heap
+./main.go:217:18: append escapes to heap
+./main.go:230:26: map[string]any{...} escapes to heap
+./main.go:230:39: len(src) escapes to heap
+./main.go:230:56: n escapes to heap
+./main.go:230:74: s.ErrorCount escapes to heap
+./main.go:230:112: ~r0 escapes to heap
+./main.go:231:22: kinds escapes to heap
+./main.go:231:54: rawOffsets escapes to heap
+./main.go:231:97: canonicalOffsets escapes to heap
+./main.go:232:23: first escapes to heap
+./main.go:232:72: ~r0 escapes to heap
+./main.go:232:72: string(hex.dst) escapes to heap
+./main.go:233:48: ~r0 escapes to heap
+./main.go:233:48: string(hex.dst) escapes to heap
+./main.go:184:29: binary.LittleEndian escapes to heap in dump:
+./main.go:185:29: binary.LittleEndian escapes to heap in dump:
+./main.go:187:26: "compiler scanner errors:" escapes to heap in dump:
+./main.go:187:62: ~r0 escapes to heap in dump:
+./main.go:183:26: &bufio.Writer{...} escapes to heap in dump:
+./main.go:180:16: append(offs, uint32(off)) escapes to heap in dump:
+./main.go:181:17: append(kinds, byte(tok)) escapes to heap in dump:
+./main.go:183:26: make([]byte, bufio.size) escapes to heap in dump:
+./main.go:180:16: append escapes to heap
+./main.go:181:17: append escapes to heap
+./main.go:183:26: &bufio.Writer{...} escapes to heap
+./main.go:183:26: make([]byte, bufio.size) escapes to heap
+./main.go:184:29: binary.LittleEndian escapes to heap
+./main.go:185:29: binary.LittleEndian escapes to heap
+./main.go:187:26: "compiler scanner errors:" escapes to heap
+./main.go:187:62: ~r0 escapes to heap
+./main.go:111:9: "unknown GC policy" escapes to heap in main:
+./main.go:130:7: c escapes to heap in main:
+./main.go:130:7: c escapes to heap in main:
+./main.go:136:9: "unknown mode" escapes to heap in main:
+./main.go:157:19: r escapes to heap in main:
+./main.go:122:24: &token.FileSet{...} escapes to heap in main:
+./main.go:125:84: n escapes to heap in main:
+./main.go:125:87: e escapes to heap in main:
+./main.go:125:101: (*token.File).LineCount(f) escapes to heap in main:
+./main.go:133:82: n escapes to heap in main:
+./main.go:133:85: e escapes to heap in main:
+./main.go:111:9: "unknown GC policy" escapes to heap
+./main.go:122:24: &token.FileSet{...} escapes to heap
+./main.go:125:84: n escapes to heap
+./main.go:125:87: e escapes to heap
+./main.go:125:101: (*token.File).LineCount(f) escapes to heap
+./main.go:133:82: n escapes to heap
+./main.go:133:85: e escapes to heap
+./main.go:136:9: "unknown mode" escapes to heap
+./main.go:157:19: r escapes to heap

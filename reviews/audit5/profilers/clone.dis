@@ -1,0 +1,41 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/clone:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	48 8d 35 11 10 00 00 	lea    0x1011(%rip),%rsi        # 402018 <stack>
+  401007:	bf 00 0f 05 00       	mov    $0x50f00,%edi
+  40100c:	31 d2                	xor    %edx,%edx
+  40100e:	45 31 d2             	xor    %r10d,%r10d
+  401011:	45 31 c0             	xor    %r8d,%r8d
+  401014:	b8 38 00 00 00       	mov    $0x38,%eax
+  401019:	0f 05                	syscall
+  40101b:	85 c0                	test   %eax,%eax
+  40101d:	74 23                	je     401042 <worker>
+
+000000000040101f <parent_wait>:
+  40101f:	b8 23 00 00 00       	mov    $0x23,%eax
+  401024:	48 8d 3d d5 0f 00 00 	lea    0xfd5(%rip),%rdi        # 402000 <delay>
+  40102b:	31 f6                	xor    %esi,%esi
+  40102d:	0f 05                	syscall
+  40102f:	48 83 3d d9 0f 00 00 	cmpq   $0x1,0xfd9(%rip)        # 402010 <done>
+  401036:	01 
+  401037:	75 e6                	jne    40101f <parent_wait>
+  401039:	b8 e7 00 00 00       	mov    $0xe7,%eax
+  40103e:	31 ff                	xor    %edi,%edi
+  401040:	0f 05                	syscall
+
+0000000000401042 <worker>:
+  401042:	b9 80 96 98 00       	mov    $0x989680,%ecx
+
+0000000000401047 <worker_loop>:
+  401047:	c5 fd ef c0          	vpxor  %ymm0,%ymm0,%ymm0
+  40104b:	ff c9                	dec    %ecx
+  40104d:	75 f8                	jne    401047 <worker_loop>
+  40104f:	48 c7 05 b6 0f 00 00 	movq   $0x1,0xfb6(%rip)        # 402010 <done>
+  401056:	01 00 00 00 
+  40105a:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  40105f:	31 ff                	xor    %edi,%edi
+  401061:	0f 05                	syscall

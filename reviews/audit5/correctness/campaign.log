@@ -1,0 +1,109 @@
+/home/exedev/simd-lang/reviews/audit5/correctness/probe.py:130: SyntaxWarning: invalid escape sequence '\u'
+  b"\xef\xbb\xbf\xef\xbb\xbf\n", b"x\ufeff\n"]):
+1000 cases, 1000 processes, 0 failures, 0 minima, 2.7s
+2000 cases, 1968 processes, 0 failures, 0 minima, 5.1s
+3000 cases, 2963 processes, 0 failures, 0 minima, 7.9s
+4000 cases, 3958 processes, 0 failures, 0 minima, 10.6s
+5000 cases, 4953 processes, 0 failures, 0 minima, 13.3s
+6000 cases, 5948 processes, 0 failures, 0 minima, 16.0s
+7000 cases, 7300 processes, 236 failures, 106 minima, 19.5s
+8000 cases, 8983 processes, 794 failures, 188 minima, 24.1s
+9000 cases, 10568 processes, 1385 failures, 239 minima, 28.5s
+10000 cases, 13011 processes, 1974 failures, 290 minima, 34.3s
+11000 cases, 14869 processes, 2680 failures, 343 minima, 39.3s
+12000 cases, 16542 processes, 3437 failures, 368 minima, 44.0s
+13000 cases, 17873 processes, 4167 failures, 371 minima, 47.3s
+14000 cases, 19602 processes, 4906 failures, 376 minima, 51.7s
+15000 cases, 22494 processes, 5674 failures, 453 minima, 59.4s
+16000 cases, 27991 processes, 6502 failures, 514 minima, 74.3s
+17000 cases, 32302 processes, 7326 failures, 558 minima, 85.8s
+18000 cases, 34087 processes, 7551 failures, 564 minima, 90.4s
+19000 cases, 35077 processes, 7551 failures, 564 minima, 93.0s
+20000 cases, 36058 processes, 7554 failures, 564 minima, 95.5s
+21000 cases, 37289 processes, 7565 failures, 572 minima, 98.9s
+22000 cases, 39058 processes, 7594 failures, 592 minima, 103.4s
+23000 cases, 40507 processes, 7613 failures, 609 minima, 107.4s
+24000 cases, 41950 processes, 7629 failures, 619 minima, 111.4s
+26000 cases, 44606 processes, 7655 failures, 639 minima, 118.7s
+{
+  "head": "25a887e61ca9493711316ba368771ddce6dce63c",
+  "go": "go version go1.27.3 linux/amd64",
+  "seed": 25887,
+  "cpus": "0",
+  "generated": 26332,
+  "tested": 26332,
+  "strand_processes": 45139,
+  "elapsed_seconds_not_benchmark": 120.197,
+  "summary": {
+    "numeric-isolated": {
+      "cases": 249,
+      "scanner_error_free": 249,
+      "match": 249
+    },
+    "complete-program": {
+      "cases": 344,
+      "scanner_error_free": 338,
+      "parse_valid": 338,
+      "type_valid": 338,
+      "match": 319,
+      "scanner_error_inputs": 6,
+      "divergence": 19,
+      "nonzero_status": 9,
+      "valid_complete_program_divergence": 19
+    },
+    "operators": {
+      "cases": 5804,
+      "scanner_error_free": 5782,
+      "match": 5782,
+      "scanner_error_inputs": 22
+    },
+    "numeric-adjacent": {
+      "cases": 10966,
+      "scanner_error_free": 10347,
+      "divergence": 7551,
+      "scanner_error_inputs": 619,
+      "match": 2796
+    },
+    "quoted-adjacent": {
+      "cases": 729,
+      "scanner_error_free": 729,
+      "match": 729
+    },
+    "semicolons-comments": {
+      "cases": 2166,
+      "scanner_error_free": 2166,
+      "match": 2163,
+      "divergence": 3
+    },
+    "mixed": {
+      "cases": 6000,
+      "scanner_error_inputs": 1176,
+      "scanner_error_free": 4824,
+      "match": 4719,
+      "divergence": 105
+    },
+    "unicode": {
+      "cases": 25,
+      "scanner_error_free": 19,
+      "match": 19,
+      "scanner_error_inputs": 6
+    },
+    "edge": {
+      "cases": 27,
+      "scanner_error_free": 27,
+      "match": 15,
+      "divergence": 12,
+      "nonzero_status": 9
+    },
+    "excluded-input": {
+      "cases": 9,
+      "scanner_error_inputs": 9
+    },
+    "escaped-runs": {
+      "cases": 13,
+      "scanner_error_free": 13,
+      "match": 13
+    }
+  },
+  "unique_minima": 667
+}

@@ -1,0 +1,4 @@
+package p
+var x = 3 /*one
+ two*/ + 5
+func f() { x++ }

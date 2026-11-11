@@ -1,0 +1,22 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/divide:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	b9 40 4b 4c 00       	mov    $0x4c4b40,%ecx
+  401005:	bb 03 00 00 00       	mov    $0x3,%ebx
+  40100a:	b8 40 e2 01 00       	mov    $0x1e240,%eax
+
+000000000040100f <loop>:
+  40100f:	31 d2                	xor    %edx,%edx
+  401011:	f7 f3                	div    %ebx
+
+0000000000401013 <after_divide>:
+  401013:	90                   	nop
+  401014:	ff c9                	dec    %ecx
+  401016:	75 f7                	jne    40100f <loop>
+  401018:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  40101d:	31 ff                	xor    %edi,%edi
+  40101f:	0f 05                	syscall

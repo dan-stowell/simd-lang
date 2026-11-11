@@ -161,3 +161,40 @@ the file and its evidence (`reviews/audit4-*`) as they were left. What it had es
 
 Not established, because the audit stopped: its memory-safety section. That is the part I
 most wanted, with eleven new primitives that write through computed addresses.
+
+## Review 8 — fifth audit, of the Go lexer; unfinished (2026-11-11)
+
+Started by me against `25a887e` (astra, x-high). It ran three campaigns and then stalled the
+same way as the fourth (the provider flagged a request, then the model went silent); there
+is no AUDIT_5.md. Its evidence is in `reviews/audit5/` as it was left; I ran its speed
+harness myself afterwards (`reviews/audit5/speed/logs/final/`).
+
+| finding | verdict | action |
+|---|---|---|
+| **Corpus equality reproduces** (17,047,917 tokens; 1, 2, 3, 8 CPUs; all 128 prefix alignments; tokens and comments over 1 MiB) | — | none needed |
+| **`x.0`, `.0.0`, `return.5`: a dot before a digit starts a float also after an identifier or a float.** The lexer made it an operator. | correct. `return.5` is in a valid Go program. | fixed |
+| **`0a`, `1ii`, `1e2x`: a number ends where `scanNumber` ends it**; the lexer let any letter continue it. go/scanner accepts these without error, as two tokens. | correct | fixed |
+| **`...0`: the third dot of an ellipsis was taken for the start of `.0`** and the first two dots vanished | correct | fixed |
+| A complete, valid file that does not end in a newline (`package p`) is refused with status 3; 14 corpus files had a newline appended | correct; documented, but worse than I made it sound | open, next |
+| A leading byte-order mark becomes an identifier | correct; documented as excluded | open |
+| Carriage returns: no mismatch found in dedicated controls | so that exclusion was over-cautious | GOLEX.md says so |
+| **go/scanner is not the scanner the Go compiler uses.** `cmd/compile/internal/syntax` scans the corpus in 497-513 ms on one core, against 549-596 for go/scanner | correct, and the baseline that matters | GOLEX.md's table has both. On one core Strand's whole process (447-453 ms) is about 10% under the compiler scanner's scan alone, not 25%. |
+| The sampling profiler is neither a CPU profile nor an unbiased wall-clock one: kernel time is under-sampled (one sample for 80 ms of page population), a sleeping process is sampled at full rate, other threads are not followed | correct | GOLEX.md calls the percentages "shares of samples on one core"; the 85 ms kernel figure never came from the sampler (it is `time`'s system time) and is now attributed |
+| `simdratio` counts a `rep` instruction once per iteration, swallows signals, and does not follow threads; `whattime.py` charges a line's prologue to the line before | correct | documented in the tools' headers; on the lexer's large-input profile the prologue effect is one sample in 1,350 |
+| The instruction classifier agrees with objdump on all 2,904 instructions of the lexer | — | none needed |
+
+The three lexer bugs were one mistake: I wrote the word automaton from my idea of Go's
+numbers instead of from `scanNumber`, and tested it on a corpus of programs people had
+already compiled. The automaton is now a transcription of `scanNumber` for input it accepts
+(`examples/golex_gen.py`, section 2), still eight states: dots of a possible `...` are
+counted in the automaton that needs to know (a float cannot start on the third), a `0x`
+prefix is recognised from the two bytes before it rather than by a state for "just a 0",
+and the state after an exponent letter and the state after the suffix `i` are folded into
+their neighbours with one input class each. `tests/golex_fuzz.py` is the test I should have
+had: random lines built from the pieces where token boundaries are decided, filtered by
+go/scanner to those it accepts, compared token for token. It found a fourth bug of the same
+family within a second (`0X1F0b`: a `b` after a zero inside a hex number is a digit, not a
+binary prefix), and has since agreed on 1.3 million accepted lines; all 642 of the audit's
+applicable minimal witnesses pass. The lexer's time did not change (447-453 ms).
+
+Not reached by the audit: memory safety, again.

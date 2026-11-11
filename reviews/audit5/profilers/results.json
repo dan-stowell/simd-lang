@@ -1,0 +1,872 @@
+[
+  {
+    "argv": [
+      "uname",
+      "-a"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0028774959937436506,
+    "user": 0.001638,
+    "system": 0.0,
+    "faults": 81,
+    "stdout": "Linux ssimd 6.12.115 #1 SMP Tue Nov  3 05:28:18 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "git",
+      "-C",
+      "/home/exedev/simd-lang",
+      "rev-parse",
+      "HEAD"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0033020199989550747,
+    "user": 0.0,
+    "system": 0.0030169999999999997,
+    "faults": 154,
+    "stdout": "25a887e61ca9493711316ba368771ddce6dce63c\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "gcc",
+      "--version"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.002097411997965537,
+    "user": 0.00193,
+    "system": 0.0,
+    "faults": 97,
+    "stdout": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "gcc",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/tools/sample.c"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.09548582099523628,
+    "user": 0.048375999999999995,
+    "system": 0.045455,
+    "faults": 4728,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "gcc",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "/home/exedev/simd-lang/tools/simdratio.c"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.11420648400235223,
+    "user": 0.08215800000000001,
+    "system": 0.030995999999999996,
+    "faults": 5280,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/normal",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/normal.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.020419621003384236,
+    "user": 0.005707999999999991,
+    "system": 0.014076999999999992,
+    "faults": 1541,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/normal"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.002935354001238011,
+    "user": 0.0,
+    "system": 0.002491000000000007,
+    "faults": 305,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/normal:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb9 64 00 00 00       \tmov    $0x64,%ecx\n\n0000000000401005 <loop>:\n  401005:\tc5 fd ef c0          \tvpxor  %ymm0,%ymm0,%ymm0\n  401009:\tff c9                \tdec    %ecx\n  40100b:\t75 f8                \tjne    401005 <loop>\n  40100d:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401012:\t31 ff                \txor    %edi,%edi\n  401014:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/normal"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.049838325001474004,
+    "user": 0.013047000000000003,
+    "system": 0.031200999999999993,
+    "faults": 16551,
+    "stdout": "",
+    "stderr": "                           stub      generated            all    share\nvector                        0            100            100    32.9%\ngather/scatter                0              0              0     0.0%\nmask                          0              0              0     0.0%\nscalar                        0            204            204    67.1%\ntotal                         0            304            304   (1 system calls; exit status 0)\n"
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/trap",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/trap.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.02388740100286668,
+    "user": 0.01330300000000001,
+    "system": 0.010215000000000002,
+    "faults": 1538,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/trap"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.003224381995096337,
+    "user": 0.0,
+    "system": 0.002846000000000015,
+    "faults": 301,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/trap:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tcc                   \tint3\n  401001:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401006:\t31 ff                \txor    %edi,%edi\n  401008:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/trap"
+    ],
+    "status": -5,
+    "timeout": false,
+    "wall": 0.0007283450031536631,
+    "user": 0.00042299999999997895,
+    "system": 0.0,
+    "faults": 3,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/trap"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.028014994000841398,
+    "user": 0.01122300000000001,
+    "system": 0.014786999999999995,
+    "faults": 16560,
+    "stdout": "",
+    "stderr": "                           stub      generated            all    share\nvector                        0              0              0     0.0%\ngather/scatter                0              0              0     0.0%\nmask                          0              0              0     0.0%\nscalar                        0              4              4   100.0%\ntotal                         0              4              4   (1 system calls; exit status 0)\n"
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/trap"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.009168099997623358,
+    "user": 0.004057000000000005,
+    "system": 0.003970000000000001,
+    "faults": 4267,
+    "stdout": "",
+    "stderr": "1 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401001": 1
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/fault",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/fault.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.023213699998450466,
+    "user": 0.011745000000000005,
+    "system": 0.011038999999999993,
+    "faults": 1535,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/fault"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.003983775000961032,
+    "user": 0.0,
+    "system": 0.0036380000000000023,
+    "faults": 305,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/fault:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\t0f 0b                \tud2\n  401002:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401007:\t31 ff                \txor    %edi,%edi\n  401009:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/fault"
+    ],
+    "status": -4,
+    "timeout": false,
+    "wall": 0.0008819080030662008,
+    "user": 0.0,
+    "system": 0.0004599999999999882,
+    "faults": 3,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/fault"
+    ],
+    "status": -9,
+    "timeout": true,
+    "wall": 0.15103527099563507,
+    "user": 0.017913999999999985,
+    "system": 0.06692600000000001,
+    "faults": 149,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/fault"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.009888993998174556,
+    "user": 0.004281000000000007,
+    "system": 0.004280999999999979,
+    "faults": 4266,
+    "stdout": "",
+    "stderr": "1 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401000": 1
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/repeated",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/repeated.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.024219455997808836,
+    "user": 0.00587399999999999,
+    "system": 0.017986000000000002,
+    "faults": 1543,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/repeated"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0020502609986579046,
+    "user": 0.0,
+    "system": 0.0016710000000000336,
+    "faults": 299,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/repeated:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\t48 8d 3d f9 0f 00 00 \tlea    0xff9(%rip),%rdi        # 402000 <buf>\n  401007:\tb9 64 00 00 00       \tmov    $0x64,%ecx\n  40100c:\t31 c0                \txor    %eax,%eax\n  40100e:\tf3 aa                \trep stos %al,%es:(%rdi)\n  401010:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401015:\t31 ff                \txor    %edi,%edi\n  401017:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/repeated"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.029500988996005617,
+    "user": 0.008816999999999992,
+    "system": 0.01847199999999999,
+    "faults": 16559,
+    "stdout": "",
+    "stderr": "                           stub      generated            all    share\nvector                        0              0              0     0.0%\ngather/scatter                0              0              0     0.0%\nmask                          0              0              0     0.0%\nscalar                        0            106            106   100.0%\ntotal                         0            106            106   (1 system calls; exit status 0)\n"
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/clone",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/clone.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.023851516998547595,
+    "user": 0.011577000000000004,
+    "system": 0.011480999999999963,
+    "faults": 1545,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/clone"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0019836889987345785,
+    "user": 0.001585000000000003,
+    "system": 0.0,
+    "faults": 303,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/clone:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\t48 8d 35 11 10 00 00 \tlea    0x1011(%rip),%rsi        # 402018 <stack>\n  401007:\tbf 00 0f 05 00       \tmov    $0x50f00,%edi\n  40100c:\t31 d2                \txor    %edx,%edx\n  40100e:\t45 31 d2             \txor    %r10d,%r10d\n  401011:\t45 31 c0             \txor    %r8d,%r8d\n  401014:\tb8 38 00 00 00       \tmov    $0x38,%eax\n  401019:\t0f 05                \tsyscall\n  40101b:\t85 c0                \ttest   %eax,%eax\n  40101d:\t74 23                \tje     401042 <worker>\n\n000000000040101f <parent_wait>:\n  40101f:\tb8 23 00 00 00       \tmov    $0x23,%eax\n  401024:\t48 8d 3d d5 0f 00 00 \tlea    0xfd5(%rip),%rdi        # 402000 <delay>\n  40102b:\t31 f6                \txor    %esi,%esi\n  40102d:\t0f 05                \tsyscall\n  40102f:\t48 83 3d d9 0f 00 00 \tcmpq   $0x1,0xfd9(%rip)        # 402010 <done>\n  401036:\t01 \n  401037:\t75 e6                \tjne    40101f <parent_wait>\n  401039:\tb8 e7 00 00 00       \tmov    $0xe7,%eax\n  40103e:\t31 ff                \txor    %edi,%edi\n  401040:\t0f 05                \tsyscall\n\n0000000000401042 <worker>:\n  401042:\tb9 80 96 98 00       \tmov    $0x989680,%ecx\n\n0000000000401047 <worker_loop>:\n  401047:\tc5 fd ef c0          \tvpxor  %ymm0,%ymm0,%ymm0\n  40104b:\tff c9                \tdec    %ecx\n  40104d:\t75 f8                \tjne    401047 <worker_loop>\n  40104f:\t48 c7 05 b6 0f 00 00 \tmovq   $0x1,0xfb6(%rip)        # 402010 <done>\n  401056:\t01 00 00 00 \n  40105a:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  40105f:\t31 ff                \txor    %edi,%edi\n  401061:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/clone"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.05543159200169612,
+    "user": 0.003280000000000005,
+    "system": 0.0,
+    "faults": 84,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/clone"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.09896713299531257,
+    "user": 0.039387000000000005,
+    "system": 0.007431000000000021,
+    "faults": 16561,
+    "stdout": "",
+    "stderr": "                           stub      generated            all    share\nvector                        0              0              0     0.0%\ngather/scatter                0              0              0     0.0%\nmask                          0              0              0     0.0%\nscalar                        0             18             18   100.0%\ntotal                         0             18             18   (3 system calls; exit status 0)\n"
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/clone"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.059371358998760115,
+    "user": 0.011114000000000013,
+    "system": 0.0025450000000000195,
+    "faults": 4266,
+    "stdout": "",
+    "stderr": "140 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x40102f": 140
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/sleep.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.025084328000957612,
+    "user": 0.011668999999999985,
+    "system": 0.012261999999999995,
+    "faults": 1544,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.004246301999955904,
+    "user": 0.0,
+    "system": 0.003774999999999973,
+    "faults": 306,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb8 23 00 00 00       \tmov    $0x23,%eax\n  401005:\t48 8d 3d f4 0f 00 00 \tlea    0xff4(%rip),%rdi        # 402000 <delay>\n  40100c:\t31 f6                \txor    %esi,%esi\n  40100e:\t0f 05                \tsyscall\n\n0000000000401010 <after_sleep>:\n  401010:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401015:\t31 ff                \txor    %edi,%edi\n  401017:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.20244305800588336,
+    "user": 0.001800999999999997,
+    "system": 0.0,
+    "faults": 83,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.22058319999632658,
+    "user": 0.012834999999999985,
+    "system": 0.027307000000000026,
+    "faults": 4258,
+    "stdout": "",
+    "stderr": "496 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401010": 496
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/busy.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.022812000999692827,
+    "user": 0.014269000000000032,
+    "system": 0.008085999999999982,
+    "faults": 1541,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0021868069961783476,
+    "user": 0.0,
+    "system": 0.0018119999999999803,
+    "faults": 300,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/busy:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb9 00 a3 e1 11       \tmov    $0x11e1a300,%ecx\n\n0000000000401005 <loop>:\n  401005:\tff c9                \tdec    %ecx\n  401007:\t75 fc                \tjne    401005 <loop>\n  401009:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  40100e:\t31 ff                \txor    %edi,%edi\n  401010:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10203648999595316,
+    "user": 0.096107,
+    "system": 0.0,
+    "faults": 83,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10616572500293842,
+    "user": 0.09346599999999994,
+    "system": 0.0029060000000000197,
+    "faults": 4264,
+    "stdout": "",
+    "stderr": "271 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401007": 271
+    }
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10748199199588271,
+    "user": 0.089109,
+    "system": 0.007902999999999993,
+    "faults": 4266,
+    "stdout": "",
+    "stderr": "287 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401007": 287
+    }
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/busy"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10592703300062567,
+    "user": 0.08330500000000007,
+    "system": 0.012759999999999994,
+    "faults": 4263,
+    "stdout": "",
+    "stderr": "271 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401007": 271
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/populate.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.021975171002850402,
+    "user": 0.007469999999999977,
+    "system": 0.014046000000000003,
+    "faults": 1544,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0038994670030660927,
+    "user": 0.0,
+    "system": 0.0035229999999999984,
+    "faults": 304,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/populate:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb8 09 00 00 00       \tmov    $0x9,%eax\n  401005:\t31 ff                \txor    %edi,%edi\n  401007:\tbe 00 00 00 10       \tmov    $0x10000000,%esi\n  40100c:\tba 03 00 00 00       \tmov    $0x3,%edx\n  401011:\t41 ba 22 80 00 00    \tmov    $0x8022,%r10d\n  401017:\t49 c7 c0 ff ff ff ff \tmov    $0xffffffffffffffff,%r8\n  40101e:\t45 31 c9             \txor    %r9d,%r9d\n\n0000000000401021 <population_syscall>:\n  401021:\t0f 05                \tsyscall\n\n0000000000401023 <after_population>:\n  401023:\tb9 00 87 93 03       \tmov    $0x3938700,%ecx\n\n0000000000401028 <busy_loop>:\n  401028:\tff c9                \tdec    %ecx\n  40102a:\t75 fc                \tjne    401028 <busy_loop>\n  40102c:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  401031:\t31 ff                \txor    %edi,%edi\n  401033:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10249324300093576,
+    "user": 0.018708999999999976,
+    "system": 0.07848100000000002,
+    "faults": 65618,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10977328899753047,
+    "user": 0.026850999999999958,
+    "system": 0.07660100000000003,
+    "faults": 69801,
+    "stdout": "",
+    "stderr": "38 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401023": 1,
+      "0x40102a": 37
+    }
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10319673000049079,
+    "user": 0.015060000000000073,
+    "system": 0.08291899999999996,
+    "faults": 65618,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.11147807499946794,
+    "user": 0.022175999999999974,
+    "system": 0.08289099999999994,
+    "faults": 69801,
+    "stdout": "",
+    "stderr": "57 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401023": 1,
+      "0x40102a": 56
+    }
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10309054900426418,
+    "user": 0.015085000000000015,
+    "system": 0.08286800000000005,
+    "faults": 65618,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/populate"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.11254299000574974,
+    "user": 0.024339,
+    "system": 0.082372,
+    "faults": 69801,
+    "stdout": "",
+    "stderr": "38 samples (0 outside the program: kernel or stub)\n",
+    "samples": {
+      "0x401023": 1,
+      "0x40102a": 37
+    }
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/outside",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/outside.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.02270310599851655,
+    "user": 0.011392999999999986,
+    "system": 0.010989999999999944,
+    "faults": 1548,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "objdump",
+      "-d",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/outside"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.0038243730014073662,
+    "user": 0.0,
+    "system": 0.0035600000000000076,
+    "faults": 305,
+    "stdout": "\n/home/exedev/simd-lang/reviews/audit5/profilers/work/outside:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000401000 <_start>:\n  401000:\tb9 00 a3 e1 11       \tmov    $0x11e1a300,%ecx\n\n0000000000401005 <loop>:\n  401005:\tff c9                \tdec    %ecx\n  401007:\t75 fc                \tjne    401005 <loop>\n  401009:\tb8 3c 00 00 00       \tmov    $0x3c,%eax\n  40100e:\t31 ff                \txor    %edi,%edi\n  401010:\t0f 05                \tsyscall\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "gcc",
+      "-nostdlib",
+      "-no-pie",
+      "-Wl,--build-id=none,-Ttext=0x900000",
+      "-o",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/outside",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/outside.S"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.024136248997820076,
+    "user": 0.01300800000000002,
+    "system": 0.009750000000000036,
+    "faults": 1542,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/outside"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.10182085300039034,
+    "user": 0.08365599999999995,
+    "system": 0.011267000000000027,
+    "faults": 4262,
+    "stdout": "",
+    "stderr": "261 samples (261 outside the program: kernel or stub)\n",
+    "samples": {}
+  },
+  {
+    "argv": [
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/sample",
+      "/definitely/not/a/program"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.01691588399989996,
+    "user": 0.012336000000000014,
+    "system": 0.0040919999999999845,
+    "faults": 4184,
+    "stdout": "",
+    "stderr": "0 samples (0 outside the program: kernel or stub)\n"
+  },
+  {
+    "argv": [
+      "/home/exedev/simd-lang/reviews/audit5/profilers/work/simdratio",
+      "0",
+      "/definitely/not/a/program"
+    ],
+    "status": 0,
+    "timeout": false,
+    "wall": 0.001959422996151261,
+    "user": 0.0018129999999999535,
+    "system": 0.0,
+    "faults": 83,
+    "stdout": "",
+    "stderr": "                           stub      generated            all    share\nvector                        0              0              0     0.0%\ngather/scatter                0              0              0     0.0%\nmask                          0              0              0     0.0%\nscalar                        0              0              0     0.0%\ntotal                         0              0              0   (0 system calls; exit status 127)\n"
+  }
+]

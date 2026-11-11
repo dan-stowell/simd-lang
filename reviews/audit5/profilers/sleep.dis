@@ -1,0 +1,16 @@
+
+/home/exedev/simd-lang/reviews/audit5/profilers/work/sleep:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	b8 23 00 00 00       	mov    $0x23,%eax
+  401005:	48 8d 3d f4 0f 00 00 	lea    0xff4(%rip),%rdi        # 402000 <delay>
+  40100c:	31 f6                	xor    %esi,%esi
+  40100e:	0f 05                	syscall
+
+0000000000401010 <after_sleep>:
+  401010:	b8 3c 00 00 00       	mov    $0x3c,%eax
+  401015:	31 ff                	xor    %edi,%edi
+  401017:	0f 05                	syscall

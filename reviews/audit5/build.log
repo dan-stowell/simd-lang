@@ -1,0 +1,6 @@
+stencils: 539 bodies + 162 prologues, 33294 bytes; stub 6144 bytes; tables.strand 157339 bytes
+stage1 == stage2 (SIMD compiler reproduces the scalar reference)
+stage2 == stage3 (fixed point)
+775caa82dce37a5f42b31b816c64d100ff8aa1fb17c9d57fbc0752d70f5a0d81  build/stage1
+775caa82dce37a5f42b31b816c64d100ff8aa1fb17c9d57fbc0752d70f5a0d81  build/stage2
+775caa82dce37a5f42b31b816c64d100ff8aa1fb17c9d57fbc0752d70f5a0d81  build/stage3

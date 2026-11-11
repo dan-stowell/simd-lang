@@ -1,0 +1,10 @@
+eb774e9a58f9d29c0296c29360338e19eb4040977a39ecc5753fd1762a18ee49  /usr/local/go/src/cmd/compile/internal/syntax/scanner.go
+d3696fb7dc2f63ebb9aeee224423426ce9f6cf47096029d36aed41763eea7349  /usr/local/go/src/cmd/compile/internal/syntax/source.go
+d9667c96873a3e1ae84fce948ef80d269a009a787496f088ab643b14b8bec192  /usr/local/go/src/cmd/compile/internal/syntax/tokens.go
+a59da3b0e566bba8dd963f2148ab0c5acbb93d1819886db6ffe7d6e9371be06e  /usr/local/go/src/cmd/compile/internal/syntax/token_string.go
+74c70571b540912e5e236fc1220752e92a1b94e15840f665a6b348cbc4bfaa90  /usr/local/go/src/go/scanner/scanner.go
+fac9e32b0a22562278d9fd23faada551d7c9f05dff2787d6e7dcec3f7ca18a23  /usr/local/go/src/go/token/token.go
+77d2670afcacc1b3658dd31c6e505122848fc3939c49a9acc9477a388269b860  /usr/local/go/src/go/token/position.go
+f0daf0180bc1a56813eea694aea1247c5558800faaddd44ba1bb274c4bf87e5e  ../../../explore/golex/main.go
+d62f2838bf0da7195c3a179d71aa441b3f954775cce838529a3d90586f8ec607  ../../../examples/golex.strand
+775caa82dce37a5f42b31b816c64d100ff8aa1fb17c9d57fbc0752d70f5a0d81  ../../../build/stage2
