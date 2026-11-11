@@ -1,12 +1,13 @@
 # NEXT
 
-State: MinIO cold 21.96 s (stock 54.2 s); kube-apiserver cold 53.4 s (stock 86.3 s). Both smoke tests pass.
+State: MinIO cold 21.3-24.1 s depending on the hour (stock 54.2 s); kube-apiserver 43.9 s (stock 86.3 s).
+Run `04-selfplan`: the driver plans by itself (Strand godecl consumed), pipelined patched compiler,
+-dwarf=false -l, GOGC=off. All differential tests and both smoke tests pass.
 
-1. Rung 4: plan without `go list`. The driver resolves the package graph itself while reading the sources:
-   go.mod build list -> module directories; files chosen by build constraints; imports from Strand's
-   declaration pass (examples/godecl.strand emits import paths and package clauses); breadth-first rounds.
-   Differential test: package set, file lists, import lists equal `go list -deps` on MinIO and kube-apiserver.
-2. Budgeted optimization (not before item 1): optional SSA passes off (`-d=ssa/<pass>/off`, about 7 core-s),
-   per-pass `time.Now` in ssa.Compile (1.3 s), cap on running back ends without stalling front ends.
-3. Spike: shape histogram for a template back end (IDEAS, kill test 2).
+1. Budgeted optimization of the compile row (A/B interleaved, because the host drifts):
+   optional SSA passes off via -d=ssa/<pass>/off; remove per-pass time.Now in ssa.Compile (patch);
+   limit oversubscription of back ends without stalling front ends (SIGSTOP/SIGCONT beyond a cap).
+2. Spike: shape histogram for a template back end (IDEAS, kill test 2).
+3. A persistent godecl (one process, rounds over a pipe) to bring the declaration pass from 220 to ~100 ms.
 4. modinfo in the link (SCALAR_LEDGER.md).
+5. Divergence step again at journal entry 10.

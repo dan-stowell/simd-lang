@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One cold build with the driver (build/sb), instrumented like stock.sh, then the target's smoke test.
 #   sb.sh <name> <srcdir> <pkg> <label> [sb flags...]     -> $TRACES/<name>/sb-<label>/
-# WARM=1 leaves the page cache alone. SBENV='GOGC=off' sets the environment of every tool. The build runs in a
+# WARM=1 leaves the page cache alone. NOLEX=' ' leaves out the token pass (nothing consumes it). SBENV='GOGC=off' sets the environment of every tool. The build runs in a
 # memory-limited scope (SBMEM, default 22G) so that a runaway cannot take the machine down.
 set -u
 name=$1; src=$2; pkg=$3; label=$4; shift 4
@@ -17,7 +17,7 @@ read r0 w0 < <(disk)
 sampler=$!
 t0=$(date +%s.%N)
 /usr/bin/time -f 'user_s %U\nsys_s %S\nwall_s %e\nmaxrss_kb %M' -o "$out/time.txt" \
-  systemd-run --user --scope -q -p MemoryMax=${SBMEM:-22G} env ${SBENV:-SB=1} "$here/build/sb" -C "$src" -o "$out/bin" -lexer "$here/build/golex_strand" -trace "$out/trace.json" "$@" "$pkg" > "$out/build.log" 2>&1
+  systemd-run --user --scope -q -p MemoryMax=${SBMEM:-22G} env ${SBENV:-SB=1} "$here/build/sb" -C "$src" -o "$out/bin" ${NOLEX:--lexer "$here/build/golex_strand"} -trace "$out/trace.json" "$@" "$pkg" > "$out/build.log" 2>&1
 rc=$?
 t1=$(date +%s.%N)
 kill $sampler 2>/dev/null
@@ -40,5 +40,15 @@ if [ $rc = 0 ]; then
   esac
 fi
 rm -f "$out/bin"
+# REPS=n: n-1 more cold runs of the same build, wall clock only, so the trace can show the spread
+walls=$(grep '^wall_ms' "$out/meta.txt" | cut -d' ' -f2)
+for i in $(seq 2 ${REPS:-1}); do
+  sync; [ -n "${WARM:-}" ] || echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
+  a=$(date +%s.%N)
+  systemd-run --user --scope -q -p MemoryMax=${SBMEM:-22G} env ${SBENV:-SB=1} "$here/build/sb" -C "$src" -o "$out/bin" ${NOLEX:--lexer "$here/build/golex_strand"} "$@" "$pkg" > /dev/null 2>&1 || walls="$walls FAILED"
+  b=$(date +%s.%N); rm -f "$out/bin"
+  walls="$walls $(echo "($b - $a) * 1000 / 1" | bc)"
+done
+echo "walls $walls" >> "$out/meta.txt"
 cat "$out/build.log" "$out/meta.txt"
 exit $rc

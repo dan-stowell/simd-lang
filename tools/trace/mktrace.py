@@ -389,7 +389,8 @@ def sb_section(name, L, out, stock):
     gb = cen['go_bytes']; inb = gb + cen['s_bytes'] + cen['embed_bytes']; binb = int(m['bin_bytes'])
     tick = lambda n, t: n * t / (NCPU * TICKS)
     objb = next((ph['bytes'] for ph in tr['phases'] if ph['name'].startswith('compile')), 0)
-    floors = {'plan': max(tick(gb, MODEL['lex']), gb / mem if mem else 0), 'read': inb / small if small else 0,
+    floors = {'plan + read': inb / small if small else 0, 'declarations': max(tick(gb, MODEL['lex']), gb / mem if mem else 0),
+              'plan': max(tick(gb, MODEL['lex']), gb / mem if mem else 0), 'read': inb / small if small else 0,
               'lex': max(tick(gb, MODEL['lex']), gb / mem if mem else 0),
               'compile': tick(gb, MODEL['parse'] + MODEL['types'] + MODEL['codegen']), 'link': (objb + binb) / mem if mem else 0,
               'write': binb / wbw if wbw else 0}
@@ -397,6 +398,10 @@ def sb_section(name, L, out, stock):
     out.append(f"Run `{label}` (driver at `{m.get('driver', '?')}`{', flags `' + m['flags'] + '`' if m.get('flags') else ''}). "
                f"Result: {m.get('smoke', 'no smoke test')}. "
                f"Stock `go build` on the same machine, cold: {ms(stock.wall) if stock else '?'} ms.\n")
+    ws = m.get('walls', '').split()
+    if len(ws) > 1:
+        out.append(f"Wall clock of {len(ws)} cold runs of this configuration, ms: {', '.join(f'{int(w):,}' if w.isdigit() else w for w in ws)}. "
+                   "The table is the first of them.\n")
     out.append('| phase | ms | cores busy | core-s | bytes moved | floor ms | ms / floor | who does it |')
     out.append('|---|---|---|---|---|---|---|---|')
     fetch = os.path.join(T, '..', f'{name}.fetch.time')
@@ -411,9 +416,10 @@ def sb_section(name, L, out, stock):
         seg = [v for t, v in busy if a <= t < b + 0.1]
         key = next((k for k in floors if ph['name'].startswith(k)), None)
         fl = floors.get(key, 0); ftot += fl
-        who = ph['name'][ph['name'].index('(') + 1:-1] if '(' in ph['name'] else 'driver'
+        who = ph['name'][ph['name'].index('(') + 1:ph['name'].index(')')] if '(' in ph['name'] else 'driver'
         nm = ph['name'].split(' (')[0]
-        nm = {'plan': 'plan (package graph)', 'lex': 'lex (tokens; not yet consumed)', 'compile': 'parse + resolve/types + lower/codegen'}.get(nm, nm)
+        nm = {'plan': 'plan (package graph)', 'plan + read': 'plan (package graph) + read inputs', 'lex': 'lex (tokens; not yet consumed)',
+              'declarations': '&nbsp;&nbsp;of which lex + package-level declarations', 'compile': 'parse + resolve/types + lower/codegen'}.get(nm, nm)
         out.append(f"| {nm} | {ph['end_ms'] - ph['start_ms']:,.0f} | {sum(seg) / len(seg) if seg else 0:.1f} | {(ph['user_ms'] + ph['sys_ms']) / 1000:,.1f} | "
                    f"{fmt_bytes(ph['bytes'])} | {fl * 1000:,.0f} | {(b - a) / fl:,.0f}x | {who} |" if fl else
                    f"| {nm} | {ph['end_ms'] - ph['start_ms']:,.0f} | | | {fmt_bytes(ph['bytes'])} | | | {who} |")
@@ -455,16 +461,20 @@ def sb_section(name, L, out, stock):
         out.append('')
     if len(runs) > 1 or stock:
         out.append(f'### {name}: every rung so far (8 CPUs, cold)\n')
-        out.append('| run | wall ms | core-s | cores busy | plan | read | lex | compile | link | write | smoke test |')
+        out.append('Single cold runs. The host is shared: the same build has cost between 139 and 157 compile core-seconds '
+                   'at different times of the night, so differences under about 2 s between rows are not evidence; compare the phase columns.\n')
+        out.append('| run | wall ms | core-s | cores busy | plan | read | lex or declarations | compile | link | write | smoke test |')
         out.append('|---|---|---|---|---|---|---|---|---|---|---|')
         if stock:
             out.append(f"| stock `go build` | {ms(stock.wall)} | {stock.cpu:,.0f} | {stock.cpu / stock.wall:.2f} | | | | | {ms(stock.link()['dur'])} | | |")
         for lb, dd, mm in runs:
             t = json.load(open(os.path.join(dd, 'trace.json')))
             phd = {p['name'].split(' ')[0]: p['end_ms'] - p['start_ms'] for p in t['phases']}
+            if 'lex' in phd: phd['lexdecl'] = phd['lex']
+            if 'declarations' in phd: phd['lexdecl'] = phd['declarations']
             c = float(mm['user_s']) + float(mm['sys_s']); w = int(mm['wall_ms']) / 1000
             out.append(f"| `{lb}` {('(' + mm['flags'] + ')') if mm.get('flags') else ''} | {ms(w)} | {c:,.0f} | {c / w:.2f} | " +
-                       ' | '.join(f"{phd.get(k, 0):,.0f}" for k in ('plan', 'read', 'lex', 'compile', 'link', 'write')) +
+                       ' | '.join((f"{phd[k]:,.0f}" if k in phd else ('(in plan)' if k == 'read' and 'declarations' in phd else '')) for k in ('plan', 'read', 'lexdecl', 'compile', 'link', 'write')) +
                        f" | {'pass' if 'PASS' in mm.get('smoke', '') else mm.get('smoke', 'not run')} |")
         out.append('')
 

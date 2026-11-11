@@ -196,3 +196,42 @@ end state needs anyway: the build's front door. Today the plan is `go list` (0.5
 of the whole 2 s budget) followed by a separate read of the same files. Rung 4: the driver finds the
 package graph itself from the sources, in the same pass that reads them, with the import lists coming
 from Strand's declaration pass, differential-tested against `go list` on both targets.
+
+## 2026-11-12 00:10 UTC — iteration 7: rung 4, the plan without `go list`
+
+**Did.** `driver/plan.go`: the driver finds the package graph itself while it reads the sources.
+go.mod / go.work / vendor/modules.txt give the modules; each round lists the directories of the packages
+found in the round before, keeps the files go/build's own `MatchFile` accepts (run on the bytes just
+read), and runs Strand's declaration pass (`examples/godecl.strand`) over their concatenation; the
+import paths it reports are resolved to directories and become the next round. Ten rounds for MinIO,
+eleven for kube-apiserver. `go list` and the separate read phase are gone, and so is the token pass
+nobody consumed: **this is the first Strand phase whose output the build uses.**
+
+**Checked.** `tests/sb_plandiff.py`: the plan equals `go list -deps` field by field (directory, name, Go
+files, assembly files, imports, import map, embed patterns, module, go version, default GODEBUG) for
+all 1,312 MinIO packages and all 2,079 of kube-apiserver; it did so on the first run, including
+Kubernetes' workspace-plus-vendor layout. `tests/sb_plan.sh ... self`: every tool command line still
+equals `go build`'s. Smoke tests pass on both.
+
+**Trace.** MinIO, cold: plan + read + declarations **0.65 s** where go list + read + lex were 0.94 s.
+kube-apiserver: 0.60 s where they were 1.53 s. Inside it, cold: reading 0.37 s (the small-file limit
+measured in HARDWARE.md is 0.30 s; more readers than cores did not help), godecl 0.22 s, resolving
+imports 0.07 s.
+
+**Two things the trace taught.**
+- The rounds cost godecl 2.4x more per byte than one pass over everything (220 ms against 90 ms for
+  the same 75.5 MB): ten process starts, and the pool does not spread a 6 MB input over eight cores the
+  way it spreads 75 MB. A persistent godecl fed over a pipe would get most of that back. Not done.
+- **The host is noisy.** The same build, same flags, cost 139 compile core-seconds at 23:00 and 157 at
+  00:05; four consecutive cold runs gave 24.1, 24.1, 23.8, 22.1 s where an hour earlier they gave
+  21.3-22.0. Steal time is small (2-3.5 s); the cores are simply slower at times (shared hardware
+  threads, presumably). `tools/trace/sb.sh` now takes `REPS=n` and TRACE.md prints every wall clock.
+  Differences under about 2 s between single runs are not evidence; I compare phase rows.
+
+**Scope check.** Most ambitious: start the flat whole-program compiler (IDEAS). Why not: unchanged from
+iteration 6; it cannot be consumed tonight. What is left that moves the compile row with the stock
+compiler: optional SSA passes off (about 7 of 139 core-s), per-pass clock calls (1.3), and not
+oversubscribing back ends (the pipelined build burns about 5% more CPU than the unpipelined one).
+That is a pure optimization iteration; the last one was iteration 4, so the budget allows it. After it:
+the template back end's kill test 2 (shape histogram), the one cheap experiment that says whether the
+end state's back end can be stencils.

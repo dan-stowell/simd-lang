@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -53,6 +54,7 @@ type Pkg struct {
 	archive  string // what the linker reads
 	export   string // what importers read (the same file unless pipelining)
 	stubOnly bool
+	mod      *modInfo
 }
 
 type Action struct {
@@ -157,6 +159,11 @@ func main() {
 	workdirFlag := flag.String("workdir", "", "use exactly this work directory (for reproducible comparisons)")
 	flag.BoolVar(&noEarly, "noearly", false, "pipelining plumbing without the early export (the compiler behaves as stock): for differential tests")
 	maxBE := flag.Int("backends", 32, "pipelining: most compilers allowed in their back end at once (memory)")
+	planMode := flag.String("plan", "golist", "who finds the package graph: golist, or self (the driver, with Strand's declaration pass)")
+	decl := flag.String("decl", "", "Strand declaration pass binary (build/godecl), for -plan=self")
+	factsPath := flag.String("facts", "", "toolchain facts file (default: sb.facts next to this binary)")
+	mkfactsFlag := flag.Bool("mkfacts", false, "write the toolchain facts file and exit")
+	dumpPlan := flag.String("dumpplan", "", "write the plan (packages, files, imports) as JSON, for diffing against go list")
 	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
 	flag.Parse()
@@ -169,38 +176,110 @@ func main() {
 	os.Setenv("GOFLAGS", "")
 	runtime.GOMAXPROCS(*jobs)
 
-	// ---- plan: the package graph (delegated to go list)
-	st := ms()
-	u, s, js, err := run(*srcdir, []string{"go", "list", "-deps",
-		"-json=ImportPath,Dir,Name,GoFiles,SFiles,EmbedPatterns,EmbedFiles,Imports,ImportMap,Standard,Module,DefaultGODEBUG,Deps", pkgArg}, nil, nil)
+	if *factsPath == "" {
+		exe, _ := os.Executable()
+		*factsPath = filepath.Join(filepath.Dir(exe), "sb.facts")
+	}
+	if *mkfactsFlag {
+		mkfacts(*factsPath)
+		return
+	}
+	var err error
+	var workdir string
+	if *workdirFlag != "" {
+		workdir = *workdirFlag
+		err = os.MkdirAll(workdir, 0o755)
+	} else {
+		workdir, err = os.MkdirTemp(*work, "sb-")
+	}
 	if err != nil {
 		die("%v", err)
 	}
+	if !*keep {
+		cleanup = workdir
+		defer os.RemoveAll(workdir)
+		// a killed build (timeout, ^C) must not leave hundreds of megabytes in tmpfs
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-sig
+			os.RemoveAll(workdir)
+			os.Exit(130)
+		}()
+	}
+
 	var pkgs []*Pkg
 	byPath := map[string]*Pkg{}
-	dec := json.NewDecoder(bytes.NewReader(js))
-	for dec.More() {
-		p := new(Pkg)
-		if err := dec.Decode(p); err != nil {
-			die("go list: %v", err)
+	var goversion string
+	type file struct {
+		p    *Pkg
+		path string
+		data []byte
+	}
+	var gofiles []*file
+	var total int64
+	if *planMode == "self" {
+		// ---- plan + read inputs + declarations, in one pass over the sources (plan.go)
+		st := ms()
+		if *decl == "" {
+			die("-plan=self needs -decl <godecl binary>")
 		}
-		if p.ImportPath == "unsafe" {
-			continue
+		pl := newPlanner(*factsPath, *decl, workdir, *jobs)
+		dir := *srcdir
+		if pkgArg != "." {
+			dir = filepath.Join(*srcdir, pkgArg)
 		}
-		pkgs = append(pkgs, p)
-		byPath[p.ImportPath] = p
+		abs, _ := filepath.Abs(dir)
+		pl.loadModules(abs)
+		pkgs = pl.run(abs)
+		goroot, goversion = pl.facts.GOROOT, pl.facts.GOVERSION
+		for _, p := range pkgs {
+			byPath[p.ImportPath] = p
+		}
+		for _, f := range pl.files {
+			gofiles = append(gofiles, &file{p: f.pkg, path: filepath.Join(f.pkg.Dir, f.name), data: f.data})
+			total += int64(len(f.data)) + 1
+		}
+		phase("plan + read (driver; go.mod, build constraints)", st, pl.bytes, 0, 0,
+			fmt.Sprintf("%d packages, %d Go files, %d rounds", len(pkgs), pl.nfiles, pl.rounds))
+		// the declaration pass ran inside those rounds; report it as its own row (its wall clock is part of the row above)
+		traceMu.Lock()
+		trace.Phases = append(trace.Phases, Phase{"declarations (Strand godecl), inside plan + read", st, st + pl.declMs, pl.declCPU, 0, pl.bytes,
+			"package clauses and import paths of every file, consumed by the plan"})
+		traceMu.Unlock()
+	} else {
+		// ---- plan: the package graph (delegated to go list)
+		st := ms()
+		u, s, js, err := run(*srcdir, []string{"go", "list", "-deps",
+			"-json=ImportPath,Dir,Name,GoFiles,SFiles,EmbedPatterns,EmbedFiles,Imports,ImportMap,Standard,Module,DefaultGODEBUG,Deps", pkgArg}, nil, nil)
+		if err != nil {
+			die("%v", err)
+		}
+		dec := json.NewDecoder(bytes.NewReader(js))
+		for dec.More() {
+			p := new(Pkg)
+			if err := dec.Decode(p); err != nil {
+				die("go list: %v", err)
+			}
+			if p.ImportPath == "unsafe" {
+				continue
+			}
+			pkgs = append(pkgs, p)
+			byPath[p.ImportPath] = p
+		}
+		u2, s2, envOut, err := run(*srcdir, []string{"go", "env", "GOROOT", "GOVERSION"}, nil, nil)
+		if err != nil {
+			die("%v", err)
+		}
+		envv := strings.Fields(string(envOut))
+		goroot = envv[0]
+		goversion = envv[1]
+		phase("plan (go list)", st, int64(len(js)), u+u2, s+s2, fmt.Sprintf("%d packages", len(pkgs)))
 	}
 	main := pkgs[len(pkgs)-1]
 	if main.Name != "main" {
 		die("%s is not a main package", main.ImportPath)
 	}
-	u2, s2, envOut, err := run(*srcdir, []string{"go", "env", "GOROOT", "GOVERSION"}, nil, nil)
-	if err != nil {
-		die("%v", err)
-	}
-	envv := strings.Fields(string(envOut))
-	goroot = envv[0]
-	goversion := envv[1]
 	tooldir = filepath.Join(goroot, "pkg", "tool", "linux_amd64")
 	if compiler == "" {
 		compiler = filepath.Join(tooldir, "compile")
@@ -221,73 +300,57 @@ func main() {
 			d.users = append(d.users, p)
 		}
 	}
-	phase("plan (go list)", st, int64(len(js)), u+u2, s+s2, fmt.Sprintf("%d packages", len(pkgs)))
+	if *dumpPlan != "" {
+		j, _ := json.Marshal(pkgs)
+		os.WriteFile(*dumpPlan, j, 0o644)
+	}
 
-	// ---- read inputs: every source file, in parallel, into one buffer per kind
-	st = ms()
-	type file struct {
-		p    *Pkg
-		path string
-		data []byte
-	}
-	var gofiles []*file
-	var sbytes int64
-	for _, p := range pkgs {
-		for _, f := range p.GoFiles {
-			gofiles = append(gofiles, &file{p: p, path: filepath.Join(p.Dir, f)})
+	if *planMode != "self" {
+		// ---- read inputs: every source file, in parallel
+		st := ms()
+		var sbytes int64
+		for _, p := range pkgs {
+			for _, f := range p.GoFiles {
+				gofiles = append(gofiles, &file{p: p, path: filepath.Join(p.Dir, f)})
+			}
 		}
-	}
-	var wg sync.WaitGroup
-	chunk := (len(gofiles) + *jobs - 1) / *jobs
-	for w := 0; w < *jobs; w++ {
-		lo, hi := w*chunk, min((w+1)*chunk, len(gofiles))
-		if lo >= hi {
-			break
-		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for _, f := range gofiles[lo:hi] {
-				b, err := os.ReadFile(f.path)
-				if err != nil {
-					die("%v", err)
+		var wg sync.WaitGroup
+		chunk := (len(gofiles) + *jobs - 1) / *jobs
+		for w := 0; w < *jobs; w++ {
+			lo, hi := w*chunk, min((w+1)*chunk, len(gofiles))
+			if lo >= hi {
+				break
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for _, f := range gofiles[lo:hi] {
+					b, err := os.ReadFile(f.path)
+					if err != nil {
+						die("%v", err)
+					}
+					f.data = b
 				}
-				f.data = b
-			}
-		}()
-	}
-	wg.Wait()
-	var total int64
-	for _, f := range gofiles {
-		f.p.goBytes += int64(len(f.data))
-		total += int64(len(f.data)) + 1
-	}
-	for _, p := range pkgs {
-		for _, f := range p.SFiles {
-			if fi, err := os.Stat(filepath.Join(p.Dir, f)); err == nil {
-				sbytes += fi.Size()
+			}()
+		}
+		wg.Wait()
+		for _, f := range gofiles {
+			f.p.goBytes += int64(len(f.data))
+			total += int64(len(f.data)) + 1
+		}
+		for _, p := range pkgs {
+			for _, f := range p.SFiles {
+				if fi, err := os.Stat(filepath.Join(p.Dir, f)); err == nil {
+					sbytes += fi.Size()
+				}
 			}
 		}
+		phase("read inputs", st, total, 0, 0, fmt.Sprintf("%d Go files; %d bytes of assembly left to asm", len(gofiles), sbytes))
 	}
-	var workdir string
-	if *workdirFlag != "" {
-		workdir = *workdirFlag
-		err = os.MkdirAll(workdir, 0o755)
-	} else {
-		workdir, err = os.MkdirTemp(*work, "sb-")
-	}
-	if err != nil {
-		die("%v", err)
-	}
-	if !*keep {
-		cleanup = workdir
-		defer os.RemoveAll(workdir)
-	}
-	phase("read inputs", st, total, 0, 0, fmt.Sprintf("%d Go files; %d bytes of assembly left to asm", len(gofiles), sbytes))
 
 	// ---- lex: Strand's Go lexer over the concatenation of every Go file
 	if *lexer != "" {
-		st = ms()
+		st := ms()
 		corpus := make([]byte, 0, total)
 		for _, f := range gofiles {
 			corpus = append(corpus, f.data...)
@@ -319,7 +382,7 @@ func main() {
 	}
 
 	// ---- compile: stock compile/asm per package, in dependency order
-	st = ms()
+	st := ms()
 	// priority = own cost + the most expensive chain of users above
 	var prio func(p *Pkg) float64
 	seen := map[*Pkg]bool{}
@@ -492,7 +555,7 @@ func main() {
 		fmt.Println(workdir)
 		return
 	}
-	u, s, _, err = run(workdir, argv, nil, nil)
+	u, s, _, err := run(workdir, argv, nil, nil)
 	if err != nil {
 		die("%v", err)
 	}
