@@ -228,3 +228,14 @@ answer, complete.
 While this review ran its tests in one checkout and I ran mine in another, `tests/pool.py`
 reported three empty outputs: both runs were writing their inputs to `/tmp/strand_pool`.
 The tests now use private directories.
+
+## Overnight 2026-11-11/12: background reviews of the build-speed work
+
+One line per inbox item; raw files in `reviews/done/`.
+
+| file | reviewer said | verdict | action |
+|---|---|---|---|
+| `20261111T2236-codex-skeptic.md` (1) | Early export leaves the front-end chain, single giant functions (the four go-json VM packages) and the link serial. | **Accept** as a statement of what the rung does not do. | Measured after the rung: the chain is 12.1 s, of which `minio/cmd` alone is 9.1 s. Its front end is one thread inside one process; that is now the chain. |
+| (2) | The 3 ms link floor is a copy of the output at memory bandwidth, not a linker floor. | **Accept.** | Floor now counts one pass over the objects in plus the binary out, and TRACE.md says it is a copy floor with no model of symbol resolution or relocation. |
+| (3) | Scheduling stock work is a dead end: 265 core-s / 8 is 33 s against 16. Build a whole-program representation and schedule functions globally. | **Accept the diagnosis.** | Rungs 2 and 3 took the cheap cuts first (now 144 core-s). The next rung removes work rather than scheduling it: whole-program reachability before code generation. |
+| (4) | The ambitious step is a Strand back end for a subset of real functions, fed into a real MinIO binary. | **Defer**, with a reason: a subset back end covering a few percent of functions cannot move the trace tonight, and it needs function-granular scheduling and reachability first, which is the next rung. Recorded in IDEAS.md. | — |

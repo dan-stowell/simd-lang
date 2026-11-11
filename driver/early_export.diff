@@ -1,0 +1,71 @@
+--- /usr/local/go/src/cmd/compile/internal/gc/main.go	2026-10-19 22:20:36.000000000 +0000
++++ main.go	2026-11-11 22:46:33.019822951 +0000
+@@ -313,6 +313,16 @@
+ 	//
+ 	// There are cyclic dependencies between all of these phases, so we
+ 	// need to iterate all of them until we reach a fixed point.
++	// sb: pipelining. Everything the export data records is decided by now.
++	if base.Flag.LinkObj != "" && os.Getenv("SB_EARLY_EXPORT") != "" {
++		base.Timer.Start("fe", "earlyexport")
++		dumpobj1(base.Flag.LowerO+".tmp", modeCompilerObj)
++		if err := os.Rename(base.Flag.LowerO+".tmp", base.Flag.LowerO); err != nil {
++			base.Fatalf("%v", err)
++		}
++		earlyExport = true
++		os.Stdout.WriteString("sb:export-ready\n")
++	}
+ 	base.Timer.Start("be", "compilefuncs")
+ 	for nextFunc, nextExtern := 0, 0; ; {
+ 		reflectdata.WriteRuntimeTypes()
+--- /usr/local/go/src/cmd/compile/internal/gc/obj.go	2026-10-19 22:20:36.000000000 +0000
++++ obj.go	2026-11-11 22:46:33.019822951 +0000
+@@ -41,12 +41,17 @@
+ 	modeLinkerObj
+ )
+ 
++// earlyExport: the compiler object was already written, before the back end ran (sb).
++var earlyExport bool
++
+ func dumpobj() {
+ 	if base.Flag.LinkObj == "" {
+ 		dumpobj1(base.Flag.LowerO, modeCompilerObj|modeLinkerObj)
+ 		return
+ 	}
+-	dumpobj1(base.Flag.LowerO, modeCompilerObj)
++	if !earlyExport {
++		dumpobj1(base.Flag.LowerO, modeCompilerObj)
++	}
+ 	dumpobj1(base.Flag.LinkObj, modeLinkerObj)
+ }
+ 
+--- /usr/local/go/src/cmd/internal/obj/objfile.go	2026-10-19 22:20:36.000000000 +0000
++++ ../../../internal/obj/objfile.go	2026-11-11 22:46:33.019822951 +0000
+@@ -548,10 +548,20 @@
+ 			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+ 			h.Write(tmp[:4])
+ 		case goobj.PkgIdxSelf:
++			if sbHashByName {
++				h.Write([]byte{2})
++				io.WriteString(h, rs.Name)
++				break
++			}
+ 			io.WriteString(h, w.pkgpath)
+ 			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+ 			h.Write(tmp[:4])
+ 		default:
++			if sbHashByName {
++				h.Write([]byte{2})
++				io.WriteString(h, rs.Name)
++				break
++			}
+ 			io.WriteString(h, rs.Pkg)
+ 			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+ 			h.Write(tmp[:4])
+@@ -966,3 +976,7 @@
+ func relocByOffCmp(x, y Reloc) int {
+ 	return cmp.Compare(x.Off, y.Off)
+ }
++
++// sbHashByName (sb): hash relocation targets of content-addressed symbols by name, never by index,
++// so that packages that import by name and packages that import by index compute the same hash.
++var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""

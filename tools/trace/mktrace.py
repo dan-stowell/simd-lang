@@ -359,19 +359,21 @@ def sb_busy(d, m):
 
 
 def sb_chain(tr):
-    """Longest chain through the driver's actions. An action can start when its deps have released it
-    (ready_ms); the chain follows, from the last action back, whichever dep finished last."""
-    acts = {a['pkg'] + ':' + a['kind'].replace('compile+asm', 'compile'): a for a in tr['actions']}
+    """The chain that decides when the build can end. Walk back from the package that finished last: each
+    step goes to the dependency whose release (its export data, or its exit when not pipelining) came last.
+    The chain's length is what those packages needed before releasing the next one (front ends, or whole
+    compiles), plus the whole of the last package, plus the link: no number of cores shortens it."""
     comp = {a['pkg']: a for a in tr['actions'] if a['kind'] != 'link'}
     link = [a for a in tr['actions'] if a['kind'] == 'link']
     if not link: return 0, []
+    rel = lambda a: a.get('export_ms') or a['end_ms']
     cur = max(comp.values(), key=lambda a: a['end_ms'])
-    path = [link[0], cur]
+    path = [dict(link[0], need=link[0]['end_ms'] - link[0]['start_ms']), dict(cur, need=cur['end_ms'] - cur['start_ms'])]
     while cur.get('deps'):
-        nxt = max((comp[d] for d in cur['deps'] if d in comp), key=lambda a: a.get('export_ms') or a['end_ms'], default=None)
+        nxt = max((comp[d] for d in cur['deps'] if d in comp), key=rel, default=None)
         if nxt is None: break
-        path.append(nxt); cur = nxt
-    return sum(a['end_ms'] - a['start_ms'] for a in path), path[::-1]
+        path.append(dict(nxt, need=rel(nxt) - nxt['start_ms'])); cur = nxt
+    return sum(a['need'] for a in path), path[::-1]
 
 
 def sb_section(name, L, out, stock):
@@ -386,9 +388,10 @@ def sb_section(name, L, out, stock):
     mem = L.get('memcpy_8t_bytes_per_s', 0); small = L.get('smallfiles_cold_8t_bytes_per_s', 0); wbw = L.get('disk_write_bytes_per_s', 0)
     gb = cen['go_bytes']; inb = gb + cen['s_bytes'] + cen['embed_bytes']; binb = int(m['bin_bytes'])
     tick = lambda n, t: n * t / (NCPU * TICKS)
+    objb = next((ph['bytes'] for ph in tr['phases'] if ph['name'].startswith('compile')), 0)
     floors = {'plan': max(tick(gb, MODEL['lex']), gb / mem if mem else 0), 'read': inb / small if small else 0,
               'lex': max(tick(gb, MODEL['lex']), gb / mem if mem else 0),
-              'compile': tick(gb, MODEL['parse'] + MODEL['types'] + MODEL['codegen']), 'link': binb / mem if mem else 0,
+              'compile': tick(gb, MODEL['parse'] + MODEL['types'] + MODEL['codegen']), 'link': (objb + binb) / mem if mem else 0,
               'write': binb / wbw if wbw else 0}
     out.append(f'## {name}: the build trace (driver `sb`, 8 CPUs, cold)\n')
     out.append(f"Run `{label}` (driver at `{m.get('driver', '?')}`{', flags `' + m['flags'] + '`' if m.get('flags') else ''}). "
@@ -427,10 +430,10 @@ def sb_section(name, L, out, stock):
     out.append('```\n')
     if path:
         out.append('The chain that ends the build (each action was the last thing the next one waited for):\n')
-        out.append('| package | action | start ms | ms | -c | Go source |')
+        out.append('| package | action | start ms | ms until it released the next | waited for a CPU token, ms | Go source |')
         out.append('|---|---|---|---|---|---|')
-        for a in sorted(path, key=lambda a: -(a['end_ms'] - a['start_ms']))[:8]:
-            out.append(f"| `{a['pkg']}` | {a['kind']} | {a['start_ms']:,.0f} | {a['end_ms'] - a['start_ms']:,.0f} | {a.get('c', '')} | {fmt_bytes(a.get('go_bytes', 0))} |")
+        for a in sorted(path, key=lambda a: -a['need'])[:8]:
+            out.append(f"| `{a['pkg']}` | {a['kind']} | {a['start_ms']:,.0f} | {a['need']:,.0f} | {a['start_ms'] - a.get('ready_ms', a['start_ms']):,.0f} | {fmt_bytes(a.get('go_bytes', 0))} |")
         out.append('')
     if len(runs) > 1 or stock:
         out.append(f'### {name}: every rung so far (8 CPUs, cold)\n')
@@ -468,10 +471,11 @@ def main():
     out += stock_out
     out.append('## How the floors are computed\n')
     out.append('A floor is the larger of (bytes moved / measured bandwidth of the level they move through) and '
+               
                '(bytes x modelled ticks per byte / (8 cores x 3.095e9 ticks/s)). The bandwidths are measured. '
                'The ticks per byte are budgets for a data-parallel implementation, set in `tools/trace/mktrace.py`: ' +
                ', '.join(f'{k} {v:g}' for k, v in MODEL.items()) +
-               '. They are the weakest numbers in this file. For scale: the Strand Go lexer measures 15 ticks/byte today '
+               '. They are the weakest numbers in this file. The link floor is one pass over the objects in and the binary out at memory bandwidth: a copy floor, which says nothing about symbol resolution or relocation (no model for those yet). For scale: the Strand Go lexer measures 15 ticks/byte today '
                '(GOLEX.md), and the stock toolchain spends about '
                + (f"{res['minio']['run'].cpu * TICKS / res['minio']['tot']['go_bytes']:,.0f}" if res.get('minio') else '?') +
                ' ticks per source byte end to end on MinIO.\n')

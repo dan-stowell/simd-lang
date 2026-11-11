@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # One cold build with the driver (build/sb), instrumented like stock.sh, then the target's smoke test.
 #   sb.sh <name> <srcdir> <pkg> <label> [sb flags...]     -> $TRACES/<name>/sb-<label>/
-# WARM=1 leaves the page cache alone.
+# WARM=1 leaves the page cache alone. SBENV='GOGC=off' sets the environment of every tool. The build runs in a
+# memory-limited scope (SBMEM, default 22G) so that a runaway cannot take the machine down.
 set -u
 name=$1; src=$2; pkg=$3; label=$4; shift 4
 here=$(cd "$(dirname "$0")/../.." && pwd)
@@ -16,14 +17,14 @@ read r0 w0 < <(disk)
 sampler=$!
 t0=$(date +%s.%N)
 /usr/bin/time -f 'user_s %U\nsys_s %S\nwall_s %e\nmaxrss_kb %M' -o "$out/time.txt" \
-  "$here/build/sb" -C "$src" -o "$out/bin" -lexer "$here/build/golex_strand" -trace "$out/trace.json" "$@" "$pkg" > "$out/build.log" 2>&1
+  systemd-run --user --scope -q -p MemoryMax=${SBMEM:-22G} env ${SBENV:-SB=1} "$here/build/sb" -C "$src" -o "$out/bin" -lexer "$here/build/golex_strand" -trace "$out/trace.json" "$@" "$pkg" > "$out/build.log" 2>&1
 rc=$?
 t1=$(date +%s.%N)
 kill $sampler 2>/dev/null
 sync
 read r1 w1 < <(disk)
 {
-  echo "name $name"; echo "label $label"; echo "rc $rc"; echo "flags $*"
+  echo "name $name"; echo "label $label"; echo "rc $rc"; echo "flags ${SBENV:+$SBENV }$*" | sed "s|$here/||g"
   echo "t0 $t0"; echo "t1 $t1"
   echo "wall_ms $(echo "($t1 - $t0) * 1000 / 1" | bc)"
   cat "$out/time.txt"

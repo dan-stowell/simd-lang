@@ -3,9 +3,17 @@
 is written as soon as the front end has finished (after inlining decisions and escape analysis, which
 the export data records) and before any function is compiled. The compiler then prints
 "sb:export-ready" on stdout. Packages that import this one need nothing else from it, so they can start
-while this package's back end is still running.     early_export.py <dir of cmd/compile/internal/gc>"""
+while this package's back end is still running.     early_export.py <dir of cmd/compile/internal/gc> <dir of cmd/internal/obj>
+
+Second change, in the object writer. Symbol indices are assigned after the back end, so early export data
+has none, and importers refer to this package's symbols by name. Content-addressed symbols (interface
+tables above all) are deduplicated by a hash that covers how each relocation target is addressed: by
+(package, index) in the defining package, by name in such an importer. Two spellings of one table then
+both survive the link, and a type assertion comparing table addresses fails. With SB_EARLY_EXPORT set,
+the hash addresses every target by name, so all packages agree."""
 import sys, os
 d = sys.argv[1]
+objd = sys.argv[2]
 p = os.path.join(d, 'main.go'); s = open(p).read()
 anchor = '\tbase.Timer.Start("be", "compilefuncs")\n'
 assert s.count(anchor) == 1
@@ -32,4 +40,42 @@ s = s.replace(old, '''	if !earlyExport {
 	dumpobj1(base.Flag.LinkObj, modeLinkerObj)
 ''')
 s = s.replace('func dumpobj() {', '// earlyExport: the compiler object was already written, before the back end ran (sb).\nvar earlyExport bool\n\nfunc dumpobj() {')
+open(p, 'w').write(s)
+
+p = os.path.join(objd, 'objfile.go'); s = open(p).read()
+old = '''		case goobj.PkgIdxSelf:
+			io.WriteString(h, w.pkgpath)
+			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+			h.Write(tmp[:4])
+		default:
+			io.WriteString(h, rs.Pkg)
+			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+			h.Write(tmp[:4])
+'''
+assert s.count(old) == 1
+new = '''		case goobj.PkgIdxSelf:
+			if sbHashByName {
+				h.Write([]byte{2})
+				io.WriteString(h, rs.Name)
+				break
+			}
+			io.WriteString(h, w.pkgpath)
+			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+			h.Write(tmp[:4])
+		default:
+			if sbHashByName {
+				h.Write([]byte{2})
+				io.WriteString(h, rs.Name)
+				break
+			}
+			io.WriteString(h, rs.Pkg)
+			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
+			h.Write(tmp[:4])
+'''
+s = s.replace(old, new)
+s += '''
+// sbHashByName (sb): hash relocation targets of content-addressed symbols by name, never by index,
+// so that packages that import by name and packages that import by index compute the same hash.
+var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""
+'''
 open(p, 'w').write(s)

@@ -76,3 +76,60 @@ Not yet: 43.1 of 47.6 s is one row, and two cheaper cuts into it have not been t
 package waits for its dependencies' *code generation*, which it does not need) and the amount of work
 (optimization level, debug info, GC settings, all of which the charter lets me relax). Rung 2 is the
 chain, via a patch to cmd/compile that writes export data before the back end runs.
+
+## 2026-11-11 23:05 UTC — iteration 3: rung 2, the chain
+
+**Did.** Patched cmd/compile (`driver/early_export.py`, built by `driver/mkcompiler.sh` into
+`build/compile-sb`): with `-linkobj` and `SB_EARLY_EXPORT` set, the export data is written as soon as the
+front end is done (after inlining decisions and escape analysis, which the export data records) and the
+compiler prints `sb:export-ready`. The driver releases a package's importers at that moment.
+
+**Two things went wrong, and both were instructive.**
+1. *The first pipelined MinIO crashed at start-up* (`reflect.Type is *reflect.rtype, not *reflect.rtype`),
+   and only the smoke test caught it. Cause: symbol indices are assigned after the back end, so early
+   export data has none and importers refer to symbols by name. Interface tables are deduplicated by a
+   content hash that covers *how* each relocation target is addressed (package+index in the defining
+   package, name in an early importer). Two spellings of the same table both survived the link and a type
+   assertion compared their addresses. Fix: with early export on, the hash addresses every target by name.
+2. *Pipelining alone gained nothing* (48.0 s against 47.6 s). The trace showed why: `minio/internal/net`,
+   1 kB of Go, sat 27.7 s in the ready queue because every CPU token was held by another package's back
+   end, and `minio/cmd` (the 8 s tail) could not start without it. Front ends are what dependents wait
+   for, so now a front end holds a token and gives it back at export; the back end carries on at nice 19
+   and fills what the front ends leave.
+
+**Checked** (`tests/sb_early.sh`, on all of MinIO): idle, the patched compiler's 2,624 export files and
+objects and the linked binary are byte-identical to the stock compiler's. With early export on, the
+binary is not byte-identical (a few duplicate-allowed `type:.eq.*` functions land in a different order),
+but all 142,181 symbols have the same names, sizes and types, and text/data/bss sizes are equal. Smoke
+test passes.
+
+**Trace.** 47.6 s -> 39.9 s cold. Chain 38.5 s -> about 12 s. Cores busy 5.6 -> 6.8. Core-seconds went
+*up*, 265 -> 273: hundreds of back ends alive at once (432 at the peak, 13 GB) cost something.
+
+## 2026-11-11 23:10 UTC — iteration 4: rung 3, less work (the budgeted optimization iteration)
+
+After rung 2 the build is bound by work: 273 core-s / 8 = 34 s. The charter lets optimization level and
+debug info go. Measured one at a time on the full MinIO build, each binary smoke-tested:
+
+| change | wall s | compile core-s |
+|---|---|---|
+| pipelined, stock flags | 41.4 | 285 |
+| `-dwarf=false`, link `-s -w` | 33.0 | 228 |
+| + `-l` (no inlining) | 26.2 | 180 |
+| + `-N -l` instead | 25.8 | 177 (binary 130 MB instead of 100; not adopted) |
+| `-dwarf=false -l`, `GOGC=300` | 25.9 | 177 |
+| `GOGC=1000` | 21.9 | 147 |
+| `GOGC=off` | 21.3 | 141 (peak memory about 16 GB of 31; the build runs in a 22 GB scope) |
+
+**Trace.** MinIO cold: **21.96 s**, 144 core-seconds, 6.6 cores busy (stock: 54.2 s, 282). Link 1.5 s.
+
+**What serializes it now.** (1) Work: 144 core-s / 8 = 18 s. (2) `minio/cmd`: 9.1 s by itself, started
+at 10.9 s; its type check is one thread. (3) The link, 1.5 s at 1.4 cores.
+
+**Scope check.** Most ambitious: a Strand back end (the skeptic's proposal, REVIEWS.md). Why not now:
+even a perfect back end leaves the front end's ~55 core-s, and a subset back end moves nothing tonight.
+The larger lever I can measure in an hour: how much of what is compiled does the linker throw away? If
+it is large, whole-program reachability before code generation removes front-end *and* back-end work,
+and its core computation (a histogram of identifier spellings over all tokens) is the first job in this
+build that is Strand-shaped and whose output would be consumed. That is the next iteration (a spike,
+with a kill test).

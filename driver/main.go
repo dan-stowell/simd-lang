@@ -9,6 +9,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -18,6 +19,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -48,7 +50,8 @@ type Pkg struct {
 	waiting  int
 	prio     float64 // cost of the longest chain from here to the link
 	objdir   string
-	archive  string
+	archive  string // what the linker reads
+	export   string // what importers read (the same file unless pipelining)
 	stubOnly bool
 }
 
@@ -60,6 +63,7 @@ type Action struct {
 	End    float64 `json:"end_ms"`
 	User   float64 `json:"user_ms"`
 	Sys    float64 `json:"sys_ms"`
+	Export float64 `json:"export_ms,omitempty"`
 	C      int     `json:"c"`
 	Bytes  int64   `json:"go_bytes"`
 	Deps   []string `json:"deps,omitempty"`
@@ -93,6 +97,9 @@ func ms() float64 { return float64(time.Since(t0).Microseconds()) / 1000 }
 
 var cleanup string
 var dryRun bool
+var compiler string
+var pipeline bool
+var noEarly bool
 
 func die(f string, a ...any) {
 	if cleanup != "" {
@@ -145,6 +152,11 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	flag.StringVar(&compiler, "compiler", "", "compiler binary (default: go tool compile)")
+	flag.BoolVar(&pipeline, "pipeline", false, "release a package's importers when its export data is written, before its back end runs (needs the patched compiler)")
+	workdirFlag := flag.String("workdir", "", "use exactly this work directory (for reproducible comparisons)")
+	flag.BoolVar(&noEarly, "noearly", false, "pipelining plumbing without the early export (the compiler behaves as stock): for differential tests")
+	maxBE := flag.Int("backends", 32, "pipelining: most compilers allowed in their back end at once (memory)")
 	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
 	flag.Parse()
@@ -190,6 +202,9 @@ func main() {
 	goroot = envv[0]
 	goversion := envv[1]
 	tooldir = filepath.Join(goroot, "pkg", "tool", "linux_amd64")
+	if compiler == "" {
+		compiler = filepath.Join(tooldir, "compile")
+	}
 	for _, p := range pkgs {
 		for _, imp := range p.Imports {
 			if m, ok := p.ImportMap[imp]; ok {
@@ -254,7 +269,13 @@ func main() {
 			}
 		}
 	}
-	workdir, err := os.MkdirTemp(*work, "sb-")
+	var workdir string
+	if *workdirFlag != "" {
+		workdir = *workdirFlag
+		err = os.MkdirAll(workdir, 0o755)
+	} else {
+		workdir, err = os.MkdirTemp(*work, "sb-")
+	}
 	if err != nil {
 		die("%v", err)
 	}
@@ -331,12 +352,18 @@ func main() {
 		}
 	}
 	done := 0
+	backends := 0 // compilers past their export, running at low priority without a token
+	maxBackends := *maxBE
 	var firstErr error
 	var cu, cs float64
 	extra := strings.Fields(*gcflags)
 	for i, p := range pkgs {
 		p.objdir = filepath.Join(workdir, fmt.Sprintf("b%04d", i))
 		p.archive = filepath.Join(p.objdir, "_pkg_.a")
+		p.export = p.archive
+		if pipeline {
+			p.export = filepath.Join(p.objdir, "_pkg_.x")
+		}
 	}
 	mu.Lock()
 	for done < len(pkgs) && firstErr == nil {
@@ -353,7 +380,29 @@ func main() {
 		if len(ready) > 0 { // leave cores for other ready packages unless this one is huge
 			c = min(c, max(1, tokens-len(ready)))
 		}
-		tokens -= c
+		held := c
+		if pipeline {
+			// A front end is one thread and is what importers wait for: it holds one token. When the export
+			// data is out the token goes back and the back end continues at the lowest CPU priority, so
+			// back ends fill whatever the front ends leave. -c is by size alone.
+			if backends >= maxBackends {
+				ready = append(ready, p)
+				cond.Wait()
+				continue
+			}
+			held = 1
+			switch {
+			case p.goBytes > 1500000:
+				c = 8
+			case p.goBytes > 300000:
+				c = 4
+			case p.goBytes > 100000:
+				c = 2
+			default:
+				c = 1
+			}
+		}
+		tokens -= held
 		go func(p *Pkg, c int, rdy float64) {
 			a := Action{Pkg: p.ImportPath, Kind: "compile", Ready: rdy, Start: ms(), C: c, Bytes: p.goBytes}
 			for _, d := range p.deps {
@@ -362,25 +411,48 @@ func main() {
 			if len(p.SFiles) > 0 {
 				a.Kind = "compile+asm"
 			}
-			u, s, cmds, err := buildPkg(p, c, goversion, extra)
+			released := false
+			inBackend := false
+			release := func() { // importers may start: called with mu held
+				if released {
+					return
+				}
+				released = true
+				for _, usr := range p.users {
+					usr.waiting--
+					if usr.waiting == 0 {
+						ready = append(ready, usr)
+						readyAt[usr] = ms()
+					}
+				}
+				cond.Broadcast()
+			}
+			u, s, cmds, err := buildPkg(p, c, goversion, extra, func(pid int) {
+				renice(pid)
+				mu.Lock()
+				a.Export = ms()
+				tokens += held
+				held = 0
+				backends++
+				inBackend = true
+				release()
+				mu.Unlock()
+			})
 			a.End, a.User, a.Sys = ms(), u, s
 			mu.Lock()
 			trace.Actions = append(trace.Actions, a)
 			cmdLog = append(cmdLog, cmds...)
 			cu += u
 			cs += s
-			tokens += c
+			tokens += held
+			if inBackend {
+				backends--
+			}
 			done++
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
-			for _, usr := range p.users {
-				usr.waiting--
-				if usr.waiting == 0 {
-					ready = append(ready, usr)
-					readyAt[usr] = ms()
-				}
-			}
+			release()
 			cond.Broadcast()
 			mu.Unlock()
 		}(p, c, readyAt[p])
@@ -452,6 +524,8 @@ func main() {
 	trace.Meta["wall_ms"] = fmt.Sprintf("%.0f", ms())
 	trace.Meta["jobs"] = fmt.Sprint(*jobs)
 	trace.Meta["gcflags"] = *gcflags
+	trace.Meta["pipeline"] = fmt.Sprint(pipeline)
+	trace.Meta["compiler"] = compiler
 	trace.Meta["ldflags"] = *ldflags
 	trace.Meta["packages"] = fmt.Sprint(len(pkgs))
 	if *tracePath != "" {
@@ -473,7 +547,7 @@ func main() {
 var completeExempt = map[string]bool{"bytes": true, "internal/poll": true, "net": true, "os": true,
 	"runtime/metrics": true, "runtime/pprof": true, "runtime/trace": true, "sync": true, "syscall": true, "time": true}
 
-func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float64, cmds []string, err error) {
+func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid int)) (user, sys float64, cmds []string, err error) {
 	if err = os.MkdirAll(p.objdir, 0o755); err != nil {
 		return
 	}
@@ -499,7 +573,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 		fmt.Fprintf(&cfg, "importmap %s=%s\n", k, p.ImportMap[k])
 	}
 	for _, d := range p.deps {
-		fmt.Fprintf(&cfg, "packagefile %s=%s\n", d.ImportPath, d.archive)
+		fmt.Fprintf(&cfg, "packagefile %s=%s\n", d.ImportPath, d.export)
 	}
 	cfgPath := filepath.Join(p.objdir, "importcfg")
 	if err = os.WriteFile(cfgPath, cfg.Bytes(), 0o644); err != nil {
@@ -531,7 +605,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 			lang = "go" + v[0] + "." + v[1]
 		}
 	}
-	argv := []string{filepath.Join(tooldir, "compile"), "-o", p.archive, "-trimpath", trim, "-p", p.ImportPath, "-lang=" + lang}
+	argv := []string{compiler, "-o", p.export, "-trimpath", trim, "-p", p.ImportPath, "-lang=" + lang}
 	if p.Name == "main" {
 		argv[6] = "main"
 	}
@@ -568,11 +642,22 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 	if len(p.SFiles) > 0 {
 		argv = append(argv, "-asmhdr", filepath.Join(p.objdir, "go_asm.h"))
 	}
+	if pipeline {
+		argv = append(argv, "-linkobj", p.archive)
+	}
 	argv = append(argv, extra...)
 	for _, f := range p.GoFiles {
 		argv = append(argv, filepath.Join(p.Dir, f))
 	}
-	if err = do(argv); err != nil {
+	if pipeline && !dryRun {
+		u, s, e := runCompile(p.Dir, argv, exported)
+		user += u
+		sys += s
+		cmds = append(cmds, strings.Join(argv, " "))
+		if err = e; err != nil {
+			return
+		}
+	} else if err = do(argv); err != nil {
 		return
 	}
 	if len(p.SFiles) > 0 {
@@ -682,4 +767,57 @@ func embedcfg(p *Pkg) ([]byte, error) {
 		}
 	}
 	return json.MarshalIndent(cfg, "", "\t")
+}
+
+// runCompile runs the patched compiler, which prints "sb:export-ready" when the file importers need
+// is complete; exported is called at that moment.
+func runCompile(dir string, argv []string, exported func(pid int)) (float64, float64, error) {
+	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Dir = dir
+	cmd.Env = os.Environ()
+	if !noEarly {
+		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
+	}
+	var errb bytes.Buffer
+	cmd.Stderr = &errb
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return 0, 0, err
+	}
+	if err := cmd.Start(); err != nil {
+		return 0, 0, err
+	}
+	sc := bufio.NewScanner(out)
+	sc.Buffer(make([]byte, 1<<16), 1<<24)
+	var rest bytes.Buffer
+	for sc.Scan() {
+		if sc.Text() == "sb:export-ready" {
+			exported(cmd.Process.Pid)
+		} else {
+			rest.WriteString(sc.Text() + "\n")
+		}
+	}
+	err = cmd.Wait()
+	u := float64(cmd.ProcessState.UserTime().Microseconds()) / 1000
+	sy := float64(cmd.ProcessState.SystemTime().Microseconds()) / 1000
+	if err != nil {
+		err = fmt.Errorf("%s: %v\n%s%s", strings.Join(argv, " "), err, rest.String(), errb.String())
+	}
+	return u, sy, err
+}
+
+// renice puts every thread of a process at the lowest CPU priority. Linux priorities are per thread and
+// new threads inherit their creator's, so two passes over /proc/pid/task catch a thread born during the first.
+func renice(pid int) {
+	for pass := 0; pass < 2; pass++ {
+		ents, err := os.ReadDir(fmt.Sprintf("/proc/%d/task", pid))
+		if err != nil {
+			return
+		}
+		for _, e := range ents {
+			if tid, err := strconv.Atoi(e.Name()); err == nil {
+				syscall.Setpriority(syscall.PRIO_PROCESS, tid, 19)
+			}
+		}
+	}
 }
