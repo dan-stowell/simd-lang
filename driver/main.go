@@ -776,7 +776,11 @@ func embedcfg(p *Pkg) ([]byte, error) {
 func runCompile(dir string, argv []string, exported func(pid int)) (float64, float64, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
-	cmd.Env = os.Environ()
+	for _, kv := range os.Environ() { // never inherit the switch: -noearly must mean stock behaviour
+		if !strings.HasPrefix(kv, "SB_EARLY_EXPORT=") {
+			cmd.Env = append(cmd.Env, kv)
+		}
+	}
 	if !noEarly {
 		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
 	}
@@ -789,14 +793,25 @@ func runCompile(dir string, argv []string, exported func(pid int)) (float64, flo
 	if err := cmd.Start(); err != nil {
 		return 0, 0, err
 	}
-	sc := bufio.NewScanner(out)
-	sc.Buffer(make([]byte, 1<<16), 1<<24)
+	// Read the compiler's stdout to the end whatever it prints: a line may be longer than any buffer
+	// (with -S a symbol name can be megabytes), and an unread pipe would block the compiler for good.
+	const marker = "sb:export-ready"
+	rd := bufio.NewReaderSize(out, 1<<16)
 	var rest bytes.Buffer
-	for sc.Scan() {
-		if sc.Text() == "sb:export-ready" {
-			exported(cmd.Process.Pid)
-		} else {
-			rest.WriteString(sc.Text() + "\n")
+	cont := false // this piece continues a line longer than the buffer
+	for {
+		line, err := rd.ReadSlice('\n')
+		if len(line) > 0 {
+			whole := !cont
+			cont = err == bufio.ErrBufferFull
+			if whole && !cont && string(bytes.TrimRight(line, "\n")) == marker {
+				exported(cmd.Process.Pid)
+			} else if rest.Len() < 1<<20 { // keep the first megabyte for the error message
+				rest.Write(line)
+			}
+		}
+		if err != nil && err != bufio.ErrBufferFull {
+			break
 		}
 	}
 	err = cmd.Wait()
