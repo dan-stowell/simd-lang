@@ -175,7 +175,7 @@ harness myself afterwards (`reviews/audit5/speed/logs/final/`).
 | **`x.0`, `.0.0`, `return.5`: a dot before a digit starts a float also after an identifier or a float.** The lexer made it an operator. | correct. `return.5` is in a valid Go program. | fixed |
 | **`0a`, `1ii`, `1e2x`: a number ends where `scanNumber` ends it**; the lexer let any letter continue it. go/scanner accepts these without error, as two tokens. | correct | fixed |
 | **`...0`: the third dot of an ellipsis was taken for the start of `.0`** and the first two dots vanished | correct | fixed |
-| A complete, valid file that does not end in a newline (`package p`) is refused with status 3; 14 corpus files had a newline appended | correct; documented, but worse than I made it sound | open, next |
+| A complete, valid file that does not end in a newline (`package p`) is refused with status 3; 14 corpus files had a newline appended | correct; documented, but worse than I made it sound | fixed: `bytesz` leads a byte line over the input and one zero byte after it, so the last token ends like any other; the fuzzer covers files without a final newline and files that end on a page boundary |
 | A leading byte-order mark becomes an identifier | correct; documented as excluded | open |
 | Carriage returns: no mismatch found in dedicated controls | so that exclusion was over-cautious | GOLEX.md says so |
 | **go/scanner is not the scanner the Go compiler uses.** `cmd/compile/internal/syntax` scans the corpus in 497-513 ms on one core, against 549-596 for go/scanner | correct, and the baseline that matters | GOLEX.md's table has both. On one core Strand's whole process (447-453 ms) is about 10% under the compiler scanner's scan alone, not 25%. |
