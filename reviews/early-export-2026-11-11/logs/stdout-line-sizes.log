@@ -1,0 +1,16 @@
+Running as unit: run-r58a30340dc7f4392882379a3ca4b19aa.scope; invocation ID: b78f0b33da444d22adf9802fcfa4f6f3
+[
+  {
+    "size": 16777284,
+    "overhead": 68,
+    "prefix": "main.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "suffix": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx STEXT nosplit size=1 align=0x0 args=0x0 locals=0x0 funcid=0x0\n"
+  },
+  {
+    "size": 16777334,
+    "overhead": 118,
+    "prefix": "\t0x0000 00000 (audit.local/stdout/oversized_stdout_identifier.go:2)\tTEXT\tmain.xx",
+    "suffix": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(SB), NOSPLIT|NOFRAME|ABIInternal, $0-0\n"
+  }
+]
+max_overhead 118

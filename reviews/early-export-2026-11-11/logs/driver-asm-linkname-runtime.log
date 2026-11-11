@@ -1,0 +1,18 @@
+Running as unit: run-re157faf3b8f34e3ca14308228723ea41.scope; invocation ID: 141d97e0e2e24d82aeb90e83cc03c848
+41 42 23 23 23
+true true 42
+9 true 11
+13 13
+45 8 9 4 9
+PASS rich runtime corpus: default inlining and relaxed flags
+Files /dev/shm/sbearly.8SqQN8/stock/a.out and /dev/shm/sbearly.8SqQN8/idle/a.out differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0000/_pkg_.a and /dev/shm/sbearly.8SqQN8/idle/b0000/_pkg_.a differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0000/_pkg_.x and /dev/shm/sbearly.8SqQN8/idle/b0000/_pkg_.x differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0001/_pkg_.a and /dev/shm/sbearly.8SqQN8/idle/b0001/_pkg_.a differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0001/_pkg_.x and /dev/shm/sbearly.8SqQN8/idle/b0001/_pkg_.x differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0002/_pkg_.a and /dev/shm/sbearly.8SqQN8/idle/b0002/_pkg_.a differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0002/_pkg_.x and /dev/shm/sbearly.8SqQN8/idle/b0002/_pkg_.x differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0003/_pkg_.a and /dev/shm/sbearly.8SqQN8/idle/b0003/_pkg_.a differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0003/_pkg_.x and /dev/shm/sbearly.8SqQN8/idle/b0003/_pkg_.x differ
+Files /dev/shm/sbearly.8SqQN8/stock/b0004/_pkg_.a and /dev/shm/sbearly.8SqQN8/idle/b0004/_pkg_.a differ
+FAIL patched compiler, idle

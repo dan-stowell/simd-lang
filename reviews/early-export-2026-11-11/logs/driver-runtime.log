@@ -1,0 +1,17 @@
+Running as unit: run-re36fa596974a46e0ac5f575ce15cf31c.scope; invocation ID: 687b001a80cf4de6a7f8a84200fba853
+true true 42
+9 true 11
+13 13
+45 8 9 4 9
+PASS rich runtime corpus: default inlining and relaxed flags
+Files /dev/shm/sbearly.mbPy2Z/stock/a.out and /dev/shm/sbearly.mbPy2Z/idle/a.out differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0000/_pkg_.a and /dev/shm/sbearly.mbPy2Z/idle/b0000/_pkg_.a differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0000/_pkg_.x and /dev/shm/sbearly.mbPy2Z/idle/b0000/_pkg_.x differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0001/_pkg_.a and /dev/shm/sbearly.mbPy2Z/idle/b0001/_pkg_.a differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0001/_pkg_.x and /dev/shm/sbearly.mbPy2Z/idle/b0001/_pkg_.x differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0002/_pkg_.a and /dev/shm/sbearly.mbPy2Z/idle/b0002/_pkg_.a differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0002/_pkg_.x and /dev/shm/sbearly.mbPy2Z/idle/b0002/_pkg_.x differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0003/_pkg_.a and /dev/shm/sbearly.mbPy2Z/idle/b0003/_pkg_.a differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0003/_pkg_.x and /dev/shm/sbearly.mbPy2Z/idle/b0003/_pkg_.x differ
+Files /dev/shm/sbearly.mbPy2Z/stock/b0004/_pkg_.a and /dev/shm/sbearly.mbPy2Z/idle/b0004/_pkg_.a differ
+FAIL patched compiler, idle

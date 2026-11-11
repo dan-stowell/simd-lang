@@ -1,0 +1,3 @@
+Running as unit: run-r671d92d17cb14af7b8a7ec1806cc4e7d.scope; invocation ID: 0d0f9fbbbbfd417594b8bed077db0872
+PASS patched compiler, idle: 60 files and the binary byte-identical to stock
+PASS early export: 2954 symbols with the same names, sizes and types as stock; sections 1141359 29076 219184

@@ -1,0 +1,8 @@
+Running as unit: run-r041166b6bffc427c856aa6b349f57025.scope; invocation ID: c32651208ad94c6f99e305318c4bd46d
+stock_go_build_status=0
+sb_nonpipeline_status=0
+sb_pipeline_without_S_status=0
+sb_pipeline_S_status=124
+runtime_go_status=0
+runtime_nonpipeline_status=0
+runtime_noS_status=0

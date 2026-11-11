@@ -1,0 +1,29 @@
+397 reviews/early-export-2026-11-11/cases/stdout/exponential_shape_name.go
+package main
+type (
+a=struct{x,y byte}
+b=struct{x,y a}
+c=struct{x,y b}
+d=struct{x,y c}
+e=struct{x,y d}
+f=struct{x,y e}
+g=struct{x,y f}
+h=struct{x,y g}
+i=struct{x,y h}
+j=struct{x,y i}
+k=struct{x,y j}
+l=struct{x,y k}
+m=struct{x,y l}
+n=struct{x,y m}
+o=struct{x,y n}
+p=struct{x,y o}
+q=struct{x,y p}
+r=struct{x,y q}
+s=struct{x,y r}
+t=struct{x,y s}
+)
+//go:noinline
+func z[T any](){}
+func main(){z[t]()}
+shape19_status=124
+Running as unit: run-r6e2c76de9a9c4aea98c9a772df5f1f1b.scope; invocation ID: 63f0430bd6604c468c5c89919f207ebd

@@ -1,0 +1,6 @@
+plan (go list)                          57 ms  cpu        60 ms         15938 bytes  30 packages
+read inputs                              9 ms  cpu         0 ms       3061131 bytes  320 Go files; 293050 bytes of assembly left to asm
+compile (go tool compile/asm)         3860 ms  cpu      9313 ms      97568638 bytes  bytes = object archives written to tmpfs
+link (go tool link)                    168 ms  cpu       240 ms      10280434 bytes
+write output                            39 ms  cpu         0 ms      10280434 bytes
+TOTAL                                 4134 ms

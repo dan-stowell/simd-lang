@@ -1,0 +1,9 @@
+Running as unit: run-r2e5a89c1710044cabb497a5881c6234c.scope; invocation ID: 322658384aab4fccb8b7e4b1d4f81a69
+ok  	reflect	0.834s
+ok  	math/big	8.735s
+ok  	sort	0.043s
+ok  	slices	0.053s
+ok  	maps	0.010s
+ok  	unique	0.115s
+ok  	iter	0.009s
+ok  	encoding/gob	3.228s
