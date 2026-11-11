@@ -1,0 +1,2662 @@
+[
+  {
+    "source": "/usr/local/go/test/typeparam/absdiff.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/absdiff2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/absdiff3.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/adder.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/append.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/boundmethod.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/chans.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/combine.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/cons.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/devirtualize1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/devirtualize2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/dictionaryCapture.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/dottype.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "3\n3 true\n0 false\n3\n3 true\n0 false\n3\n3\n0\n0 true\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "3\n3 true\n0 false\n3\n3 true\n0 false\n3\n3\n0\n0 true\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/double.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/eface.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/equal.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/fact.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/genembed.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/genembed2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/graph.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/ifaceconv.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/index.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/index2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/interfacearg.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/list.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/list2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/lockable.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/map.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/maps.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/metrics.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/min.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/nested.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "0,3: main.T[int;int]\n4,7: main.T[int;main.U[int;int]\u00b73]\n22,23: main.T[main.Int;main.Int]\n26,27: main.T[main.Int;main.U[main.Int;main.Int]\u00b73]\n",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "0,3: main.T[int;int]\n4,7: main.T[int;main.U[int;int]\u00b73]\n22,23: main.T[main.Int;main.Int]\n26,27: main.T[main.Int;main.U[main.Int;main.Int]\u00b73]\n",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/ordered.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/orderedmap.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/pair.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/sets.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/settable.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/shape1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "25\n10\n6\n4\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "25\n10\n6\n4\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/shape_assert.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/slices.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/smallest.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/stringable.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/stringer.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/struct.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/subdict.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/sum.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "T\nint\nint32/int16\nstruct{T,T}\nother\nT\nint32/int16\nT\nint\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "T\nint\nint32/int16\nstruct{T,T}\nother\nT\nint32/int16\nT\nint\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "T 6\nint 7\nint32/int16 8\nstruct{T,T} 1 2\nother 9\nT 7\nint32/int16 7\nT 10\nint 11\n",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "T 6\nint 7\nint32/int16 8\nstruct{T,T} 1 2\nother 9\nT 7\nint32/int16 7\nT 10\nint 11\n",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch3.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "myint 6\nT 7\nother 8\nT 8\nother 7\nother 9\nT 10\nmyint 11\nT 12\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "myint 6\nT 7\nother 8\nT 8\nother 7\nother 9\nT 10\nmyint 11\nT 12\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch4.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other 6\nT/myint32 7\nT/myint32 8\nT/myint32 9\nT/myint32 10\nother 42\nT/myint32 10\nother 11\nT/myint32 12\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other 6\nT/myint32 7\nT/myint32 8\nT/myint32 9\nT/myint32 10\nother 42\nT/myint32 10\nother 11\nT/myint32 12\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch5.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "fooer 6\nother\nother\nfooer 9\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "fooer 6\nother\nother\nfooer 9\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch6.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other\nT\nother\nint\nT\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other\nT\nother\nint\nT\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/typeswitch7.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other\nbarT\nmyfloat\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "other\nbarT\nmyfloat\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/value.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue23536.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue376214.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue42758.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue44688.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue45722.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue45817.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue46472.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue46591.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue47258.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue47272.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "Some(1) None\nOk(1) Err(test)\n",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "Some(1) None\nOk(1) Err(test)\n",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/typeparam/issue54537.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/alias1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/align.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/blank.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/char_lit.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/closure.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/closure1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/closure2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/closure4.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/closure7.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/complit.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/complit2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/const3.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/const4.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/const7.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/convT2X.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/defer.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/defernil.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/deferprint.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "printing: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n42 true false true 1.5 world 0x0 [0/0]0x0 0x0 0x0 255\n"
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": "printing: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20\n42 true false true 1.5 world 0x0 [0/0]0x0 0x0 0x0 255\n"
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/float_lit2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/func5.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/genmeth.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/genmeth1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/genmeth2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod1.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod2.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod3.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod4.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod5.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod6.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  },
+  {
+    "source": "/usr/local/go/test/reflectmethod7.go",
+    "stock": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "early": {
+      "build": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "run": {
+        "status": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    "equal": true
+  }
+]

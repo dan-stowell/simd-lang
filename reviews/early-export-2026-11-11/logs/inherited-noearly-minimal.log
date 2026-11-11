@@ -1,0 +1,12 @@
+Running as unit: run-rd43d67b9a0414ad6a1c39cfb0d8a2776.scope; invocation ID: 7b53145736fc4dfb9f1bf6143ae4f791
+Files /dev/shm/sbearly.Nn1psH/stock/a.out and /dev/shm/sbearly.Nn1psH/idle/a.out differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0000/_pkg_.a and /dev/shm/sbearly.Nn1psH/idle/b0000/_pkg_.a differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0000/_pkg_.x and /dev/shm/sbearly.Nn1psH/idle/b0000/_pkg_.x differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0001/_pkg_.a and /dev/shm/sbearly.Nn1psH/idle/b0001/_pkg_.a differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0001/_pkg_.x and /dev/shm/sbearly.Nn1psH/idle/b0001/_pkg_.x differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0002/_pkg_.a and /dev/shm/sbearly.Nn1psH/idle/b0002/_pkg_.a differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0002/_pkg_.x and /dev/shm/sbearly.Nn1psH/idle/b0002/_pkg_.x differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0003/_pkg_.a and /dev/shm/sbearly.Nn1psH/idle/b0003/_pkg_.a differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0003/_pkg_.x and /dev/shm/sbearly.Nn1psH/idle/b0003/_pkg_.x differ
+Files /dev/shm/sbearly.Nn1psH/stock/b0004/_pkg_.a and /dev/shm/sbearly.Nn1psH/idle/b0004/_pkg_.a differ
+FAIL patched compiler, idle

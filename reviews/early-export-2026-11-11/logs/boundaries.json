@@ -1,0 +1,407 @@
+[
+  {
+    "kind": "offset",
+    "value": 127,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 128,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 129,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 4095,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 4096,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 4097,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 65535,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 65536,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 65537,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 1048575,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 1048576,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "offset",
+    "value": 1048577,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 127,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 128,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 129,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 255,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 256,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 257,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 4095,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 4096,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 4097,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 65535,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 65536,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "name",
+    "value": 65537,
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "ending",
+    "value": "eof",
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "ending",
+    "value": "crlf",
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  },
+  {
+    "kind": "ending",
+    "value": "bom",
+    "equal": true,
+    "stock": [
+      0,
+      "",
+      "42\ntrue\n"
+    ],
+    "early": [
+      0,
+      "",
+      "42\ntrue\n"
+    ]
+  }
+]

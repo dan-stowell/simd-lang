@@ -1,0 +1,4 @@
+Scope command line contains environment variable, which is not expanded by default for now, but will be expanded by default in the future. Use --expand-environment=yes/no to explicitly control it as needed.
+Running as unit: run-r2725e08ef4c2420aaef53013633ea846.scope; invocation ID: 7122d020fe694e71ada2d7ad6c7a49a7
+shape18_pipeline_status=0
+shape19_stock_go_status=0
