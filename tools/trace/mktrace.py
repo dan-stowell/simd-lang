@@ -335,6 +335,119 @@ def target_section(name, L, out):
     return dict(run=r, tot=tot, floor=f_total, binb=binb, cp=cp_len)
 
 
+def sb_runs(name):
+    base = os.path.join(T, name)
+    if not os.path.isdir(base): return []
+    out = []
+    for d in sorted(os.listdir(base)):
+        if d.startswith('sb-') and not d.endswith('-warm') and os.path.exists(os.path.join(base, d, 'trace.json')):
+            m = meta(os.path.join(base, d, 'meta.txt'))
+            if m.get('rc') == '0': out.append((d[3:], os.path.join(base, d), m))
+    return out
+
+
+def sb_busy(d, m):
+    rows = []
+    for line in open(os.path.join(d, 'cpu.txt')):
+        f = line.split()
+        if len(f) < 9: continue
+        v = list(map(int, f[2:10])); rows.append((float(f[0]), sum(v), v[3] + v[4]))
+    t0 = float(m['t0']); out = []
+    for (ta, sa, ia), (tb, sb, ib) in zip(rows, rows[1:]):
+        if sb != sa: out.append((tb - t0, NCPU * (1 - (ib - ia) / (sb - sa))))
+    return out
+
+
+def sb_chain(tr):
+    """Longest chain through the driver's actions. An action can start when its deps have released it
+    (ready_ms); the chain follows, from the last action back, whichever dep finished last."""
+    acts = {a['pkg'] + ':' + a['kind'].replace('compile+asm', 'compile'): a for a in tr['actions']}
+    comp = {a['pkg']: a for a in tr['actions'] if a['kind'] != 'link'}
+    link = [a for a in tr['actions'] if a['kind'] == 'link']
+    if not link: return 0, []
+    cur = max(comp.values(), key=lambda a: a['end_ms'])
+    path = [link[0], cur]
+    while cur.get('deps'):
+        nxt = max((comp[d] for d in cur['deps'] if d in comp), key=lambda a: a.get('export_ms') or a['end_ms'], default=None)
+        if nxt is None: break
+        path.append(nxt); cur = nxt
+    return sum(a['end_ms'] - a['start_ms'] for a in path), path[::-1]
+
+
+def sb_section(name, L, out, stock):
+    runs = sb_runs(name)
+    if not runs: return
+    label, d, m = runs[-1]
+    tr = json.load(open(os.path.join(d, 'trace.json')))
+    cen = json.load(open(os.path.join(T, name, 'census.json')))['total']
+    busy = sb_busy(d, m)
+    wall = int(m['wall_ms']) / 1000
+    cpu = float(m['user_s']) + float(m['sys_s'])
+    mem = L.get('memcpy_8t_bytes_per_s', 0); small = L.get('smallfiles_cold_8t_bytes_per_s', 0); wbw = L.get('disk_write_bytes_per_s', 0)
+    gb = cen['go_bytes']; inb = gb + cen['s_bytes'] + cen['embed_bytes']; binb = int(m['bin_bytes'])
+    tick = lambda n, t: n * t / (NCPU * TICKS)
+    floors = {'plan': max(tick(gb, MODEL['lex']), gb / mem if mem else 0), 'read': inb / small if small else 0,
+              'lex': max(tick(gb, MODEL['lex']), gb / mem if mem else 0),
+              'compile': tick(gb, MODEL['parse'] + MODEL['types'] + MODEL['codegen']), 'link': binb / mem if mem else 0,
+              'write': binb / wbw if wbw else 0}
+    out.append(f'## {name}: the build trace (driver `sb`, 8 CPUs, cold)\n')
+    out.append(f"Run `{label}` (driver at `{m.get('driver', '?')}`{', flags `' + m['flags'] + '`' if m.get('flags') else ''}). "
+               f"Result: {m.get('smoke', 'no smoke test')}. "
+               f"Stock `go build` on the same machine, cold: {ms(stock.wall) if stock else '?'} ms.\n")
+    out.append('| phase | ms | cores busy | core-s | bytes moved | floor ms | ms / floor | who does it |')
+    out.append('|---|---|---|---|---|---|---|---|')
+    fetch = os.path.join(T, '..', f'{name}.fetch.time')
+    if os.path.exists(fetch):
+        fm = meta(fetch)
+        out.append(f"| fetch (separate, not in total) | {ms(float(fm['fetch_s']))} | | | {fmt_bytes(int(fm.get('modcache_bytes', 0)))} | | | `go mod download` |")
+    else:
+        out.append('| fetch (separate, not in total) | 0 (vendored) | | | | | | |')
+    ftot = 0.0
+    for ph in tr['phases']:
+        a, b = ph['start_ms'] / 1000, ph['end_ms'] / 1000
+        seg = [v for t, v in busy if a <= t < b + 0.1]
+        key = next((k for k in floors if ph['name'].startswith(k)), None)
+        fl = floors.get(key, 0); ftot += fl
+        who = ph['name'][ph['name'].index('(') + 1:-1] if '(' in ph['name'] else 'driver'
+        nm = ph['name'].split(' (')[0]
+        nm = {'plan': 'plan (package graph)', 'lex': 'lex (tokens; not yet consumed)', 'compile': 'parse + resolve/types + lower/codegen'}.get(nm, nm)
+        out.append(f"| {nm} | {ph['end_ms'] - ph['start_ms']:,.0f} | {sum(seg) / len(seg) if seg else 0:.1f} | {(ph['user_ms'] + ph['sys_ms']) / 1000:,.1f} | "
+                   f"{fmt_bytes(ph['bytes'])} | {fl * 1000:,.0f} | {(b - a) / fl:,.0f}x | {who} |" if fl else
+                   f"| {nm} | {ph['end_ms'] - ph['start_ms']:,.0f} | | | {fmt_bytes(ph['bytes'])} | | | {who} |")
+    cl, path = sb_chain(tr)
+    out.append(f"| **TOTAL** | **{ms(wall)}** | **{cpu / wall:.2f}** | **{cpu:,.0f}** | read {fmt_bytes(int(m['disk_read_bytes']))}, wrote {fmt_bytes(int(m['disk_written_bytes']))} (disk) | **{ftot * 1000:,.0f}** | **{wall / ftot:,.0f}x** | |")
+    out.append(f"| critical path ({len(path)} actions) | {cl:,.0f} | | | | | | |")
+    out.append('')
+    notes = [f"{ph['name'].split(' (')[0]}: {ph['note']}" for ph in tr['phases'] if ph.get('note')]
+    if notes: out.append('Notes: ' + '; '.join(notes) + '.\n')
+    nb = 60
+    out.append('```')
+    out.append(f'8 |{spark(bucket([(t, v) for t, v in busy if t <= wall], nb, wall), 8)}|   cores busy; one column = {wall / nb * 1000:,.0f} ms')
+    out.append(f'0 +{"-" * nb}+')
+    out.append('```\n')
+    if path:
+        out.append('The chain that ends the build (each action was the last thing the next one waited for):\n')
+        out.append('| package | action | start ms | ms | -c | Go source |')
+        out.append('|---|---|---|---|---|---|')
+        for a in sorted(path, key=lambda a: -(a['end_ms'] - a['start_ms']))[:8]:
+            out.append(f"| `{a['pkg']}` | {a['kind']} | {a['start_ms']:,.0f} | {a['end_ms'] - a['start_ms']:,.0f} | {a.get('c', '')} | {fmt_bytes(a.get('go_bytes', 0))} |")
+        out.append('')
+    if len(runs) > 1 or stock:
+        out.append(f'### {name}: every rung so far (8 CPUs, cold)\n')
+        out.append('| run | wall ms | core-s | cores busy | plan | read | lex | compile | link | write | smoke test |')
+        out.append('|---|---|---|---|---|---|---|---|---|---|---|')
+        if stock:
+            out.append(f"| stock `go build` | {ms(stock.wall)} | {stock.cpu:,.0f} | {stock.cpu / stock.wall:.2f} | | | | | {ms(stock.link()['dur'])} | | |")
+        for lb, dd, mm in runs:
+            t = json.load(open(os.path.join(dd, 'trace.json')))
+            phd = {p['name'].split(' ')[0]: p['end_ms'] - p['start_ms'] for p in t['phases']}
+            c = float(mm['user_s']) + float(mm['sys_s']); w = int(mm['wall_ms']) / 1000
+            out.append(f"| `{lb}` {('(' + mm['flags'] + ')') if mm.get('flags') else ''} | {ms(w)} | {c:,.0f} | {c / w:.2f} | " +
+                       ' | '.join(f"{phd.get(k, 0):,.0f}" for k in ('plan', 'read', 'lex', 'compile', 'link', 'write')) +
+                       f" | {'pass' if 'PASS' in mm.get('smoke', '') else mm.get('smoke', 'not run')} |")
+        out.append('')
+
+
 def main():
     L = limits()
     out = ['# TRACE', '',
@@ -345,9 +458,14 @@ def main():
         out.append('Measured limits (`hw/limits.c`, `hw/limits.out.txt`): ' + ', '.join(
             f'{k.replace("_bytes_per_s", "").replace("_", " ")} {v / 1e9:.2f} GB/s' for k, v in L.items() if k.endswith('bytes_per_s')) + '.\n')
     res = {}
+    stock_out = []
     for name in TARGETS:
         if os.path.exists(os.path.join(T, name)):
-            res[name] = target_section(name, L, out)
+            res[name] = target_section(name, L, stock_out)
+    for name in TARGETS:
+        sb_section(name, L, out, res[name]['run'] if res.get(name) else None)
+    out.append('# The stock toolchain (rung 0: the gap)\n')
+    out += stock_out
     out.append('## How the floors are computed\n')
     out.append('A floor is the larger of (bytes moved / measured bandwidth of the level they move through) and '
                '(bytes x modelled ticks per byte / (8 cores x 3.095e9 ticks/s)). The bandwidths are measured. '

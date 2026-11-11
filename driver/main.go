@@ -91,7 +91,13 @@ var (
 
 func ms() float64 { return float64(time.Since(t0).Microseconds()) / 1000 }
 
+var cleanup string
+var dryRun bool
+
 func die(f string, a ...any) {
+	if cleanup != "" {
+		os.RemoveAll(cleanup)
+	}
 	fmt.Fprintf(os.Stderr, "sb: "+f+"\n", a...)
 	os.Exit(1)
 }
@@ -139,6 +145,7 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
 	flag.Parse()
 	pkgArg := "."
@@ -252,6 +259,7 @@ func main() {
 		die("%v", err)
 	}
 	if !*keep {
+		cleanup = workdir
 		defer os.RemoveAll(workdir)
 	}
 	phase("read inputs", st, total, 0, 0, fmt.Sprintf("%d Go files; %d bytes of assembly left to asm", len(gofiles), sbytes))
@@ -348,6 +356,9 @@ func main() {
 		tokens -= c
 		go func(p *Pkg, c int, rdy float64) {
 			a := Action{Pkg: p.ImportPath, Kind: "compile", Ready: rdy, Start: ms(), C: c, Bytes: p.goBytes}
+			for _, d := range p.deps {
+				a.Deps = append(a.Deps, d.ImportPath)
+			}
 			if len(p.SFiles) > 0 {
 				a.Kind = "compile+asm"
 			}
@@ -402,11 +413,17 @@ func main() {
 	argv = append(argv, "-buildmode=exe")
 	argv = append(argv, strings.Fields(*ldflags)...)
 	argv = append(argv, main.archive)
+	cmdLog = append(cmdLog, strings.Join(argv, " "))
+	if dryRun {
+		sort.Strings(cmdLog)
+		os.WriteFile(*dumpCmds, []byte(strings.ReplaceAll(strings.Join(cmdLog, "\n")+"\n", workdir, "$WORK")), 0o644)
+		fmt.Println(workdir)
+		return
+	}
 	u, s, _, err = run(workdir, argv, nil, nil)
 	if err != nil {
 		die("%v", err)
 	}
-	cmdLog = append(cmdLog, strings.Join(argv, " "))
 	fi, _ := os.Stat(exe)
 	trace.Actions = append(trace.Actions, Action{Pkg: main.ImportPath, Kind: "link", Start: st, End: ms(), User: u, Sys: s})
 	phase("link (go tool link)", st, fi.Size(), u, s, "")
@@ -461,6 +478,10 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 		return
 	}
 	do := func(argv []string) error {
+		if dryRun {
+			cmds = append(cmds, strings.Join(argv, " "))
+			return nil
+		}
 		u, s, _, e := run(p.Dir, argv, nil, nil)
 		user += u
 		sys += s
@@ -501,6 +522,9 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 			lang = lang[:2+i+1+j]
 		}
 	}
+	if p.Module != nil && p.Module.GoVersion == "" {
+		lang = "go1.16" // a module with no go directive: cmd/go assumes 1.16 (older loop-variable semantics, etc.)
+	}
 	if p.Module != nil && p.Module.GoVersion != "" {
 		v := strings.Split(p.Module.GoVersion, ".")
 		if len(v) >= 2 {
@@ -509,7 +533,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 	}
 	argv := []string{filepath.Join(tooldir, "compile"), "-o", p.archive, "-trimpath", trim, "-p", p.ImportPath, "-lang=" + lang}
 	if p.Name == "main" {
-		argv[5] = "main"
+		argv[6] = "main"
 	}
 	if p.Standard {
 		argv = append(argv, "-std")
@@ -520,6 +544,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 	argv = append(argv, "-goversion", goversion)
 	if len(p.SFiles) > 0 {
 		symabis := filepath.Join(p.objdir, "symabis")
+		os.WriteFile(filepath.Join(p.objdir, "go_asm.h"), nil, 0o644) // empty for this pass, as cmd/go does
 		a := append(append([]string{}, asmBase...), "-gensymabis", "-o", symabis)
 		for _, f := range p.SFiles {
 			a = append(a, filepath.Join(p.Dir, f))
@@ -560,7 +585,9 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string) (user, sys float6
 			}
 			objs = append(objs, o)
 		}
-		err = appendArchive(p.archive, objs)
+		if !dryRun {
+			err = appendArchive(p.archive, objs)
+		}
 	}
 	return
 }

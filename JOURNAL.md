@@ -45,3 +45,34 @@ with a Strand code generator. Why not now: there is no driver yet in which a rep
 be tested against MinIO's own behaviour; without the skeleton a new back end has nowhere to stand. Rung 1
 first (hours, not days), then the chain (item 2), which a patch to the compiler can cut without a new
 back end.
+
+## 2026-11-11 22:40 UTC — iteration 2: rung 1, the skeleton
+
+**Did.** `build/sb` (driver/main.go) builds MinIO end to end, cold: plan (`go list`) -> read every Go
+file in parallel -> Strand golex over the 75.5 MB concatenation -> `go tool compile`/`asm` per package
+from a priority queue (priority = bytes of Go on the longest chain above) with CPU tokens that become the
+compiler's `-c` -> `go tool link` -> write the binary. Objects live in tmpfs and there is no build cache.
+`tools/trace/sb.sh` runs it cold with the same instrumentation as the stock runs, then the smoke test.
+
+**Checked.**
+- `tests/minio_smoke.sh`: the binary serves S3 put/get/list/delete (3 MB object round trip). Passes for
+  the stock binary and the driver's.
+- `tests/sb_plan.sh`: all 1,483 compile/asm/link command lines for MinIO and all 2,180 for kube-apiserver
+  equal `go build`'s (from its action graph) up to work-directory names, build IDs and `-c`; embed
+  configurations equal `go build -n`'s. The first run of this test failed on 31 packages: modules with
+  no `go` directive must be compiled as Go 1.16, and I was giving them 1.27. That is a behaviour
+  difference (loop variables), and the smoke test had passed with it.
+- Strand golex against go/scanner on the build's whole input: 12,874,970 tokens over 7,531 files,
+  byte-identical.
+- `./test.sh`: ALL PASS.
+
+**Trace.** MinIO cold 54.2 s -> 47.6 s; 282 -> 265 core-seconds. Plan 0.43 s (go build spends 3.3 s
+before its first compile; `go list` alone is much cheaper), read 0.22 s, lex 0.21 s, compile 43.1 s at
+6.1 cores busy, link 3.1 s, write 0.27 s. Disk writes fell from 1,651 MB to 148 MB (just the binary).
+The gain is from not writing a cache and from scheduling; no phase got faster.
+
+**Scope check.** Most ambitious next: a Strand front end producing what the compiler's back end needs.
+Not yet: 43.1 of 47.6 s is one row, and two cheaper cuts into it have not been tried: the chain (a
+package waits for its dependencies' *code generation*, which it does not need) and the amount of work
+(optimization level, debug info, GC settings, all of which the charter lets me relax). Rung 2 is the
+chain, via a patch to cmd/compile that writes export data before the back end runs.
