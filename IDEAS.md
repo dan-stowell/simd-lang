@@ -52,3 +52,9 @@ informative test is the shape histogram (template back end, kill test 2).
 - **Turn optional SSA passes off.** Status: **dead** (slower: 23.9-26.8 s against 21.9-24.1 s; JOURNAL iteration 8).
 - **Pause back ends beyond a cap instead of letting hundreds run at nice 19.** Status: **dead** for wall clock (no gain); it does lower CPU and peak memory, so `-running n` stays as an option for builds that do not fit in memory.
 - **Compile each duplicate-allowed function once per build, not once per package.** Measured: 8.1% of MinIO's compiled text is copies (26,052 functions). Kill test passed in the weak sense (it is not nothing); payoff at most 5% of the build. Status: untested.
+
+## 2026-11-12, measured (JOURNAL iteration 9)
+
+- **Declarations first** kill test 2: go/types with IgnoreFuncBodies over all of MinIO, one process: 365-430 ms wall, 2.3-2.6 core-s, chain 0.3 s, no errors. Line was 400 ms. **Alive.** With bodies: 963 ms wall, 4.6 core-s.
+- **Template back end** kill test 2: top 4,096 typed expression-node shapes cover 96.7% of 1.42 M nodes (**alive** per node); top 4,096 whole-statement shapes cover 80.9% (**dead** per statement).
+- **A second compiler taking over single functions inside the stock build** (bodyless declaration + symabis + extra object in the package archive). Status: **spiking now** (rung 5 skeleton).

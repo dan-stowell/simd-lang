@@ -267,3 +267,59 @@ measurements nobody has (IDEAS, both kill tests under an hour): what a declarati
 whole program costs, and whether Go function bodies fall into few enough shapes for stencils. And the
 trace should say what "2 s on N cores" means for the pipeline as it stands: simulate the measured
 action graph on N cores.
+
+## 2026-11-12 01:00 UTC — iteration 9: two measurements for the next compiler (spike)
+
+`explore/wholeprog` (built as `build/wholeprog`) reads the driver's plan and works on the whole of
+MinIO in one process: 1,312 packages, 75.5 MB.
+
+**1. What does a whole-program front end cost, with nothing clever?**
+
+| step (stock libraries, 8 cores) | wall ms | core-s | longest chain ms |
+|---|---|---|---|
+| go/parser, every file | 440 | 2.8 | |
+| go/types, declarations only (`IgnoreFuncBodies`) | 365-430 | 2.3-2.6 | 304-338 |
+| go/types, with every function body | 963 | 4.6 | 800 |
+
+Zero type errors. So parsing and fully type-checking all of MinIO takes **1.4 s of wall clock and 7.4
+core-seconds** in one process, against roughly 30 core-seconds that the stock compiler's 1,312 front
+ends spend on parse, check and their two IR conversions (TRACE.md: 21 of 99 profile seconds). The
+difference is not the checker (types2 is the same algorithm): it is that one process checks each package
+once and hands its neighbours pointers, where 1,312 processes each write export data, read their
+dependencies' export data, write their own IR and read it back.
+
+The kill test in IDEAS for "declarations first" was 400 ms for the declarations pass: 365-430 ms. Alive,
+at the line. And the whole-program chain for declarations is 0.3 s where the per-package chain is 12 s.
+
+**2. Are function bodies made of few enough shapes for templates?**
+
+Typed shape of an expression node = operator, what each operand is (a local, a global, a constant, a
+field, or a computed temporary) with its type class (i8..i64, u8..u64, f32, f64, bool, string, pointer,
+slice, map, chan, func, interface, struct by size class), and the result's class.
+
+| | occurrences | distinct shapes | top 256 | top 1,024 | top 4,096 | top 16,384 |
+|---|---|---|---|---|---|---|
+| expression nodes | 1,423,275 | 22,301 | 69.6% | 88.2% | **96.7%** | 99.6% |
+| whole statements | 878,220 | 82,505 | 54.2% | 69.5% | 80.9% | 89.8% |
+
+The kill line was 95% at 4,096. Per node: alive. Per statement: dead; statements are too varied to be
+templates. (If operands are first brought to fixed places, so a node's shape no longer says where its
+operands came from, the count drops further; not measured.)
+
+**What this changes.** The end state's front end does not need to be invented: stock parser and
+checker, whole program, one process, already fit in 2 s. What has to be built is everything after
+the checker: code generation at about 100 ns per byte of machine code (16 core-s budget minus the
+front end's 7, over 45 MB of text) and a link that is a layout pass. That is where a data-parallel
+design has to earn its keep; lexing never was.
+
+**Scope check.** Most ambitious: start that compiler. I now think a consumed slice is possible tonight
+after all, because Go's toolchain already has the seam: a function declared without a body is
+"implemented elsewhere", the compiler takes the implementation's ABI from a symabis file, and a
+package archive may hold several object files. So a second compiler can take over single functions
+inside the real MinIO build: the patched stock compiler drops the bodies of the functions on a list, the
+second compiler emits them into an extra object in the same archive. Coverage starts tiny and the trace
+will not move (it will get worse by the whole-program check, about 1.4 s), but every function it takes
+is in the binary that the smoke test runs, and from then on widening it is measured in the real build.
+That is rung 5's skeleton. Staged so that a failure leaves something: (A) one hand-made function through
+cmd/internal/obj into a running program; (B) the body-dropping patch and the driver plumbing; (C) a
+real subset over the whole-program type information; (D) a differential harness.
