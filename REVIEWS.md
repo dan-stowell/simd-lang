@@ -198,3 +198,15 @@ binary prefix), and has since agreed on 1.3 million accepted lines; all 642 of t
 applicable minimal witnesses pass. The lexer's time did not change (447-453 ms).
 
 Not reached by the audit: memory safety, again.
+
+## Review 9 — a sixth audit that did not run (2026-11-11)
+
+Started against `01e53c1` to attack the one-pass thread pool and the corrected lexer. It
+did not get past reading the repository: every model request came back from the provider
+"flagged for possible cybersecurity risk" (the fifth audit ended the same way after its
+three campaigns), and it produced no findings. So the one-pass pool has been reviewed by
+nobody but me. What stands behind it: `tests/pool.py` (5,456 runs against the same binary
+on one CPU, 96 checks of which path ran), `tests/pool_big.py` (inputs built to defeat the
+guesses, with checks that the retry, copy and fallback paths ran), the semantic fuzzer in
+eager mode, the mutation suite, and the Go corpus on 1, 2, 3 and 8 CPUs. What does not: an
+adversary.
