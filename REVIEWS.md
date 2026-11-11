@@ -210,3 +210,21 @@ on one CPU, 96 checks of which path ran), `tests/pool_big.py` (inputs built to d
 guesses, with checks that the retry, copy and fallback paths ran), the semantic fuzzer in
 eager mode, the mutation suite, and the Go corpus on 1, 2, 3 and 8 CPUs. What does not: an
 adversary.
+
+## Review 10 — the pool's kernel, by gpt-6.1-sol (2026-11-11)
+
+Asked for after the audits stopped running: a narrower question to a different model.
+RUNTIME.md had just claimed that one comparison (`fs7`) decides whether a parallel block is
+kept and that everything else in the pool cannot affect output. `REVIEW_SOL.md` is the
+answer, complete.
+
+| finding | verdict | action |
+|---|---|---|
+| A line whose only carries are `prev` never reaches `fs7`: it is cut into ranges after a one-chunk warm-up and kept. Demonstrated with a trap at `fs7` that is never hit. Not a wrong-output bug (the warm-up argument holds), but RUNTIME.md's rule was stated as universal and chaos did not cover the path. | correct | such lines, and lines with an `out` sink, are now one-pass lines: guessed, compared, retried or redone like any other. Only a line with no carries skips the comparison. |
+| A byte line's `prev` carry is compared by its last dword though only the last byte is read: needless retries, and chaos left bytes 60-62 unspoiled | correct | compared by the last byte; chaos spoils the other 63. (The Go lexer on eight CPUs went from about 126 ms to about 115: fewer needless retries.) |
+| Comparison per carry kind, scratch-area arithmetic, copy step, fallback, accumulators: checked by hand, no defect found | — | none needed |
+| Chaos is a bounded fault model (one dword of noise per range), exempts the first range and sink counts by design, and is not a proof | fair | RUNTIME.md says so |
+
+While this review ran its tests in one checkout and I ran mine in another, `tests/pool.py`
+reported three empty outputs: both runs were writing their inputs to `/tmp/strand_pool`.
+The tests now use private directories.
