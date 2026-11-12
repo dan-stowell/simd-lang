@@ -128,7 +128,11 @@ func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 		}
 		f, ok := g.info.Uses[id].(*types.Func)
 		if !ok {
-			giveUp("%s of a non-function", fn.Name())
+			// a function value: its code pointer is the first word of the closure object
+			l := g.expr(e.Args[0])
+			g.loadTo(AX, l, unsafePtr)
+			g.a.load(AX, mb(AX, 0), 8, false)
+			return ax
 		}
 		sym := g.c.funcSym(f)
 		if fn.Name() == "FuncPCABI0" {

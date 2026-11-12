@@ -342,6 +342,7 @@ func main() {
 		os.Exit(3)
 	}
 	c.ctxt.Imports = stockImports(o.out)
+	c.indexRefs(archives)
 	missing := c.alignWithStock(stockDefs)
 	if os.Getenv("FC_SYMDIFF") != "" {
 		for _, m := range missing {
@@ -421,6 +422,9 @@ func (c *compiler) stockParity(stock map[string]bool) {
 		}
 		switch u := types.Unalias(t).(type) {
 		case *types.Named:
+			if u.TypeParams().Len() > 0 && u.TypeArgs().Len() == 0 {
+				return // a generic type itself
+			}
 			if u.TypeArgs().Len() > 0 || isInterface(u) {
 				byName[c.typeLinkName(u)] = u
 			}
@@ -446,6 +450,74 @@ func (c *compiler) stockParity(stock map[string]bool) {
 					c.methodSym(recv, sel)
 				}
 			}
+		}
+	}
+}
+
+// indexRefs (mixed mode) makes this object refer to the symbols of the packages it imports the way a stock
+// object does: by the package and the symbol's index there, not by name. It matters for symbols the linker
+// merges by content (itabs): the content hash covers how each relocation's target is addressed, so an itab
+// written here merges with the stock one only if its method and type references are addressed alike.
+func (c *compiler) indexRefs(archives map[string]string) {
+	type ref struct {
+		pkg string
+		idx int32
+	}
+	type key struct {
+		name string
+		abi  uint16
+	}
+	var index map[key]ref
+	load := func() {
+		index = map[key]ref{}
+		for path, file := range archives {
+			_, defs := definedSymsOrder(file)
+			pp := objabi.PathToPrefix(path)
+			for i, d := range defs {
+				if d.name != "" {
+					index[key{d.name, d.abi}] = ref{pp, int32(i)}
+				}
+			}
+		}
+	}
+	seen := map[*obj.LSym]bool{}
+	var visit func(s *obj.LSym)
+	fix := func(rs *obj.LSym) {
+		if rs == nil || seen[rs] {
+			return
+		}
+		seen[rs] = true
+		if rs.OnList() || rs.Type != 0 || rs.Static() || rs.ContentAddressable() {
+			visit(rs) // defined here (perhaps not on a list: function data)
+			return
+		}
+		if goobj.BuiltinIdx(rs.Name, int(rs.ABI())) != -1 {
+			return
+		}
+		if index == nil {
+			load()
+		}
+		if r, ok := index[key{rs.Name, uint16(rs.ABI())}]; ok {
+			rs.Pkg = r.pkg
+			rs.SymIdx = r.idx
+			rs.Set(obj.AttrIndexed, true)
+		}
+	}
+	visit = func(s *obj.LSym) {
+		for i := range s.R {
+			fix(s.R[i].Sym)
+		}
+		fix(s.Gotype)
+		if fn := s.Func(); fn != nil {
+			for _, d := range fn.Pcln.Funcdata {
+				fix(d)
+			}
+		}
+	}
+	for _, list := range [][]*obj.LSym{c.ctxt.Text, c.ctxt.Data} {
+		for _, s := range list {
+			seen[s] = true
+			visit(s)
 		}
 	}
 }
