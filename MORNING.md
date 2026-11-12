@@ -27,7 +27,7 @@ Against the stock toolchain:
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
 | now | **11.8 s** (above); median of 130 cold builds 11.2 s | **21.1 s** (above); medians of 20 and 30 cold builds 19.8 and 21.3 s |
 
-Soaks of the final configuration, cold, each build smoke-tested (`tools/trace/soak.sh`): MinIO 150 of 150
+Soaks of the final configuration, cold, each build smoke-tested (`tools/trace/soak.sh`): MinIO 180 of 180
 pass (runs of 60 and 70: wall min 10.5 and 10.6 s, **median 11.2 s** in both, max 12.6 and 13.1 s); kube-apiserver 56 of 56 pass (a
 run of 20: median 19.8 s; a run of 30 an hour later: min 19.8 s, **median 21.3 s**, max 23.8 s).
 

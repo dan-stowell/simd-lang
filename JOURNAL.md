@@ -1449,3 +1449,9 @@ function-value symbols (`f·f`) that no object defines and the linker makes. Tri
 undefined `f·f` to `f`. Result: still 46 missing, the same ones. **Wrong; reverted.** They are reached
 some other way (a table built in assembly data, or a linkname); left as the first item for the next
 session's diff, with the ten local-type methods whose names the two lists probably spell differently.
+
+## 2026-11-12 21:30 UTC — iteration 30: soak while the clock ran down
+
+Inbox empty. Scope check: nothing a rung needs fits in the last minutes; more evidence on the
+fork-server's one risk does. Thirty more cold MinIO builds, each smoke-tested: 30 builds, 30 pass; wall min 10566, median 11405, max 13848 ms.
+Total for the final configuration: MinIO 180 of 180, kube-apiserver 56 of 56.
