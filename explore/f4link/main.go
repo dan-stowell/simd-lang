@@ -37,31 +37,66 @@ type object struct {
 	gid0                                 uint64 // global id of symbol 0 is gid0+1
 }
 
-const nshard = 256
+// The resolution table: open addressing over 64-bit keys, filled by all cores at once without locks.
+// A key is a hash of what identifies a definition across objects: its name and ABI, or the first eight
+// bytes of its content hash. The value is the global id of the lowest-numbered object's definition
+// (min wins, so the result does not depend on which thread got there first). Two different names with
+// the same 64-bit key would be merged: at a million keys the chance is about 3e-8; a linker would
+// compare the names on a hit, this spike does not.
+type table struct {
+	keys []atomic.Uint64
+	vals []atomic.Uint64
+	mask uint64
+}
 
-type shard struct {
-	mu sync.Mutex
-	m  map[string]uint64 // name (with ABI) or content hash -> global id of the lowest-numbered definition
+func newTable(n int) *table {
+	size := 1
+	for size < 2*n {
+		size <<= 1
+	}
+	return &table{keys: make([]atomic.Uint64, size), vals: make([]atomic.Uint64, size), mask: uint64(size - 1)}
+}
+
+func (t *table) claim(key, gid uint64) {
+	key |= 1 << 63 // never zero
+	for i := (key * 0x9E3779B97F4A7C15) >> 20 & t.mask; ; i = (i + 1) & t.mask {
+		k := t.keys[i].Load()
+		if k == 0 {
+			if !t.keys[i].CompareAndSwap(0, key) {
+				k = t.keys[i].Load()
+			} else {
+				k = key
+			}
+		}
+		if k == key {
+			for {
+				old := t.vals[i].Load()
+				if old != 0 && old <= gid || t.vals[i].CompareAndSwap(old, gid) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (t *table) get(key uint64) uint64 {
+	key |= 1 << 63
+	for i := (key * 0x9E3779B97F4A7C15) >> 20 & t.mask; ; i = (i + 1) & t.mask {
+		switch t.keys[i].Load() {
+		case key:
+			return t.vals[i].Load()
+		case 0:
+			return 0
+		}
+	}
 }
 
 var seed = maphash.MakeSeed()
 var noNames = os.Getenv("F4LINK_NONAMES") != ""
 
-type shards [nshard]shard
-
-func (s *shards) claim(key string, gid uint64) {
-	sh := &s[maphash.String(seed, key)%nshard]
-	sh.mu.Lock()
-	if old, ok := sh.m[key]; !ok || gid < old {
-		sh.m[key] = gid
-	}
-	sh.mu.Unlock()
-}
-
-func (s *shards) get(key string) uint64 {
-	sh := &s[maphash.String(seed, key)%nshard]
-	return sh.m[key] // read-only phase: no lock
-}
+func nameKey(name string, abi uint16) uint64 { return maphash.String(seed, name) ^ uint64(abi)*0x9E3779B97F4A7C15 }
+func hash64Key(h uint64) uint64             { return h*0xC2B2AE3D27D4EB4F ^ 0x1111 }
+func hashKey(h []byte) uint64               { return maphash.Bytes(seed, h) ^ 0x2222 } // all 32 bytes: short symbols' "hashes" share prefixes
 
 func par(n int, f func(i int)) {
 	var wg sync.WaitGroup
@@ -162,25 +197,19 @@ func main() {
 		len(libs), len(objs), mapped.Load()>>20, c[0], c[1], c[2], c[3], c[4]))
 
 	// ---- 2. claim: every definition that is found by name or by content hash, into a sharded table
-	var table shards
-	for i := range table {
-		table[i].m = make(map[string]uint64, int(nsyms)/nshard/2)
-	}
+	tab := newTable(int(nsyms))
 	var nclaims atomic.Int64
 	par(len(objs), func(i int) {
 		o := objs[i]
 		r := o.r
 		n := 0
 		for j := o.ndef; j < o.ndef+o.nh64; j++ {
-			var k [9]byte
-			k[0] = 1
-			binary.LittleEndian.PutUint64(k[1:], r.Hash64(uint32(j-o.ndef)))
-			table.claim(string(k[:]), o.gid0+uint64(j)+1)
+			tab.claim(hash64Key(r.Hash64(uint32(j-o.ndef))), o.gid0+uint64(j)+1)
 			n++
 		}
 		for j := o.ndef + o.nh64; j < o.ndef+o.nh64+o.nh; j++ {
 			h := r.Hash(uint32(j - o.ndef - o.nh64))
-			table.claim("\x02"+string(h[:]), o.gid0+uint64(j)+1)
+			tab.claim(hashKey(h[:]), o.gid0+uint64(j)+1)
 			n++
 		}
 		for j := o.ndef + o.nh64 + o.nh; j < o.ndef+o.nh64+o.nh+o.nnonpkg; j++ {
@@ -188,7 +217,7 @@ func main() {
 			if s.ABI() == goobj.SymABIstatic {
 				continue // file-local
 			}
-			table.claim(s.Name(r)+"\x00"+string(rune('0'+s.ABI())), o.gid0+uint64(j)+1)
+			tab.claim(nameKey(s.Name(r), s.ABI()), o.gid0+uint64(j)+1)
 			n++
 		}
 		// Package-indexed definitions are found by (package, index), a table read; they are entered by
@@ -199,16 +228,22 @@ func main() {
 			if s.ABI() == goobj.SymABIstatic {
 				continue
 			}
-			table.claim(s.Name(r)+"\x00"+string(rune('0'+s.ABI())), o.gid0+uint64(j)+1)
+			tab.claim(nameKey(s.Name(r), s.ABI()), o.gid0+uint64(j)+1)
 			n++
 		}
 		nclaims.Add(int64(n))
 	})
-	distinct := 0
-	for i := range table {
-		distinct += len(table[i].m)
-	}
-	lap("2. claim names and content hashes", fmt.Sprintf("%d claims, %d distinct", nclaims.Load(), distinct))
+	var distinct atomic.Int64
+	par(64, func(c int) {
+		n := 0
+		for i := c * len(tab.keys) / 64; i < (c+1)*len(tab.keys)/64; i++ {
+			if tab.keys[i].Load() != 0 {
+				n++
+			}
+		}
+		distinct.Add(int64(n))
+	})
+	lap("2. claim names and content hashes", fmt.Sprintf("%d claims, %d distinct", nclaims.Load(), distinct.Load()))
 
 	// ---- 3. resolve: every symbol slot of every object to the global id of its definition
 	var unresolved atomic.Int64
@@ -222,19 +257,16 @@ func main() {
 			case j < o.ndef:
 				o.canon[j] = o.gid0 + uint64(j) + 1
 			case j < o.ndef+o.nh64:
-				var k [9]byte
-				k[0] = 1
-				binary.LittleEndian.PutUint64(k[1:], r.Hash64(uint32(j-o.ndef)))
-				o.canon[j] = table.get(string(k[:]))
+				o.canon[j] = tab.get(hash64Key(r.Hash64(uint32(j - o.ndef))))
 			case j < o.ndef+o.nh64+o.nh:
 				h := r.Hash(uint32(j - o.ndef - o.nh64))
-				o.canon[j] = table.get("\x02" + string(h[:]))
+				o.canon[j] = tab.get(hashKey(h[:]))
 			default:
 				s := r.Sym(uint32(j))
 				if s.ABI() == goobj.SymABIstatic && j < o.ndef+o.nh64+o.nh+o.nnonpkg {
 					o.canon[j] = o.gid0 + uint64(j) + 1
 				} else {
-					o.canon[j] = table.get(s.Name(r) + "\x00" + string(rune('0'+s.ABI())))
+					o.canon[j] = tab.get(nameKey(s.Name(r), s.ABI()))
 					if o.canon[j] == 0 {
 						un++
 					}

@@ -22,11 +22,10 @@ evidence even order-balanced. Two big rungs, and one cheap vein worth an hour be
    binary (`go tool nm -type`), and do the same for method wrappers and equality/hash functions.
 
 1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iterations 25, 26):
-   layout by prefix sums + relocation of everything is 40 ms on 8 cores; resolution is 200 ms in the
-   spike but that is its own string-keyed table. Tried and reverted: pc tables as plain symbols (link
-   +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) give the spike
-   a real resolution table (open addressing on the 32-byte hashes, names interned per object) and
-   measure again; (b) profile the stock loader's `addSym` to see what its 300 ms are; (c) add dead code
+   resolve + layout + relocate everything is 0.16 s on 8 cores (resolution 110 ms with a lock-free
+   table: memory latency; layout + relocation 40 ms). Tried and reverted: pc tables as plain symbols (link
+   +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) find why 19 of 960 k keys merge under 64-bit keys, compare full keys on a hit, and try a
+   range-partitioned insert (Strand-shaped: SCALAR_LEDGER entry if it stays in Go); (b) profile the stock loader's `addSym` to see what its 300 ms are; (c) add dead code
    (frontier-parallel flood over 3.4 M relocation edges) and pclntab to the spike; then make it emit an
    image that runs. The stock linker's output depends on load order (iteration 18); ours must define
    its own deterministic order (the spike's rule: lowest object index wins).

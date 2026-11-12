@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 26)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 27)
 
 ## The trace, before and after
 
@@ -120,11 +120,12 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
   by a copy. Link + write 1,459 -> 1,316 ms. Same bytes.
 
 - **F4 spike, measured, not consumed** (`explore/f4link`): the core of a link on MinIO's real objects
-  (resolve all 2.7 M symbols, lay out 213 MB by prefix sums, apply 3.4 M relocations) takes **0.26 s on
-  8 cores**; the stock linker's corresponding phases take 0.67 s of its 1.13 s. Layout and relocation
-  are 40 ms together: they are not the problem. Resolution is 200 ms in the spike, but that is the cost
-  of the spike's own hash table, not of the problem (see the next item). No dead-code elimination or
-  pclntab in the spike.
+  (resolve all 2.7 M symbols with a lock-free table, lay out 213 MB by prefix sums, apply 3.4 M
+  relocations) takes **0.16 s on 8 cores**; the stock linker's corresponding phases take 0.67 s of its
+  1.1 s. Layout and relocation are 40 ms together; resolution is 110 ms and is memory latency (one
+  random table probe per symbol), which a partitioned join would cut further. Not in the spike:
+  dead-code elimination (stock: 246 ms) and pclntab (114 ms), the two serial algorithms left. One
+  unexplained discrepancy is recorded in JOURNAL iteration 27 (19 of 960 k keys merge under 64-bit keys).
 - **A consumed F4 slice, tried and reverted**: per-function pc tables as plain symbols instead of
   content-addressed ones (about a million of the 1.84 M hashed symbols the linker resolves). It works,
   and the link gets 76 ms *slower* and the binary 2.3% bigger: the sharing those hashes buy is worth
@@ -215,5 +216,5 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
    A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the
    trace sharper.
 4. **The floors in TRACE.md** (see the reviews section above). There is now a measured number for the
-   link's core (0.26 s, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
+   link's core (0.16 s, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
    table without your say.

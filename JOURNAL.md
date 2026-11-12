@@ -1284,3 +1284,33 @@ twelve) and the soak medians (MinIO 11.2 s, kube 19.8 s) are the numbers to quot
 
 **Scope check.** Most ambitious: F4 consumed. Tried its smallest slice; it lost; reverted within the
 iteration. No time left in this session for a second slice. NEXT.md is corrected.
+
+## 2026-11-12 18:00 UTC — iteration 27: the link spike with a real resolution table: 0.16 s
+
+Iteration 26 ended on "the spike's resolution number is its own string-keyed maps". Replaced them
+with a lock-free open-addressing table over 64-bit keys (hash of name + ABI, or of the 32-byte content
+hash), filled by all cores with compare-and-swap, lowest object id wins.
+
+    MinIO, 8 cores, ms                     string-keyed maps    lock-free table
+    map archives, find objects                    6-12               8-10
+    claim names and content hashes              132-189             89-101
+    resolve every symbol slot                     62-65              17-21
+    layout by prefix sums                             4                  4
+    copy data, apply relocations                  34-41              33-36
+    total                                    about 260          **about 160**   (one core: about 650)
+
+**What is left in "claim" and why.** 2.6 M claims at 90 ms on 8 cores is about 270 ns of core time
+each: one name or hash fetched from a mapped object, one random probe into a 128 MB table. That is
+memory latency, not computation (HARDWARE.md: a miss is about 100 ns here). The data-parallel answer
+is the database one: partition the keys by range first (sequential writes), then insert each
+partition into a cache-sized piece of the table. Not built; it is the first Strand-shaped phase F4
+would create (a join over hashed keys), and by the charter Strand is its default.
+
+**An unexplained discrepancy, recorded rather than hidden:** the 64-bit table finds 960,356 distinct
+keys where the string-keyed maps found 960,375. Nineteen pairs merge that should not, about 400 times
+more than chance for 63-bit keys; I did not find the cause. A linker has to compare full keys on a
+hit in any case; the timing above does not include that comparison.
+
+**For F4's design:** resolve + layout + relocate for the whole of MinIO is in reach of 0.15 s on this
+machine without dead-code elimination; the stock linker spends 1.1 s. The two things the spike still
+lacks are the two serial algorithms: reachability (stock: 246 ms) and pclntab (114 ms).
