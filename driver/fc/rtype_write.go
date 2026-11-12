@@ -346,8 +346,11 @@ func (c *compiler) writeCommon(s *obj.LSym, t types.Type) {
 
 // symExported: does t have a name, and is it exported?
 func symExported(t types.Type) bool {
-	if n, ok := types.Unalias(t).(*types.Named); ok {
-		return token.IsExported(n.Obj().Name())
+	switch u := types.Unalias(t).(type) {
+	case *types.Named:
+		return token.IsExported(u.Obj().Name())
+	case *types.Basic:
+		return u.Kind() == types.UnsafePointer // "Pointer", of package unsafe
 	}
 	return false
 }
@@ -528,6 +531,9 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 		dupok = n.TypeArgs().Len() > 0
 	} else if _, ok := tbase.(*types.Basic); ok {
 		dupok = false
+	}
+	if c.path == "runtime" && s.Name == "type:*interface {}" {
+		dupok = false // stock WriteBasicTypes writes it as *any, and any has a name
 	}
 	if dupok {
 		s.Set(obj.AttrDuplicateOK, true)

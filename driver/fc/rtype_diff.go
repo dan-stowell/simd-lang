@@ -19,6 +19,7 @@ import (
 	"go/types"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"cmd/internal/goobj"
@@ -240,6 +241,11 @@ func diffWanted(name string) bool {
 		// compared through the symbols that point to them: the names of some are only counters
 		return false
 	}
+	for _, suffix := range []string{".arginfo0", ".arginfo1", ".argliveinfo", ".args_stackmap", ".stkobj", ".opendefer", ".wrapinfo"} {
+		if strings.HasSuffix(name, suffix) {
+			return false // belongs to the code of an equality or hash function
+		}
+	}
 	return strings.HasPrefix(name, "type:") || strings.HasPrefix(name, "go:itab.") || strings.HasPrefix(name, "runtime.gcbits.")
 }
 
@@ -368,13 +374,43 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 	}
 	sort.Strings(names)
+	// a name the package does not mention may be a pointer to, a slice of or an array of one it does
+	var derive func(name string) types.Type
+	derive = func(name string) types.Type {
+		if t := byName[name]; t != nil {
+			return t
+		}
+		var t types.Type
+		switch {
+		case strings.HasPrefix(name, "*"):
+			if e := derive(name[1:]); e != nil {
+				t = types.NewPointer(e)
+			}
+		case strings.HasPrefix(name, "[]"):
+			if e := derive(name[2:]); e != nil {
+				t = types.NewSlice(e)
+			}
+		case strings.HasPrefix(name, "["):
+			if i := strings.Index(name, "]"); i > 0 {
+				if n, err := strconv.ParseInt(name[1:i], 10, 64); err == nil {
+					if e := derive(name[i+1:]); e != nil {
+						t = types.NewArray(e, n)
+					}
+				}
+			}
+		}
+		if t != nil {
+			byName[name] = t
+		}
+		return t
+	}
 	// force the descriptors the stock object has: maps first (they bring their groups), then the rest
 	force := func(maps bool) {
 		for _, name := range names {
 			if !strings.HasPrefix(name, "type:") {
 				continue
 			}
-			t := byName[name[5:]]
+			t := derive(name[5:])
 			if t == nil {
 				continue
 			}
@@ -395,7 +431,7 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 			if rest[i] != ',' {
 				continue
 			}
-			t, it := byName[rest[:i]], byName[rest[i+1:]]
+			t, it := derive(rest[:i]), derive(rest[i+1:])
 			if t != nil && it != nil {
 				try(name, func() { c.itabSym(t, it) })
 				break
@@ -425,6 +461,8 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 				why = "a shape type of the stock compiler's generics (fc instantiates fully)"
 			case strings.HasPrefix(name, "type:.eqfunc.") || strings.HasPrefix(name, "type:.hashfunc.") || strings.HasPrefix(name, "type:.gcmask."):
 				why = "belongs to a descriptor fc was not asked for"
+			case strings.Contains(name, "struct { Typ uintptr;") || strings.Contains(name, "struct { Mask uintptr; Entries") || strings.Contains(name, "struct { Itab uintptr"):
+				why = "a cache of the stock compiler's type switches and assertions"
 			case strings.HasPrefix(name, "type:noalg."):
 				why = "a compiler-made type (closure, defer or map internals) no type in the package maps to"
 			case strings.HasPrefix(name, "go:itab."):

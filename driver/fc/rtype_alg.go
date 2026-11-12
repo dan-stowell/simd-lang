@@ -134,10 +134,22 @@ const (
 
 var algPriority = [...]int8{algMem: -1, algOther: 0, algSpecial: 1, algNoeq: 2, algNoalg: 3}
 
+// noalgFlag: is t marked as having no algorithms: a compiler-made type, or a pointer to one (stock: Noalg)?
+func (c *compiler) noalgFlag(t types.Type) bool {
+	t = types.Unalias(t)
+	if c.rtNoalg[t] {
+		return true
+	}
+	if p, ok := t.(*types.Pointer); ok {
+		return c.noalgFlag(p.Elem())
+	}
+	return false
+}
+
 // algKind is how values of t are compared (stock: types.AlgType, computed in CalcSize).
 func (c *compiler) algKind(t types.Type) algKind {
 	t = types.Unalias(t)
-	if c.rtNoalg[t] {
+	if c.noalgFlag(t) {
 		return algNoalg
 	}
 	a := algMem

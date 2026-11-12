@@ -691,7 +691,13 @@ func recvBase(t types.Type) (base types.Type, ptr bool) {
 
 // methodSymName is the linker's name of the method m with the receiver type recv (stock: ir.MethodSym).
 func (c *compiler) methodSymName(recv types.Type, m *types.Func) (name, pkg string) {
-	base, ptr := recvBase(recv)
+	// the receiver's package is that of the defined type recv is or points to; a struct, or the pointer
+	// to a pointer that carries a not-in-heap type in an interface, is in the pseudo-package "go"
+	base := types.Unalias(recv)
+	ptr := false
+	if p, ok := base.(*types.Pointer); ok {
+		base, ptr = types.Unalias(p.Elem()), true
+	}
 	prefix := "go"
 	var rpkg *types.Package
 	if n, ok := base.(*types.Named); ok {
@@ -724,6 +730,10 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 	name, pkg := c.methodSymName(recv, m)
 	s := c.lookup(name, obj.ABIInternal, pkg)
 	base, ptr := recvBase(recv)
+	if base == nil { // **T, T not in the heap
+		base, _ = recvBase(types.Unalias(recv).(*types.Pointer).Elem())
+		ptr = true
+	}
 	if !c.needEmit(base) || c.rtWrap[s] {
 		return s
 	}
@@ -733,7 +743,7 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 	if sig.Recv() != nil {
 		_, declPtr = types.Unalias(sig.Recv().Type()).(*types.Pointer)
 	}
-	direct := len(sel.Index()) == 1 && declPtr == ptr
+	direct := len(sel.Index()) == 1 && declPtr == ptr && types.Identical(sel.Recv(), recv)
 	named, _ := base.(*types.Named)
 	inst := named != nil && named.TypeArgs().Len() > 0
 	if direct && !inst {
@@ -777,7 +787,9 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		} else {
 			isel = types.NewMethodSet(irecv).Lookup(fn.Pkg(), fn.Name())
 			if isel == nil {
-				giveUp("method %v of %v", fn, irecv)
+				// irecv is **T (a pointer to a not-in-heap type is not a pointer to the collector, so
+				// the interface holds a pointer to it): the wrapper loads *T and calls on
+				isel = sel
 			}
 		}
 		ps := make([]*types.Var, 0, sig.Params().Len()+1)
