@@ -977,3 +977,40 @@ table lookup instead of a field read (then it is cached). Nothing else.
 this iteration says about how to spend the time until then: there may be more work of this kind,
 things the stock compiler does for every package so that a linker can throw them away. The descriptor
 log has 225 k distinct anonymous types left; the next question is how many survive the link.
+
+## 2026-11-12 14:25 UTC — correction to iteration 20: the descriptor change is worth 1.6 core-s and 0.3 s, not 7 and 0.9
+
+Iteration 20 reported -6.9 core-s and -0.97 s "in every one of four interleaved rounds". That number
+is wrong, and the way it is wrong matters more than the number.
+
+**How I found out.** I re-ran the exact per-phase CPU table with and without the change to see which
+phase had shrunk. In the two phases the change can touch (be:compilefuncs + be:dumpobj) the difference
+was 2.3 and 0.6 core-s; the "saving" in round one was spread over type checking and IR reading as
+well, which the change cannot affect.
+
+**What was wrong with the A/B.** Each round ran "keep" first and "skip" second, and over those eight
+builds the host was getting steadily quieter (totals 12.76, 11.94, 12.00, 11.32, 11.68, 10.62, 11.41,
+10.08 s: a trend through the whole sequence, not a step between configurations). A fixed order credits
+the drift to whichever configuration runs second.
+
+**Measured again, order balanced** (keep skip skip keep, three times; 12 builds):
+
+    keep   compile 69.0 71.6 72.1 75.6 72.8 72.6 core-s (mean 72.3)   link 1353 1195 1213 1244 1221 1309 ms (mean 1,256)
+    skip   compile 72.0 71.6 63.5 74.4 69.9 73.0 core-s (mean 70.7)   link 1098 1107 1143 1133 1165 1172 ms (mean 1,136)
+
+**-1.6 core-s of compile; -120 ms of link (the two link samples do not overlap at all); about -0.3 s
+of wall clock** (11.97 -> 11.69 s without the first run, a 15.5 s outlier). That matches what I had
+estimated from the descriptor count before measuring (1.5 core-s) and should have made me suspicious
+of a result four times larger. The change stays: it is correct, tested, and the link gain is clean.
+
+**What else this touches.**
+- The cold trace for `13-noweakptr` (10.8-11.3 s against `12`'s 11.5-12.3) was taken in the same
+  quieter stretch; most of that half second is the host.
+- Today's other comparisons, re-read for the same flaw: the one-pass assembler's whole-build rounds
+  were also old-then-new, but its claim rests on a single-package min-of-15 in strict alternation
+  (8.5% of a package compile, plus 3.5% for the DWARF skip) and on the profile (Flushplist 7.0 -> 4.0 s
+  of samples); it stands at about 6 core-s. Direct output is read from two serial rows. The fork-server
+  and both head starts were reported as nothing or nearly nothing.
+- `tools/trace/abd.sh` now reverses the order on even rounds.
+- "Only removing work moves the trace" survives, but with one example, not two: this change removed
+  148 k descriptors that turned out to be cheap ones.

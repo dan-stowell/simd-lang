@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 20)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 20 and its correction)
 
 ## The trace, before and after
 
@@ -14,13 +14,13 @@ Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.
 | `10-onepass` (today) | 11.6-13.5 s (four runs), 67 core-s | 21.1-23.2 s, 137 core-s |
 | `11-headstart` (today) | 11.6-12.8 s (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | 20.5-23.8 s |
 | `12-directout` (today) | 11.5-12.3 s (four runs), 71 core-s | 20.1-22.3 s, 135 core-s |
-| **now (`13-noweakptr`)** | **10.8-11.3 s** (four runs), 69 core-s | **20.5 s** (and a noisy 23.6) |
+| **now (`13-noweakptr`)** | **10.8-11.3 s** (four runs in a quiet stretch; expect 11-12), 69 core-s | **20.5 s** (and a noisy 23.6) |
 
 The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
 single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
 1.6 core-s and no wall clock; the one-pass assembler is worth 6 core-s and about 0.7 s (compile
 core-s min 67.4 -> 60.9, mean 74.9 -> 68.8 over four rounds). Against the fair row the technique is
-worth 32.5 -> ~11 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
+worth 32.5 -> ~11.5 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
 things turned off.
 
 **The materialization tax** (MinIO; kube is in TRACE.md):
@@ -63,11 +63,17 @@ the front end is 35% of the row, not 20%.
 ## The pattern in today's results
 
 Scheduling and plumbing: fork-server 1.6 core-s, head start 0.2-0.4 s, direct output 0.14 s, wider
-head start 0, streaming link dead. **Removing work: one assembler pass, 6 core-s and 0.7 s; 148,000
-type descriptors nobody wanted, 7 core-s and 0.9 s.** The schedule is as good as it needs to be at this
-work volume; only removing work moves the trace. The work that is left is the stock compiler's own
-(type check 10, IR round trip 17, walk + generate + assemble about 27 core-s) and the stock linker's
-(1.1 s serial), plus whatever else the compiler does per package only for the linker to discard.
+head start 0, streaming link dead. Removing work: one assembler pass, 6 core-s and 0.7 s; speculative
+type descriptors, 1.6 core-s and 0.12 s of link. The schedule is as good as it needs to be at this
+work volume; only removing work moves the trace, and the cheap removals are getting small. The work
+that is left is the stock compiler's own (type check 10, IR round trip 17, walk + generate + assemble
+about 27 core-s) and the stock linker's (1.1 s serial).
+
+**A mistake of mine you should know about.** I first reported the type-descriptor change as -7 core-s
+and -0.9 s, from an A/B that always ran the old configuration first while the host was getting
+quieter. Checking which compiler phase had shrunk exposed it; an order-balanced re-run (12 builds)
+gives -1.6 core-s and -0.3 s. The commit message of `b040190` carries the wrong number; the journal has
+the correction, and the A/B script now alternates order.
 
 ## Rungs climbed today
 
@@ -92,8 +98,8 @@ work volume; only removing work moves the trace. The work that is left is the st
 - **Work removed: speculative pointer-type descriptors.** For every type it describes the stock
   compiler also describes the pointer to it, weakly referenced; for unnamed types the linker drops
   nearly all of them. In MinIO that is 148 k of 371 k descriptors. The baseline build no longer writes
-  them: **-7 core-s, -0.9 s** in every one of four interleaved rounds, link -90 ms, binary the same size
-  to the byte. New differential test `tests/sb_ptrto.sh`.
+  them: **-1.6 core-s of compile, -120 ms of link, about -0.3 s** (order-balanced, 12 builds), objects
+  573 -> 526 MB, binary the same size to the byte. New differential test `tests/sb_ptrto.sh`.
 - **Direct output** (`-directout`): the linker writes the binary in place instead of to tmpfs followed
   by a copy. Link + write 1,459 -> 1,316 ms. Same bytes.
 
@@ -157,7 +163,7 @@ work volume; only removing work moves the trace. The work that is left is the st
 2. **Keep the fork-server on by default?** It is correct as far as I and the reviewer can test and buys
    almost nothing today. I left it on in the trace configuration and off by default in the driver.
    Same question for `-headstart`.
-4. **The host.** The same build cost between 61 and 84 core-seconds within an hour today. Differences
-   under about half a second cannot be seen in single cold runs here; I used interleaved A/B and say so
-   wherever a number is that small. A quieter machine (or pinned cores) would make the trace sharper.
+4. **The host.** The same build cost between 61 and 84 core-seconds within an hour today, and it drifts
+   over minutes. Differences under about half a second cannot be seen in single cold runs here, and an
+   A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the trace sharper.
 3. **The floors in TRACE.md** (see the review disagreement above).

@@ -1,13 +1,14 @@
 # NEXT
 
-State at 2026-11-12 14:05 UTC (JOURNAL iteration 20): MinIO cold 10.8-11.3 s, kube-apiserver
+State at 2026-11-12 14:05 UTC (JOURNAL iteration 20): MinIO cold 10.8-11.3 s in a quiet stretch (expect 11-12), kube-apiserver
 20.5 s, configuration `13-noweakptr` (`tools/trace/run09.sh <minio|kube> <label> -zygote
 -headstart -directout`). Fair stock rows: MinIO 32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md
 (`tools/trace/cpuphases.sh`): walk + generate + assemble 28.7 core-s, export-IR round trip 17, type
 check 10, objects + export 6.7.
 
-Scheduling steps are exhausted (iteration 19); removing work is what moves the trace (iterations 16
-and 20). Two big rungs, and one cheap vein worth an hour before them:
+Scheduling steps are exhausted (iteration 19); removing work is what moves the trace (iteration 16:
+6 core-s; iteration 20: 1.6 core-s after correction). Measure with `tools/trace/abd.sh` (order-balanced)
+or min-of-N on single packages; never old-then-new in a fixed order. Two big rungs, and one cheap vein worth an hour before them:
 
 0. More work the compiler does only for the linker to discard. `SB_TYPELOG` lists every type descriptor
    emitted (223 k left after iteration 20, most of them anonymous); compare with what survives in the
