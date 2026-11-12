@@ -406,3 +406,30 @@ for imp in ('"bufio"', '"os"', '"fmt"'):
         s = s.replace('import (', 'import (\n\t' + imp, 1)
 open(p, 'w').write(s)
 
+# Fourteenth change: no speculative pointer-type descriptors in the baseline build. For every type T it
+# describes, the stock compiler also writes a descriptor for *T, so that T's PtrToThis can point at it.
+# When T is unnamed and *T has no methods that reference is weak: the linker drops *T unless something
+# else needs it, and whoever needs it writes it itself (an unnamed type is emitted by every package that
+# uses it). In MinIO these are 148 k of the 371 k descriptors the compilers write (125 k of them pointers
+# to func types). Here they are not written and PtrToThis is 0, which reflect and the runtime treat as
+# "look it up": reflect.PointerTo finds a *T that exists through the typelinks table, as it does today
+# whenever the weak reference was not kept.
+p = os.path.join(reflectd, 'reflect.go'); s = open(p).read()
+old = '''		if t.Sym() != nil || methods(tptr) != nil {
+			sptrWeak = false
+		}
+		sptr = writeType(tptr)
+'''
+assert s.count(old) == 1
+s = s.replace(old, '''		if t.Sym() != nil || methods(tptr) != nil {
+			sptrWeak = false
+		}
+		if !(sptrWeak && sbNoWeakPtr) {
+			sptr = writeType(tptr)
+		}
+''')
+s += '''
+var sbNoWeakPtr = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_KEEP_WEAKPTR") == ""
+'''
+open(p, 'w').write(s)
+

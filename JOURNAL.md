@@ -922,3 +922,58 @@ as I write; result in MORNING.md.
 **Scope check.** Most ambitious next is unchanged (F4, or whole packages leaving the stock compiler).
 Why not now: both start with a design that I would rather hand over with today's numbers than begin
 badly in the last stretch of a session. NEXT.md has them in order with the numbers to design against.
+
+## 2026-11-12 14:05 UTC — iteration 20: work removed: 148,000 type descriptors nobody wanted (-7 core-s, -0.9 s)
+
+**Trace.** MinIO cold, four runs of `13-noweakptr`: **11.0, 11.3, 10.9, 10.8 s** (69 core-s in the
+first; `12`: 11.5-12.3). kube-apiserver, two: 23.6 (a noisy run, 161 core-s), **20.5 s**. Both pass
+smoke; MinIO passes the stress test. Objects 573 -> 526 MB; link 1.2 -> 1.07-1.15 s.
+
+**How it was found.** Iteration 19's lesson was that only removing work moves the trace, so I went
+back to the largest block of work I had measured and not explained: runtime type descriptors, 8% of
+compile samples, 371 k of them, 225 k distinct anonymous types. The most repeated names in iteration
+16's log came in pairs: `func() string` and `*func() string`, 613 each. Why would anything need a
+pointer to a func type?
+
+**What it is.** For every type T it describes, the stock compiler also writes a descriptor for `*T`,
+so that T's `PtrToThis` field can point at it and `reflect.PointerTo` is a field read. When T is
+unnamed and `*T` has no methods the reference is *weak*: the linker keeps `*T` only if something else
+uses it, and whatever else uses it writes its own copy (an unnamed type is emitted by every package
+that needs it). Counted on MinIO: **148,235 of the 371,329 descriptors** the compilers write are such
+pointers (125 k to func types), each built, named, hashed, written to an object, read by the linker,
+entered in its symbol table, and almost always dropped by dead-code elimination.
+
+**The change** (fourteenth in `driver/early_export.py`, baseline build only): do not write them;
+`PtrToThis` is 0, which reflect and the runtime already treat as "look it up" (`PointerTo` finds an
+existing `*T` through the typelinks table, exactly as it does today whenever the weak reference was not
+kept). The binary is the same size to the byte (159,101,052): what was removed was never in it.
+
+**Measured.** Four interleaved rounds, old behaviour via `SB_KEEP_WEAKPTR=1`:
+
+    keep   total 12.76 12.00 11.68 11.41 s   compile 76.9 74.1 72.0 69.2 core-s   link 1260 1240 1160 1188 ms
+    skip   total 11.94 11.32 10.62 10.08 s   compile 72.9 68.4 64.3 59.1 core-s   link 1153 1132 1097 1119 ms
+
+Every round the same sign: **-6.9 core-s and -0.97 s on average**, link -87 ms. I had estimated 1.5
+core-s from the descriptor count; the descriptors drag more with them than their own construction
+(name data, object writing, hashing) than the profile's `writeType` line showed.
+
+**Evidence.**
+- `tests/sb_ptrto.sh` (new): a program that reaches pointers to ten kinds of unnamed type statically,
+  through `PointerTo` and through `New`, and checks identity, assertions and type switches: 39 lines of
+  output identical for the stock compiler, the baseline with the descriptors and the baseline without.
+  (My first version of the program had its own bug, a `Field` call on an array type; all three builds
+  panicked identically, which is the differential test doing its job on the test.)
+- Standard-library oracle: 27 of 29 (the two known allocation-count tests). `reflect`,
+  `encoding/json`, `encoding/gob`, `encoding/xml`, `text/template`, `fmt` and four more: 9 of 10; the
+  tenth, `reflect`, fails `TestMapIterSet` (allocation count) and `TestCallReturnsEmpty` (waits for a
+  cleanup; the liveness class), both identically with the descriptors kept.
+- MinIO smoke and stress; kube smoke; `tests/sb_early.sh` (gated on `SB_BASELINE`: idle compiler still
+  byte-identical to stock); `tests/sb_zygote.sh`. MinIO's unit tests are running with this compiler.
+
+**Behaviour difference for MORNING.md.** The first `reflect.PointerTo(T)` for an unnamed T does a
+table lookup instead of a field read (then it is cached). Nothing else.
+
+**Scope check.** Most ambitious next: unchanged (F4; whole packages leaving the stock compiler). What
+this iteration says about how to spend the time until then: there may be more work of this kind,
+things the stock compiler does for every package so that a linker can throw them away. The descriptor
+log has 225 k distinct anonymous types left; the next question is how many survive the link.

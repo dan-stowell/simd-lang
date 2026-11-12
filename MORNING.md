@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 19)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 20)
 
 ## The trace, before and after
 
@@ -13,13 +13,14 @@ Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.
 | `09-forkserver` (today) | 12.5-15.6 s (four runs; noisy host) | 22.5-24.5 s |
 | `10-onepass` (today) | 11.6-13.5 s (four runs), 67 core-s | 21.1-23.2 s, 137 core-s |
 | `11-headstart` (today) | 11.6-12.8 s (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | 20.5-23.8 s |
-| **now (`12-directout`)** | **11.5-12.3 s** (four runs), 71 core-s | **20.1-22.3 s**, 135 core-s |
+| `12-directout` (today) | 11.5-12.3 s (four runs), 71 core-s | 20.1-22.3 s, 135 core-s |
+| **now (`13-noweakptr`)** | **10.8-11.3 s** (four runs), 69 core-s | **20.5 s** (and a noisy 23.6) |
 
 The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
 single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
 1.6 core-s and no wall clock; the one-pass assembler is worth 6 core-s and about 0.7 s (compile
 core-s min 67.4 -> 60.9, mean 74.9 -> 68.8 over four rounds). Against the fair row the technique is
-worth 32.5 -> ~11.7 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
+worth 32.5 -> ~11 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
 things turned off.
 
 **The materialization tax** (MinIO; kube is in TRACE.md):
@@ -62,10 +63,11 @@ the front end is 35% of the row, not 20%.
 ## The pattern in today's results
 
 Scheduling and plumbing: fork-server 1.6 core-s, head start 0.2-0.4 s, direct output 0.14 s, wider
-head start 0, streaming link dead. Removing work: one assembler pass, 6 core-s and 0.7 s. The schedule
-is as good as it needs to be at this work volume; from here only removing work moves the trace, and
-the work that is left is the stock compiler's own (type check 10, IR round trip 17, walk + generate +
-assemble 29 core-s) and the stock linker's (1.2 s serial).
+head start 0, streaming link dead. **Removing work: one assembler pass, 6 core-s and 0.7 s; 148,000
+type descriptors nobody wanted, 7 core-s and 0.9 s.** The schedule is as good as it needs to be at this
+work volume; only removing work moves the trace. The work that is left is the stock compiler's own
+(type check 10, IR round trip 17, walk + generate + assemble about 27 core-s) and the stock linker's
+(1.1 s serial), plus whatever else the compiler does per package only for the linker to discard.
 
 ## Rungs climbed today
 
@@ -87,6 +89,11 @@ assemble 29 core-s) and the stock linker's (1.2 s serial).
   Worth **0.2-0.4 s**, which today's host noise hides in cold wall clock (interleaved cold means 11.91
   vs 11.96 s; warm 12.15 vs 11.72 s).
 
+- **Work removed: speculative pointer-type descriptors.** For every type it describes the stock
+  compiler also describes the pointer to it, weakly referenced; for unnamed types the linker drops
+  nearly all of them. In MinIO that is 148 k of 371 k descriptors. The baseline build no longer writes
+  them: **-7 core-s, -0.9 s** in every one of four interleaved rounds, link -90 ms, binary the same size
+  to the byte. New differential test `tests/sb_ptrto.sh`.
 - **Direct output** (`-directout`): the linker writes the binary in place instead of to tmpfs followed
   by a copy. Link + write 1,459 -> 1,316 ms. Same bytes.
 
@@ -139,6 +146,8 @@ assemble 29 core-s) and the stock linker's (1.2 s serial).
   speed on some Intel cores, not correctness) and forward branches further than 12 instructions use the
   long encoding. No per-function DWARF when the driver's link has `-w` (the reviewer showed that a link
   without `-w` panicked; the compiler now leaves DWARF out only when the driver says the link strips it).
+- The first `reflect.PointerTo(T)` for an unnamed type T does a table lookup instead of a field read
+  (the compiler no longer emits `*T` descriptors speculatively); results are the same.
 - Our wall clock includes syncing the binary to disk; the stock rows do not sync theirs.
 
 ## Decisions that are yours

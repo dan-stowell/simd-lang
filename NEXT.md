@@ -1,13 +1,17 @@
 # NEXT
 
-State at 2026-11-12 13:35 UTC (JOURNAL iteration 18): MinIO cold 11.5-12.3 s, kube-apiserver
-20.1-22.3 s, configuration `12-directout` (`tools/trace/run09.sh <minio|kube> <label> -zygote
+State at 2026-11-12 14:05 UTC (JOURNAL iteration 20): MinIO cold 10.8-11.3 s, kube-apiserver
+20.5 s, configuration `13-noweakptr` (`tools/trace/run09.sh <minio|kube> <label> -zygote
 -headstart -directout`). Fair stock rows: MinIO 32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md
 (`tools/trace/cpuphases.sh`): walk + generate + assemble 28.7 core-s, export-IR round trip 17, type
 check 10, objects + export 6.7.
 
-Every cheap step is taken; what is left is the two big ones. Start the next session with a design
-note for one of them, not with another measurement.
+Scheduling steps are exhausted (iteration 19); removing work is what moves the trace (iterations 16
+and 20). Two big rungs, and one cheap vein worth an hour before them:
+
+0. More work the compiler does only for the linker to discard. `SB_TYPELOG` lists every type descriptor
+   emitted (223 k left after iteration 20, most of them anonymous); compare with what survives in the
+   binary (`go tool nm -type`), and do the same for method wrappers and equality/hash functions.
 
 1. F4, the link (1.2 s serial, the whole tail). Numbers to design against (JOURNAL iteration 18):
    loadlib 439 ms of which reading objects is 55 and symbol resolution ~390; deadcode 246; asmb 118;
