@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Start a continuous run on the campaign in PLAN.md. Usage: ./overnight.sh   (run it inside tmux)
 # It runs until a file STOP exists in this directory: `touch STOP`. There is no deadline.
+# Sessions run on Fable; set MODEL to use another model (MODEL=opus ./overnight.sh).
 #
 # If claude exits, a fresh session starts on PLAN.md. If the session stops working
 # (usually the model usage limit: claude stays open but idle), a watchdog types a
@@ -8,6 +9,7 @@
 # work resumes by itself when the limit resets.
 set -uo pipefail
 cd "$(dirname "$0")"
+model=${MODEL:-claude-fable-5-2}
 rm -f STOP .claude/status-asked
 prompt="Continuous run. Read CHARTER.md, PLAN.md and LOOP.md, then work the campaign in PLAN.md, starting from its Now line. There is no deadline; a session ending costs nothing because you commit often. Don't ask the user questions; decide and write down why."
 nudge="Continue the campaign in PLAN.md from its Now line. (Watchdog: no activity for 30 minutes, probably a usage limit that has since reset.)"
@@ -37,7 +39,7 @@ fi
 
 while [ ! -f STOP ]; do
   git pull --ff-only || echo "overnight.sh: git pull failed; continuing with the local tree" >&2
-  claude --dangerously-skip-permissions --remote-control -- "$prompt"
+  claude --model "$model" --dangerously-skip-permissions --remote-control -- "$prompt"
   [ -f STOP ] && break
   echo "overnight.sh: claude exited; starting a fresh session in 60 s (touch STOP to end)" >&2
   sleep 60
