@@ -566,7 +566,10 @@ func (g *gen) unary(e *ast.UnaryExpr) loc {
 		return g.recv(e, false)[0]
 	}
 	if isComplex(t) {
-		giveUp("complex arithmetic")
+		if e.Op != token.SUB {
+			giveUp("complex unary %v", e.Op)
+		}
+		return g.complexNeg(g.keep(g.expr(e.X), t), t)
 	}
 	l := g.expr(e.X)
 	size := int(g.c.sizeof(t))
@@ -670,7 +673,8 @@ func (g *gen) arith(x, y ast.Expr, op token.Token, t types.Type) loc {
 		return g.concat(x, y, t)
 	}
 	if isComplex(t) {
-		giveUp("complex arithmetic")
+		xl := g.keep(g.exprAs(x, t), t)
+		return g.complexArith(xl, g.keep(g.exprAs(y, t), t), op, t)
 	}
 	size := int(g.c.sizeof(t))
 	if isFloat(t) {

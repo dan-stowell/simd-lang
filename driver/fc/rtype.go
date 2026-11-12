@@ -24,11 +24,11 @@ import (
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
 	rtMu     sync.Mutex
-	rtDone   map[*obj.LSym]bool          // descriptors considered (written, or left to another object)
-	rtMeth   map[string][]methodSig      // method tables, by type symbol name
-	rtNoalg  map[types.Type]bool         // synthetic types with no equality and no hash (map groups, closures)
+	rtDone   map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
+	rtMeth   map[string][]methodSig       // method tables, by type symbol name
+	rtNoalg  map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
 	rtGroup  map[*types.Struct]*types.Map // the map a group struct belongs to
-	rtGroups map[string]*types.Struct    // group struct by the map's link name
+	rtGroups map[string]*types.Struct     // group struct by the map's link name
 	rtVargen map[*types.Package]map[token.Pos]int
 	rtWrap   map[*obj.LSym]bool
 	rtAlg    map[string]bool
@@ -144,26 +144,6 @@ func (c *compiler) writeDeclaredTypes() {
 	}
 }
 
-// unwrittenTypeCode gives the package up when a descriptor needs code nobody writes yet and no placeholder
-// can stand for: equality and hash functions and the wrappers of unnamed and instantiated types (DUPOK:
-// main.go's placeholders are for the stock object's indexed symbols only, which the wrappers of the
-// package's own defined types are). To be deleted when the code generator writes the bodies of needEq,
-// needHash and needWrapper.
-func (c *compiler) unwrittenTypeCode() {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
-	for _, w := range c.needWrapper {
-		if w.dupok {
-			giveUp("method wrapper %s", w.sym.Name)
-		}
-	}
-	switch {
-	case len(c.needEq) > 0:
-		giveUp("equality function %s", c.needEq[0].sym.Name)
-	case len(c.needHash) > 0:
-		giveUp("hash function %s", c.needHash[0].sym.Name)
-	}
-}
 
 // eqFuncSym is the closure (a func(p, q unsafe.Pointer) bool value) that compares two values of the
 // comparable type t: of a runtime function, or type:.eqfunc.<signature>. hashFuncSym likewise hashes.

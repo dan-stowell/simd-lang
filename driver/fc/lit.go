@@ -24,7 +24,7 @@ func (g *gen) compositeTo(e *ast.CompositeLit, dst loc, t types.Type) {
 				f := g.info.Uses[kv.Key.(*ast.Ident)].(*types.Var)
 				fi = -1
 				for j := 0; j < u.NumFields(); j++ {
-					if u.Field(j) == f {
+					if u.Field(j) == f || u.Field(j).Name() == f.Name() && u.Field(j).Pkg() == f.Pkg() {
 						fi = j
 					}
 				}
@@ -125,5 +125,3 @@ func (g *gen) arrayElems(e *ast.CompositeLit, dst loc, et types.Type) {
 		i++
 	}
 }
-
-func (g *gen) mapLit(e *ast.CompositeLit, dst loc, t types.Type) { giveUp("map literal") }

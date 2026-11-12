@@ -82,16 +82,60 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 	switch fn.Pkg().Path() {
 	case "runtime":
 		switch fn.Name() {
-		case "getcallerpc", "getcallersp", "getclosureptr", "KeepAlive":
-			return fn.Name() != "KeepAlive"
+		case "getcallerpc", "getcallersp", "getclosureptr", "getg":
+			return true
 		}
 	case "internal/runtime/sys":
 		switch fn.Name() {
 		case "GetCallerPC", "GetCallerSP", "GetClosurePtr":
 			return true
 		}
+	case "internal/abi":
+		switch fn.Name() {
+		case "FuncPCABI0", "FuncPCABIInternal":
+			return true
+		}
 	}
 	return false
+}
+
+// intrinsic expands a call of one of those functions.
+func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
+	ax := []loc{{kind: lReg, reg: AX}}
+	switch fn.Name() {
+	case "getcallerpc", "GetCallerPC":
+		g.a.load(AX, mb(BP, 8), 8, false)
+		return ax
+	case "getcallersp", "GetCallerSP":
+		g.a.lea(AX, mb(BP, 16))
+		return ax
+	case "getclosureptr", "GetClosurePtr":
+		if g.ctxSlot.kind == lNone {
+			giveUp("getclosureptr outside a closure")
+		}
+		g.a.load(AX, mb(BP, g.ctxSlot.off), 8, false)
+		return ax
+	case "getg":
+		g.a.movRR(AX, R14)
+		return ax
+	case "FuncPCABI0", "FuncPCABIInternal":
+		id := identOf(ast.Unparen(e.Args[0]))
+		if id == nil {
+			giveUp("%s of an expression", fn.Name())
+		}
+		f, ok := g.info.Uses[id].(*types.Func)
+		if !ok {
+			giveUp("%s of a non-function", fn.Name())
+		}
+		sym := g.c.funcSym(f)
+		if fn.Name() == "FuncPCABI0" {
+			sym = g.c.lookup(sym.Name, obj.ABI0, sym.Pkg)
+		}
+		g.a.lea(AX, msym(sym, 0))
+		return ax
+	}
+	giveUp("compiler intrinsic %s", fn.FullName())
+	return nil
 }
 
 // findHeapVars marks the local variables that must live on the heap: their address is taken (explicitly,
@@ -135,6 +179,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 		}
 	}
 	var lits []*ast.FuncLit
+	var rangeBodies []*ast.BlockStmt
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.UnaryExpr:
@@ -167,9 +212,30 @@ func (g *gen) findHeapVars(body ast.Node) {
 			}
 		case *ast.FuncLit:
 			lits = append(lits, n)
+		case *ast.RangeStmt:
+			if _, ok := g.typeOf(n.X).Underlying().(*types.Signature); ok {
+				// the body becomes a function: it captures like a literal, and a return inside it
+				// reaches this function's results through the heap
+				rangeBodies = append(rangeBodies, n.Body)
+				for i := 0; i < g.sig.Results().Len(); i++ {
+					g.heapVars[g.sig.Results().At(i)] = true
+				}
+			}
 		}
 		return true
 	})
+	for _, b := range rangeBodies {
+		ast.Inspect(b, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok {
+				if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+					if v.Pos() < b.Pos() || v.Pos() >= b.End() {
+						mark(v)
+					}
+				}
+			}
+			return true
+		})
+	}
 	for _, lit := range lits {
 		ast.Inspect(lit.Body, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
@@ -191,12 +257,27 @@ func (pr *Program) linknames(p *Pkg) map[string]string {
 		for _, f := range p.files {
 			for _, cg := range f.Comments {
 				for _, cm := range cg.List {
+					if strings.HasPrefix(cm.Text, "//go:linknamestd ") {
+						if fs := strings.Fields(cm.Text); len(fs) >= 2 {
+							if p.linknamedStd == nil {
+								p.linknamedStd = map[string]bool{}
+							}
+							p.linknamedStd[fs[1]] = true
+						}
+						continue
+					}
 					if !strings.HasPrefix(cm.Text, "//go:linkname ") {
 						continue
 					}
 					fs := strings.Fields(cm.Text)
 					if len(fs) == 3 {
 						p.linkname[fs[1]] = fs[2]
+					}
+					if len(fs) >= 2 {
+						if p.linknamed == nil {
+							p.linknamed = map[string]bool{}
+						}
+						p.linknamed[fs[1]] = true
 					}
 				}
 			}
@@ -228,43 +309,4 @@ func (g *gen) funcValue(fn *types.Func) loc {
 	g.c.mu.Unlock()
 	g.a.lea(AX, msym(s, 0))
 	return loc{kind: lReg, reg: AX}
-}
-
-func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
-	giveUp("method value")
-	return loc{}
-}
-func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
-	giveUp("method expression")
-	return loc{}
-}
-func (g *gen) mapIndex(e *ast.IndexExpr, commaOK bool) []loc { giveUp("map index"); return nil }
-func (g *gen) mapOperands(e *ast.IndexExpr) (loc, loc)       { giveUp("map index"); return loc{}, loc{} }
-func (g *gen) mapIndexLocs(e *ast.IndexExpr, m, k loc, commaOK bool) []loc {
-	giveUp("map index")
-	return nil
-}
-func (g *gen) mapAssign(e *ast.IndexExpr) loc                  { giveUp("map assignment"); return loc{} }
-func (g *gen) mapAssignLocs(e *ast.IndexExpr, m, k loc) loc    { giveUp("map assignment"); return loc{} }
-func (g *gen) mapDelete(e *ast.CallExpr)                       { giveUp("delete") }
-func (g *gen) clearCall(e *ast.CallExpr)                       { giveUp("clear") }
-func (g *gen) printCall(e *ast.CallExpr, nl bool)              { giveUp("print") }
-func (g *gen) recoverCall(e *ast.CallExpr) loc                 { giveUp("recover"); return loc{} }
-func (g *gen) funcLit(e *ast.FuncLit) loc                      { giveUp("function literal"); return loc{} }
-func (g *gen) typeAssert(e *ast.TypeAssertExpr, ok bool) []loc { giveUp("type assertion"); return nil }
-func (g *gen) recv(e *ast.UnaryExpr, ok bool) []loc            { giveUp("channel receive"); return nil }
-func (g *gen) ifaceToIface(l loc, from, to types.Type) loc {
-	giveUp("interface conversion")
-	return loc{}
-}
-func (g *gen) typeSwitch(s *ast.TypeSwitchStmt, name string) { giveUp("type switch") }
-func (g *gen) selectStmt(s *ast.SelectStmt, name string)     { giveUp("select") }
-func (g *gen) deferStmt(s *ast.DeferStmt)                    { giveUp("defer") }
-func (g *gen) goStmt(s *ast.GoStmt)                          { giveUp("go statement") }
-func (g *gen) send(s *ast.SendStmt)                          { giveUp("channel send") }
-func (g *gen) rangeMap(s *ast.RangeStmt, name string, set func(ast.Expr, *types.Var, loc, types.Type)) {
-	giveUp("range over a map")
-}
-func (g *gen) rangeChan(s *ast.RangeStmt, name string, set func(ast.Expr, *types.Var, loc, types.Type)) {
-	giveUp("range over a channel")
 }

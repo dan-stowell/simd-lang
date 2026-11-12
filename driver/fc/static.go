@@ -114,6 +114,7 @@ func (c *compiler) compilePackage() (errs []string) {
 			g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 		})
 	}
+	c.abiWrappers(try)
 	// the init function: the dynamic initializers, in order
 	pp := objabi.PathToPrefix(c.path)
 	var fns []*obj.LSym
@@ -184,7 +185,39 @@ func (c *compiler) compilePackage() (errs []string) {
 		c.defData(task, objabi.SNOPTRDATA, int64(8+8*len(fns)))
 	}
 	c.hasInit = len(fns) > 0 || len(deps) > 0
-	try("type descriptors", func() { c.writeDeclaredTypes(); c.unwrittenTypeCode() })
+	// a symbol with a //go:linkname directive may be referenced from other packages by name
+	c.pr.linknames(c.pkg)
+	for _, set := range []struct {
+		names map[string]bool
+		attr  obj.Attribute
+	}{{c.pkg.linknamed, obj.AttrLinkname}, {c.pkg.linknamedStd, obj.AttrLinknameStd}} {
+		for name := range set.names {
+			switch o := c.tpkg.Scope().Lookup(name).(type) {
+			case *types.Func:
+				s := c.funcSym(o)
+				s.Set(set.attr, true)
+				c.lookup(s.Name, obj.ABI0, s.Pkg).Set(set.attr, true)
+			case *types.Var:
+				c.globalSym(o).Set(set.attr, true)
+			}
+		}
+	}
+	try("type descriptors", func() { c.writeDeclaredTypes() })
+	// instances of generic functions and the code descriptors need, each of which may ask for more
+	for again := true; again; {
+		again = false
+		for len(c.instQueue) > 0 {
+			in := c.instQueue[0]
+			c.instQueue = c.instQueue[1:]
+			try("instance "+in.sym.Name, func() { c.compileInstance(in) })
+			again = true
+		}
+		try("code for type descriptors", func() {
+			if c.unwrittenTypeCode() {
+				again = true
+			}
+		})
+	}
 	if len(errs) == 0 {
 		c.installFuncs()
 	}

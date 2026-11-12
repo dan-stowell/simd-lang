@@ -97,3 +97,43 @@ func float(a, b float64) float64 {
 	}
 	return c + float64(int(a))
 }
+
+func TestMore(t *testing.T) {
+	if got := lib.SumSeq(10, 7); got != 0+2+4+6 {
+		t.Error("SumSeq", got)
+	}
+	if got := lib.SumSeq(5, 100); got != 6 {
+		t.Error("SumSeq all", got)
+	}
+	if i, ok := lib.FindSeq([]string{"a", "b", "c"}, "c"); i != 2 || !ok {
+		t.Error("FindSeq", i, ok)
+	}
+	if i, ok := lib.FindSeq([]string{"a"}, "z"); i != -1 || ok {
+		t.Error("FindSeq miss", i, ok)
+	}
+	want := 0
+outer:
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			if j > i {
+				continue outer
+			}
+			if i+j > 12 {
+				break outer
+			}
+			want += i * j
+		}
+	}
+	if got := lib.Nested(9); got != want {
+		t.Error("Nested", got, want)
+	}
+	if got := lib.MethodExprs(2, 3, 5); got != 15020 {
+		t.Error("MethodExprs", got)
+	}
+	x, y := complex(1.5, -2), complex(0.5, 4)
+	z := x*y + x/y - y
+	if re, im, eq := lib.Cplx(1.5, -2, 0.5, 4); re != real(z) || im != imag(z) || eq {
+		t.Error("Cplx", re, im, eq, z)
+	}
+	lib.Print(42, "str")
+}

@@ -38,7 +38,8 @@ type callee struct {
 	clo   loc       // a closure value (a pointer to a funcval), stashed
 	iface loc       // an interface value, stashed: call method number imethod
 	imeth int
-	kind  int // 0 direct, 1 closure, 2 interface
+	kind  int  // 0 direct, 1 closure, 2 interface
+	abi0  bool // a direct call of an assembly function with ABI0
 }
 
 // emitCall moves the arguments to where the ABI wants them, calls, and collects the results.
@@ -77,6 +78,11 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 	switch c.kind {
 	case 0:
 		g.a.call(c.sym)
+		if c.abi0 {
+			// assembly may have used the registers ABIInternal fixes
+			g.a.xorps(X15, X15)
+			g.a.loadG()
+		}
 	case 1:
 		g.loadTo(DX, c.clo, types.Typ[types.UnsafePointer])
 		g.a.load(R12, mb(DX, 0), 8, false)
@@ -123,9 +129,22 @@ func (g *gen) rtCall(name string, args ...loc) []loc {
 }
 
 func (g *gen) call(e *ast.CallExpr) []loc {
+	ai, args, c, rs, done := g.prepCall(e, true)
+	if done {
+		return rs
+	}
+	return g.emitCall(ai, args, c)
+}
+
+// prepCall evaluates the callee and the arguments of a call. A conversion or a built-in is carried out on
+// the spot (done is true and rs its results) when now is set, and given up on otherwise.
+func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c callee, rs []loc, done bool) {
 	fun := ast.Unparen(e.Fun)
 	if tv := g.info.Types[fun]; tv.IsType() {
-		return []loc{g.convert(e.Args[0], g.subst(tv.Type))}
+		if !now {
+			giveUp("deferred conversion")
+		}
+		return nil, nil, c, []loc{g.convert(e.Args[0], g.subst(tv.Type))}, true
 	}
 	// F[int](x): the callee is under the index expression
 	switch ix := fun.(type) {
@@ -140,16 +159,16 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 	}
 	if id := identOf(fun); id != nil {
 		if b, ok := g.info.Uses[id].(*types.Builtin); ok {
-			return g.builtin(e, b.Name())
+			if !now {
+				giveUp("deferred built-in %s", b.Name())
+			}
+			return nil, nil, c, g.builtin(e, b.Name()), true
 		}
 	}
 	sig, ok := g.typeOf(e.Fun).Underlying().(*types.Signature)
 	if !ok {
 		giveUp("call of %T", fun)
 	}
-	var c callee
-	var ai *abiInfo
-	var args []loc
 	var recvArg bool
 	direct := func(fn *types.Func) {
 		if g.c.isIntrinsic(fn) {
@@ -170,6 +189,14 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 		}
 		ai = g.c.abiOfTypes(in, out)
 	}
+	if id := identOf(fun); id != nil {
+		if fn, ok := g.info.Uses[id].(*types.Func); ok && g.info.Selections[selOf(fun)] == nil && g.c.isIntrinsic(fn) {
+			if !now {
+				giveUp("deferred intrinsic %s", fn.Name())
+			}
+			return nil, nil, c, g.intrinsic(fn, e), true
+		}
+	}
 	switch f := fun.(type) {
 	case *ast.Ident:
 		if fn, ok := g.info.Uses[f].(*types.Func); ok {
@@ -186,68 +213,10 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 		if sel.Kind() != types.MethodVal {
 			break // a field of function type, or a method expression: a function value
 		}
-		fn := sel.Obj().(*types.Func)
-		path := sel.Index()
-		if g.env != nil {
-			// inside an instance: the method is the one the type argument has
-			obj, p2, _ := types.LookupFieldOrMethod(g.typeOf(f.X), true, fn.Pkg(), fn.Name())
-			m, ok := obj.(*types.Func)
-			if !ok {
-				giveUp("method %s of %v", fn.Name(), g.typeOf(f.X))
-			}
-			fn, path = m, p2
-		}
-		msig := fn.Type().(*types.Signature)
-		l := g.expr(f.X)
-		l, t := g.fieldPath(l, g.typeOf(f.X), path[:len(path)-1])
-		if isInterface(t) {
-			if l.kind == lZero {
-				l = g.zeroTemp(t)
-			}
-			l = g.stashValue(l, t)
-			it := t.Underlying().(*types.Interface)
-			idx := -1
-			for i, m := range ifaceMethods(it) {
-				if m.Name() == fn.Name() && (m.Exported() || m.Pkg() == fn.Pkg()) {
-					idx = i
-				}
-			}
-			if idx < 0 {
-				giveUp("interface method %s not found", fn.Name())
-			}
-			c = callee{kind: 2, iface: l, imeth: idx}
-			in := []types.Type{types.Typ[types.UnsafePointer]}
-			for i := 0; i < sig.Params().Len(); i++ {
-				in = append(in, sig.Params().At(i).Type())
-			}
-			var out []types.Type
-			for i := 0; i < sig.Results().Len(); i++ {
-				out = append(out, sig.Results().At(i).Type())
-			}
-			ai = g.c.abiOfTypes(in, out)
-			args = append(args, l.plus(8))
-			recvArg = true
-			g.usedIfaceMethod(t, fn)
-			break
-		}
-		_, wantPtr := msig.Recv().Type().(*types.Pointer)
-		_, havePtr := t.Underlying().(*types.Pointer)
 		var rl loc
-		switch {
-		case wantPtr && havePtr, !wantPtr && !havePtr:
-			rl = l
-			if rl.kind == lZero {
-				rl = g.zeroTemp(t)
-			}
-		case wantPtr:
-			rl = g.addrOfLoc(l)
-		default:
-			rl = g.deref(l)
-		}
-		rl = g.stashValue(rl, msig.Recv().Type())
+		c, ai, rl = g.method(f, sel, sig)
 		args = append(args, rl)
 		recvArg = true
-		direct(fn)
 	}
 	if ai == nil {
 		// a function value
@@ -257,7 +226,7 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 	}
 	_ = recvArg
 	args = append(args, g.args(e, sig)...)
-	return g.emitCall(ai, args, c)
+	return ai, args, c, nil, false
 }
 
 func hasTypeParams(t types.Type) bool {
@@ -514,7 +483,7 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 		if g.c.sizeof(from) == g.c.sizeof(to) {
 			return l
 		}
-		giveUp("complex conversion")
+		return g.complexConv(l, from, to)
 	}
 	if _, ok := fu.(*types.Slice); ok {
 		switch tt := tu.(type) {
@@ -640,8 +609,29 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		return nil
 	case "recover":
 		return one(g.recoverCall(e))
-	case "complex", "real", "imag":
-		giveUp("complex arithmetic")
+	case "complex":
+		return one(g.makeComplex(e))
+	case "real", "imag":
+		return one(g.complexPart(e, name == "imag"))
+	case "Sizeof":
+		return one(loc{kind: lImm, imm: g.c.sizeof(g.typeOf(e.Args[0]))})
+	case "Alignof":
+		return one(loc{kind: lImm, imm: g.c.alignof(g.typeOf(e.Args[0]))})
+	case "Offsetof":
+		se := ast.Unparen(e.Args[0]).(*ast.SelectorExpr)
+		sel := g.info.Selections[se]
+		t := g.typeOf(se.X)
+		off := int64(0)
+		for _, i := range sel.Index() {
+			if p, ok := t.Underlying().(*types.Pointer); ok {
+				t = p.Elem()
+				off = 0
+			}
+			st := t.Underlying().(*types.Struct)
+			off += g.c.fieldOffsets(st)[i]
+			t = st.Field(i).Type()
+		}
+		return one(loc{kind: lImm, imm: off})
 	case "Add": // unsafe.Add(p, n)
 		pt := g.typeOf(e.Args[0])
 		nt := g.typeOf(e.Args[1])
@@ -920,3 +910,99 @@ func (g *gen) minmax(e *ast.CallExpr, name string) loc {
 }
 
 var _ = token.ADD
+
+// method prepares a call of the method selected by f (x.M): the callee, its ABI, and the receiver argument
+// (evaluated, safe from what is evaluated next). sig is the method's signature without the receiver.
+func (g *gen) method(f *ast.SelectorExpr, sel *types.Selection, sig *types.Signature) (c callee, ai *abiInfo, recv loc) {
+	fn := sel.Obj().(*types.Func)
+	path := sel.Index()
+	if g.env != nil {
+		// inside an instance: the method is the one the type argument has
+		obj, p2, _ := types.LookupFieldOrMethod(g.typeOf(f.X), true, fn.Pkg(), fn.Name())
+		m, ok := obj.(*types.Func)
+		if !ok {
+			giveUp("method %s of %v", fn.Name(), g.typeOf(f.X))
+		}
+		fn, path = m, p2
+	}
+	return g.methodOn(g.expr(f.X), g.typeOf(f.X), fn, path, sig, f.Sel)
+}
+
+// methodOn is method for a receiver operand already evaluated: the value of type xt at l.
+func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *types.Signature, id *ast.Ident) (c callee, ai *abiInfo, recv loc) {
+	direct := func(fn *types.Func) {
+		if g.c.isIntrinsic(fn) {
+			giveUp("compiler intrinsic %s", fn.FullName())
+		}
+		sym, fsig := g.funcRef(fn, id)
+		c = callee{sym: sym}
+		in := []types.Type{}
+		if r := fsig.Recv(); r != nil {
+			in = append(in, r.Type())
+		}
+		for i := 0; i < sig.Params().Len(); i++ {
+			in = append(in, sig.Params().At(i).Type())
+		}
+		var out []types.Type
+		for i := 0; i < sig.Results().Len(); i++ {
+			out = append(out, sig.Results().At(i).Type())
+		}
+		ai = g.c.abiOfTypes(in, out)
+	}
+	for once := true; once; once = false {
+		msig := fn.Type().(*types.Signature)
+		l, t := g.fieldPath(l, xt, path[:len(path)-1])
+		if isInterface(t) {
+			if l.kind == lZero {
+				l = g.zeroTemp(t)
+			}
+			l = g.stashValue(l, t)
+			it := t.Underlying().(*types.Interface)
+			idx := -1
+			for i, m := range ifaceMethods(it) {
+				if m.Name() == fn.Name() && (m.Exported() || m.Pkg() == fn.Pkg()) {
+					idx = i
+				}
+			}
+			if idx < 0 {
+				giveUp("interface method %s not found", fn.Name())
+			}
+			c = callee{kind: 2, iface: l, imeth: idx}
+			in := []types.Type{types.Typ[types.UnsafePointer]}
+			for i := 0; i < sig.Params().Len(); i++ {
+				in = append(in, sig.Params().At(i).Type())
+			}
+			var out []types.Type
+			for i := 0; i < sig.Results().Len(); i++ {
+				out = append(out, sig.Results().At(i).Type())
+			}
+			ai = g.c.abiOfTypes(in, out)
+			recv = l.plus(8)
+			g.usedIfaceMethod(t, fn)
+			break
+		}
+		_, wantPtr := msig.Recv().Type().(*types.Pointer)
+		_, havePtr := t.Underlying().(*types.Pointer)
+		var rl loc
+		switch {
+		case wantPtr && havePtr, !wantPtr && !havePtr:
+			rl = l
+			if rl.kind == lZero {
+				rl = g.zeroTemp(t)
+			}
+		case wantPtr:
+			rl = g.addrOfLoc(l)
+		default:
+			rl = g.deref(l)
+		}
+		rl = g.stashValue(rl, msig.Recv().Type())
+		recv = rl
+		direct(fn)
+	}
+	return
+}
+
+func selOf(e ast.Expr) *ast.SelectorExpr {
+	s, _ := e.(*ast.SelectorExpr)
+	return s
+}
