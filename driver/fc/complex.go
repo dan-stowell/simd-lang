@@ -211,9 +211,10 @@ func (g *gen) printLocs(vals []typedLoc, nl bool) {
 			case u.Kind() == types.UnsafePointer:
 				g.loadTo(AX, v.l, t)
 				g.callRT("printpointer")
-			case u.Kind() == types.Uintptr:
+			case u.Kind() == types.Uintptr && t != u:
 				g.loadTo(AX, v.l, t)
-				g.callRT("printuintptr")
+				g.callRT("printuintptr") // a named uintptr type (the runtime's hex)
+
 			case u.Info()&types.IsUnsigned != 0:
 				g.loadTo(AX, v.l, t)
 				g.callRT("printuint")

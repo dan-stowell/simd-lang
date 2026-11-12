@@ -95,7 +95,7 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 		}
 	case "internal/abi":
 		switch fn.Name() {
-		case "FuncPCABI0", "FuncPCABIInternal":
+		case "FuncPCABI0", "FuncPCABIInternal", "EscapeNonString":
 			return true
 		}
 	case "crypto/internal/constanttime":
@@ -108,6 +108,9 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 	ax := []loc{{kind: lReg, reg: AX}}
 	switch fn.Name() {
+	case "EscapeNonString":
+		g.expr(e.Args[0]) // a hint to escape analysis; here everything escapes already
+		return nil
 	case "boolToUint8":
 		g.loadTo(AX, g.expr(e.Args[0]), types.Typ[types.Bool])
 		return ax

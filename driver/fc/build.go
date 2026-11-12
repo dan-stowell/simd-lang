@@ -92,6 +92,9 @@ func buildMode(args []string) {
 		}
 	}
 	// link mode: the main package's whole closure, minus what stays with the stock compiler
+	for _, k := range strings.FieldsFunc(os.Getenv("FC_KEEP_STOCK"), func(r rune) bool { return r == ',' || r == ' ' }) {
+		keepStock[k] = true // (bisecting: these packages, and what they import, come from the stock archives)
+	}
 	var mainPkg *Pkg
 	stock := map[*Pkg]bool{}
 	var closure []*Pkg

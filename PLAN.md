@@ -88,11 +88,14 @@ Log (append one line per milestone reached, with the oracle number):
   whole fc build is 26-27 core-s against the frozen path's 74.
 
 
-Now: make the whole-program MinIO binary run (`go list -deps -export -json -gcflags=all=-l . runtime > plan` in
-/home/exedev/targets/minio, then `build/fc build -plan plan -o objs -link minio.bin github.com/minio/minio`; it dies
-in encoding/gob's init: "bootstrap type wrong id", some init-order or reflect difference), then tests/minio_smoke.sh:
-that is M4 short of the runtime. In parallel: fold in Codex's triage of the 53 failing std packages
-(reviews/inbox/fc-triage-1.md; list in /home/exedev/targets/fc-failing.txt), then M3's hard part: the runtime's own
-packages need escape analysis (fc moves every address-taken variable to the heap, which the runtime cannot do).
-Cost work with a count behind it: object writer and stock link (M5 removes them), the assembler as a subprocess,
-allocation in the code generator.
+Now: the fc-built MinIO binary starts (`minio.bin --version` works; itabs merge by name in whole-program mode) but
+the server dies in its self-test: a fault at address 0x684f inside fc's ABIInternal wrapper for the assembly function
+github.com/klauspost/compress/s2.s2Decode (decode_asm.go:17 +0x63; wrapToABI0 in driver/fc/abiwrap.go: check the
+ABI0 argument layout and frame for a `func s2Decode(dst, src []byte) int` shape, and that the wrapper's outgoing area
+covers the callee's argument size). Rebuild: in /home/exedev/targets/minio
+`GOFLAGS=-buildvcs=false go list -deps -export -json -gcflags=all=-l . runtime > plan`, then
+`build/fc build -plan plan -o objs -link minio.bin github.com/minio/minio`, then `tests/minio_smoke.sh minio.bin`.
+In parallel: Codex's triage of the 53 failing std packages (reviews/inbox/fc-triage-1.md if it finished; list in
+/home/exedev/targets/fc-failing.txt; rerun it with the command in JOURNAL's M2 entry spirit: `codex exec -s
+workspace-write` with /home/exedev/targets and /tmp writable); triage reviews/inbox. Then M3's hard part: escape
+analysis, which the runtime's own packages need. Cost items with counts: JOURNAL M2.

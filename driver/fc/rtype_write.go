@@ -686,7 +686,10 @@ func (c *compiler) writeITab(t, iface types.Type) *obj.LSym {
 		s.WriteWeakAddr(c.ctxt, 24+int64(i)*8, 8, fn, 0)
 	}
 	s.Set(obj.AttrDuplicateOK, true)
-	s.Set(obj.AttrContentAddressable, true)
+	// Stock itabs are merged by content, and the content hash covers how each method is addressed (by
+	// index in its own package's object, by name elsewhere unless the indexes are known: indexRefs). In a
+	// build of our own, objects cannot agree on that, so itabs are merged by name instead.
+	s.Set(obj.AttrContentAddressable, c.mixed)
 	s.Align = 8
 	c.defData(s, objabi.SRODATA, 24+int64(len(entries))*8)
 	return s
