@@ -1044,3 +1044,38 @@ night's compiler" is reproducible from today's binary.
 **Scope check.** Most ambitious: unchanged (F4; whole packages leaving the stock compiler). This
 iteration was spent on the credibility of the numbers instead, because a report whose headline is
 inflated is worse than no report.
+
+## 2026-11-12 15:05 UTC — iteration 22: soak (20 of 20, 6 of 6), a clean review, and where the cheap vein ends
+
+**Trace.** Configuration unchanged (`13-noweakptr`). Spread of the final configuration, cold, each
+build smoke-tested (`tools/trace/soak.sh`): MinIO 20 of 20 pass, **min 10.7 s, median 11.5 s, max
+12.8 s** (compile 60.0-76.6 core-s: the wall clock follows the host); kube-apiserver 6 of 6 pass,
+**min 20.7 s, median 21.0 s, max 23.1 s**.
+
+**Review of the descriptor change** (`reviews/runtime-descriptors-2026-11-12/`): no counterexample.
+635 type expressions (512 generated, nested to depth 4), two-package and mixed keep/skip builds, 32
+concurrent `PointerTo` readers, targeted reflect tests: identical for the real stock compiler, the
+baseline with descriptors and the baseline without; every reader of `PtrToThis` audited. Its one
+finding was about my test, not the change: `tests/sb_ptrto.sh` ignored exit statuses and passed on
+three identical error outputs. Fixed (each build must exit 0 and print all 39 lines).
+
+**What I looked at and did not build, with numbers for whoever picks this up.**
+- Why functions still reach SSA in MinIO: 2,404 of 209,732 (1.15%), costing 4.7% of compile samples.
+  By reason: pragma 938 (mostly the runtime; legitimate), dynamic type assertion (generics) 332,
+  variable with no home 324, NAME 167, keepalive arguments 160, uint64/float conversions 179,
+  range-over-func bodies 56. Covering the five largest non-pragma reasons is worth at most 1.5 core-s.
+- Type-name formatting: `types.tconv` is 4.3% of compile samples (the symbol of a type is found by
+  formatting its full name and looking the string up, every time). A per-type cache would save about
+  1.5 core-s; I did not build it because a stale entry would be a silent type-identity bug and the
+  gain is at the edge of what this host can measure.
+- Emitted type descriptors after iteration 20: 212 k (125 k are func types, one per method signature of
+  every named type). How many survive the link I could not measure cheaply: this Go version folds type
+  symbols and typelinks into `.rodata`. Needs a counter in the linker's dead-code pass.
+- The linker by profile: symbol-table inserts by name are about 300 ms of the 1.1 s (370 k named
+  duplicate-allowed symbols), dead-code flood 230 ms. Dense symbol IDs from the compilers would remove
+  the first.
+
+**Scope check.** Most ambitious: unchanged. Everything cheap that I can find is now worth 2% or less
+and several of them carry real risk; the session's remaining value is in the report being exact. The
+wide standard-library oracle (the 100-odd packages of last night's run, twice, under GOGC=10) is
+running with the final compiler; its result goes into MORNING.md.

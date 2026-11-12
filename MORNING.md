@@ -19,7 +19,11 @@ Against the stock toolchain:
 | stock `go build` (2026-11-11) | 54.2 s, 282 core-s | 86.3 s, 554 core-s |
 | stock, re-measured 2026-11-12 | 50.0 s, 257 core-s | 77.1 s, 511 core-s |
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
-| now | **11.8 s** (above); the trace's own four runs: 10.8-11.3 | **20.5 s** (and a noisy 23.6) |
+| now | **11.8 s** (above); median of 20 cold builds 11.5 s | **21.0 s** (median of 6 cold builds) |
+
+Twenty cold builds of the final configuration in a row, each smoke-tested (`tools/trace/soak.sh`): MinIO
+20 of 20 pass, wall min 10.7 s, median 11.5 s, max 12.8 s. kube-apiserver, six: 6 of 6 pass, min 20.7 s,
+median 21.0 s, max 23.1 s (last night: 24.1-25.2 s).
 
 Against the fair row the technique is worth 32.5 -> 11.8 s on MinIO and 51.2 -> ~21 s on
 kube-apiserver; the rest of the distance from 54 s is things turned off. The host drifts (the same
@@ -151,7 +155,7 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 - The compilers run with the garbage collector off (`GOGC=off`); the fair stock row does too.
 - New today: with `-zygote`, compiles are forked from one warm compiler process by a runtime function
   that is not part of Go. Output is byte-identical; the risk is a hang or crash in a child, not a wrong
-  binary. None seen in about 50 MinIO builds, 8 kube builds, 6,000 test forks and the reviewer's 648.
+  binary. None seen in about 120 MinIO builds, 20 kube builds, 6,000 test forks and the reviewer's 648.
 - New today: baseline code has no jump padding to 32-byte boundaries (the Intel JCC erratum mitigation:
   speed on some Intel cores, not correctness) and forward branches further than 12 instructions use the
   long encoding. No per-function DWARF when the driver's link has `-w` (the reviewer showed that a link
