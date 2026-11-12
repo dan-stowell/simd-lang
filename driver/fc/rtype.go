@@ -80,9 +80,23 @@ func (c *compiler) rtInit() {
 // typeLinkName is the name of t as the linker knows it (stock: Type.LinkString); t's descriptor is "type:"
 // followed by it.
 func (c *compiler) typeLinkName(t types.Type) string {
+	l := &c.layout
+	l.mu.Lock()
+	name, ok := l.names[t]
+	l.mu.Unlock()
+	if ok {
+		return name
+	}
 	var b strings.Builder
 	c.tconv(&b, t, fmtID, false)
-	return b.String()
+	name = b.String()
+	l.mu.Lock()
+	if l.names == nil {
+		l.names = map[types.Type]string{}
+	}
+	l.names[t] = name
+	l.mu.Unlock()
+	return name
 }
 
 // typeNameString is t's name in the descriptor itself (stock: Type.NameString): package names, not paths.

@@ -18,6 +18,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"sync"
@@ -28,10 +30,16 @@ import (
 	"cmd/internal/objabi"
 )
 
+// cpuSeconds: user and system time of this process and of the children it has waited for (the assembler,
+// the linker).
 func cpuSeconds() float64 {
-	var ru syscall.Rusage
-	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
-	return float64(ru.Utime.Sec) + float64(ru.Utime.Usec)/1e6 + float64(ru.Stime.Sec) + float64(ru.Stime.Usec)/1e6
+	t := 0.0
+	for _, who := range []int{syscall.RUSAGE_SELF, syscall.RUSAGE_CHILDREN} {
+		var ru syscall.Rusage
+		syscall.Getrusage(who, &ru)
+		t += float64(ru.Utime.Sec) + float64(ru.Utime.Usec)/1e6 + float64(ru.Stime.Sec) + float64(ru.Stime.Usec)/1e6
+	}
+	return t
 }
 
 func buildMode(args []string) {
@@ -42,9 +50,24 @@ func buildMode(args []string) {
 	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result")
 	link := fs.String("link", "", "link the program whose main package is the (single) argument into this file; packages of the\n"+
 		"runtime's closure and packages with assembly (and what they import) come from the plan's stock archives")
+	prof := fs.String("cpuprofile", "", "write a CPU profile")
 	fs.Parse(args)
+	if *prof != "" {
+		f, err := os.Create(*prof)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 	if *plan == "" || *out == "" || fs.NArg() == 0 {
 		log.Fatal("usage: fc build -plan plan.json -o outdir [-j N] <import paths... | all>")
+	}
+	if os.Getenv("GOGC") == "" {
+		// One build, one heap: collecting it is work the build does not need (the stock baseline mode it is
+		// measured against also runs with the collector off). The limit is a guard for the 31 GiB machine.
+		debug.SetGCPercent(-1)
+		debug.SetMemoryLimit(20 << 30)
 	}
 	t0 := time.Now()
 	c0 := cpuSeconds()
@@ -324,7 +347,9 @@ func buildMode(args []string) {
 	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), %.0f ms wall, %.2f core-s\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64((time.Since(t0) - tCheck).Milliseconds()), total-cCheck)
 	fmt.Printf("compiled packages only: parse %.2f s + check %.2f s + compile %.2f s = %.2f core-s for %.2f MB: %.2f core-s per MB\n",
 		float64(parse)/1e9, float64(check)/1e9, float64(compile)/1e9, float64(parse+check+compile)/1e9, float64(okSrc)/1e6, float64(parse+check+compile)/1e9/(float64(okSrc)/1e6+1e-9))
-	fmt.Printf("total: %.0f ms wall, %.2f core-s\n", float64(time.Since(t0).Milliseconds()), total)
+	var ru syscall.Rusage
+	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
+	fmt.Printf("total: %.0f ms wall, %.2f core-s (with the assembler and the linker), peak memory %.1f GB\n", float64(time.Since(t0).Milliseconds()), total, float64(ru.Maxrss)/1e6)
 }
 
 // needsInit: does the package have initialization to run (an init function, or a variable whose value is

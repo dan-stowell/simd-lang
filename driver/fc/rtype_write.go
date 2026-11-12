@@ -267,6 +267,9 @@ func (c *compiler) abiKind(t types.Type) abi.Kind {
 // *t predicts it best (over the standard library: 7 descriptors differ; taking "the stock object defines
 // type:**T" as the answer instead gives 90, never pointing gives 42).
 func (c *compiler) isPtrElem(t types.Type) bool {
+	if !c.mixed {
+		return false // in a build of our own nothing depends on it (reflect makes pointer types itself)
+	}
 	if !c.rtPtrSet {
 		c.rtPtrSet = true
 		c.rtPtrTo = map[string]bool{}

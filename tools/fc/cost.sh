@@ -19,6 +19,7 @@ cat > "$out/wrap.sh" <<'W'
 tool=$1; shift
 if [ "$(basename "$tool")" != compile ]; then exec "$tool" "$@"; fi
 pkg=; prev=; for a in "$@"; do [ "$prev" = -p ] && pkg=$a; prev=$a; done
+[ -n "$pkg" ] || exec "$tool" "$@"
 case " $COST_PKGS " in *" $pkg "*) ;; *) exec "$tool" "$@";; esac
 t=$(mktemp)
 env GOGC=off SB_BASELINE=1 /usr/bin/time -o "$t" -f "%U %S" "$COST_COMPILER" "$@"; rc=$?

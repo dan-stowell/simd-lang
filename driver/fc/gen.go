@@ -96,8 +96,8 @@ type gen struct {
 	vars     map[*types.Var]loc
 	heapVars map[*types.Var]bool
 	slots    []slotInfo
-	free     map[string][]int // free slots by shape
-	temps    []int            // slots handed out since the function began, released by mark
+	free     map[shape][]int // free slots by shape
+	temps    []int           // slots handed out since the function began, released by mark
 	locals   int64
 	maxarg   int64
 
@@ -191,6 +191,28 @@ func isPtrWord(t types.Type) bool {
 
 // ptrBits appends, for each word of t, whether it holds a pointer.
 func (c *compiler) ptrBits(t types.Type, bits []bool) []bool {
+	if bits == nil {
+		// the usual question: the whole map of one type (shared: do not modify)
+		l := &c.layout
+		l.mu.Lock()
+		v, ok := l.ptrs[t]
+		l.mu.Unlock()
+		if ok {
+			return v
+		}
+		v = c.ptrBitsUncached(t, make([]bool, 0, (c.sizeof(t)+7)/8))
+		l.mu.Lock()
+		if l.ptrs == nil {
+			l.ptrs = map[types.Type][]bool{}
+		}
+		l.ptrs[t] = v
+		l.mu.Unlock()
+		return v
+	}
+	return c.ptrBitsUncached(t, bits)
+}
+
+func (c *compiler) ptrBitsUncached(t types.Type, bits []bool) []bool {
 	size := c.sizeof(t)
 	n := int((size + 7) / 8)
 	base := len(bits)
@@ -253,22 +275,36 @@ func (c *compiler) hasPointers(t types.Type) bool {
 
 // ---- frame slots
 
-func shapeKey(size int64, ptrs []bool) string {
-	b := make([]byte, 0, len(ptrs)+8)
-	b = fmt.Appendf(b, "%d:", size)
+// shapeKey identifies slots that may stand in for each other: the same size and pointer words.
+type shape struct {
+	size int64
+	mask uint64 // pointer words, for slots of up to 64 words
+	big  string // beyond that
+}
+
+func shapeKey(size int64, ptrs []bool) shape {
+	k := shape{size: size}
+	if len(ptrs) <= 64 {
+		for i, p := range ptrs {
+			if p {
+				k.mask |= 1 << i
+			}
+		}
+		return k
+	}
+	b := make([]byte, len(ptrs))
 	any := false
-	for _, p := range ptrs {
+	for i, p := range ptrs {
+		b[i] = '0'
 		if p {
-			b = append(b, '1')
+			b[i] = '1'
 			any = true
-		} else {
-			b = append(b, '0')
 		}
 	}
-	if !any {
-		return fmt.Sprintf("%d", size)
+	if any {
+		k.big = string(b)
 	}
-	return string(b)
+	return k
 }
 
 func (g *gen) newSlotBits(size int64, ptrs []bool) int {
@@ -667,7 +703,7 @@ func (g *gen) callRT(name string) {
 // body is in; env gives the type arguments when the function is an instance of a generic one.
 func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, env map[*types.TypeParam]types.Type) *gen {
 	g := &gen{c: c, name: name, sig: sig, info: info, env: env, vars: map[*types.Var]loc{}, heapVars: map[*types.Var]bool{},
-		free: map[string][]int{}, labels: map[*types.Label]*label{}, lblScope: map[*types.Label]*scope{}}
+		free: map[shape][]int{}, labels: map[*types.Label]*label{}, lblScope: map[*types.Label]*scope{}}
 	g.out = &funcOut{}
 	if env != nil {
 		g.substCache = map[types.Type]types.Type{}
@@ -896,7 +932,8 @@ func (g *gen) finish(pos token.Pos) {
 	}
 	plen := p.pc()
 	body := g.a
-	code := append(p.b, body.b...)
+	code := make([]byte, 0, len(p.b)+len(body.b)+96)
+	code = append(append(code, p.b...), body.b...)
 	out := g.out
 	// tables: the prologue is one unsafe region at the function's first line
 	var unsafe, stackmap, lines []pcval

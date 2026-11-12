@@ -125,6 +125,24 @@ func (s *abiState) assign(t types.Type, isResult bool) abiParam {
 
 // abiOf analyzes a signature; the receiver, if any, is the first parameter.
 func (c *compiler) abiOf(sig *types.Signature) *abiInfo {
+	l := &c.layout
+	l.mu.Lock()
+	ai := l.abis[sig]
+	l.mu.Unlock()
+	if ai != nil {
+		return ai
+	}
+	ai = c.abiOfUncached(sig)
+	l.mu.Lock()
+	if l.abis == nil {
+		l.abis = map[*types.Signature]*abiInfo{}
+	}
+	l.abis[sig] = ai
+	l.mu.Unlock()
+	return ai
+}
+
+func (c *compiler) abiOfUncached(sig *types.Signature) *abiInfo {
 	var in, out []types.Type
 	if r := sig.Recv(); r != nil {
 		in = append(in, r.Type())

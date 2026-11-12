@@ -339,6 +339,7 @@ func main() {
 		}
 		return v
 	}
+	c.mixed = true
 	c.parity = func() { c.stockParity(stock) }
 	errs := c.compilePackage()
 	if len(errs) == 0 && c.hasInit && !c.forceInit {

@@ -47,6 +47,8 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
+	layout     layoutCache
+	mixed      bool      // one package among stock-compiled ones (tools/fc/test.sh)
 	embed      *embedCfg // from -embedcfg (mixed mode)
 	zeroSyms   map[int64]*obj.LSym
 	globGen    *gen // names the function literals of package-level initializers
@@ -70,14 +72,73 @@ func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
 	return c
 }
 
-func (c *compiler) sizeof(t types.Type) int64  { return c.pr.sizes.Sizeof(t) }
-func (c *compiler) alignof(t types.Type) int64 { return c.pr.sizes.Alignof(t) }
+// Layout questions are asked over and over for the same types, and go/types answers each from scratch.
+type layoutCache struct {
+	mu     sync.Mutex
+	size   map[types.Type]int64
+	align  map[types.Type]int64
+	offs   map[*types.Struct][]int64
+	names  map[types.Type]string
+	ptrs   map[types.Type][]bool
+	abis   map[*types.Signature]*abiInfo
+	hasPtr map[types.Type]bool
+}
+
+func (c *compiler) sizeof(t types.Type) int64 {
+	l := &c.layout
+	l.mu.Lock()
+	v, ok := l.size[t]
+	l.mu.Unlock()
+	if !ok {
+		v = c.pr.sizes.Sizeof(t)
+		l.mu.Lock()
+		if l.size == nil {
+			l.size = map[types.Type]int64{}
+		}
+		l.size[t] = v
+		l.mu.Unlock()
+	}
+	return v
+}
+
+func (c *compiler) alignof(t types.Type) int64 {
+	l := &c.layout
+	l.mu.Lock()
+	v, ok := l.align[t]
+	l.mu.Unlock()
+	if !ok {
+		v = c.pr.sizes.Alignof(t)
+		l.mu.Lock()
+		if l.align == nil {
+			l.align = map[types.Type]int64{}
+		}
+		l.align[t] = v
+		l.mu.Unlock()
+	}
+	return v
+}
+
+// fieldOffsets: the offsets of a struct's fields. The result is shared: do not modify it.
 func (c *compiler) fieldOffsets(s *types.Struct) []int64 {
+	l := &c.layout
+	l.mu.Lock()
+	v, ok := l.offs[s]
+	l.mu.Unlock()
+	if ok {
+		return v
+	}
 	fs := make([]*types.Var, s.NumFields())
 	for i := range fs {
 		fs[i] = s.Field(i)
 	}
-	return c.pr.sizes.Offsetsof(fs)
+	v = c.pr.sizes.Offsetsof(fs)
+	l.mu.Lock()
+	if l.offs == nil {
+		l.offs = map[*types.Struct][]int64{}
+	}
+	l.offs[s] = v
+	l.mu.Unlock()
+	return v
 }
 
 type bail string
