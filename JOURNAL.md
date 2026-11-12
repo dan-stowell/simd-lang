@@ -1014,3 +1014,33 @@ of a result four times larger. The change stays: it is correct, tested, and the 
 - `tools/trace/abd.sh` now reverses the order on even rounds.
 - "Only removing work moves the trace" survives, but with one example, not two: this change removed
   148 k descriptors that turned out to be cheap ones.
+
+## 2026-11-12 14:45 UTC — iteration 21: one honest number for the day (13.2 -> 11.8 s), and the assembler claim re-measured
+
+**The day, order-balanced and cold.** After the correction above I did not trust any of today's
+whole-build comparisons, so I measured the sum directly. `tools/trace/day.sh`: last night's
+configuration exactly (`08-huge-shard`: exec per compile, multi-pass assembler, per-function DWARF,
+speculative descriptors, binary copied from tmpfs; the old behaviours are selectable by environment, and
+its 641 MB of objects reproduce) against today's (`13-noweakptr`), cold, in the order old new new old,
+three times:
+
+    old   wall 12.87 12.39 13.79 12.29 14.33 13.72 s (mean 13.23)   compile 76.2 core-s   link+write 1,602 ms   objects 641 MB
+    new   wall 11.38 11.32 11.90 11.73 12.50 11.99 s (mean 11.80)   compile 68.6 core-s   link+write 1,234 ms   objects 526 MB
+
+**-1.43 s (11%), -7.6 compile core-s, -368 ms of link + write.** Every run passes smoke. Link + write
+does not overlap between the two at all; wall clock overlaps in one run of twelve.
+
+**The one-pass assembler, re-measured the same way** (multi one one multi, three times, warm):
+compile 74.2 -> 71.3 core-s, with single runs ranging from 60 to 84. So about 3 core-s by whole
+builds, 4.3 by the profile (Flushplist 7.0 -> 4.0 s of ~50 s of samples), 8.5% of one package's
+compile in strict alternation. Iteration 16 said "6 core-s and 0.7 s"; **"3 to 6 core-s" is what the
+evidence supports.** The pieces add up to the day's total without it needing to be 6: assembler +
+DWARF 3-6, descriptors 1.6, fork-server 1.6.
+
+**Tooling changed so this does not recur.** `tools/trace/abd.sh` alternates order; `day.sh` exists;
+the DWARF skip can be turned off by environment (`SB_NODWARFSYMS=0`) like the other two, so "last
+night's compiler" is reproducible from today's binary.
+
+**Scope check.** Most ambitious: unchanged (F4; whole packages leaving the stock compiler). This
+iteration was spent on the credibility of the numbers instead, because a report whose headline is
+inflated is worse than no report.

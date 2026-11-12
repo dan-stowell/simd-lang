@@ -1,27 +1,30 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 20 and its correction)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 21)
 
 ## The trace, before and after
 
 Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.md.
+
+**The number to trust for today's work** (`tools/trace/day.sh`: last night's configuration against
+today's, cold, order-balanced, six builds each, MinIO):
+
+| | wall, mean of 6 | compile core-s | link + write | objects written |
+|---|---|---|---|---|
+| end of the 2026-11-11 run (`08-huge-shard`) | **13.23 s** (12.3-14.3) | 76.2 | 1,602 ms | 641 MB |
+| now (`13-noweakptr`) | **11.80 s** (11.3-12.5) | 68.6 | 1,234 ms | 526 MB |
+
+Against the stock toolchain:
 
 | | MinIO | kube-apiserver |
 |---|---|---|
 | stock `go build` (2026-11-11) | 54.2 s, 282 core-s | 86.3 s, 554 core-s |
 | stock, re-measured 2026-11-12 | 50.0 s, 257 core-s | 77.1 s, 511 core-s |
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
-| end of the 2026-11-11 run (`08-huge-shard`) | 12.3-13.3 s, 80 core-s | 24.1-25.2 s, 158 core-s |
-| `09-forkserver` (today) | 12.5-15.6 s (four runs; noisy host) | 22.5-24.5 s |
-| `10-onepass` (today) | 11.6-13.5 s (four runs), 67 core-s | 21.1-23.2 s, 137 core-s |
-| `11-headstart` (today) | 11.6-12.8 s (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | 20.5-23.8 s |
-| `12-directout` (today) | 11.5-12.3 s (four runs), 71 core-s | 20.1-22.3 s, 135 core-s |
-| **now (`13-noweakptr`)** | **10.8-11.3 s** (four runs in a quiet stretch; expect 11-12), 69 core-s | **20.5 s** (and a noisy 23.6) |
+| now | **11.8 s** (above); the trace's own four runs: 10.8-11.3 | **20.5 s** (and a noisy 23.6) |
 
-The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
-single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
-1.6 core-s and no wall clock; the one-pass assembler is worth 6 core-s and about 0.7 s (compile
-core-s min 67.4 -> 60.9, mean 74.9 -> 68.8 over four rounds). Against the fair row the technique is
-worth 32.5 -> ~11.5 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
-things turned off.
+Against the fair row the technique is worth 32.5 -> 11.8 s on MinIO and 51.2 -> ~21 s on
+kube-apiserver; the rest of the distance from 54 s is things turned off. The host drifts (the same
+build cost 60 to 84 compile core-seconds today), so single runs and the rung table in TRACE.md are
+indicative only.
 
 **The materialization tax** (MinIO; kube is in TRACE.md):
 
@@ -62,18 +65,19 @@ the front end is 35% of the row, not 20%.
 
 ## The pattern in today's results
 
-Scheduling and plumbing: fork-server 1.6 core-s, head start 0.2-0.4 s, direct output 0.14 s, wider
-head start 0, streaming link dead. Removing work: one assembler pass, 6 core-s and 0.7 s; speculative
-type descriptors, 1.6 core-s and 0.12 s of link. The schedule is as good as it needs to be at this
-work volume; only removing work moves the trace, and the cheap removals are getting small. The work
-that is left is the stock compiler's own (type check 10, IR round trip 17, walk + generate + assemble
-about 27 core-s) and the stock linker's (1.1 s serial).
+Scheduling and plumbing: fork-server 1.6 core-s, head start 0-0.4 s, direct output 0.14 s, wider head
+start 0, streaming link dead. Removing work: one assembler pass and no per-function DWARF, 3-6 core-s;
+speculative type descriptors, 1.6 core-s and 0.12 s of link. The schedule is as good as it needs to be
+at this work volume; only removing work moves the trace, and the cheap removals are getting small. The
+work that is left is the stock compiler's own (type check 10, IR round trip 17, walk + generate +
+assemble about 27 core-s) and the stock linker's (1.1 s serial).
 
-**A mistake of mine you should know about.** I first reported the type-descriptor change as -7 core-s
-and -0.9 s, from an A/B that always ran the old configuration first while the host was getting
-quieter. Checking which compiler phase had shrunk exposed it; an order-balanced re-run (12 builds)
-gives -1.6 core-s and -0.3 s. The commit message of `b040190` carries the wrong number; the journal has
-the correction, and the A/B script now alternates order.
+**Two numbers I reported too high, and corrected.** The type-descriptor change first went into the
+journal and a commit message (`b040190`) as -7 core-s and -0.9 s; the one-pass assembler as -6 core-s
+and -0.7 s. Both came from A/B runs in a fixed order (old first) on a host that was drifting. Checking
+which compiler phase had shrunk exposed the first; order-balanced re-runs give 1.6 core-s for the
+descriptors and about 3 (3-6 across three kinds of evidence) for the assembler. The day's total above
+was measured order-balanced for that reason, and the A/B script now alternates order.
 
 ## Rungs climbed today
 
@@ -86,8 +90,8 @@ the correction, and the A/B script now alternates order.
   has the same ceiling and needs every compiler global reset; not built.
 - **Critical-path optimization** (the one budgeted iteration): the Go assembler re-assembled every
   function 3.3 times (by bytes) to size branches and pad jumps. Baseline builds now assemble once, and
-  skip the per-function DWARF the stock compiler builds even at `-dwarf=false`. **-6 core-s, about
-  -0.7 s**, objects 641 -> 573 MB.
+  skip the per-function DWARF the stock compiler builds even at `-dwarf=false`. **3-6 core-s** (see the
+  correction above), objects 641 -> 573 MB.
 
 - **The first edge of the DAG, streamed** (`-headstart`): the runtime and the 28 packages under it are
   planned and compiled while the plan of the whole build is still being made, then adopted by the

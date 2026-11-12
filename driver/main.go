@@ -289,7 +289,7 @@ func (h *headPkg) adopt(p *Pkg, c int, goversion string, extra []string, exporte
 // those: a setting like GODEBUG=sbrk=1 must not reach the driver or the linker).
 func compileEnv() []string {
 	env := strings.FieldsFunc(os.Getenv("SB_COMPILE_ENV"), func(r rune) bool { return r == ' ' || r == ',' })
-	if linkStripsDWARF {
+	if linkStripsDWARF && !strings.Contains(os.Getenv("SB_COMPILE_ENV"), "SB_NODWARFSYMS=") {
 		env = append(env, "SB_NODWARFSYMS=1") // the compiler may leave out per-function DWARF: the link drops it
 	}
 	return env

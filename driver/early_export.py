@@ -370,7 +370,7 @@ assert s.count(old) == 1
 s = s.replace(old, '\tif sbNoDwarf && ctxt.DebugInfo == nil {\n\t\treturn\n\t}\n' + old)
 if '\t"os"\n' not in s:
     s = s.replace('import (', 'import (\n\t"os"', 1)
-s += '\nvar sbNoDwarf = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_NODWARFSYMS") != ""\n'
+s += '\nvar sbNoDwarf = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_NODWARFSYMS") == "1"\n'
 open(p, 'w').write(s)
 
 # Thirteenth change (measurement only): with SB_TYPELOG=<dir>, log every runtime type descriptor this

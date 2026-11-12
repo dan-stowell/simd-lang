@@ -1,7 +1,7 @@
 # NEXT
 
-State at 2026-11-12 14:05 UTC (JOURNAL iteration 20): MinIO cold 10.8-11.3 s in a quiet stretch (expect 11-12), kube-apiserver
-20.5 s, configuration `13-noweakptr` (`tools/trace/run09.sh <minio|kube> <label> -zygote
+State at 2026-11-12 14:45 UTC (JOURNAL iteration 21): MinIO cold 11.8 s (mean of six, order-balanced
+against last night's 13.2 s: `tools/trace/day.sh`), kube-apiserver 20.5 s, configuration `13-noweakptr` (`tools/trace/run09.sh <minio|kube> <label> -zygote
 -headstart -directout`). Fair stock rows: MinIO 32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md
 (`tools/trace/cpuphases.sh`): walk + generate + assemble 28.7 core-s, export-IR round trip 17, type
 check 10, objects + export 6.7.
