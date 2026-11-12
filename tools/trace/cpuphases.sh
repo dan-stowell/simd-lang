@@ -27,7 +27,7 @@ print(f'{"phase":52s} {"user s":>7s} {"sys s":>6s} {"faults":>9s}')
 for k in sorted(cpu, key=lambda k: -(cpu[k] + sysc[k])):
     print(f'{k:52s} {cpu[k]/1e6:7.1f} {sysc[k]/1e6:6.1f} {flt[k]:9d}')
 print(f'{"(exit, asm, pack)":52s} {allcpu - last_total/1e6:7.1f}')
-rows = [(k, cpu[k] / 1e6, sysc[k] / 1e6, flt[k]) for k in sorted(cpu, key=lambda k: -(cpu[k] + sysc[k])) if k != 'fe:pgo-load-profile' and k != '(between phases)']
+rows = [(k, cpu[k] / 1e6, sysc[k] / 1e6, flt[k]) for k in sorted(cpu, key=lambda k: -(cpu[k] + sysc[k])) if cpu[k] + sysc[k] > 50000]
 rows.append(('(exit, asm, pack)', allcpu - last_total / 1e6, 0.0, 0))
 json.dump({'procs': n, 'row': allcpu, 'rows': rows}, open('/home/exedev/targets/traces/minio/sb-cpuphases.json', 'w'))
 PY

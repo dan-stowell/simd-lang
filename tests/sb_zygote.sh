@@ -19,3 +19,10 @@ if out=$(env GOGC=off build/sb -C "$t/bad" -o "$t/bad.bin" -plan=self -decl "$PW
   echo "FAIL fork-server: a build with a type error succeeded"; exit 1
 elif echo "$out" | grep -q 'undefined: undefinedName'; then echo "PASS fork-server: a compile error fails the build with the compiler's message"
 else echo "$out" | tail -5; echo "FAIL fork-server: error message lost"; exit 1; fi
+# A request too large for one socket message (review 2026-11-12, finding 2) must fall back to exec, not fail.
+mkdir -p "$t/big" && printf 'module big\ngo 1.27\n' > "$t/big/go.mod" && printf 'package main\nfunc main() {}\n' > "$t/big/main.go"
+big=$(head -c 90000 /dev/zero | tr '\0' x)
+if env GOGC=off SB_BIG1=$big SB_BIG2=$big SB_BIG3=$big SB_BIG4=$big SB_BIG5=$big build/sb -C "$t/big" -o "$t/big.bin" -plan=self -decl "$PWD/build/godecl" -compiler "$PWD/build/compile-sb" -pipeline -zygote . > "$t/big.out" 2>&1 && "$t/big.bin"; then
+  echo "PASS fork-server: a 450 kB environment is compiled by exec instead"
+else tail -3 "$t/big.out"; echo "FAIL fork-server: oversized request"; exit 1; fi
+

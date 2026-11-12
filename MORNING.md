@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 15)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 16)
 
 ## The trace, before and after
 
@@ -10,39 +10,45 @@ Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.
 | stock, re-measured 2026-11-12 | 50.0 s, 257 core-s | 77.1 s, 511 core-s |
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
 | end of the 2026-11-11 run (`08-huge-shard`) | 12.3-13.3 s, 80 core-s | 24.1-25.2 s, 158 core-s |
-| now (`09-forkserver`) | 12.5-15.6 s (four runs; noisy host), 97 core-s in the slowest | 22.5-24.5 s, 162 core-s |
+| `09-forkserver` (today) | 12.5-15.6 s (four runs; noisy host) | 22.5-24.5 s |
+| **now (`10-onepass`)** | **11.6-13.5 s** (four runs), 67 core-s | **21.1-23.2 s**, 137 core-s |
 
-Read the last two rows as "unchanged": the host was noisier today (the same warm build cost 71 to 84
-compile core-seconds within half an hour). Against the fair row the technique is worth 32.5 -> ~12.5 s
-on MinIO and 51.2 -> ~23.5 s on kube-apiserver; the rest of the distance from 54 s is things turned off.
+The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
+single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
+1.6 core-s and no wall clock; the one-pass assembler is worth 6 core-s and about 0.7 s (compile
+core-s min 67.4 -> 60.9, mean 74.9 -> 68.8 over four rounds). Against the fair row the technique is
+worth 32.5 -> ~12 s on MinIO and 51.2 -> ~22 s on kube-apiserver; the rest of the distance from 54 s is
+things turned off.
 
 **The materialization tax** (MinIO; kube is in TRACE.md):
 
 | | stock | fair stock | this build |
 |---|---|---|---|
 | tool processes started | 1,483 | 1,483 | 172 + 1,315 forked from one warm compiler |
-| tasks created, whole machine | 11,404 | 10,585 | 6,786 |
-| page faults, whole machine | 11.9 M | 11.0 M | 1.3 M |
-| intermediates written | 1,899 MB (disk, twice) | 1,383 MB | 733 MB (tmpfs, once) |
-| intermediates read back | 2,731 MB | 1,996 MB | 1,258 MB |
+| page faults, whole machine | 11.9 M | 11.0 M | 1.4 M |
+| intermediates written | 1,899 MB (disk, twice) | 1,383 MB | 665 MB (tmpfs, once) |
+| intermediates read back | 2,731 MB | 1,996 MB | 1,190 MB |
 
 **Where the compile row's CPU goes, measured exactly** (each compiler logs its own rusage at every phase
-boundary; one warm MinIO build, 81 core-s in the row):
+boundary; one warm MinIO build after the one-pass assembler, about 70 core-s in the row):
 
 | | core-s | |
 |---|---|---|
-| walk, baseline code generation, assembler | 34.0 | compiling |
-| parse, type check, export-IR write and read-back, imports | 28.6 | about 11 compiling, about 17 moving data |
-| wrappers, escape analysis | 4.8 | compiling |
-| object files + export data for importers | 6.6 | moving data |
-| exec, runtime start, package init, flags | 5.1 | process setup |
+| walk, baseline code generation, assembler | 28.7 | compiling |
+| build the compiler's IR by reading the package's export IR back | 11.5 | moving data |
+| type check | 10.1 | compiling |
+| write the package as export IR | 5.7 | moving data |
+| wrappers, escape analysis | 4.6 | compiling |
+| object files + export data for importers | 6.7 | moving data |
+| parse | 2.3 | compiling |
+| exec/fork, runtime start, package init, flags | 2.9 | process setup |
 | exit, assembler for .s files, joining shards | 1.7 | |
 
 ## What this says (the one thing to read)
 
-Fusing the stock compiler's work into one address space can remove about 29 of 81 core-seconds (setup
-5, object and export writing 7, the IR round trip 17). What is left, about 50 core-s, is compiling:
-6.3 s on 8 cores. **Two seconds on this machine needs the compiling itself to get about three times
+Fusing the stock compiler's work into one address space can remove about 27 of 70 core-seconds (setup
+3, object and export writing 7, the export-IR round trip 17). What is left, about 45 core-s, is compiling:
+5.6 s on 8 cores. **Two seconds on this machine needs the compiling itself to get about three times
 cheaper as well** (our own lowering, and an emitter that writes bytes instead of going through the Go
 assembler's instruction lists). Fusion is necessary and not sufficient. The ladder's F2-F4 should be
 read as "a cheaper compiler that is also fused", not "the stock compiler, fused".
@@ -57,18 +63,23 @@ the front end is 35% of the row, not 20%.
   the exact CPU table (`tools/trace/cpuphases.sh`).
 - **F1** (done; nearly a negative result): a fork-server for the compiler. `runtime.SBFork` (fork
   without exec in a Go process, 60 lines in the patched runtime) and `sb -zygote`. Output is
-  byte-identical to one exec per compile (`tests/sb_zygote.sh`: cmd/go, 664 files; MinIO binary same
-  SHA-256). Worth **1.6 core-s of ~71 and no measurable wall clock**. The persistent-worker variant has
-  the same ceiling (~6 core-s) and needs every compiler global reset; not built.
+  byte-identical to one exec per compile (`tests/sb_zygote.sh`; the reviewer confirmed it over MinIO's
+  2,624 files). Worth **1.6 core-s of ~71 and no measurable wall clock**. The persistent-worker variant
+  has the same ceiling and needs every compiler global reset; not built.
+- **Critical-path optimization** (the one budgeted iteration): the Go assembler re-assembled every
+  function 3.3 times (by bytes) to size branches and pad jumps. Baseline builds now assemble once, and
+  skip the per-function DWARF the stock compiler builds even at `-dwarf=false`. **-6 core-s, about
+  -0.7 s**, objects 641 -> 573 MB.
 
-## Ideas tried and killed
+## Ideas tried and killed (all by measurement; IDEAS.md and JOURNAL iteration 16)
 
-- Process start as a large cost: killed by measurement (above).
-- From the 03:20 divergence round (IDEAS.md): "compile each function shape once" killed in ten minutes
-  (20.8% of body bytes are repeats, an upper bound, under its own 25% threshold); reachability before
-  code generation already measured negative (iteration 9).
-- Interface-first export (the skeptic's proposal, twice): simulated on the real trace last night, 9.9 s
-  at best against 10.3 s; not built.
+- Process start as a large cost: 3.6 core-s, not 12.
+- A warm process holding imported packages (two divergence lenses): import decoding is 1-3% of compile
+  CPU; the cost is the package's own IR round trip.
+- A never-free bump allocator: Go's own (`GODEBUG=sbrk=1`) gains nothing and deadlocks.
+- Emitting each shared type descriptor once across the build: 28.6% are duplicates, worth 1.6 core-s.
+- "Compile each function shape once" (20.8% repeats, an upper bound); reachability before code
+  generation (iteration 9); interface-first export (simulated: 9.9 s at best against 10.3 s).
 
 ## Review disagreements worth your attention
 
@@ -87,15 +98,17 @@ the front end is 35% of the row, not 20%.
   Known tests that wait for a finalizer and so never finish: `net/http` `TestTransportGCRequest`; the
   sync/reflect promptness tests listed in JOURNAL iteration 12. Four standard-library tests that count
   allocations fail, as they do with the stock compiler at `-l`.
-- MinIO's own unit tests (last night's run, to be confirmed by the run started today at 12:30 UTC):
-  45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the baseline off.
+- MinIO's own unit tests (repeated today with one fixed compiler): 45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the baseline off.
 - No module build info in the binary (`go version -m` shows no dependency list).
 - Huge pages: the trace configuration reserves 3,072 2 MB pages (MinIO) or 5,120 (kube) with
   `sudo sysctl vm.nr_hugepages` for the duration of the build and puts the old value (0) back.
 - The compilers run with the garbage collector off (`GOGC=off`); the fair stock row does too.
 - New today: with `-zygote`, compiles are forked from one warm compiler process by a runtime function
   that is not part of Go. Output is byte-identical; the risk is a hang or crash in a child, not a wrong
-  binary. None seen in about 20 MinIO builds, 4 kube builds and 6,000 test forks.
+  binary. None seen in about 50 MinIO builds, 8 kube builds, 6,000 test forks and the reviewer's 648.
+- New today: baseline code has no jump padding to 32-byte boundaries (the Intel JCC erratum mitigation:
+  speed on some Intel cores, not correctness) and forward branches further than 12 instructions use the
+  long encoding. No per-function DWARF at all, so the binary must be linked with `-w` (it is).
 
 ## Decisions that are yours
 

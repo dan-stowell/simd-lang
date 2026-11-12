@@ -133,6 +133,15 @@ func zygoteStop() {
 	}
 }
 
+// compileEnv: SB_COMPILE_ENV="K=V,K2=V2" (commas or spaces) is added to the environment of every compiler process (and only
+// those: a setting like GODEBUG=sbrk=1 must not reach the driver or the linker).
+func compileEnv() []string {
+	return strings.FieldsFunc(os.Getenv("SB_COMPILE_ENV"), func(r rune) bool { return r == ' ' || r == ',' })
+}
+
+// errZygoteUnavailable: the request never reached the fork-server; the caller falls back to exec.
+var errZygoteUnavailable = fmt.Errorf("zygote unavailable")
+
 func zygoteStart() {
 	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_SEQPACKET|syscall.SOCK_CLOEXEC, 0)
 	if err != nil {
@@ -151,6 +160,7 @@ func zygoteStart() {
 	if !noEarly {
 		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
 	}
+	cmd.Env = append(cmd.Env, compileEnv()...)
 	cmd.Env = append(cmd.Env, "SB_ZYGOTE=3")
 	zy.cmd = cmd
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
@@ -165,7 +175,7 @@ func zygoteStart() {
 func zygoteCompile(dir string, argv []string, exported func(pid int), dropBodies bool, extraEnv ...string) (float64, float64, error) {
 	zy.once.Do(zygoteStart)
 	if zy.err != nil {
-		return 0, 0, zy.err
+		return 0, 0, errZygoteUnavailable
 	}
 	var env []string
 	for _, kv := range os.Environ() {
@@ -179,6 +189,7 @@ func zygoteCompile(dir string, argv []string, exported func(pid int), dropBodies
 	if dropBodies {
 		env = append(env, "SB_DROP_BODIES=1")
 	}
+	env = append(env, compileEnv()...)
 	env = append(env, extraEnv...)
 	msg := "F" + dir + "\x00" + strconv.Itoa(len(env)) + "\x00" + strings.Join(env, "\x00") + "\x00" + strings.Join(argv, "\x00")
 	var po, pe [2]int
@@ -201,7 +212,13 @@ func zygoteCompile(dir string, argv []string, exported func(pid int), dropBodies
 	out, errf := os.NewFile(uintptr(po[0]), "out"), os.NewFile(uintptr(pe[0]), "err")
 	defer out.Close()
 	defer errf.Close()
+	if err == syscall.EMSGSIZE {
+		return 0, 0, errZygoteUnavailable // environment + command line do not fit one message; nothing was sent
+	}
 	pid, _ := strconv.Atoi(string(reply[:max(n, 0)]))
+	if err == nil && pid == -2 {
+		return 0, 0, errZygoteUnavailable // the zygote received a truncated request and did not fork
+	}
 	if err != nil || pid <= 0 {
 		return 0, 0, fmt.Errorf("zygote: fork failed: %v %q", err, reply[:max(n, 0)])
 	}
@@ -221,7 +238,11 @@ func zygoteCompile(dir string, argv []string, exported func(pid int), dropBodies
 	}
 	var st int
 	var uus, sus, minf, majf int64
-	fmt.Sscan(string(reply[:n]), &st, &uus, &sus, &minf, &majf)
+	// A compile has succeeded only if the zygote says so in full: an empty reply (the zygote died) or a
+	// malformed one is a failure, never status 0.
+	if k, _ := fmt.Sscan(string(reply[:max(n, 0)]), &st, &uus, &sus, &minf, &majf); k != 5 {
+		return 0, 0, fmt.Errorf("%s: zygote: no exit status for pid %d (reply %q)", strings.Join(argv, " "), pid, reply[:max(n, 0)])
+	}
 	taxForks.Add(1)
 	taxMinflt.Add(minf)
 	taxMajflt.Add(majf)
@@ -1180,7 +1201,12 @@ func embedcfg(p *Pkg) ([]byte, error) {
 // is complete; exported is called at that moment.
 func runCompile(dir string, argv []string, exported func(pid int), dropBodies bool, extraEnv ...string) (float64, float64, error) {
 	if zygoteOn {
-		return zygoteCompile(dir, argv, exported, dropBodies, extraEnv...)
+		u, sy, err := zygoteCompile(dir, argv, exported, dropBodies, extraEnv...)
+		if err != errZygoteUnavailable {
+			return u, sy, err
+		}
+		// The request could not be handed to the fork-server (too large for one message, or no
+		// fork-server): nothing was started, so run this compile the ordinary way.
 	}
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
@@ -1192,6 +1218,7 @@ func runCompile(dir string, argv []string, exported func(pid int), dropBodies bo
 	if !noEarly {
 		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
 	}
+	cmd.Env = append(cmd.Env, compileEnv()...)
 	if dropBodies {
 		cmd.Env = append(cmd.Env, "SB_DROP_BODIES=1")
 	}

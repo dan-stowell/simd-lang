@@ -73,3 +73,21 @@ Twelve ideas, five distinct. Status after triage:
 
 Picked for the next spike: none of these. The trace's own idle stretches (the first second, where only
 the planner runs) are cheaper to attack than any of them.
+
+## Divergence step, 2026-11-12 12:45 UTC (three subagents on a cheaper model; each saw only CHARTER, TRACE, HARDWARE and one lens)
+
+Nine ideas, seven distinct. Status after triage (JOURNAL iteration 16 has the measurements):
+
+| idea | from | status |
+|---|---|---|
+| **Resident typed universe**: a warm process holds imported packages' typed state; importers follow pointers; no export IR read. | fusion, design | **dead as stated**: import decoding is 1-3% of compile samples (`importer.*` 0.4-0.7 s, `readImportFile` 1.1 s of 51.8 s). The 15 core-s round trip is the package's own IR. Surviving form: build compiler IR directly from checked syntax (large; no kill test under an hour). |
+| **Function-granularity work-stealing, dedup, streaming link.** | fusion | **untested; this is F3.** Last night's scheduling simulation says the compile stretch is CPU-bound (10.3 s against a 9.3 s bound), so the gain is the tail: link + write, 1.5 s at 1.5 cores. |
+| **Pinned persistent workers with arena reset, graph partitioned for locality.** | fusion | **dead by the table**: setup rows are ~4.5 core-s after the fork-server; cross-core traffic is 0.05 s by its own arithmetic. |
+| **Compile shared bodies, wrappers and type descriptors once (content-addressed).** | design | **dead for descriptors**: 371 k emitted, 106 k duplicates (28.6%), worth ~1.6 core-s. Bodies: killed earlier (`explore/shapes`, 20.8%). |
+| **Delete the IR round trip: type-check straight into back-end IR.** | design | **alive, large**: 15.1 core-s measured (write 5.0, read back 10.1). Same as the surviving form of the first row. |
+| **Template/stencil emitter, columnar codegen, presized layout, no link.** | design, ridiculous | **untested; F3/F4's emitter.** After the one-pass assembler, instruction encoding is `span6` 3.7% of samples (~2.6 core-s) and all of `Flushplist` 8.8%; the larger prize in this row is the serial link (1.2-1.4 s wall). |
+| **Bump allocator, never free.** | ridiculous | **dead in 15 minutes**: `GODEBUG=sbrk=1` gives no CPU gain on go/types (0.56 s vs 0.57 s) and deadlocks intermittently. |
+| **Lazy compilation stubs in the output binary.** | ridiculous | **rejected**: moves compilation into the run; the charter's output is a working binary. |
+
+Picked for the next step: none of these. The head of the build (plan, then `runtime`, on two cores) is cheaper.
+

@@ -29,7 +29,7 @@ func sbZygote() {
 	buf := make([]byte, 1<<20)
 	oob := make([]byte, 128)
 	for {
-		n, oobn, _, _, err := syscall.Recvmsg(sock, buf, oob, 0)
+		n, oobn, rflags, _, err := syscall.Recvmsg(sock, buf, oob, 0)
 		if err == syscall.EINTR {
 			continue
 		}
@@ -64,8 +64,11 @@ func sbZygote() {
 					}
 				}
 			}
-			if len(fds) != 2 {
-				syscall.Write(sock, []byte("-1"))
+			if rflags&(syscall.MSG_TRUNC|syscall.MSG_CTRUNC) != 0 || len(fds) != 2 {
+				for _, f := range fds {
+					syscall.Close(f)
+				}
+				syscall.Write(sock, []byte("-2")) // not forked: the driver runs this compile itself
 				continue
 			}
 			parts := strings.Split(string(buf[1:n]), "\x00")

@@ -705,3 +705,80 @@ exact CPU table, which is new.
 once in one address space and hand typed packages to back ends in memory. Why not this iteration: F0 and
 F1 were the charter's next rungs and F0's table is what tells me which half of F2 pays (the 17 core-s
 round trip, not the 3.6 of process start). Next iteration goes at F2's cheapest consumed slice.
+
+## 2026-11-12 13:30 UTC — iteration 16: divergence round, four ideas killed by measurement, a one-pass assembler (-6 core-s), review fixes
+
+**Trace.** MinIO cold, four runs of `10-onepass`: **11.7, 11.6, 13.5, 12.9 s** (67 core-s in the first;
+`09`: 12.5-15.6). kube-apiserver, two: **21.1, 23.2 s** (137 core-s; `09`: 22.5-24.5). Both pass smoke;
+MinIO passes the stress test. Objects written: 641 -> 573 MB. The host is noisy enough that single runs
+overlap between configurations; the interleaved comparison is below.
+
+**The front end split exactly** (finer `SB_CPUPHASES` boundaries; one warm MinIO build, 72 core-s row):
+parse 1.9, **type check 8.9**, **write export IR 5.0**, **read it back as compiler IR 10.1**. The round
+trip is 15.1 core-s, a fifth of the compile row, and it is the package's *own* IR, not imports.
+
+**Divergence step** (three lenses on a cheaper model, each saw CHARTER, TRACE, HARDWARE; nine ideas;
+IDEAS.md has all of them). Triage, with the kill tests I ran:
+- *Resident typed universe, importers follow pointers* (two lenses). Their premise is that reading
+  imports is expensive. The merged profile says it is not: `importer.*` 0.4-0.7 s and `readImportFile`
+  1.1 s of 51.8 s of samples, 1-3%. Import decoding is lazy and cheap; what costs is serializing and
+  deserializing the package being compiled. **Dead as stated.** What survives is harder: build the
+  compiler's IR straight from the checked syntax (no export IR for the own package).
+- *Bump allocator, never free* (the allocator is 11% of samples). Go ships one: `GODEBUG=sbrk=1`.
+  On go/types it changes nothing (0.56 s against 0.57 s CPU) and it deadlocks intermittently with
+  concurrent back ends. **Dead in 15 minutes.** (The first attempt hung the whole build: the setting
+  reached the driver. `SB_COMPILE_ENV` now passes environment to compiler processes only.)
+- *Emit each shared type descriptor once across the graph.* Logged every descriptor the build emits
+  (`SB_TYPELOG`): 371 k emitted, of which 331 k are the kind every needing package emits, with 225 k
+  distinct names: 106 k duplicates, **28.6%**. Descriptors are 8% of compile samples, so a perfect
+  cross-package claim table saves about 1.6 core-s. Under my 40% threshold: **dead**. (Surprise worth
+  keeping: most descriptor work is unique anonymous types, 225 k of them; `func() string` is the most
+  repeated at 613 copies.)
+- *Persistent pinned workers with arena reset*: ceiling is the setup rows, ~4.5 core-s after the
+  fork-server. Dead by the table, not built.
+- *Lazy compilation in the output binary*: moves the build into the run; not a build. Rejected.
+- *Template emitter / columnar codegen, presized layout* (two lenses): this is F3/F4's emitter. Not
+  tested this iteration; the assembler result below changes its arithmetic.
+
+**The consumed change: one assembler pass instead of 3.3** (the budgeted optimization iteration; the
+profile pointed at it: `obj.Flushplist` was 13.5% of compile samples).
+- `x86.span6` assumes every forward branch is short and re-assembles the whole function each time one
+  does not fit. Counted on go/types: 2.68 passes per function, 3.33 weighted by bytes, and *every*
+  function at least two, because padding jumps to 32-byte boundaries (the Intel JCC erratum
+  mitigation) needs sizes from a previous pass.
+- Now, in the baseline build only: a forward branch more than 12 instructions ahead starts out long
+  (`driver/x86/sbspan.go`), and jump padding is off. Result: exactly one pass for all 1,376 functions
+  of go/types, and the text is 0.7% *smaller* (no padding) despite the longer branches.
+- Also: with `-dwarf=false` the stock compiler still builds a DWARF subprogram entry and line table per
+  function. The baseline build skips them (requires `-w` at link, which the build already uses).
+- Measured. One package, min of 15 alternating runs: 566 -> 520 ms for one pass (8.5%), -> 504 with the
+  DWARF skip. Whole MinIO build, four interleaved rounds, compile core-s: old 75.4, 81.0, 67.4, 76.0;
+  new 77.2, 67.5, 60.9, 69.7 (**min 67.4 -> 60.9, mean 74.9 -> 68.8**); wall mean 12.4 -> 11.7 s.
+  Profile after: Flushplist 7.0 -> 4.0 s of samples, span6 4.3 -> 1.7.
+- Evidence: standard-library oracle 27 of 29 packages (the two failures, `TestNewBufferShallow` and
+  `TestAllocationsDecode`, count allocations and fail identically with the old assembler path and with
+  the stock compiler at `-l`); MinIO smoke and stress; kube smoke; `tests/sb_early.sh` (idle patched
+  compiler byte-identical to stock: the change is gated on `SB_BASELINE`); `tests/sb_zygote.sh`.
+- Behaviour difference for MORNING.md: no JCC-erratum jump padding (matters for speed on some Intel
+  cores, not for correctness; this is an AMD machine and a dev build).
+
+**Reviews.** The correctness reviewer returned a real review of the fork-server
+(`reviews/forkserver-2026-11-12/`): MinIO byte-identical fork vs exec (2,624 files), 648-fork stress
+clean, and two confirmed findings, both fixed with regression cases in `tests/sb_zygote.sh`:
+(1) if the zygote died after taking a wait request, the empty reply parsed as exit status 0, a compile
+"succeeded" (now: anything but a full five-field reply is a failure); (2) an environment + argv over
+the socket's message limit (425 kB here) failed the build where exec would not (now falls back to
+exec for that compile; the zygote also refuses truncated requests). The skeptic's review agrees with
+iteration 15's arithmetic and asks again for a consumed F2/F3 skeleton; triaged in REVIEWS.md.
+
+**MinIO unit tests with one fixed compiler** (the loose end): 45 packages pass, `cmd` (253 s) has the
+one known failure, `TestTrackingResponseWriter`, identical with the baseline off.
+
+**Scope check.** Most ambitious next: the F2/F3 skeleton the skeptic names (whole-program typing once,
+our own lowering and direct emission for a function subset, linked into MinIO). Why not that with the
+two and a half hours left: `05-sbc` was that skeleton and it lost 2 s, because every function it does
+not take still pays the stock front end *and* the build pays a second whole-program type check; it pays
+only when whole packages leave the stock compiler, which needs export data written without it. What I
+do instead, in the fusion direction and on the trace: the first edge of the DAG is not streamed. The
+planner runs for 0.9 s on 2 cores while 6 idle, and only then does `runtime` (which everything waits
+for) start compiling. Start the runtime's closure at time zero, in parallel with the plan.

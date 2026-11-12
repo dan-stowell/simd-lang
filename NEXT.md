@@ -1,24 +1,17 @@
 # NEXT
 
-State at 2026-11-12 12:40 UTC (JOURNAL iteration 15): MinIO cold 12.5-15.6 s on a noisy host (no real
-change from 12.3-13.3), kube-apiserver 22.5-24.5 s, configuration `09-forkserver`. Fair stock rows:
-MinIO 32.5 s, kube 51.2 s. F0 and F1 are done; F1 (fork-server) is worth 1.6 core-s.
+State at 2026-11-12 13:35 UTC (JOURNAL iteration 16): MinIO cold 11.6-13.5 s, kube-apiserver
+21.1-23.2 s, configuration `10-onepass` (fork-server on, one-pass assembler). Fair stock rows: MinIO
+32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md (`tools/trace/cpuphases.sh`).
 
-The exact CPU table (TRACE.md, `tools/trace/cpuphases.sh`) is the map: be:compilefuncs 34 core-s,
-fe:parse 28.6 (of which ~17 is the export-IR round trip and import reading), setup + object/export
-writing 11.7.
-
-1. Divergence step (was due at iteration 15; lenses should see the new CPU table): 3-4 subagents,
-   `model: "sonnet"`, triage in the same iteration.
-2. Rung F2, cheapest consumed slice first. Candidates, in the order I would try them:
-   a. Split fe:parse exactly (parse / types2 / IR write / IR read / import reading) with the same
-      rusage method (finer `SB_CPUPHASES` boundaries inside noder.LoadPackage), so the slice is chosen
-      by measurement and not by last night's profile shares.
-   b. Whole-program type check in one compiler process (types2 with in-memory imports, packages in
-      parallel), then fork one back end per package from it with `runtime.SBFork`: removes per-package
-      parse + type check + the types2 half of import reading. Needs the parent's heap on huge pages (or
-      fork's page-table copy costs tens of ms per child) and a way to keep children from copying it.
-   c. The same in threads instead of forks: needs cmd/compile's per-package globals (LocalPkg, Target,
-      Ctxt) made per-compile. Larger, and the real F2.
-3. Repeat `tests/minio_unit.sh` result check (run started 12:30 UTC, output in
-   `/home/exedev/targets/minio-unit2/baseline.out`).
+1. In progress: stream the first edge of the DAG. Start compiling `runtime` and its dependency closure
+   at time zero, in parallel with the plan (0.9 s on 2 cores), so the build fans out when the plan
+   ends instead of 0.5 s later. Expected: about -0.5 s of wall clock at the head.
+2. The tail: link + write output is 1.5 s at 1.5 cores, now the largest serial item (F4). First
+   measurement to make: the linker's own phase times on the baseline build's objects
+   (`-ldflags=-benchmark=cpu`), then decide between overlapping it with the compile tail and replacing
+   layout + relocation (LINKING.md).
+3. F2 proper, in the form the measurements leave standing: compiler IR built directly from checked
+   syntax (no export-IR round trip for the package being compiled: 15 core-s), and whole packages
+   bypassing the stock compiler (needs export data produced without it). Large; start with a design
+   note and the smallest package that can go end to end.

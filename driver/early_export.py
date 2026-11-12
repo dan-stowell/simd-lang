@@ -335,3 +335,72 @@ func sbCPUPhase(label string, start bool) {
 '''
 open(p, 'w').write(s)
 
+# Tenth change (measurement only): finer phase boundaries inside the front end, for SB_CPUPHASES.
+p = os.path.join(os.path.dirname(d), 'noder', 'unified.go'); s = open(p).read()
+for old, new in [
+    ('\tdata := writePkgStub(m, noders)\n', '\tbase.Timer.Start("fe", "typecheck")\n\tdata := writePkgStub(m, noders)\n\tbase.Timer.Start("fe", "irread")\n'),
+    ('\tpkg, info, otherInfo := checkFiles(m, noders)\n', '\tpkg, info, otherInfo := checkFiles(m, noders)\n\tbase.Timer.Start("fe", "irwrite")\n'),
+]:
+    assert s.count(old) == 1, old
+    s = s.replace(old, new)
+open(p, 'w').write(s)
+
+# Eleventh change: one-pass branch sizing in the assembler for the baseline build (obj/x86/sbspan.go).
+p = os.path.join(objd, 'x86', 'asm6.go'); s = open(p).read()
+old = '\ts.GrowCap(count * 5) // preallocate roughly 5 bytes per instruction\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tsbPresize(s.Func().Text)\n' + old)
+old = '\ts.Size = int64(c)\n\n\tif false { /* debug'
+assert s.count(old) == 1
+s = s.replace(old, '\ts.Size = int64(c)\n\tsbSpanStat(s.Name, n, s.Size)\n\n\tif false { /* debug')
+# and no padding of jumps to 32-byte boundaries in that build (the Intel JCC erratum mitigation, a
+# performance measure): it needs every instruction's size from a previous pass, i.e. a second pass always.
+old = '\t// Disable jump padding for hand written assembly code.\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tif sbOnePass {\n\t\treturn padJumpsCtx(0)\n\t}\n' + old)
+open(p, 'w').write(s)
+
+# Twelfth change: with -dwarf=false the stock compiler still builds a DWARF subprogram entry and a line
+# table for every function (the linker drops them under -w). The baseline build does not.
+p = os.path.join(objd, 'dwarf.go'); s = open(p).read()
+old = '\tinfo, loc, ranges, absfunc, lines := ctxt.dwarfSym(s)\n\tif info.Size != 0 {'
+assert s.count(old) == 1
+s = s.replace(old, '\tif sbNoDwarf && ctxt.DebugInfo == nil {\n\t\treturn\n\t}\n' + old)
+if '\t"os"\n' not in s:
+    s = s.replace('import (', 'import (\n\t"os"', 1)
+s += '\nvar sbNoDwarf = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_KEEP_DWARF") == ""\n'
+open(p, 'w').write(s)
+
+# Thirteenth change (measurement only): with SB_TYPELOG=<dir>, log every runtime type descriptor this
+# process emits: "D name" if any package that needs the type emits it (anonymous, instantiated, shape:
+# the linker keeps one copy), "L name" if only this package does.
+p = os.path.join(reflectd, 'reflect.go'); s = open(p).read()
+old = '''	// Type layout                          Written by               Marker
+'''
+assert s.count(old) == 1
+s = s.replace(old, '''	if sbTypeLogDir != "" {
+		sbTypeLogLine(tbase, lsym.Name)
+	}
+''' + old)
+s += '''
+var sbTypeLogDir = os.Getenv("SB_TYPELOG")
+var sbTypeLogFile *bufio.Writer
+
+func sbTypeLogLine(tbase *types.Type, name string) {
+	if sbTypeLogFile == nil {
+		f, _ := os.OpenFile(fmt.Sprintf("%s/%d.txt", sbTypeLogDir, os.Getpid()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		sbTypeLogFile = bufio.NewWriterSize(f, 1<<16)
+		base.AtExit(func() { sbTypeLogFile.Flush() })
+	}
+	k := "L"
+	if tbase.Sym() == nil || tbase.IsFullyInstantiated() || tbase.HasShape() {
+		k = "D"
+	}
+	fmt.Fprintf(sbTypeLogFile, "%s %s\\n", k, name)
+}
+'''
+for imp in ('"bufio"', '"os"', '"fmt"'):
+    if '\t' + imp + '\n' not in s:
+        s = s.replace('import (', 'import (\n\t' + imp, 1)
+open(p, 'w').write(s)
+

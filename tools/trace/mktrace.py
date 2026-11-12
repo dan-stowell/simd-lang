@@ -487,7 +487,10 @@ def sb_section(name, L, out, stock):
         out.append('| compiler phase | user s | sys s | page faults | what it is |')
         out.append('|---|---|---|---|---|')
         what = {'be:compilefuncs': 'walk, baseline code generation (SSA for the rest), assembler: **compiling**',
-                'fe:parse': 'parse, type check, write the package as export IR, read it back as compiler IR, read imports: **compiling + moving data**',
+                'fe:parse': 'read and parse the source files: compiling',
+                'fe:typecheck': 'types2, including reading imported packages\' export data on demand: compiling (+ moving data)',
+                'fe:irwrite': 'serialize the checked package as export IR: **moving data**',
+                'fe:irread': 'build the compiler\'s IR by reading that back, plus imported bodies and types: **moving data**',
                 'be:dumpobj': 'write the object file: **moving data**', '(before main)': 'exec, runtime start, package init: **process setup**',
                 'fe:earlyexport': 'write export data for importers: **moving data**', 'fe:escapes': 'escape analysis: compiling',
                 'fe:devirtualize-and-inline': 'inlining is off; what is left under this timer is method wrappers and small per-function passes: compiling', 'fe:loadsys': 'declare the runtime\'s functions: process setup',
