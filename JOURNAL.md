@@ -612,3 +612,96 @@ tonight's two largest wins came from asking where the time goes rather than from
 What I do instead: (1) the remaining kernel and start-up time (1.7 M faults left, 1,312 process
 starts at 9 ms); (2) the head of the build (plan, then the runtime alone: 2 s at 1-2 cores);
 (3) repeat the evidence with the final compiler.
+
+## 2026-11-12 13:20 UTC — iteration 15: F0 (the fair row, the tax, an exact CPU table) and F1 (a fork-server: works, and is worth 1.5 core-seconds)
+
+**Trace.** MinIO cold, four runs of `09-forkserver`: **15.6, 14.0, 12.5, 13.0 s**; kube-apiserver, two:
+**24.5, 22.5 s**. Both pass their smoke tests. The host was noisier than last night (the same warm build
+cost 71, 81 and 84 compile core-seconds within half an hour), so the honest reading is "no change in
+wall clock from `08-huge-shard`" (12.3-13.3 and 24.1-25.2). What this iteration produced is measurement,
+and it changes what the next rungs are worth.
+
+**Loose ends from last night.** Both inbox reviews triaged (the skeptic's was already in REVIEWS.md; the
+correctness reviewer's file holds only a session id). The 03:20 divergence round survived in IDEAS.md and
+is committed with its triage. `tests/minio_unit.sh` is running again with the final compiler as I write.
+SCALAR_LEDGER.md brought up to date.
+
+**F0, the fair stock row.** `GOGC=off go build -trimpath -gcflags=all='-dwarf=false -l' -ldflags='-s -w'`,
+cold, 8 CPUs: MinIO **32.5 s** (169 core-s), kube-apiserver **51.2 s** (329 core-s). Plain stock in the
+same hour: 50.0 s and 77.1 s. So of last night's "54 s -> 12.5 s", 54 -> 32.5 is turning things off and
+32.5 -> 12.5 is technique (early export, the baseline generator, huge pages, shards, our own plan).
+
+**F0, the tax.** New in TRACE.md, for stock, fair stock and this build: tasks created, tool processes,
+page faults, bytes of intermediates written and read back. MinIO: stock writes 1.9 GB of archives (each
+twice: work directory, then GOCACHE) and reads 2.7 GB back; this build writes 733 MB to tmpfs and reads
+1.26 GB back; faults 11.9 M -> 1.3 M.
+
+**F0, the attribution, and a correction.** Last night's profile table put "46 s of samples" under a
+75 core-s row and I filled the gap with a guess (process start 12 core-s, kernel 20). I replaced the
+guess with a measurement: the patched compiler logs its own rusage at every phase boundary
+(`SB_CPUPHASES`, `tools/trace/cpuphases.sh`); phases are sequential, so the differences are exact
+whatever the machine is doing. One warm MinIO build, 1,315 compiler processes, core-seconds:
+
+    be:compilefuncs   34.0   walk, baseline generator, assembler            compiling
+    fe:parse          28.6   parse, types2, write export IR, read it back,  compiling + moving data
+                             read imports
+    be:dumpobj         3.9   object files                                   moving data
+    before main        3.6   exec, runtime start, package init (654 k of    process setup
+                             the 1.6 M faults)
+    fe:earlyexport     2.7   export data for importers                      moving data
+    wrappers, escapes  4.8                                                  compiling
+    init, loadsys      1.5                                                  process setup
+    exit, asm, pack    1.7
+
+Three things I had wrong. (1) Process start is 3.6 core-s, not 12. (2) The front end is 35% of the row,
+not 20%: the sampler under-counted it (many short processes). (3) The wall-clock `-bench` timers are
+useless here (be:compilefuncs "290 s"): back ends sit at nice 19 waiting for a core.
+
+**What serializes each phase, and what fusion can remove (the charter's question, answered from the
+table).** Pure setup and data movement that one address space removes outright: before main 3.6 + init
+1.5 + dumpobj 3.9 + earlyexport 2.7 = **11.7 core-s**. Inside fe:parse, by last night's profile shares,
+about 40% is type checking and 60% is the export-IR round trip and import reading: **~17 core-s** that
+exists only because the compiler's IR can only be built by deserializing. The rest, **~50 core-s, is
+compiling** (types ~11, walk + generate + assemble 34, wrappers/escape 5). So perfect fusion *of the
+stock compiler's work* ends near 50 core-s = 6.3 s on this machine. Two seconds needs the compiling
+itself cut by three: our own lowering and an emitter that does not go through `obj.Prog`. Fusion is
+necessary and not sufficient; F2-F4 have to bring a cheaper compiler with them, not only a different
+process structure.
+
+**F1: fork-server (built, consumed, differential-tested) vs persistent worker (measured, not built).**
+- *What was built.* `runtime.SBFork` (driver/runtime/sbfork.go, 60 lines): fork without exec in a Go
+  process. Stop the world, lock out sysmon, fork; in the child drop the idle Ms (their threads do not
+  exist), fix the thread id, start a new sysmon. The compiler with `SB_ZYGOTE=<fd>` finishes start-up
+  and waits on a socket; the driver (`-zygote`) sends each compile's directory, environment, argv and
+  two pipe ends; the zygote forks and the child carries on into the ordinary `gc.Main`. Exit status and
+  rusage come back through the zygote's wait4.
+- *Kill test first:* 6,000 forked children each running 16 goroutines, maps, timers and (a third of
+  them) a forced collection, at GOGC 100 and 5: no failure, no hang.
+- *A bug the first real build found:* the binary failed in `encoding/gob` init ("*reflect.rtype is not
+  *reflect.rtype"). Three of my own package-level variables read the environment at init
+  (`SB_EARLY_EXPORT`, `SB_SHARD` twice), i.e. in the zygote, before the compile's environment existed.
+  The zygote now starts with the environment every compile gets, and the two per-compile values are
+  read again in the child.
+- *Correctness evidence:* `tests/sb_zygote.sh`: every export file, object and the binary byte-identical
+  to one exec per compile (cmd/go: 664 files; MinIO: binary SHA-256 identical); a compile error still
+  fails the build with the compiler's message. MinIO and kube smoke tests pass.
+- *What it is worth* (interleaved A/B, 4 rounds, warm): compile core-s 67.9/66.2, 70.9/69.0, 75.6/72.6,
+  71.4/71.7: **-1.6 core-s on average, wall clock unchanged** (11.80 vs 11.77 s). Faults 1.60 M -> 1.17 M.
+  Why so little: fork does not copy the page tables of the 37 MB of mapped binary, so the child takes
+  those faults again; and "before main" was 3.6 core-s to begin with.
+- *Persistent worker:* its ceiling is the same rows (before main + init + loadsys + exit: ~6 core-s),
+  and it needs every global in cmd/compile reset between packages. Not built: the ceiling does not pay
+  for the audit.
+- *Verdict on F1:* done, and nearly a negative result. Kept (`-zygote`, off by default in the driver, on
+  in the trace configuration) because fork-without-exec is a tool the later rungs can use: it is the
+  cheap way to hand a typed whole program to many workers without export data, *if* the heap is on huge
+  pages (page-table copy of a multi-GB 4 kB heap would cost tens of ms per fork; noted for F2).
+
+**Divergence step.** Due by count (15). Not fired: a round ran at 03:20 after iteration 14, nothing had
+been built since, and usage is the binding limit. It runs next iteration, when the lenses can see the
+exact CPU table, which is new.
+
+**Scope check.** Most ambitious thing I could attempt next: F2 proper: type-check the whole program
+once in one address space and hand typed packages to back ends in memory. Why not this iteration: F0 and
+F1 were the charter's next rungs and F0's table is what tells me which half of F2 pays (the 17 core-s
+round trip, not the 3.6 of process start). Next iteration goes at F2's cheapest consumed slice.

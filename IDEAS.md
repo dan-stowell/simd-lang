@@ -58,3 +58,18 @@ informative test is the shape histogram (template back end, kill test 2).
 - **Declarations first** kill test 2: go/types with IgnoreFuncBodies over all of MinIO, one process: 365-430 ms wall, 2.3-2.6 core-s, chain 0.3 s, no errors. Line was 400 ms. **Alive.** With bodies: 963 ms wall, 4.6 core-s.
 - **Template back end** kill test 2: top 4,096 typed expression-node shapes cover 96.7% of 1.42 M nodes (**alive** per node); top 4,096 whole-statement shapes cover 80.9% (**dead** per statement).
 - **A second compiler taking over single functions inside the stock build** (bodyless declaration + symabis + extra object in the package archive). Status: **spiking now** (rung 5 skeleton).
+
+## Divergence step, 2026-11-12 03:20 UTC (four subagents; each saw only CHARTER, TRACE, HARDWARE and one lens)
+
+Twelve ideas, five distinct. Status after triage:
+
+| idea | from | status |
+|---|---|---|
+| **Reachability before code generation**: compute the linker's live set from `main` first, lower and emit only live functions. (Proposed by all four lenses; their kill test: object text against linked text.) | all | **already measured, negative** (iteration 9: 21% of functions are dead; saving at most a fifth of the 27 body-proportional core-s, and the live set needs the whole program type-checked first, which costs 7.4 core-s by the `explore/wholeprog` measurement). 641 MB of objects against a 160 MB binary is mostly export data, pclntab pieces and duplicated instantiations, not dead text. |
+| **One resident compiler**: one address space, importers follow pointers, no export data, no process start. | flip, design, ridiculous | **the direction, not a spike.** Their kill tests are done: process start is 1,312 x ~10 ms = 13 core-s (HARDWARE.md); export IR write + read is 9.2 core-s. Together a quarter of the compile row. Cannot be done inside cmd/compile (global state); it is the front-end replacement of NEXT.md. |
+| **Zygote**: fork compilers from a pre-initialized process. | borrow | ~~dead: a Go process cannot fork without exec~~ **built in iteration 15** (`runtime.SBFork`, `-zygote`): it can, with 60 lines in the runtime. Byte-identical output; worth 1.6 core-s of ~71 and no wall clock, because process start was 3.6 core-s, not 12. |
+| **No link / cut-through link**: assign addresses as code is produced, patch relocations in one parallel pass; or a linker that ingests objects as they finish. | flip, borrow, design | **untested.** Link is 1.3 s of a 12.5 s build, serial, last. Needs a linker of our own; kill test (phase-time the stock linker) partly done in iteration 4 (`linkprof_*`): no single phase dominates. Best large idea left; too big for the rest of tonight. |
+| **Compile each function shape once**: hash bodies with names and literals erased, compile one per shape, patch the rest. | ridiculous | **killed in 10 minutes** (`explore/shapes`): of 35 MB of function bodies in the MinIO build, 27.1% is in token shapes seen at least twice and 20.8% is beyond the first copy; that is an upper bound (types must match too; exact token text repeats for 5.7%). Under the proposer's own 25% threshold. |
+
+Picked for the next spike: none of these. The trace's own idle stretches (the first second, where only
+the planner runs) are cheaper to attack than any of them.

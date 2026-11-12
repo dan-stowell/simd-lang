@@ -306,3 +306,32 @@ s = s.replace(old, old + '''\tif environ() != nil && gogetenv("SB_HUGE") != "" &
 \t}
 ''')
 open(p, 'w').write(s)
+
+# Ninth change (measurement only): with SB_CPUPHASES=<dir>, every phase boundary of the compiler's own timer
+# appends the process's CPU time and page faults so far to <dir>/<pid>.txt. Phases are sequential, so the
+# difference between two lines is that phase's CPU, whatever the machine was doing (the wall-clock timers of
+# -bench are useless when back ends run at low priority on a busy machine).
+p = os.path.join(os.path.dirname(d), 'base', 'timings.go'); s = open(p).read()
+old = '\tt.list = append(t.list, timestamp{time.Now(), strings.Join(labels, ":"), start})\n'
+assert s.count(old) == 1
+s = s.replace(old, old + '\tsbCPUPhase(strings.Join(labels, ":"), start)\n')
+s = s.replace('import (', 'import (\n\t"os"\n\t"syscall"', 1)
+s += '''
+var sbCPUDir = os.Getenv("SB_CPUPHASES")
+var sbCPUFile *os.File
+
+func sbCPUPhase(label string, start bool) {
+	if sbCPUDir == "" {
+		return
+	}
+	if sbCPUFile == nil {
+		sbCPUFile, _ = os.OpenFile(fmt.Sprintf("%s/%d.txt", sbCPUDir, os.Getpid()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+		fmt.Fprintf(sbCPUFile, "pid %d\\n", os.Getpid())
+	}
+	var ru syscall.Rusage
+	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
+	fmt.Fprintf(sbCPUFile, "%s %v %d %d %d\\n", label, start, ru.Utime.Sec*1e6+ru.Utime.Usec, ru.Stime.Sec*1e6+ru.Stime.Usec, ru.Minflt)
+}
+'''
+open(p, 'w').write(s)
+

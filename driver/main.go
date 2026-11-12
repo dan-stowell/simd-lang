@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -23,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -98,6 +100,163 @@ var (
 	tooldir string
 )
 
+// The materialization tax: what the build pays for being a set of processes.
+var taxProcs, taxForks, taxMinflt, taxMajflt atomic.Int64
+
+func taxChild(ps *os.ProcessState) {
+	if ps == nil {
+		return
+	}
+	taxProcs.Add(1)
+	if ru, ok := ps.SysUsage().(*syscall.Rusage); ok {
+		taxMinflt.Add(ru.Minflt)
+		taxMajflt.Add(ru.Majflt)
+	}
+}
+
+// ---- the compiler fork-server (rung F1): one warm compiler process, forked once per compile.
+var zygoteOn bool
+var zy struct {
+	once sync.Once
+	mu   sync.Mutex
+	sock int
+	err  error
+	cmd  *exec.Cmd
+}
+
+// zygoteStop ends the fork-server and waits for it, so that its children's CPU time is counted as ours.
+func zygoteStop() {
+	if zy.cmd != nil {
+		syscall.Close(zy.sock)
+		zy.cmd.Wait()
+		zy.cmd = nil
+	}
+}
+
+func zygoteStart() {
+	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_SEQPACKET|syscall.SOCK_CLOEXEC, 0)
+	if err != nil {
+		zy.err = err
+		return
+	}
+	syscall.SetsockoptInt(fds[0], syscall.SOL_SOCKET, syscall.SO_SNDBUF, 4<<20)
+	cmd := exec.Command(compiler)
+	cmd.ExtraFiles = []*os.File{os.NewFile(uintptr(fds[1]), "zygote")}
+	// the zygote gets the environment every compile gets: package-level variables read it at init
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "SB_EARLY_EXPORT=") {
+			cmd.Env = append(cmd.Env, kv)
+		}
+	}
+	if !noEarly {
+		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
+	}
+	cmd.Env = append(cmd.Env, "SB_ZYGOTE=3")
+	zy.cmd = cmd
+	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+	if zy.err = cmd.Start(); zy.err != nil {
+		return
+	}
+	taxProcs.Add(1)
+	syscall.Close(fds[1])
+	zy.sock = fds[0]
+}
+
+func zygoteCompile(dir string, argv []string, exported func(pid int), dropBodies bool, extraEnv ...string) (float64, float64, error) {
+	zy.once.Do(zygoteStart)
+	if zy.err != nil {
+		return 0, 0, zy.err
+	}
+	var env []string
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "SB_EARLY_EXPORT=") {
+			env = append(env, kv)
+		}
+	}
+	if !noEarly {
+		env = append(env, "SB_EARLY_EXPORT=1")
+	}
+	if dropBodies {
+		env = append(env, "SB_DROP_BODIES=1")
+	}
+	env = append(env, extraEnv...)
+	msg := "F" + dir + "\x00" + strconv.Itoa(len(env)) + "\x00" + strings.Join(env, "\x00") + "\x00" + strings.Join(argv, "\x00")
+	var po, pe [2]int
+	if err := syscall.Pipe2(po[:], syscall.O_CLOEXEC); err != nil {
+		return 0, 0, err
+	}
+	if err := syscall.Pipe2(pe[:], syscall.O_CLOEXEC); err != nil {
+		return 0, 0, err
+	}
+	reply := make([]byte, 256)
+	zy.mu.Lock()
+	err := syscall.Sendmsg(zy.sock, []byte(msg), syscall.UnixRights(po[1], pe[1]), nil, 0)
+	n := 0
+	if err == nil {
+		n, err = syscall.Read(zy.sock, reply)
+	}
+	zy.mu.Unlock()
+	syscall.Close(po[1])
+	syscall.Close(pe[1])
+	out, errf := os.NewFile(uintptr(po[0]), "out"), os.NewFile(uintptr(pe[0]), "err")
+	defer out.Close()
+	defer errf.Close()
+	pid, _ := strconv.Atoi(string(reply[:max(n, 0)]))
+	if err != nil || pid <= 0 {
+		return 0, 0, fmt.Errorf("zygote: fork failed: %v %q", err, reply[:max(n, 0)])
+	}
+	var errb bytes.Buffer
+	done := make(chan struct{})
+	go func() { io.Copy(&errb, errf); close(done) }()
+	rest := readCompilerStdout(out, func() { exported(pid) })
+	<-done
+	zy.mu.Lock()
+	_, err = syscall.Write(zy.sock, []byte("W"+strconv.Itoa(pid)))
+	if err == nil {
+		n, err = syscall.Read(zy.sock, reply)
+	}
+	zy.mu.Unlock()
+	if err != nil {
+		return 0, 0, fmt.Errorf("zygote: wait failed: %v", err)
+	}
+	var st int
+	var uus, sus, minf, majf int64
+	fmt.Sscan(string(reply[:n]), &st, &uus, &sus, &minf, &majf)
+	taxForks.Add(1)
+	taxMinflt.Add(minf)
+	taxMajflt.Add(majf)
+	if st != 0 {
+		err = fmt.Errorf("%s: exit status %d (forked)\n%s%s", strings.Join(argv, " "), st, rest, errb.String())
+	}
+	return float64(uus) / 1000, float64(sus) / 1000, err
+}
+
+// readCompilerStdout reads the compiler's stdout to the end whatever it prints: a line may be longer than
+// any buffer (with -S a symbol name can be megabytes), and an unread pipe would block the compiler for good.
+// It calls ready when the export-data marker line arrives and returns the first megabyte of everything else.
+func readCompilerStdout(out io.Reader, ready func()) string {
+	const marker = "sb:export-ready"
+	rd := bufio.NewReaderSize(out, 1<<16)
+	var rest bytes.Buffer
+	cont := false // this piece continues a line longer than the buffer
+	for {
+		line, err := rd.ReadSlice('\n')
+		if len(line) > 0 {
+			whole := !cont
+			cont = err == bufio.ErrBufferFull
+			if whole && !cont && string(bytes.TrimRight(line, "\n")) == marker {
+				ready()
+			} else if rest.Len() < 1<<20 { // keep the first megabyte for the error message
+				rest.Write(line)
+			}
+		}
+		if err != nil && err != bufio.ErrBufferFull {
+			break
+		}
+	}
+	return rest.String()
+}
+
 func ms() float64 { return float64(time.Since(t0).Microseconds()) / 1000 }
 
 var cleanup string
@@ -138,6 +297,7 @@ func run(dir string, argv []string, stdin []byte, stdout *os.File) (float64, flo
 		cmd.Stdout = &outb
 	}
 	err := cmd.Run()
+	taxChild(cmd.ProcessState)
 	var u, s float64
 	if cmd.ProcessState != nil {
 		u = float64(cmd.ProcessState.UserTime().Microseconds()) / 1000
@@ -159,6 +319,7 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	flag.BoolVar(&zygoteOn, "zygote", false, "fork compiles from one warm compiler process (needs the patched compiler)")
 	flag.StringVar(&compiler, "compiler", "", "compiler binary (default: go tool compile)")
 	linker := flag.String("linker", "", "linker binary (default: go tool link)")
 	flag.BoolVar(&pipeline, "pipeline", false, "release a package's importers when its export data is written, before its back end runs (needs the patched compiler)")
@@ -601,6 +762,7 @@ func main() {
 	if firstErr != nil {
 		die("%v", firstErr)
 	}
+	zygoteStop()
 	var objBytes int64
 	for _, p := range pkgs {
 		if fi, err := os.Stat(p.archive); err == nil {
@@ -608,6 +770,28 @@ func main() {
 		}
 	}
 	phase("compile (go tool compile/asm)", st, objBytes, cu, cs, "bytes = object archives written to tmpfs")
+	// Intermediates: every archive and export file is written by one process and read back by others.
+	// Written = archives + separate export files. Read back = each importer maps the export data of each of
+	// its direct imports, and the linker reads every archive.
+	var interW, interR int64
+	xsize := map[*Pkg]int64{}
+	for _, p := range pkgs {
+		if fi, err := os.Stat(p.export); err == nil {
+			xsize[p] = fi.Size()
+			if p.export != p.archive {
+				interW += fi.Size()
+			}
+		}
+	}
+	for _, p := range pkgs {
+		for _, d := range p.deps {
+			interR += xsize[d]
+		}
+	}
+	interW += objBytes
+	interR += objBytes
+	trace.Meta["tax_inter_written"] = fmt.Sprint(interW)
+	trace.Meta["tax_inter_read"] = fmt.Sprint(interR)
 
 	// ---- link (delegated), writing the binary to tmpfs
 	st = ms()
@@ -665,6 +849,10 @@ func main() {
 	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
 	trace.Meta["self_user_ms"] = fmt.Sprint(ru.Utime.Sec*1000 + ru.Utime.Usec/1000)
 	trace.Meta["self_sys_ms"] = fmt.Sprint(ru.Stime.Sec*1000 + ru.Stime.Usec/1000)
+	trace.Meta["tax_procs"] = fmt.Sprint(taxProcs.Load())
+	trace.Meta["tax_forks"] = fmt.Sprint(taxForks.Load())
+	trace.Meta["tax_minflt"] = fmt.Sprint(taxMinflt.Load() + ru.Minflt)
+	trace.Meta["tax_majflt"] = fmt.Sprint(taxMajflt.Load() + ru.Majflt)
 	trace.Meta["wall_ms"] = fmt.Sprintf("%.0f", ms())
 	trace.Meta["jobs"] = fmt.Sprint(*jobs)
 	trace.Meta["gcflags"] = *gcflags
@@ -683,6 +871,8 @@ func main() {
 	for _, ph := range trace.Phases {
 		fmt.Printf("%-32s %9.0f ms  cpu %9.0f ms  %12d bytes  %s\n", ph.Name, ph.End-ph.Start, ph.User+ph.Sys, ph.Bytes, ph.Note)
 	}
+	fmt.Printf("tax: %s processes started, %s forked, %s minor faults, intermediates written %s bytes, read back %s bytes\n",
+		trace.Meta["tax_procs"], trace.Meta["tax_forks"], trace.Meta["tax_minflt"], trace.Meta["tax_inter_written"], trace.Meta["tax_inter_read"])
 	fmt.Printf("%-32s %9.0f ms\n", "TOTAL", ms())
 }
 
@@ -989,6 +1179,9 @@ func embedcfg(p *Pkg) ([]byte, error) {
 // runCompile runs the patched compiler, which prints "sb:export-ready" when the file importers need
 // is complete; exported is called at that moment.
 func runCompile(dir string, argv []string, exported func(pid int), dropBodies bool, extraEnv ...string) (float64, float64, error) {
+	if zygoteOn {
+		return zygoteCompile(dir, argv, exported, dropBodies, extraEnv...)
+	}
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
 	for _, kv := range os.Environ() { // never inherit the switch: -noearly must mean stock behaviour
@@ -1012,32 +1205,13 @@ func runCompile(dir string, argv []string, exported func(pid int), dropBodies bo
 	if err := cmd.Start(); err != nil {
 		return 0, 0, err
 	}
-	// Read the compiler's stdout to the end whatever it prints: a line may be longer than any buffer
-	// (with -S a symbol name can be megabytes), and an unread pipe would block the compiler for good.
-	const marker = "sb:export-ready"
-	rd := bufio.NewReaderSize(out, 1<<16)
-	var rest bytes.Buffer
-	cont := false // this piece continues a line longer than the buffer
-	for {
-		line, err := rd.ReadSlice('\n')
-		if len(line) > 0 {
-			whole := !cont
-			cont = err == bufio.ErrBufferFull
-			if whole && !cont && string(bytes.TrimRight(line, "\n")) == marker {
-				exported(cmd.Process.Pid)
-			} else if rest.Len() < 1<<20 { // keep the first megabyte for the error message
-				rest.Write(line)
-			}
-		}
-		if err != nil && err != bufio.ErrBufferFull {
-			break
-		}
-	}
+	rest := readCompilerStdout(out, func() { exported(cmd.Process.Pid) })
 	err = cmd.Wait()
+	taxChild(cmd.ProcessState)
 	u := float64(cmd.ProcessState.UserTime().Microseconds()) / 1000
 	sy := float64(cmd.ProcessState.SystemTime().Microseconds()) / 1000
 	if err != nil {
-		err = fmt.Errorf("%s: %v\n%s%s", strings.Join(argv, " "), err, rest.String(), errb.String())
+		err = fmt.Errorf("%s: %v\n%s%s", strings.Join(argv, " "), err, rest, errb.String())
 	}
 	return u, sy, err
 }

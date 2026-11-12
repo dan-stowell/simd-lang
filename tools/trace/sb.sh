@@ -18,6 +18,8 @@ sync
 [ -n "${WARM:-}" ] || echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
 disk() { awk '$3=="vda"{print $6*512, $10*512}' /proc/diskstats; }
 read r0 w0 < <(disk)
+forks() { awk '$1=="processes"{print $2}' /proc/stat; }; faults() { awk '$1=="pgfault"{print $2}' /proc/vmstat; }
+f0=$(forks); pf0=$(faults)
 ( while :; do echo "$(date +%s.%N) $(head -1 /proc/stat)"; sleep 0.1; done ) > "$out/cpu.txt" &
 sampler=$!
 t0=$(date +%s.%N)
@@ -25,6 +27,7 @@ t0=$(date +%s.%N)
   systemd-run --user --scope -q -p MemoryMax=${SBMEM:-22G} env ${SBENV:-SB=1} "$here/build/sb" -C "$src" -o "$out/bin" ${NOLEX:--lexer "$here/build/golex_strand"} -trace "$out/trace.json" "$@" "$pkg" > "$out/build.log" 2>&1
 rc=$?
 t1=$(date +%s.%N)
+f1=$(forks); pf1=$(faults)
 kill $sampler 2>/dev/null
 sync
 read r1 w1 < <(disk)
@@ -35,6 +38,7 @@ read r1 w1 < <(disk)
   echo "wall_ms $(echo "($t1 - $t0) * 1000 / 1" | bc)"
   cat "$out/time.txt"
   echo "disk_read_bytes $((r1 - r0))"; echo "disk_written_bytes $((w1 - w0))"
+  echo "forks $((f1 - f0))"; echo "pgfault_system $((pf1 - pf0))"
   echo "bin_bytes $(stat -c %s "$out/bin" 2>/dev/null || echo 0)"
   echo "commit $(git -C "$src" rev-parse HEAD)"
   echo "driver $(git -C "$here" rev-parse --short HEAD)"

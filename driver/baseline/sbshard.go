@@ -24,7 +24,10 @@ import (
 )
 
 // SbShard, SbShards: this process is shard SbShard of SbShards (SbShards == 0: not sharded).
-var SbShard, SbShards = func() (int, int) {
+var SbShard, SbShards = SbShardEnv()
+
+// SbShardEnv reads SB_SHARD=k/n. (A function, so that a forked compiler can read its own environment again.)
+func SbShardEnv() (int, int) {
 	ks, ns, ok := strings.Cut(os.Getenv("SB_SHARD"), "/")
 	if !ok {
 		return 0, 0
@@ -35,7 +38,7 @@ var SbShard, SbShards = func() (int, int) {
 		return 0, 0
 	}
 	return k, n
-}()
+}
 
 // sbAssign gives every function declaration with a body its shard, from the syntax alone so that every
 // shard computes the same answer: -1 for a function every shard keeps (generic ones: any shard may need

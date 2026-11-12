@@ -432,8 +432,8 @@ def sb_section(name, L, out, stock):
         P = json.load(open(pj))
         comp_cpu = next(((ph['user_ms'] + ph['sys_ms']) / 1000 for ph in tr['phases'] if ph['name'].startswith('compile')), 0)
         w = P['work_s']
-        out.append(f"**Inside the compile row** (`tools/trace/phases.sh`: a CPU profile of every compiler process, merged; "
-                   f"{w:,.0f} s of samples for {comp_cpu:,.0f} core-s of compile, the rest being kernel time and process start):\n")
+        out.append(f"**Inside the compile row, by profile** (`tools/trace/phases.sh`: a CPU profile of every compiler process of run `08-huge-shard`, merged; "
+                   f"{w:,.0f} s of samples. Read the shares, not the seconds: the sampler misses about a third of the row's CPU. The exact per-phase table is further down):\n")
         out.append('| compiler phase | core-s | share | the charter\'s row |')
         out.append('|---|---|---|---|')
         rowof = {'lex': 'lex/parse', 'type check': 'resolve/types', 'typed tree': 'resolve/types', 'export IR': 'resolve/types',
@@ -445,6 +445,56 @@ def sb_section(name, L, out, stock):
         out.append(f"\nAcross all phases, {P['malloc_s']:,.1f} s is the allocator and {P['memclr_s']:,.1f} s is clearing memory. "
                    f"Lexing and parsing all of the build's Go is {P['phases'][next(iter(P['phases']))]:.2f} core-s: "
                    f"{100 * P['phases'][next(iter(P['phases']))] / w:.1f}% of the compiler's work.\n")
+    # ---- the fair stock row and the materialization tax (rung F0)
+    def stockmeta(tag):
+        q = os.path.join(T, name, f'p8-cold-{tag}', 'meta.txt')
+        return meta(q) if os.path.exists(q) else None
+    plain, fair = stockmeta('tax'), stockmeta('fair')
+    if fair and plain:
+        tm = tr['meta']
+        out.append(f"**The fair stock row.** Stock `go build`, cold, with the relaxations this build uses "
+                   f"(`GOGC=off go build -trimpath -gcflags=all='-dwarf=false -l' -ldflags='-s -w'`): **{int(fair['wall_ms']):,} ms** "
+                   f"({float(fair['user_s']) + float(fair['sys_s']):,.0f} core-s). Plain stock in the same hour: {int(plain['wall_ms']):,} ms. "
+                   f"This build: {ms(wall)} ms. The gain to claim is against the fair row.\n")
+        out.append('**The materialization tax** (what the build pays for being separate processes that hand each other files; `tools/trace/tax.py`, driver counters):\n')
+        out.append('| | stock | fair stock | this build |')
+        out.append('|---|---|---|---|')
+        def row(label, f, mine):
+            out.append(f"| {label} | {f(plain)} | {f(fair)} | {mine} |")
+        gi = lambda k: (lambda mm: f"{int(mm[k]):,}" if mm.get(k) else '')
+        gb = lambda k: (lambda mm: fmt_bytes(int(mm[k])) if mm.get(k) else '')
+        row('wall ms, cold', gi('wall_ms'), ms(wall))
+        row('core-s', lambda mm: f"{float(mm['user_s']) + float(mm['sys_s']):,.0f}", f'{cpu:,.0f}')
+        row('tasks created, whole machine (processes + threads)', gi('forks'), f"{int(m['forks']):,}" if m.get('forks') else '')
+        def ncmds(tag):
+            try: return f"{sum(len(a.get('Cmd') or []) for a in json.load(open(os.path.join(T, name, f'p8-cold-{tag}', 'actions.json')))):,}"
+            except OSError: return ''
+        cm = {id(plain): ncmds('tax'), id(fair): ncmds('fair')}
+        row('tool processes started (exec)', lambda mm: cm[id(mm)],
+            f"{int(tm['tax_procs']):,}" + (f" + {int(tm['tax_forks']):,} forked from one warm compiler" if int(tm.get('tax_forks', 0)) else '') if tm.get('tax_procs') else '')
+        row('page faults, whole machine', gi('pgfault_system'), f"{int(m['pgfault_system']):,}" if m.get('pgfault_system') else '')
+        row('intermediates written (archives, export data)', gb('tax_inter_written'), fmt_bytes(int(tm['tax_inter_written'])) if tm.get('tax_inter_written') else '')
+        row('intermediates read back (importers, linker, cache copy)', gb('tax_inter_read'), fmt_bytes(int(tm['tax_inter_read'])) if tm.get('tax_inter_read') else '')
+        row('of which export data', gb('tax_export_bytes'), '')
+        out.append('')
+        out.append('Stock writes every archive twice (work directory, then GOCACHE) to disk; this build writes each once to tmpfs. '
+                   '"Read back" counts the export data each importer maps and every archive the linker reads.\n')
+    cj = os.path.join(T, name, 'sb-cpuphases.json')
+    if os.path.exists(cj):
+        C = json.load(open(cj))
+        out.append(f"**Where the compile row's CPU goes, exactly** (`tools/trace/cpuphases.sh`: every compiler process logs its own CPU time and page "
+                   f"faults at each phase boundary; warm run, {C['procs']:,} compiler processes, {C['row']:,.1f} core-s in the row):\n")
+        out.append('| compiler phase | user s | sys s | page faults | what it is |')
+        out.append('|---|---|---|---|---|')
+        what = {'be:compilefuncs': 'walk, baseline code generation (SSA for the rest), assembler: **compiling**',
+                'fe:parse': 'parse, type check, write the package as export IR, read it back as compiler IR, read imports: **compiling + moving data**',
+                'be:dumpobj': 'write the object file: **moving data**', '(before main)': 'exec, runtime start, package init: **process setup**',
+                'fe:earlyexport': 'write export data for importers: **moving data**', 'fe:escapes': 'escape analysis: compiling',
+                'fe:devirtualize-and-inline': 'inlining is off; what is left under this timer is method wrappers and small per-function passes: compiling', 'fe:loadsys': 'declare the runtime\'s functions: process setup',
+                'fe:init': 'flags, universe: process setup', '(exit, asm, pack)': 'process exit, the assembler, joining shard objects'}
+        for k, u, sy, fl in C['rows']:
+            out.append(f"| {k} | {u:,.1f} | {sy:,.1f} | {fl:,} | {what.get(k, '')} |")
+        out.append('')
     notes = [f"{ph['name'].split(' (')[0]}: {ph['note']}" for ph in tr['phases'] if ph.get('note')]
     if notes: out.append('Notes: ' + '; '.join(notes) + '.\n')
     nb = 60
