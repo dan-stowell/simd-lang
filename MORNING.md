@@ -124,8 +124,9 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
   relocations) takes **0.16 s on 8 cores**; the stock linker's corresponding phases take 0.67 s of its
   1.1 s. Layout and relocation are 40 ms together; resolution is 110 ms and is memory latency (one
   random table probe per symbol), which a partitioned join would cut further. Not in the spike:
-  dead-code elimination (stock: 246 ms) and pclntab (114 ms), the two serial algorithms left. One
-  unexplained discrepancy is recorded in JOURNAL iteration 27 (19 of 960 k keys merge under 64-bit keys).
+  dead-code elimination (stock: 246 ms) and pclntab (114 ms), the two serial algorithms left. The fast
+  table's first version merged float constants differing only in sign (+x with -x); the slow
+  string-keyed version it replaced caught it. F4 will need such a slow reference resolver permanently.
 - **A consumed F4 slice, tried and reverted**: per-function pc tables as plain symbols instead of
   content-addressed ones (about a million of the 1.84 M hashed symbols the linker resolves). It works,
   and the link gets 76 ms *slower* and the binary 2.3% bigger: the sharing those hashes buy is worth

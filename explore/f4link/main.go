@@ -42,7 +42,7 @@ type object struct {
 // bytes of its content hash. The value is the global id of the lowest-numbered object's definition
 // (min wins, so the result does not depend on which thread got there first). Two different names with
 // the same 64-bit key would be merged: at a million keys the chance is about 3e-8; a linker would
-// compare the names on a hit, this spike does not.
+// compare the full keys on a hit, this spike does not (F4LINK_CHECK=1 lists any that collide).
 type table struct {
 	keys []atomic.Uint64
 	vals []atomic.Uint64
@@ -58,7 +58,9 @@ func newTable(n int) *table {
 }
 
 func (t *table) claim(key, gid uint64) {
-	key |= 1 << 63 // never zero
+	if key == 0 { // 0 marks an empty slot
+		key = 1
+	}
 	for i := (key * 0x9E3779B97F4A7C15) >> 20 & t.mask; ; i = (i + 1) & t.mask {
 		k := t.keys[i].Load()
 		if k == 0 {
@@ -80,7 +82,9 @@ func (t *table) claim(key, gid uint64) {
 }
 
 func (t *table) get(key uint64) uint64 {
-	key |= 1 << 63
+	if key == 0 { // 0 marks an empty slot
+		key = 1
+	}
 	for i := (key * 0x9E3779B97F4A7C15) >> 20 & t.mask; ; i = (i + 1) & t.mask {
 		switch t.keys[i].Load() {
 		case key:
@@ -94,9 +98,21 @@ func (t *table) get(key uint64) uint64 {
 var seed = maphash.MakeSeed()
 var noNames = os.Getenv("F4LINK_NONAMES") != ""
 
-func nameKey(name string, abi uint16) uint64 { return maphash.String(seed, name) ^ uint64(abi)*0x9E3779B97F4A7C15 }
-func hash64Key(h uint64) uint64             { return h*0xC2B2AE3D27D4EB4F ^ 0x1111 }
-func hashKey(h []byte) uint64               { return maphash.Bytes(seed, h) ^ 0x2222 } // all 32 bytes: short symbols' "hashes" share prefixes
+func nameKey(name string, abi uint16) uint64 {
+	return maphash.String(seed, name) ^ uint64(abi)*0x9E3779B97F4A7C15
+}
+
+// hash64Key: a short symbol's "hash" is its content, so the key must depend on every bit of it. (The
+// first version forced the key's top bit to keep it non-zero, which merged float constants that differ
+// only in sign, +x and -x: 19 false merges in MinIO, found by F4LINK_CHECK.)
+func hash64Key(h uint64) uint64 {
+	h ^= 0x1111
+	h = (h ^ h>>30) * 0xBF58476D1CE4E5B9
+	h = (h ^ h>>27) * 0x94D049BB133111EB
+	return h ^ h>>31
+}
+
+func hashKey(h []byte) uint64 { return maphash.Bytes(seed, h) ^ 0x2222 } // all 32 bytes: short symbols' "hashes" share prefixes
 
 func par(n int, f func(i int)) {
 	var wg sync.WaitGroup
@@ -233,6 +249,45 @@ func main() {
 		}
 		nclaims.Add(int64(n))
 	})
+	if os.Getenv("F4LINK_CHECK") != "" {
+		// which different identities share a 64-bit key? (single-threaded, slow, for debugging the table)
+		seen := map[uint64]string{}
+		bad := 0
+		note := func(key uint64, id string) {
+			if key == 0 { // 0 marks an empty slot
+				key = 1
+			}
+			if old, ok := seen[key]; !ok {
+				seen[key] = id
+			} else if old != id {
+				if bad++; bad <= 12 {
+					fmt.Printf("  same key: %q and %q\n", old, id)
+				}
+			}
+		}
+		for _, o := range objs {
+			r := o.r
+			for j := o.ndef; j < o.ndef+o.nh64; j++ {
+				h := r.Hash64(uint32(j - o.ndef))
+				note(hash64Key(h), fmt.Sprintf("h64 %x", h))
+			}
+			for j := o.ndef + o.nh64; j < o.ndef+o.nh64+o.nh; j++ {
+				h := r.Hash(uint32(j - o.ndef - o.nh64))
+				note(hashKey(h[:]), fmt.Sprintf("h %x", h[:]))
+			}
+			for j := 0; j < o.ndef+o.nh64+o.nh+o.nnonpkg; j++ {
+				if j >= o.ndef && j < o.ndef+o.nh64+o.nh {
+					continue
+				}
+				s := r.Sym(uint32(j))
+				if s.ABI() == goobj.SymABIstatic {
+					continue
+				}
+				note(nameKey(s.Name(r), s.ABI()), fmt.Sprintf("name %s abi %d", s.Name(r), s.ABI()))
+			}
+		}
+		fmt.Printf("  check: %d identities collide with another under 64-bit keys; %d distinct keys\n", bad, len(seen))
+	}
 	var distinct atomic.Int64
 	par(64, func(c int) {
 		n := 0

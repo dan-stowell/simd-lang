@@ -24,7 +24,7 @@ evidence even order-balanced. Two big rungs, and one cheap vein worth an hour be
 1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iterations 25, 26):
    resolve + layout + relocate everything is 0.16 s on 8 cores (resolution 110 ms with a lock-free
    table: memory latency; layout + relocation 40 ms). Tried and reverted: pc tables as plain symbols (link
-   +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) find why 19 of 960 k keys merge under 64-bit keys, compare full keys on a hit, and try a
+   +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) compare full keys on a hit (keep `F4LINK_CHECK` as the slow reference), and try a
    range-partitioned insert (Strand-shaped: SCALAR_LEDGER entry if it stays in Go); (b) profile the stock loader's `addSym` to see what its 300 ms are; (c) add dead code
    (frontier-parallel flood over 3.4 M relocation edges) and pclntab to the spike; then make it emit an
    image that runs. The stock linker's output depends on load order (iteration 18); ours must define

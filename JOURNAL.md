@@ -1314,3 +1314,20 @@ hit in any case; the timing above does not include that comparison.
 **For F4's design:** resolve + layout + relocate for the whole of MinIO is in reach of 0.15 s on this
 machine without dead-code elimination; the stock linker spends 1.1 s. The two things the spike still
 lacks are the two serial algorithms: reachability (stock: 246 ms) and pclntab (114 ms).
+
+## 2026-11-12 18:20 UTC — the discrepancy of iteration 27, found: +x and -x
+
+I did not want to leave "nineteen keys merge and I do not know why" in a hash table, so the spike got
+a check mode (`F4LINK_CHECK=1`: a single-threaded pass that lists different identities sharing a key).
+Every one of them was a pair of 8-byte constants differing only in the top bit: 0 and
+0x8000000000000000, 0x3fd0000000000000 and 0xbfd0000000000000: **a float64 and its negation.** A short
+content-addressed symbol's "hash" is its content; my key was content x odd constant, which moves a
+top-bit difference only into the top bit; and I forced the top bit to 1 to keep keys non-zero. In a
+real linker that is +0.25 silently linked as -0.25. Fixed (a full mixer for short hashes; zero is
+remapped instead of a bit being forced): 0 collisions, 960,375 distinct keys, the same as the
+string-keyed reference. Timing unchanged: 7-11 + 82-84 + 20-24 + 4-6 + 33-38 ms, **about 0.16 s** on 8
+cores (0.71 s on one).
+
+Worth keeping from this: the string-keyed version was slow and was the oracle that caught the fast
+one. F4 needs that pair permanently: a slow, obviously-right resolver to diff the fast one against on
+every build, exactly as the stock toolchain is for the compiler phases.
