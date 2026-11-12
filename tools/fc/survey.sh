@@ -14,7 +14,8 @@ go list -deps -json "$@" > "$out/plan.json" || exit 2
 export FC_PLAN=$out/plan.json
 hash=$(sha1sum "$FC_BIN" | cut -c1-12)
 go build -toolexec="$here/tools/fc/toolexec.sh" -ldflags=-w "-gcflags=all=-l -d=fc=$hash" "$@" 2>&1 | tail -20
-echo "compiled by fc: $(grep -c '	FC$' "$FC_LOG")   left to stock: $(grep -c '	STOCK$' "$FC_LOG")"
+echo "compiled by fc: $(grep -c '	FC$' "$FC_LOG")   left to stock: $(grep -c '	STOCK$' "$FC_LOG")   fc crashed: $(grep -c '	CRASH$' "$FC_LOG")"
+grep '	CRASH$' "$FC_LOG" | cut -f1 | tr '\n' ' '; echo
 echo "--- reasons (packages affected, functions affected)"
 # a line is "fc: <pkg>: <what>: <reason>"
 sed -n 's/^fc: \([^:]*\): \(.*\)$/\1\t\2/p' "$FC_REASONS" | awk -F'\t' '{r=$2; sub(/^[^:]*: /,"",r); gsub(/[^ ]*\.[^ ]*/,"X",r); n[r]++; if(!seen[r,$1]++) p[r]++} END{for(r in n) printf "%5d %6d  %s\n", p[r], n[r], r}' | sort -rn | head -${TOP:-40}

@@ -77,8 +77,13 @@ Log (append one line per milestone reached, with the oracle number):
   whose other packages are stock-compiled (`tools/fc/test.sh unicode/utf8`; one allocation-count test skipped,
   tests/fc/skips.txt). Oracle: standard library 1 package; corpus 0. Core-seconds per MB: not measured yet (M2).
 
-Now: M2. `tools/fc/survey.sh std` lists what stops fc, most frequent first: implement down that list (driver/fc;
-stubs that give up are in misc.go), `tools/fc/test.sh <pkg>` per package, record passes in tests/fc/passing.txt.
-M0's scoreboard run may still be going (`cat /home/exedev/targets/scoreboard.log`; when it prints ALLDONE:
-`tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`, commit). Builders' branches (worktrees under .claude/worktrees):
-type descriptors (rtype.go) and tests/fc/lang; merge them when they report.
+Now: M2. `tools/fc/survey.sh std` (last run: 81 of 374 std packages compile; reasons most frequent first: type
+descriptors/itabs, function literals, type assertions, map index, defer, interface conversion, type switch, map
+literal, range over map, method values, clear, select, print, complex, ABI wrappers for assembly functions).
+Implement down that list in driver/fc (stubs that give up are in misc.go), `tools/fc/test.sh <pkg>` per package,
+record passes in tests/fc/passing.txt. Two builders were working in worktrees under .claude/worktrees when the
+session hit its usage limit (type descriptors in rtype.go checked against stock objects; tests/fc/lang feature
+tests): look at `git worktree list` and their branches' logs, merge what is committed, and re-brief if unfinished.
+M0: when /home/exedev/targets/scoreboard.log ends with ALLDONE run `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`
+and commit (the 8-core rows of the later projects overlapped with fc builds on cores 4-7: rerun `tools/scoreboard/run.sh . 8`
+on a quiet machine before trusting them).

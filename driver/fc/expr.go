@@ -126,7 +126,7 @@ func (g *gen) pure(e ast.Expr) bool {
 func (g *gen) expr(e ast.Expr) loc {
 	tv := g.info.Types[e]
 	if tv.Value != nil {
-		return g.constLoc(tv.Value, tv.Type)
+		return g.constLoc(tv.Value, g.subst(tv.Type))
 	}
 	if tv.IsNil() {
 		return loc{kind: lZero}

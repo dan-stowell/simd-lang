@@ -18,5 +18,6 @@ if [ -n "$FC_REASONS" ]; then "$FC_BIN" "${args[@]}" 2>> "$FC_REASONS"; rc=$?; e
 case $rc in
   0) [ -z "$FC_LOG" ] || echo "$pkg	FC" >> "$FC_LOG"; exit 0;;
   3) [ -z "$FC_LOG" ] || echo "$pkg	STOCK" >> "$FC_LOG"; [ -n "$FC_STRICT" ] && exit 1; exit 0;;
-  *) exit $rc;;
+  *) [ -n "$FC_STRICT" ] && exit $rc
+     [ -z "$FC_LOG" ] || echo "$pkg	CRASH" >> "$FC_LOG"; exit 0;;
 esac
