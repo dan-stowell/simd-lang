@@ -74,7 +74,17 @@ answered with a measurement or a commit, not "defer".
 
 ## Usage limits
 
-Don't ration. If the model limit is reached the session goes idle; `overnight.sh`'s watchdog
+Your 5-hour model limit is shared with Dan's other VMs. Codex runs on its own budget
+(`codex exec`, configured as in the reviewer commands above), so give it the work it does as
+well as you:
+- writing tests and differential cases for a part you've specified
+- running and triaging the oracle, soaks and corpus builds, and reporting failures
+- mechanical edits and re-reviews of a diff after a fix
+
+Keep Fable, yourself and Fable subagents, for design and the hard parts of the compiler. A
+subagent that only searches or summarizes runs on `model: "sonnet"`.
+
+Within that, don't ration. If the model limit is reached the session goes idle; `overnight.sh`'s watchdog
 types a "continue" once it has been quiet for 30 minutes, so work resumes when the limit
 resets. Commit often and nothing is lost.
 
