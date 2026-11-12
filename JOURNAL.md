@@ -1495,3 +1495,39 @@ objects, and a corpus of language-feature test packages (tests/fc/lang).
 **What did the oracle number do since the last milestone?** 0 -> 1 standard-library package. No blocker: the
 next packages need type descriptors (a builder is on it), closures, interfaces, maps, defer; the survey
 script orders them.
+
+## 2026-11-12 23:23 UTC — M2: 205 standard-library packages pass; the kill test, measured; MinIO links
+
+Since M1: type descriptors and itabs (a builder's port of reflectdata to go/types, checked against stock
+objects: 81,134 of 87,546 descriptors identical over std, 7 different in one harmless field, the rest stock's
+shape types), closures, defer/go/recover, method values and expressions, interfaces, maps, channels, select,
+range-over-func, complex numbers, print, ABI wrappers for assembly, embed, static initialization, generics by
+instantiation. A second builder wrote tests/fc/lang (21 packages, ~670,000 differential checks against
+stock-compiled copies of the same source); all 21 pass. LOOP.md changed on the remote mid-run (hand tests,
+oracle triage and re-reviews to Codex): the failing-package triage went to Codex.
+
+Things the oracle taught, each a mechanism: stock importers address a package's symbols by index (fc orders
+its symbols as the stock object does, unnamed entries included, and addresses imported symbols by index so
+that content-hashed itabs merge); stock callers stack-allocate arguments on the strength of the stock
+compiler's escape analysis of the callee (the harness gives the package under test export data that says
+every pointer parameter escapes: tools/fc/mkcompile-esc.sh); the stock compiler evaluates call-free
+right-hand sides last to first; a runtime copy of a nil-derived address is fatal, not a panic.
+
+**Kill test** (PLAN.md; tools/fc/cost.sh; 205 packages, 8.23 MB; three rounds, medians): stock baseline mode
+6.18 core-s (6.00-7.08); fc 2.80 core-s attributable to those packages (2.65-3.23), 3.48 for the whole
+process, which also type-checks the closure and runs the assembler. Ratio 0.45: **above one third**. The
+campaign continues because the path is measured, not argued: (1) of fc's time on these packages about 0.8
+core-s is go/parser + go/types and about 1.9 is everything after (per-package wall sums, so contention
+inflates it); (2) the profile of the MinIO build names what the 1.9 is made of: the object writer 9%, the
+content hashing it needs, growing buffers and maps in the code generator, the assembler as one process per
+file; (3) the first four cheap items (layout caches, collector off as in the baseline's own configuration,
+map sizes, calling the assembler directly) took the ratio from 0.60 to 0.45 in an hour. On the campaign's
+target the comparison is already near the line: MinIO whole-program 26-27 core-s and 5.4-6.3 s wall (1,283
+packages by fc in one process, assembler and stock link included; the runtime's 30 packages prebuilt, so
+not a cold number) against 74 core-s for the frozen path. The same test at M3 will say whether the path was
+real.
+
+**What did the oracle number do since the last milestone?** 1 -> 205 standard-library packages (of 262 with
+tests); language corpus 0 -> 21 of 21; MinIO 0 -> builds and links, does not run. No stall. Blockers ahead:
+the 53 failing packages (triage running), the gob init failure in the MinIO binary, and escape analysis for
+the runtime's packages.

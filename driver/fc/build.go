@@ -402,7 +402,7 @@ func stockFingerprint(path string) goobj.FingerprintType {
 }
 
 func asmArgs(p *Pkg, dir string) []string {
-	args := []string{"tool", "asm", "-p", p.ImportPath, "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
+	args := []string{"-p", p.ImportPath, "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
 		"-D", "GOOS_linux", "-D", "GOARCH_amd64", "-D", "GOAMD64_v1"}
 	if p.Standard {
 		args = append(args, "-std")
@@ -425,7 +425,8 @@ func runAsmFile(p *Pkg, dir, sf, out string) error {
 }
 
 func runTool(dir string, args []string) error {
-	cmd := exec.Command("go", args...)
+	// the assembler itself, not through the go command (whose start costs as much as a small file)
+	cmd := exec.Command(filepath.Join(runtime.GOROOT(), "pkg/tool/linux_amd64/asm"), args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local")
 	if outb, err := cmd.CombinedOutput(); err != nil {

@@ -168,14 +168,16 @@ func (pr *Program) check(p *Pkg) error {
 		}
 		pr.sem <- struct{}{}
 		defer func() { <-pr.sem }()
+		// sized from the source: growing these maps is a tenth of the type checker's time otherwise
+		n := int(p.srcBytes)
 		p.info = &types.Info{
-			Types:        map[ast.Expr]types.TypeAndValue{},
-			Defs:         map[*ast.Ident]types.Object{},
-			Uses:         map[*ast.Ident]types.Object{},
+			Types:        make(map[ast.Expr]types.TypeAndValue, n/9),
+			Defs:         make(map[*ast.Ident]types.Object, n/40),
+			Uses:         make(map[*ast.Ident]types.Object, n/14),
 			Implicits:    map[ast.Node]types.Object{},
-			Selections:   map[*ast.SelectorExpr]*types.Selection{},
+			Selections:   make(map[*ast.SelectorExpr]*types.Selection, n/40),
 			Instances:    map[*ast.Ident]types.Instance{},
-			Scopes:       map[ast.Node]*types.Scope{},
+			Scopes:       make(map[ast.Node]*types.Scope, n/60),
 			FileVersions: map[*ast.File]string{},
 		}
 		gover := ""

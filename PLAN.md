@@ -79,14 +79,20 @@ Log (append one line per milestone reached, with the oracle number):
 - M1, 2026-11-12 19:57 UTC: `unicode/utf8` compiled entirely by fc (driver/fc) passes its own tests in a binary
   whose other packages are stock-compiled (`tools/fc/test.sh unicode/utf8`; one allocation-count test skipped,
   tests/fc/skips.txt). Oracle: standard library 1 package; corpus 0. Core-seconds per MB: not measured yet (M2).
+- M2, 2026-11-12 23:23 UTC: **205 standard-library packages** compiled entirely by fc pass their own tests in mixed mode
+  (tests/fc/passing.txt; 53 compile but fail, with Codex triaging; 91 have no tests), and all 21 packages of the
+  language corpus (tests/fc/lang). Corpus: MinIO builds and links in whole-program mode (1,283 packages by fc, the
+  runtime's 30 from stock) but does not run yet. **Kill test measured** (`tools/fc/cost.sh`, the 205 packages, 8.23 MB):
+  stock baseline mode 6.18 core-s (0.75 per MB); fc 2.80 core-s attributable (0.34 per MB), ratio **0.45**: above one
+  third. Not stopped, because the path is measured (JOURNAL): the profile is flat with named items, and on MinIO the
+  whole fc build is 26-27 core-s against the frozen path's 74.
 
-Now: M2. `tools/fc/survey.sh std` (last run: 81 of 374 std packages compile; reasons most frequent first: type
-descriptors/itabs, function literals, type assertions, map index, defer, interface conversion, type switch, map
-literal, range over map, method values, clear, select, print, complex, ABI wrappers for assembly functions).
-Implement down that list in driver/fc (stubs that give up are in misc.go), `tools/fc/test.sh <pkg>` per package,
-record passes in tests/fc/passing.txt. Two builders were working in worktrees under .claude/worktrees when the
-session hit its usage limit (type descriptors in rtype.go checked against stock objects; tests/fc/lang feature
-tests): look at `git worktree list` and their branches' logs, merge what is committed, and re-brief if unfinished.
-M0: when /home/exedev/targets/scoreboard.log ends with ALLDONE run `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`
-and commit (the 8-core rows of the later projects overlapped with fc builds on cores 4-7: rerun `tools/scoreboard/run.sh . 8`
-on a quiet machine before trusting them).
+
+Now: make the whole-program MinIO binary run (`go list -deps -export -json -gcflags=all=-l . runtime > plan` in
+/home/exedev/targets/minio, then `build/fc build -plan plan -o objs -link minio.bin github.com/minio/minio`; it dies
+in encoding/gob's init: "bootstrap type wrong id", some init-order or reflect difference), then tests/minio_smoke.sh:
+that is M4 short of the runtime. In parallel: fold in Codex's triage of the 53 failing std packages
+(reviews/inbox/fc-triage-1.md; list in /home/exedev/targets/fc-failing.txt), then M3's hard part: the runtime's own
+packages need escape analysis (fc moves every address-taken variable to the heap, which the runtime cannot do).
+Cost work with a count behind it: object writer and stock link (M5 removes them), the assembler as a subprocess,
+allocation in the code generator.
