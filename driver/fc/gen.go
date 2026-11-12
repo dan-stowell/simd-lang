@@ -114,7 +114,9 @@ type gen struct {
 	nosplit  bool
 	fallthru *label
 	entry    func()
-	abi0     bool // the function itself is called with ABI0 (a wrapper for assembly callers)
+	rf       *rfCtx // set in the body of a range-over-func loop
+	root     *gen   // the function whose results a return there sets
+	abi0     bool   // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -750,13 +752,11 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 		}
 		g.resHome = append(g.resHome, home)
 		g.resVars = append(g.resVars, v)
-		if v.Name() != "" && v.Name() != "_" {
-			if g.heapVars[v] {
-				g.declare(v)
-				g.newHeapVar(v)
-			} else {
-				g.vars[v] = home
-			}
+		if g.heapVars[v] {
+			g.declare(v)
+			g.newHeapVar(v)
+		} else if v.Name() != "" && v.Name() != "_" {
+			g.vars[v] = home
 		}
 	}
 	body()

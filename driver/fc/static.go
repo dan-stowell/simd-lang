@@ -202,6 +202,22 @@ func (c *compiler) compilePackage() (errs []string) {
 			}
 		}
 	}
+	try("type descriptors", func() { c.writeDeclaredTypes() })
+	// instances of generic functions and the code descriptors need, each of which may ask for more
+	for again := true; again; {
+		again = false
+		for len(c.instQueue) > 0 {
+			in := c.instQueue[0]
+			c.instQueue = c.instQueue[1:]
+			try("instance "+in.sym.Name, func() { c.compileInstance(in) })
+			again = true
+		}
+		try("code for type descriptors", func() {
+			if c.unwrittenTypeCode() {
+				again = true
+			}
+		})
+	}
 	if len(errs) == 0 {
 		c.installFuncs()
 	}

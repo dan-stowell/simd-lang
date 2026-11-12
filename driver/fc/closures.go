@@ -17,10 +17,10 @@ import (
 var unsafePtr = types.Typ[types.UnsafePointer]
 
 // freeVars: the variables of enclosing functions that the literal uses, in order of first use.
-func (g *gen) freeVars(lit *ast.FuncLit) []*types.Var {
+func (g *gen) freeVars(lit ast.Node) []*types.Var {
 	var out []*types.Var
 	seen := map[*types.Var]bool{}
-	ast.Inspect(lit.Body, func(n ast.Node) bool {
+	ast.Inspect(lit, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
 		if !ok {
 			return true
@@ -85,12 +85,28 @@ func (g *gen) child(name string, sig *types.Signature) *gen {
 
 func (g *gen) funcLit(e *ast.FuncLit) loc {
 	sig := g.info.Types[e].Type.(*types.Signature)
-	free := g.freeVars(e)
+	return g.closure(sig, e, e.Body, nil, func(cg *gen) { cg.block(e.Body.List) })
+}
+
+// closure compiles a nested function whose code is lit (searched for the variables it captures; extra
+// lists more to capture) and returns its value.
+func (g *gen) closure(sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt, extra []*types.Var, body func(cg *gen)) loc {
+	free := g.freeVars(lit)
+	for _, v := range extra {
+		dup := false
+		for _, f := range free {
+			dup = dup || f == v
+		}
+		if !dup {
+			free = append(free, v)
+		}
+	}
 	for _, v := range free {
 		if l := g.vars[v]; l.kind != lInd || l.off != 0 {
 			giveUp("captured variable %s is not on the heap", v.Name())
 		}
 	}
+	e := litBody
 	cg := g.child(g.childName("func"), sig)
 	if len(free) > 0 {
 		cg.entry = func() {
@@ -104,7 +120,7 @@ func (g *gen) funcLit(e *ast.FuncLit) loc {
 			}
 		}
 	}
-	cg.compileFunc(nil, e.Pos(), e.Body.Rbrace, e.Body, func() { cg.block(e.Body.List) })
+	cg.compileFunc(nil, e.Pos(), e.Rbrace, e, func() { body(cg) })
 	if len(free) == 0 {
 		g.a.lea(AX, msym(g.c.staticClosure(cg.out.sym), 0))
 		return loc{kind: lReg, reg: AX}
@@ -238,6 +254,9 @@ func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
 }
 
 func (g *gen) deferStmt(s *ast.DeferStmt) {
+	if g.rf != nil {
+		giveUp("defer in the body of a range-over-func loop")
+	}
 	g.hasDefer = true
 	clo := g.deferred(s.Call, "deferwrap")
 	clo = g.stash(clo, unsafePtr)

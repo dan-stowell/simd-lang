@@ -124,6 +124,9 @@ func (g *gen) labelFor(l *types.Label) *label {
 func (g *gen) branch(s *ast.BranchStmt) {
 	switch s.Tok {
 	case token.GOTO:
+		if g.rf != nil {
+			giveUp("goto in the body of a range-over-func loop")
+		}
 		g.jmp(g.labelFor(g.info.Uses[s.Label].(*types.Label)))
 	case token.FALLTHROUGH:
 		if g.fallthru == nil {
@@ -144,6 +147,16 @@ func (g *gen) branch(s *ast.BranchStmt) {
 				g.jmp(sc.cont)
 				return
 			}
+		}
+		if g.rf != nil {
+			// the target is outside this loop body: tell the loop's function which
+			name := ""
+			if s.Label != nil {
+				name = s.Label.Name
+			}
+			g.rf.targets = append(g.rf.targets, rfTarget{s.Tok, name})
+			g.leaveBody(int64(2 + len(g.rf.targets)))
+			return
 		}
 		giveUp("break or continue without a target")
 	}
@@ -524,28 +537,40 @@ func (g *gen) resultDst(i int) loc {
 }
 
 func (g *gen) returnStmt(s *ast.ReturnStmt) {
-	n := len(g.resHome)
+	// in the body of a range-over-func loop the results are the enclosing function's
+	fn := g
+	if g.rf != nil {
+		fn = g.root
+	}
+	n := len(fn.resVars)
+	out := fn.abi.out
+	dst := func(i int) loc {
+		if g.rf != nil {
+			return g.vars[fn.resVars[i]]
+		}
+		return g.resultDst(i)
+	}
 	switch {
 	case len(s.Results) == 0:
 	case len(s.Results) == 1 && n == 1:
-		g.exprTo(s.Results[0], g.resultDst(0), g.abi.out[0].typ)
+		g.exprTo(s.Results[0], dst(0), out[0].typ)
 	case len(s.Results) == 1 && n > 1:
 		rs := g.multi(s.Results[0])
 		for i, r := range rs {
-			t := g.abi.out[i].typ
-			g.move(g.resultDst(i), g.convertImplicit(r.l, r.t, t), t)
+			t := out[i].typ
+			g.move(dst(i), g.convertImplicit(r.l, r.t, t), t)
 		}
 	default:
 		vals := make([]loc, n)
 		for i, e := range s.Results {
-			t := g.abi.out[i].typ
+			t := out[i].typ
 			vals[i] = g.keep(g.exprAs(e, t), t)
 		}
 		for i := range vals {
-			g.move(g.resultDst(i), vals[i], g.abi.out[i].typ)
+			g.move(dst(i), vals[i], out[i].typ)
 		}
 	}
-	g.jmp(g.ret)
+	g.returnJump()
 }
 
 func (g *gen) push(brk, cont *label, name string) {
@@ -868,6 +893,9 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 		return
 	case *types.Chan:
 		g.rangeChan(s, name, set)
+		return
+	case *types.Signature:
+		g.rangeFunc(s, name)
 		return
 	}
 	giveUp("range over %v", xt)

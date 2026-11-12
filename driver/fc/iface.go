@@ -70,8 +70,8 @@ func (g *gen) typeAssert(e *ast.TypeAssertExpr, commaOK bool) []loc {
 		}
 		// the data word goes along only if the assertion held
 		g.a.load(CX, mb(BP, res.off), 8, false)
+		g.a.movImm(R8, 0) // (before the test: clearing a register sets the flags)
 		g.a.testRR(8, CX, CX)
-		g.a.movImm(R8, 0)
 		z := g.a.jcc(ccE)
 		g.a.load(R8, mb(BP, x.off+8), 8, false)
 		g.a.patch(z, g.a.pc())

@@ -310,6 +310,13 @@ func main() {
 	c := newCompiler(pr, target, o.path, o.trimpath)
 	c.readSymABIs(o.symabis)
 	stock, stockDefs := definedSymsOrder(o.out)
+	if m := os.Getenv("FC_TYPEDIFF"); m != "" {
+		typeDiff(pr, target, o.path, o.trimpath, o.out) // rtype_diff.go
+		if m == "only" {
+			os.Exit(3)
+		}
+	}
+	c.stockDefs = stock
 	pp := objabi.PathToPrefix(o.path)
 	c.forceInit = stock[pp+"..inittask"]
 	depInit := map[*Pkg]bool{}

@@ -179,6 +179,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 		}
 	}
 	var lits []*ast.FuncLit
+	var rangeBodies []*ast.BlockStmt
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.UnaryExpr:
@@ -211,9 +212,30 @@ func (g *gen) findHeapVars(body ast.Node) {
 			}
 		case *ast.FuncLit:
 			lits = append(lits, n)
+		case *ast.RangeStmt:
+			if _, ok := g.typeOf(n.X).Underlying().(*types.Signature); ok {
+				// the body becomes a function: it captures like a literal, and a return inside it
+				// reaches this function's results through the heap
+				rangeBodies = append(rangeBodies, n.Body)
+				for i := 0; i < g.sig.Results().Len(); i++ {
+					g.heapVars[g.sig.Results().At(i)] = true
+				}
+			}
 		}
 		return true
 	})
+	for _, b := range rangeBodies {
+		ast.Inspect(b, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok {
+				if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+					if v.Pos() < b.Pos() || v.Pos() >= b.End() {
+						mark(v)
+					}
+				}
+			}
+			return true
+		})
+	}
 	for _, lit := range lits {
 		ast.Inspect(lit.Body, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {

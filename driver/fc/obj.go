@@ -32,23 +32,24 @@ type compiler struct {
 	path     string // the package's path as the linker knows it (-p)
 	trimpath string
 
-	fileIdx   map[*token.File]int32
-	mu        sync.Mutex
-	funcs     []*funcOut // finished functions, in the order they will be written
-	closures  map[string]int
-	strSyms   map[string]*obj.LSym
-	tmpN      int
-	runtime   map[string]*obj.LSym
-	initCode  []func(g *gen) // dynamic initialization of package-level variables, in order
-	strHdrs   map[string]*obj.LSym
-	noWB      bool              // no write barriers (parts of the runtime)
-	depInit   func(p *Pkg) bool // does a dependency have an init task?
-	forceInit bool              // emit an init task even with nothing to run (the stock object has one)
-	errs      []string
-	hasInit   bool
-	abis      *symABIs
-	instances map[string]bool
-	instQueue []*instance
+	fileIdx    map[*token.File]int32
+	mu         sync.Mutex
+	funcs      []*funcOut // finished functions, in the order they will be written
+	closures   map[string]int
+	strSyms    map[string]*obj.LSym
+	tmpN       int
+	runtime    map[string]*obj.LSym
+	initCode   []func(g *gen) // dynamic initialization of package-level variables, in order
+	strHdrs    map[string]*obj.LSym
+	noWB       bool              // no write barriers (parts of the runtime)
+	depInit    func(p *Pkg) bool // does a dependency have an init task?
+	forceInit  bool              // emit an init task even with nothing to run (the stock object has one)
+	errs       []string
+	hasInit    bool
+	abis       *symABIs
+	instances  map[string]bool
+	instQueue  []*instance
+	rtypeState // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator
 }
 
 func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
