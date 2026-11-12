@@ -184,6 +184,7 @@ func (c *compiler) compilePackage() (errs []string) {
 		c.defData(task, objabi.SNOPTRDATA, int64(8+8*len(fns)))
 	}
 	c.hasInit = len(fns) > 0 || len(deps) > 0
+	try("type descriptors", func() { c.writeDeclaredTypes(); c.unwrittenTypeCode() })
 	if len(errs) == 0 {
 		c.installFuncs()
 	}

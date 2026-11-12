@@ -48,6 +48,7 @@ type compiler struct {
 	hasInit   bool
 	instances map[string]bool
 	instQueue []*instance
+	rtypeState // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator
 }
 
 func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
