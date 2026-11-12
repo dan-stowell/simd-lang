@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 25)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 26)
 
 ## The trace, before and after
 
@@ -13,6 +13,10 @@ today's, cold, order-balanced; MinIO six builds each, kube-apiserver four each; 
 | MinIO, now (`13-noweakptr`) | **11.80 s** (11.3-12.5) | 68.6 | 1,234 ms | 526 MB |
 | kube-apiserver, end of the 2026-11-11 run | **22.99 s** (22.3-24.1) | 144.0 | 2,356 ms | 1,323 MB |
 | kube-apiserver, now | **21.10 s** (19.8-23.2) | 133.7 | 1,802 ms | 1,043 MB |
+
+Quote the wall clock and the link + write column from this table; the compile core-seconds column is
+uncertain by several core-s (on this host that number has a sigma of about 5 per build and drifts over
+minutes; JOURNAL iteration 26).
 
 Against the stock toolchain:
 
@@ -83,7 +87,11 @@ journal and a commit message (`b040190`) as -7 core-s and -0.9 s; the one-pass a
 and -0.7 s. Both came from A/B runs in a fixed order (old first) on a host that was drifting. Checking
 which compiler phase had shrunk exposed the first; order-balanced re-runs give 1.6 core-s for the
 descriptors and about 3 (3-6 across three kinds of evidence) for the assembler. The day's total above
-was measured order-balanced for that reason, and the A/B script now alternates order.
+was measured order-balanced for that reason, and the A/B script now alternates order. Even so, a later
+experiment showed order balancing with four to six builds per arm is not enough for *compile
+core-seconds* on this host (a change with no mechanism "saved" 5.9 core-s in all four pairs and nothing
+in a single-package measurement). The claims in this report rest on mechanisms with counts,
+single-package alternation, the quiet serial rows, and wall clock over many builds, in that order.
 
 ## Rungs climbed today
 
@@ -114,10 +122,13 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 - **F4 spike, measured, not consumed** (`explore/f4link`): the core of a link on MinIO's real objects
   (resolve all 2.7 M symbols, lay out 213 MB by prefix sums, apply 3.4 M relocations) takes **0.26 s on
   8 cores**; the stock linker's corresponding phases take 0.67 s of its 1.13 s. Layout and relocation
-  are 40 ms; **resolution is 200 ms and it is hashing**: 1.84 M of the 2.7 M symbols are
-  content-addressed fragments (per-function pc tables, stack maps, strings) that exist only so the
-  linker can deduplicate them. F4's first step is therefore in the compiler (stop emitting those as
-  symbols), not in a faster relocation pass. No dead-code elimination or pclntab in the spike.
+  are 40 ms together: they are not the problem. Resolution is 200 ms in the spike, but that is the cost
+  of the spike's own hash table, not of the problem (see the next item). No dead-code elimination or
+  pclntab in the spike.
+- **A consumed F4 slice, tried and reverted**: per-function pc tables as plain symbols instead of
+  content-addressed ones (about a million of the 1.84 M hashed symbols the linker resolves). It works,
+  and the link gets 76 ms *slower* and the binary 2.3% bigger: the sharing those hashes buy is worth
+  more than the hashing costs. Negative result.
 
 ## Ideas tried and killed (all by measurement; IDEAS.md and JOURNAL iteration 16)
 

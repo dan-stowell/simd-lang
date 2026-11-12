@@ -1236,3 +1236,51 @@ copying and relocating (asmb + dodata) 230, pclntab 114.
 **Scope check.** This was the spike budget (none used today until now). Most ambitious next is to
 make this consumed: emit an image that runs. Not in the hour left; the measurement is what the next
 session starts from, and it changes what F4's first step is.
+
+## 2026-11-12 17:40 UTC — iteration 26: a consumed F4 slice tried and reverted (plain pc tables), and how far to trust whole-build CPU numbers
+
+**Trace.** Unchanged (`13-noweakptr`).
+
+**The skeptic's review of the final state** (`reviews/done/20261112T1458-codex-skeptic.md`) agrees with
+the replay (44 front ends, 5.8 s; no N today) and names its night-sized choice: a consumed F4 slice,
+dense symbol ids and incremental resolution in the real build, aimed at the loader's ~390 ms. The spike
+of iteration 25 had just said where resolution time goes in *my* implementation: hashing 1.84 M
+content-addressed symbols. So I tried the smallest consumed version of "stop hashing".
+
+**The slice.** Each function's pc-value tables (pcsp, pcfile, pcline, pcdata) are anonymous symbols
+marked content-addressable: the compiler SHA-256es each and the linker enters each in a hash table so
+that identical tables share storage. About a million of the 1.84 M. The stock loader already has a
+path for unnamed plain symbols that involves no hashing. Fifteenth change: in the baseline build, do
+not mark them content-addressable. Six lines.
+
+**Result: negative, reverted.**
+- It works: tracebacks, `runtime.Callers` line numbers and recovered panics identical on a test
+  program; MinIO smoke and stress pass.
+- Link: 1,113 -> **1,189 ms** (four builds each, order-balanced; link CPU 1,816 -> 1,946 ms). Slower.
+  Without sharing there is more pclntab to build and write, and that costs more than the hashing saved.
+- Binary 159.1 -> 162.7 MB (+2.3%); objects 526 -> 504 MB.
+- Compile: one package in strict alternation, twice: -0.8% and +1.2%, i.e. nothing.
+So in the stock loader, hashing content-addressed pc tables is not where the 390 ms goes; the 200 ms
+of "claims" in my spike is the cost of *my* table (Go maps with string keys), not a property of the
+problem. That corrects iteration 25's reading: F4's first step is not "stop emitting those symbols".
+What the stock loader's resolution time is made of is still unmeasured below the function level
+(`addSym` and map operations, by its profile), and the spike needs a better table before its
+resolution number means anything. The layout and relocation numbers (40 ms) stand.
+
+**A second warning about whole-build CPU comparisons.** The same eight order-balanced builds showed
+compile CPU of 67.5 core-s hashed against 61.6 plain, the "right" sign in all four adjacent pairs, by
+5.0 to 6.6 core-s each. There is no mechanism for it (a million SHA-256s of tiny buffers is 0.3
+core-s) and the single-package measurement says zero. So order balancing with four or six builds per
+arm is *not* enough on this host for compile core-seconds: the noise is large (sigma about 5 core-s per
+build) and correlated over minutes in ways ABBA does not cancel. What I trust, in order: (1) a
+mechanism plus a count (bytes assembled, descriptors emitted); (2) one package, min of 15, strict
+alternation; (3) serial rows of the build (link, write), which are quiet; (4) whole-build wall clock
+over many builds (the 60-build soak); and only then (5) whole-build compile core-seconds.
+Re-reading today's claims by that order: the assembler (mechanism: 3.3x fewer bytes assembled;
+single package 8.5%) and the link + write rows (-368 ms) are solid; the descriptors' -120 ms of link
+is solid and its 1.6 core-s is plausible but unproven; **the day's "-7.6 compile core-s" is uncertain
+by several core-s, while its wall-clock difference (13.23 -> 11.80 s, six builds each, one overlap in
+twelve) and the soak medians (MinIO 11.2 s, kube 19.8 s) are the numbers to quote.**
+
+**Scope check.** Most ambitious: F4 consumed. Tried its smallest slice; it lost; reverted within the
+iteration. No time left in this session for a second slice. NEXT.md is corrected.

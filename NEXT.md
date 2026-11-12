@@ -12,20 +12,24 @@ this 8-core VM the build is bound by work; on 16+ cores it is bound by a 44-pack
 decision 1) or assume this VM.
 
 Scheduling steps are exhausted on 8 cores (iteration 19); removing work is what moves the trace (iteration 16:
-6 core-s; iteration 20: 1.6 core-s after correction). Measure with `tools/trace/abd.sh` (order-balanced)
-or min-of-N on single packages; never old-then-new in a fixed order. Two big rungs, and one cheap vein worth an hour before them:
+6 core-s; iteration 20: 1.6 core-s after correction). Measurement on this host (iteration 26): trust a mechanism with a count, then one package min-of-15 in
+strict alternation, then the serial rows (link, write), then wall clock over many builds
+(`tools/trace/soak.sh`, `day.sh`); whole-build compile core-seconds differences under about 5 are not
+evidence even order-balanced. Two big rungs, and one cheap vein worth an hour before them:
 
 0. More work the compiler does only for the linker to discard. `SB_TYPELOG` lists every type descriptor
    emitted (223 k left after iteration 20, most of them anonymous); compare with what survives in the
    binary (`go tool nm -type`), and do the same for method wrappers and equality/hash functions.
 
-1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iteration 25):
-   resolve + layout + relocate everything is 0.26 s on 8 cores, 200 ms of it hashing 1.84 M
-   content-addressed symbols (pc tables, stack maps, strings). First slice: make the compilers stop
-   emitting those as separate symbols (or dedup per package), measure resolution again (expect ~60 ms),
-   then add dead code (frontier-parallel flood over 3.4 M relocation edges) and pclntab to the spike,
-   then make it emit an image that runs. The stock linker's output depends on load order (iteration
-   18); ours must define its own deterministic order (the spike's rule: lowest object index wins).
+1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iterations 25, 26):
+   layout by prefix sums + relocation of everything is 40 ms on 8 cores; resolution is 200 ms in the
+   spike but that is its own string-keyed table. Tried and reverted: pc tables as plain symbols (link
+   +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) give the spike
+   a real resolution table (open addressing on the 32-byte hashes, names interned per object) and
+   measure again; (b) profile the stock loader's `addSym` to see what its 300 ms are; (c) add dead code
+   (frontier-parallel flood over 3.4 M relocation edges) and pclntab to the spike; then make it emit an
+   image that runs. The stock linker's output depends on load order (iteration 18); ours must define
+   its own deterministic order (the spike's rule: lowest object index wins).
 2. F2/F3: whole packages leaving the stock compiler. The export-IR round trip (17 core-s) and the
    assembler path (`obj.Prog`, 8.8% of compile samples after the one-pass change) are what a second
    compiler would not pay; `05-sbc` showed that taking single functions does not pay. Needs export data
