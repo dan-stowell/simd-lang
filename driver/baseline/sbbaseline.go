@@ -418,7 +418,7 @@ func (g *sbGen) function() {
 	if fn.RangeParent != nil {
 		sbGiveUp("body of a range-over-func loop")
 	}
-	if fn.Pragma&^(ir.Noinline) != 0 {
+	if fn.Pragma&^(ir.Noinline|ir.Norace|ir.NoCheckPtr) != 0 {
 		sbGiveUp("pragma")
 	}
 	if fn.ABIWrapper() {
@@ -464,6 +464,9 @@ func (g *sbGen) function() {
 		}
 		if pa.Name != nil {
 			g.homes[pa.Name] = sbLoc{kind: sbParam, off: off}
+		}
+		if len(dclParams) == len(g.abi.InParams()) {
+			g.homes[dclParams[i]] = sbLoc{kind: sbParam, off: off} // the body refers to the declared name
 		}
 		if len(pa.Registers) == 0 {
 			continue
@@ -738,16 +741,14 @@ func (g *sbGen) stmt(n ir.Node) {
 		g.assign(n.X, n.Y)
 	case ir.OIF:
 		n := n.(*ir.IfStmt)
-		g.scalar(n.Cond)
-		g.ins(x86.ATESTB, sbR(x86.REG_AX), sbR(x86.REG_AX))
-		jElse := g.jump(x86.AJEQ)
+		jElse := g.branch(n.Cond, false)
 		g.stmts(n.Body)
 		if len(n.Else) == 0 {
-			g.land(jElse)
+			g.land(jElse...)
 			break
 		}
 		jEnd := g.jump(obj.AJMP)
-		g.land(jElse)
+		g.land(jElse...)
 		g.stmts(n.Else)
 		g.land(jEnd)
 	case ir.OFOR:
@@ -762,11 +763,9 @@ func (g *sbGen) stmt(n ir.Node) {
 			g.labels[sbLoopSym(n.Label, "continue")] = cont
 		}
 		top := g.here()
-		var jOut *obj.Prog
+		var jOut []*obj.Prog
 		if n.Cond != nil {
-			g.scalar(n.Cond)
-			g.ins(x86.ATESTB, sbR(x86.REG_AX), sbR(x86.REG_AX))
-			jOut = g.jump(x86.AJEQ)
+			jOut = g.branch(n.Cond, false)
 		}
 		g.brk, g.cont = append(g.brk, brk), append(g.cont, cont)
 		g.stmts(n.Body)
@@ -776,8 +775,8 @@ func (g *sbGen) stmt(n ir.Node) {
 			g.stmt(n.Post)
 		}
 		g.jump(obj.AJMP).To.SetTarget(top)
-		if jOut != nil {
-			g.land(jOut)
+		if len(jOut) > 0 {
+			g.land(jOut...)
 		}
 		g.place(brk)
 	case ir.OBREAK, ir.OCONTINUE:
@@ -819,18 +818,42 @@ func (g *sbGen) stmt(n ir.Node) {
 			}
 		}
 		g.epilogue()
-	case ir.OSWITCH:
-		// walk has compiled the switch into tests and jumps; what is left to do is `break`
-		n := n.(*ir.SwitchStmt)
+	case ir.OSWITCH, ir.OSELECT:
+		// walk has compiled the statement into tests, runtime calls and jumps; what is left to do is `break`
+		var label *types.Sym
+		var body ir.Nodes
+		if sw, ok := n.(*ir.SwitchStmt); ok {
+			label, body = sw.Label, sw.Compiled
+		} else {
+			sel := n.(*ir.SelectStmt)
+			label, body = sel.Label, sel.Compiled
+		}
 		brk := new(sbLabel)
-		if n.Label != nil {
-			g.labels[sbLoopSym(n.Label, "break")] = brk
+		if label != nil {
+			g.labels[sbLoopSym(label, "break")] = brk
 		}
 		g.brk = append(g.brk, brk)
 		g.cont = append(g.cont, nil) // a continue inside belongs to an enclosing loop
-		g.stmts(n.Compiled)
+		g.stmts(body)
 		g.brk, g.cont = g.brk[:len(g.brk)-1], g.cont[:len(g.cont)-1]
 		g.place(brk)
+	case ir.OFALL:
+		// nothing: walk laid the case bodies out so that falling through is falling through
+	case ir.OINTERFACESWITCH:
+		// which case of a type switch does this dynamic type satisfy: ask the runtime (no cache here)
+		n := n.(*ir.InterfaceSwitchStmt)
+		g.scalar(n.RuntimeType)
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_BX))
+		g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: n.Descriptor}, sbR(x86.REG_AX))
+		g.call(ir.Syms.InterfaceSwitch) // (case index, itab)
+		ci := g.temp(types.Types[types.TINT])
+		it := g.temp(types.Types[types.TUNSAFEPTR])
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), ci.addr())
+		g.ins(x86.AMOVQ, sbR(x86.REG_BX), it.addr())
+		g.assignFrom(n.Case, ci)
+		g.assignFrom(n.Itab, it)
+		g.release(it, types.Types[types.TUNSAFEPTR])
+		g.release(ci, types.Types[types.TINT])
 	case ir.ODEFER, ir.OGO:
 		// walk has turned the call into a closure without arguments: hand it to the runtime
 		n := n.(*ir.GoDeferStmt)
@@ -1170,6 +1193,8 @@ func (g *sbGen) valueLoc(n ir.Node) sbLoc {
 		g.slice(n.(*ir.SliceExpr), slot)
 	case ir.OAPPEND:
 		g.appendTo(n.(*ir.CallExpr), slot)
+	case ir.OMOVE2HEAP:
+		g.moveToHeap(n.(*ir.MoveToHeapExpr), slot)
 	case ir.OBYTES2STRTMP:
 		// the same bytes seen as a string: pointer and length
 		l := g.valueLoc(n.(*ir.ConvExpr).X)
@@ -1204,11 +1229,11 @@ func (g *sbGen) valueLoc(n ir.Node) sbLoc {
 func (g *sbGen) dottype(n *ir.TypeAssertExpr, commaok bool) (val, ok sbLoc) {
 	dst := n.Type()
 	srcT := n.X.Type()
-	if dst.IsInterface() {
-		sbGiveUp("type assertion to an interface type")
-	}
 	if n.UseNilPanic || dst.IsFloat() || dst.IsComplex() {
 		sbGiveUp("type assertion (special case)")
+	}
+	if dst.IsInterface() {
+		return g.dottypeIface(n, commaok)
 	}
 	g.stmts(n.Init())
 	// the interface's two words, parked
@@ -1267,6 +1292,125 @@ func (g *sbGen) dottype(n *ir.TypeAssertExpr, commaok bool) (val, ok sbLoc) {
 	g.release(data, types.Types[types.TUNSAFEPTR])
 	g.release(tab, types.Types[types.TUNSAFEPTR])
 	return val, ok
+}
+
+// dottypeIface: the type assertion n.X.(I) for an interface type I. A nil interface fails. Otherwise an
+// empty I keeps the dynamic type and the data as they are; for any other I the runtime finds (or
+// builds) the method table of the dynamic type for I, or reports that there is none.
+func (g *sbGen) dottypeIface(n *ir.TypeAssertExpr, commaok bool) (val, ok sbLoc) {
+	dst := n.Type()
+	srcT := n.X.Type()
+	g.stmts(n.Init())
+	l := g.valueLoc(n.X)
+	tab := g.temp(types.Types[types.TUNSAFEPTR])
+	data := g.temp(types.Types[types.TUNSAFEPTR])
+	g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(x86.REG_CX))
+	g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tab.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_CX), data.addr())
+	val = g.newSlot(dst)
+	if commaok {
+		ok = g.newSlot(types.Types[types.TBOOL])
+	}
+	dstType := obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(dst)}
+	var fails []*obj.Prog
+	g.ins(x86.ATESTQ, sbR(x86.REG_AX), sbR(x86.REG_AX))
+	nonNil := g.jump(x86.AJNE)
+	if commaok {
+		fails = append(fails, g.jump(obj.AJMP))
+	} else {
+		g.ins(x86.ALEAQ, dstType, sbR(x86.REG_AX))
+		g.call(ir.Syms.Panicnildottype)
+		g.pp.Prog(x86.AUD2)
+	}
+	g.land(nonNil)
+	if !srcT.IsEmptyInterface() { // the dynamic type is one load away, in the source's method table
+		g.ins(x86.AMOVQ, obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_AX, Offset: rttype.ITab.OffsetOf("Type")}, sbR(x86.REG_AX))
+	}
+	if !dst.IsEmptyInterface() {
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_BX))
+		switch {
+		case n.Descriptor != nil:
+			g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: n.Descriptor}, sbR(x86.REG_AX))
+			g.call(ir.Syms.TypeAssert) // nil if it may fail and does; panics itself if it may not
+		case commaok:
+			g.ins(x86.ALEAQ, dstType, sbR(x86.REG_AX))
+			g.call(ir.Syms.AssertE2I2)
+		default:
+			g.ins(x86.ALEAQ, dstType, sbR(x86.REG_AX))
+			g.call(ir.Syms.AssertE2I)
+		}
+		if commaok {
+			g.ins(x86.ATESTQ, sbR(x86.REG_AX), sbR(x86.REG_AX))
+			fails = append(fails, g.jump(x86.AJEQ))
+		}
+	}
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), val.addr())
+	g.ins(x86.AMOVQ, data.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), val.plus(8).addr())
+	if commaok {
+		g.ins(x86.AMOVB, sbImm(1), ok.addr())
+		done := g.jump(obj.AJMP)
+		g.land(fails...)
+		g.zero(val, dst)
+		g.ins(x86.AMOVB, sbImm(0), ok.addr())
+		g.land(done)
+	}
+	g.release(data, types.Types[types.TUNSAFEPTR])
+	g.release(tab, types.Types[types.TUNSAFEPTR])
+	return val, ok
+}
+
+// moveToHeap evaluates n (a slice that may be backed by an array in this frame, about to outlive it) into
+// slot: if its data pointer points into this frame, the runtime copies the backing store to the heap.
+func (g *sbGen) moveToHeap(n *ir.MoveToHeapExpr, slot sbLoc) {
+	st := n.Slice.Type()
+	et := st.Elem()
+	l := g.valueLoc(n.Slice)
+	g.copyHeader(slot, l, 3)
+	// in this frame means: at or above the stack pointer and below the caller's (where our arguments start)
+	g.ins(x86.AMOVQ, slot.addr(), sbR(x86.REG_AX))
+	g.ins(x86.ASUBQ, sbR(x86.REG_SP), sbR(x86.REG_AX))
+	g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_PARAM, Reg: x86.REG_SP}, sbR(x86.REG_CX))
+	g.ins(x86.ASUBQ, sbR(x86.REG_SP), sbR(x86.REG_CX))
+	g.ins(x86.ACMPQ, sbR(x86.REG_AX), sbR(x86.REG_CX))
+	away := g.jump(x86.AJCC) // offset >= frame size, unsigned: not ours
+	var fn *obj.LSym
+	if et.HasPointers() {
+		g.scalar(n.RType)
+		fn = ir.Syms.MoveSliceNoCap
+		if n.PreserveCapacity {
+			fn = ir.Syms.MoveSlice
+		}
+	} else {
+		g.ins(x86.AMOVQ, sbImm(et.Size()), sbR(x86.REG_AX))
+		fn = ir.Syms.MoveSliceNoCapNoScan
+		if n.PreserveCapacity {
+			fn = ir.Syms.MoveSliceNoScan
+		}
+	}
+	g.ins(x86.AMOVQ, slot.addr(), sbR(x86.REG_BX))
+	g.ins(x86.AMOVQ, slot.plus(8).addr(), sbR(x86.REG_CX))
+	if n.PreserveCapacity {
+		g.ins(x86.AMOVQ, slot.plus(16).addr(), sbR(x86.REG_DI))
+	}
+	g.call(fn) // (type or element size, pointer, length[, capacity]) -> the moved slice
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_BX), slot.plus(8).addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_CX), slot.plus(16).addr())
+	g.land(away)
+}
+
+// copyHeader copies n words from src (base, if any, in AX) to a slot of this frame, without barriers
+func (g *sbGen) copyHeader(slot, src sbLoc, n int64) {
+	if src.kind == sbInd {
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_SI))
+		src.reg = x86.REG_SI
+	}
+	for i := int64(0); i < n; i++ {
+		g.ins(x86.AMOVQ, src.plus(8*i).addr(), sbR(x86.REG_R8))
+		g.ins(x86.AMOVQ, sbR(x86.REG_R8), slot.plus(8*i).addr())
+	}
 }
 
 // appendTo evaluates append(s, e1, ..., en) into slot: grow if there is no room, store the elements.
@@ -1339,6 +1483,22 @@ func (g *sbGen) storeAX(x ir.Node) {
 			g.storeScalar(l, t, x86.REG_AX)
 			return
 		}
+	}
+	// A field or the target of a pointer that is itself a plain variable: the address is one load away.
+	var base ir.Node
+	off := int64(0)
+	switch x.Op() {
+	case ir.ODOTPTR:
+		sel := x.(*ir.SelectorExpr)
+		base, off = sel.X, sel.Offset()
+	case ir.ODEREF:
+		base = x.(*ir.StarExpr).X
+	}
+	if base != nil && len(x.Init()) == 0 && off < 4096 && base.Op() == ir.ONAME && g.leaf(base) {
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_CX))
+		g.leafInto(base, x86.REG_AX)
+		g.storeScalar(sbLoc{kind: sbInd, reg: x86.REG_AX, off: off}, t, x86.REG_CX)
+		return
 	}
 	// The address needs computing, which takes AX: park the value.
 	tmp := g.temp(t)
@@ -1721,6 +1881,13 @@ func (g *sbGen) scalar(n ir.Node) {
 			g.ins(x86.AMOVQ, sbR(x86.REG_CX), sbR(x86.REG_AX))
 			g.land(j)
 		}
+	case ir.OUNSAFEADD:
+		n := n.(*ir.BinaryExpr)
+		if !sbScalar(n.Y.Type()) {
+			sbGiveUp("unsafe.Add of %v", n.Y.Type())
+		}
+		g.binary(n.X, n.Y) // the offset is the full extension of its own type
+		g.ins(x86.AADDQ, sbR(x86.REG_CX), sbR(x86.REG_AX))
 	case ir.OSPTR, ir.OITAB:
 		l := g.valueLoc(n.(*ir.UnaryExpr).X)
 		g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
@@ -1881,8 +2048,8 @@ func (g *sbGen) scalar(n ir.Node) {
 		if !sbScalar(ot) || !sbScalar(n.Y.Type()) {
 			sbGiveUp("comparison of %v", ot)
 		}
-		g.binary(n.X, n.Y) // X in AX, Y in CX
-		g.ins(x86.ACMPQ, sbR(x86.REG_AX), sbR(x86.REG_CX))
+		y := g.binop(n.X, n.Y) // X in AX
+		g.ins(x86.ACMPQ, sbR(x86.REG_AX), y)
 		signed := 0
 		if ot.IsInteger() && ot.IsSigned() {
 			signed = 1
@@ -1894,8 +2061,13 @@ func (g *sbGen) scalar(n ir.Node) {
 		if !(t.IsInteger() || t.IsUintptr()) {
 			sbGiveUp("arithmetic on %v", t)
 		}
-		g.binary(n.X, n.Y)
-		g.ins(sbArith[n.Op()], sbR(x86.REG_CX), sbR(x86.REG_AX))
+		if n.Op() == ir.OMUL {
+			g.binary(n.X, n.Y)
+			g.ins(x86.AIMULQ, sbR(x86.REG_CX), sbR(x86.REG_AX))
+		} else {
+			y := g.binop(n.X, n.Y)
+			g.ins(sbArith[n.Op()], y, sbR(x86.REG_AX))
+		}
 		g.extend(x86.REG_AX, t)
 	case ir.OANDNOT:
 		n := n.(*ir.BinaryExpr)
@@ -1916,8 +2088,155 @@ func (g *sbGen) scalar(n ir.Node) {
 	}
 }
 
+// sbJcc: the jump taken when "x op y" holds, after CMPQ x, y; [unsigned, signed]
+var sbJcc = map[ir.Op][2]obj.As{
+	ir.OEQ: {x86.AJEQ, x86.AJEQ}, ir.ONE: {x86.AJNE, x86.AJNE},
+	ir.OLT: {x86.AJCS, x86.AJLT}, ir.OLE: {x86.AJLS, x86.AJLE},
+	ir.OGT: {x86.AJHI, x86.AJGT}, ir.OGE: {x86.AJCC, x86.AJGE},
+}
+var sbNegate = map[ir.Op]ir.Op{ir.OEQ: ir.ONE, ir.ONE: ir.OEQ, ir.OLT: ir.OGE, ir.OGE: ir.OLT, ir.OLE: ir.OGT, ir.OGT: ir.OLE}
+
+// branch evaluates the boolean n and returns the jumps taken when n == when; otherwise control falls through.
+func (g *sbGen) branch(n ir.Node, when bool) []*obj.Prog {
+	switch n.Op() {
+	case ir.ONOT:
+		if len(n.Init()) == 0 {
+			return g.branch(n.(*ir.UnaryExpr).X, !when)
+		}
+	case ir.OANDAND, ir.OOROR:
+		n := n.(*ir.LogicalExpr)
+		if len(n.Init()) != 0 {
+			break
+		}
+		// "a && b" is false as soon as one is; "a || b" is true as soon as one is
+		short := n.Op() == ir.OOROR
+		if when == short {
+			return append(g.branch(n.X, when), g.branch(n.Y, when)...)
+		}
+		skip := g.branch(n.X, short)
+		out := g.branch(n.Y, when)
+		g.land(skip...)
+		return out
+	case ir.OEQ, ir.ONE, ir.OLT, ir.OLE, ir.OGT, ir.OGE:
+		n := n.(*ir.BinaryExpr)
+		ot := n.X.Type()
+		if len(n.Init()) != 0 || !sbScalar(ot) || !sbScalar(n.Y.Type()) {
+			break
+		}
+		y := g.binop(n.X, n.Y)
+		g.ins(x86.ACMPQ, sbR(x86.REG_AX), y)
+		op := n.Op()
+		if !when {
+			op = sbNegate[op]
+		}
+		signed := 0
+		if ot.IsInteger() && ot.IsSigned() {
+			signed = 1
+		}
+		return []*obj.Prog{g.jump(sbJcc[op][signed])}
+	}
+	g.scalar(n)
+	g.ins(x86.ATESTB, sbR(x86.REG_AX), sbR(x86.REG_AX))
+	if when {
+		return []*obj.Prog{g.jump(x86.AJNE)}
+	}
+	return []*obj.Prog{g.jump(x86.AJEQ)}
+}
+
+// sbLeaf: evaluating n touches no register but the one it is loaded into: a constant, or a variable that
+// lives in this frame or is a global
+func (g *sbGen) leaf(n ir.Node) bool {
+	if len(n.Init()) != 0 || !sbScalar(n.Type()) {
+		return false
+	}
+	switch n.Op() {
+	case ir.OLITERAL:
+		t := n.Type()
+		return t.IsBoolean() || t.IsInteger() || t.IsUintptr()
+	case ir.ONIL:
+		return true
+	case ir.ONAME:
+		nn := n.(*ir.Name)
+		switch nn.Class {
+		case ir.PAUTO, ir.PPARAM, ir.PPARAMOUT:
+			l, ok := g.homes[nn]
+			return ok && l.kind != sbHeapVar
+		case ir.PEXTERN:
+			return true
+		}
+	}
+	return false
+}
+
+// leafInto loads the leaf n into reg (its full 64-bit extension)
+func (g *sbGen) leafInto(n ir.Node, reg int16) {
+	t := n.Type()
+	switch n.Op() {
+	case ir.ONIL:
+		g.ins(x86.AXORL, sbR(reg), sbR(reg))
+	case ir.OLITERAL:
+		v := int64(0)
+		if t.IsBoolean() {
+			if ir.BoolVal(n) {
+				v = 1
+			}
+		} else {
+			v = ir.IntVal(t, n.Val())
+		}
+		g.ins(x86.AMOVQ, sbImm(v), sbR(reg))
+		g.extend(reg, t)
+	default:
+		g.ins(sbLoadOp(t), g.nameLoc(n.(*ir.Name)).addr(), sbR(reg))
+	}
+}
+
+// binop evaluates x into AX and returns y as an operand: an immediate if y is a small constant, else CX.
+func (g *sbGen) binop(x, y ir.Node) obj.Addr {
+	if g.leaf(y) {
+		g.scalar(x)
+		if y.Op() == ir.OLITERAL {
+			t := y.Type()
+			v := int64(0)
+			if t.IsBoolean() {
+				if ir.BoolVal(y) {
+					v = 1
+				}
+			} else {
+				v = ir.IntVal(t, y.Val())
+				// the value as the 64-bit extension of its type, like every value here
+				switch {
+				case t.Size() == 4 && !t.IsSigned():
+					v = int64(uint32(v))
+				case t.Size() == 4:
+					v = int64(int32(v))
+				case t.Size() == 2 && !t.IsSigned():
+					v = int64(uint16(v))
+				case t.Size() == 2:
+					v = int64(int16(v))
+				case t.Size() == 1 && !t.IsSigned():
+					v = int64(uint8(v))
+				case t.Size() == 1:
+					v = int64(int8(v))
+				}
+			}
+			if v == int64(int32(v)) {
+				return sbImm(v)
+			}
+		}
+		g.leafInto(y, x86.REG_CX)
+		return sbR(x86.REG_CX)
+	}
+	g.binary(x, y)
+	return sbR(x86.REG_CX)
+}
+
 // binary evaluates x into AX and y into CX
 func (g *sbGen) binary(x, y ir.Node) {
+	if g.leaf(y) {
+		g.scalar(x)
+		g.leafInto(y, x86.REG_CX)
+		return
+	}
 	g.scalar(x)
 	tmp := g.temp(x.Type())
 	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tmp.addr())
