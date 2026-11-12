@@ -137,6 +137,18 @@ func (g *gen) compareLocs(op token.Token, xl loc, xt types.Type, yl loc, yt type
 		}
 		t = xt
 	}
+	if isInterface(xt) && isInterface(yt) && !types.Identical(xt.Underlying(), yt.Underlying()) {
+		// two interface types: compare as empty interfaces (type words, not itabs)
+		anyT := g.c.anyType()
+		yl = g.keep(g.inMem(yl, yt), yt)
+		if !isEmptyIface(xt) {
+			xl = g.ifaceToIface(xl, xt, anyT)
+		}
+		if !isEmptyIface(yt) {
+			yl = g.ifaceToIface(yl, yt, anyT)
+		}
+		xt, yt, t = anyT, anyT, anyT
+	}
 	switch {
 	case isFloat(t):
 		if yl.kind == lReg && yl.reg == X0 {

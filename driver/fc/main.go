@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/types"
 	"log"
 	"os"
 	"path/filepath"
@@ -213,10 +214,21 @@ func (c *compiler) alignWithStock(defs []stockDef) (missing []string) {
 		}
 	}
 	used := map[*obj.LSym]bool{}
+	// one list in the stock object's exact order (it goes first: obj numbers Text before Data)
 	var text, data []*obj.LSym
-	for _, d := range defs {
+	last := -1
+	for i, d := range defs {
+		if d.name != "" {
+			last = i
+		}
+	}
+	for _, d := range defs[:last+1] {
 		if d.name == "" {
-			continue // function info and the like: after everything else, never referenced from outside
+			// an unnamed symbol of the stock object (debug information): keep its place
+			ph := &obj.LSym{Type: objabi.SRODATA}
+			ph.Set(obj.AttrOnList, true)
+			text = append(text, ph)
+			continue
 		}
 		s := mine[key{d.name, d.abi}]
 		if s != nil && s.Type.IsText() != d.text {
@@ -240,11 +252,7 @@ func (c *compiler) alignWithStock(defs []stockDef) (missing []string) {
 			}
 		}
 		used[s] = true
-		if d.text {
-			text = append(text, s)
-		} else {
-			data = append(data, s)
-		}
+		text = append(text, s)
 	}
 	for _, s := range c.ctxt.Text {
 		if !used[s] {
@@ -330,6 +338,7 @@ func main() {
 		}
 		return v
 	}
+	c.parity = func() { c.stockParity(stock) }
 	errs := c.compilePackage()
 	if len(errs) == 0 && c.hasInit && !c.forceInit {
 		errs = append(errs, "initialization the stock compiler does at compile time")
@@ -366,6 +375,21 @@ func main() {
 		log.Fatalf("fc: %s has no _go_.o", o.out)
 	}
 	writeArchive(o.out, ms)
+	if os.Getenv("FC_IDXDIFF") != "" {
+		_, mineDefs := definedSymsOrder(o.out)
+		for i, d := range stockDefs {
+			if d.name == "" {
+				continue
+			}
+			if i >= len(mineDefs) || mineDefs[i].name != d.name || mineDefs[i].abi != d.abi {
+				m := "(none)"
+				if i < len(mineDefs) {
+					m = mineDefs[i].name
+				}
+				fmt.Fprintf(os.Stderr, "fc: %s: index %d: stock %s, fc %s\n", o.path, i, d.name, m)
+			}
+		}
+	}
 	if os.Getenv("FC_SYMDIFF") != "" {
 		ours := definedSyms(o.out)
 		for s := range stock {
@@ -391,4 +415,45 @@ func stockImports(path string) []goobj.ImportedPkg {
 		}
 	}
 	return nil
+}
+
+// stockParity (mixed mode): stock-compiled importers expect this object to define what the stock object
+// defines for the generic instantiations the package makes, since the export data told them so: the
+// methods of instantiated types, and method-expression wrappers of interface types. Find those names
+// among the stock object's symbols and ask for them.
+func (c *compiler) stockParity(stock map[string]bool) {
+	byName := map[string]types.Type{}
+	c.forEachType(func(t types.Type) {
+		if mentionsTypeParam(t) {
+			return
+		}
+		switch u := types.Unalias(t).(type) {
+		case *types.Named:
+			if u.TypeArgs().Len() > 0 || isInterface(u) {
+				byName[c.typeLinkName(u)] = u
+			}
+		}
+	})
+	for name, t := range byName {
+		if isInterface(t) {
+			it := t.Underlying().(*types.Interface)
+			for i := 0; i < it.NumMethods(); i++ {
+				m := it.Method(i)
+				sym := name + "." + m.Name()
+				if stock[sym] {
+					c.ifaceMethodWrapper(t, m, sym)
+				}
+			}
+			continue
+		}
+		for _, recv := range []types.Type{t, types.NewPointer(t)} {
+			ms := types.NewMethodSet(recv)
+			for i := 0; i < ms.Len(); i++ {
+				sel := ms.At(i)
+				if n, _ := c.methodSymName(recv, sel.Obj().(*types.Func)); stock[n] {
+					c.methodSym(recv, sel)
+				}
+			}
+		}
+	}
 }

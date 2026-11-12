@@ -113,7 +113,18 @@ func (g *gen) mapLit(e *ast.CompositeLit, dst loc, t types.Type) {
 	g.callRT("makemap")
 	mp := g.ptrTemp()
 	g.a.store(mb(BP, mp.off), AX, 8)
-	for _, el := range e.Elts {
+	// entries whose key and value are constants go first, as the stock compiler orders them (it matters
+	// when a later, computed key equals a constant one)
+	var elts []ast.Expr
+	for _, pass := range []bool{true, false} {
+		for _, el := range e.Elts {
+			kv := el.(*ast.KeyValueExpr)
+			if (g.info.Types[kv.Key].Value != nil && g.info.Types[kv.Value].Value != nil) == pass {
+				elts = append(elts, el)
+			}
+		}
+	}
+	for _, el := range elts {
 		kv := el.(*ast.KeyValueExpr)
 		m := g.mark()
 		kt, et := mt.Key(), mt.Elem()

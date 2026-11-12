@@ -332,3 +332,9 @@ func (c *compiler) compileInstance(in *instance) {
 	g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
 	g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 }
+
+// funcRefIsGeneric: is fn a generic function or a method of a generic type?
+func (g *gen) funcRefIsGeneric(fn *types.Func) (*types.Signature, bool) {
+	osig := fn.Origin().Type().(*types.Signature)
+	return osig, osig.TypeParams().Len() > 0 || osig.RecvTypeParams().Len() > 0
+}

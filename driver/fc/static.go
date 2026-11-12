@@ -203,6 +203,9 @@ func (c *compiler) compilePackage() (errs []string) {
 		}
 	}
 	try("type descriptors", func() { c.writeDeclaredTypes() })
+	if c.parity != nil {
+		try("symbols the stock object defines", c.parity)
+	}
 	// instances of generic functions and the code descriptors need, each of which may ask for more
 	for again := true; again; {
 		again = false

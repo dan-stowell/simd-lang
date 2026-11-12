@@ -217,6 +217,20 @@ func (g *gen) findHeapVars(body ast.Node) {
 				// the body becomes a function: it captures like a literal, and a return inside it
 				// reaches this function's results through the heap
 				rangeBodies = append(rangeBodies, n.Body)
+				if n.Tok == token.ASSIGN {
+					for _, kv := range []ast.Expr{n.Key, n.Value} {
+						if kv != nil {
+							ast.Inspect(kv, func(m ast.Node) bool {
+								if id, ok := m.(*ast.Ident); ok {
+									if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+										mark(v)
+									}
+								}
+								return true
+							})
+						}
+					}
+				}
 				for i := 0; i < g.sig.Results().Len(); i++ {
 					g.heapVars[g.sig.Results().At(i)] = true
 				}
@@ -288,25 +302,11 @@ func (pr *Program) linknames(p *Pkg) map[string]string {
 
 // ---- not written yet
 
-func (g *gen) funcValue(fn *types.Func) loc {
+func (g *gen) funcValue(fn *types.Func, id *ast.Ident) loc {
 	if g.c.isIntrinsic(fn) {
 		giveUp("compiler intrinsic %s as a value", fn.FullName())
 	}
-	if sig := fn.Type().(*types.Signature); sig.TypeParams().Len() > 0 || sig.RecvTypeParams().Len() > 0 {
-		giveUp("generic function value")
-	}
-	target := g.c.funcSym(fn)
-	s := g.c.lookup(target.Name+"·f", obj.ABI0, target.Pkg)
-	g.c.mu.Lock()
-	if !s.OnList() {
-		s.WriteAddr(g.c.ctxt, 0, 8, target, 0)
-		s.Type = objabi.SRODATA
-		s.Size = 8
-		s.Set(obj.AttrDuplicateOK, true)
-		s.Set(obj.AttrOnList, true)
-		g.c.ctxt.Data = append(g.c.ctxt.Data, s)
-	}
-	g.c.mu.Unlock()
-	g.a.lea(AX, msym(s, 0))
+	target, _ := g.funcRef(fn, id)
+	g.a.lea(AX, msym(g.c.staticClosure(target), 0))
 	return loc{kind: lReg, reg: AX}
 }

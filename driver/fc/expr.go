@@ -139,7 +139,7 @@ func (g *gen) expr(e ast.Expr) loc {
 		case *types.Var:
 			return g.varLoc(o)
 		case *types.Func:
-			return g.funcValue(o)
+			return g.funcValue(o, e)
 		case *types.Nil:
 			return loc{kind: lZero}
 		}
@@ -157,6 +157,13 @@ func (g *gen) expr(e ast.Expr) loc {
 		return l
 	case *ast.IndexExpr:
 		return g.index(e)
+	case *ast.IndexListExpr:
+		if id := identOf(e.X); id != nil {
+			if fn, ok := g.info.Uses[id].(*types.Func); ok {
+				return g.funcValue(fn, id)
+			}
+		}
+		giveUp("generic instantiation")
 	case *ast.SliceExpr:
 		return g.sliceExpr(e)
 	case *ast.UnaryExpr:
@@ -250,7 +257,7 @@ func (g *gen) selector(e *ast.SelectorExpr) loc {
 		case *types.Var:
 			return g.varLoc(o)
 		case *types.Func:
-			return g.funcValue(o)
+			return g.funcValue(o, e.Sel)
 		}
 		giveUp("selector %s", e.Sel.Name)
 	}
@@ -332,77 +339,88 @@ func (g *gen) scaleAdd(size int64) {
 }
 
 func (g *gen) index(e *ast.IndexExpr) loc {
-	if tv, ok := g.info.Types[e.Index]; ok && tv.IsType() {
-		giveUp("generic instantiation")
-	}
-	if _, ok := g.info.Instances[identOf(e.X)]; ok {
-		giveUp("generic instantiation")
+	if id := identOf(e.X); id != nil {
+		if _, ok := g.info.Instances[id]; ok {
+			// F[int] as a value
+			if fn, ok := g.info.Uses[id].(*types.Func); ok {
+				return g.funcValue(fn, id)
+			}
+			giveUp("generic instantiation")
+		}
 	}
 	xt := g.typeOf(e.X)
 	it := g.typeOf(e.Index)
-	switch u := xt.Underlying().(type) {
-	case *types.Map:
+	if _, ok := xt.Underlying().(*types.Map); ok {
 		return g.mapIndex(e, false)[0]
+	}
+	xl := g.indexBase(e.X, xt)
+	if u, ok := xt.Underlying().(*types.Array); ok {
+		if tv := g.info.Types[e.Index]; tv.Value != nil {
+			i, _ := constant.Int64Val(constant.ToInt(tv.Value))
+			return xl.plus(i * g.c.sizeof(u.Elem()))
+		}
+	}
+	xl = g.stash(xl, xt)
+	return g.indexAddr(xt, xl, g.expr(e.Index), it)
+}
+
+// indexBase evaluates the operand of an index expression: a slice or string value, a pointer to an array,
+// or an array in memory.
+func (g *gen) indexBase(x ast.Expr, xt types.Type) loc {
+	xl := g.expr(x)
+	switch u := xt.Underlying().(type) {
 	case *types.Array:
-		xl := g.expr(e.X)
 		if !xl.isMem() {
 			giveUp("index of an array that is not in memory")
 		}
-		es := g.c.sizeof(u.Elem())
-		if tv := g.info.Types[e.Index]; tv.Value != nil {
-			i, _ := constant.Int64Val(constant.ToInt(tv.Value))
-			return xl.plus(i * es)
+		if (xl.kind == lInd || xl.kind == lRegInd) && xl.off+g.c.sizeof(u) >= 4096 {
+			g.nilcheckLoc(xl)
 		}
-		xl = g.stash(xl, xt)
-		il := g.expr(e.Index)
-		g.loadIndex(BX, il, it)
-		g.a.movImm(CX, u.Len())
-		g.a.aluRR(aCMP, 8, BX, CX)
-		ok := g.a.jcc(ccB)
-		g.boundsFail("goPanicIndex", isUnsignedIndex(it))
-		g.a.patch(ok, g.a.pc())
-		g.addrTo(DX, xl)
-		g.scaleAdd(es)
-		return loc{kind: lRegInd, reg: AX}
 	case *types.Pointer:
-		arr := u.Elem().Underlying().(*types.Array)
-		es := g.c.sizeof(arr.Elem())
-		xl := g.stash(g.expr(e.X), xt)
-		il := g.expr(e.Index)
-		g.loadIndex(BX, il, it)
-		g.a.movImm(CX, arr.Len())
-		g.a.aluRR(aCMP, 8, BX, CX)
-		ok := g.a.jcc(ccB)
-		g.boundsFail("goPanicIndex", isUnsignedIndex(it))
-		g.a.patch(ok, g.a.pc())
-		g.loadTo(DX, xl, xt)
-		g.a.nilcheck(DX)
-		g.scaleAdd(es)
-		return loc{kind: lRegInd, reg: AX}
-	case *types.Slice, *types.Basic:
-		es := int64(1)
-		if s, ok := u.(*types.Slice); ok {
-			es = g.c.sizeof(s.Elem())
-		}
-		xl := g.expr(e.X)
+	default:
 		if xl.kind == lZero {
 			xl = g.zeroTemp(xt)
 		}
-		xl = g.stash(xl, xt)
-		il := g.expr(e.Index)
-		g.loadIndex(BX, il, it)
-		xm := g.m(xl, R13)
-		g.a.load(CX, xm.plus(8), 8, false)
-		g.a.aluRR(aCMP, 8, BX, CX)
-		ok := g.a.jcc(ccB)
-		g.boundsFail("goPanicIndex", isUnsignedIndex(it))
-		g.a.patch(ok, g.a.pc())
-		g.a.load(DX, g.m(xl, R13), 8, false)
-		g.scaleAdd(es)
-		return loc{kind: lRegInd, reg: AX}
 	}
-	giveUp("index of %v", xt)
-	return loc{}
+	return xl
+}
+
+// indexAddr: the element of x (type xt, at xl, safe from the index's evaluation) at index il, after the
+// bounds check.
+func (g *gen) indexAddr(xt types.Type, xl loc, il loc, it types.Type) loc {
+	g.loadIndex(BX, il, it)
+	var es int64 = 1
+	switch u := xt.Underlying().(type) {
+	case *types.Array:
+		es = g.c.sizeof(u.Elem())
+		g.a.movImm(CX, u.Len())
+	case *types.Pointer:
+		arr := u.Elem().Underlying().(*types.Array)
+		es = g.c.sizeof(arr.Elem())
+		g.a.movImm(CX, arr.Len())
+	case *types.Slice:
+		es = g.c.sizeof(u.Elem())
+		g.a.load(CX, g.m(xl, R13).plus(8), 8, false)
+	case *types.Basic:
+		g.a.load(CX, g.m(xl, R13).plus(8), 8, false)
+	default:
+		giveUp("index of %v", xt)
+	}
+	g.a.aluRR(aCMP, 8, BX, CX)
+	ok := g.a.jcc(ccB)
+	g.boundsFail("goPanicIndex", isUnsignedIndex(it))
+	g.a.patch(ok, g.a.pc())
+	switch xt.Underlying().(type) {
+	case *types.Array:
+		g.addrTo(DX, xl)
+	case *types.Pointer:
+		g.loadTo(DX, xl, xt)
+		g.a.nilcheck(DX)
+	default:
+		g.a.load(DX, g.m(xl, R13), 8, false)
+	}
+	g.scaleAdd(es)
+	return loc{kind: lRegInd, reg: AX}
 }
 
 func identOf(e ast.Expr) *ast.Ident {
@@ -501,13 +519,15 @@ func (g *gen) sliceExpr(e *ast.SliceExpr) loc {
 	} else {
 		g.loadTo(R10, max, word)
 	}
+	uns := func(x ast.Expr) bool { return x != nil && isUnsignedIndex(g.typeOf(x)) }
+	unsOf := map[int]bool{R8: uns(e.Low), R9: uns(e.High), R10: uns(e.Max)}
 	fail := func(fn string, x, y int) {
 		// if x > y (unsigned): panic
 		g.a.aluRR(aCMP, 8, x, y)
 		ok := g.a.jcc(ccBE)
 		g.a.movRR(BX, x)
 		g.a.movRR(CX, y)
-		g.boundsFail(fn, false)
+		g.boundsFail(fn, unsOf[x])
 		g.a.patch(ok, g.a.pc())
 	}
 	capName := "Acap"
@@ -942,12 +962,13 @@ func (g *gen) addressOf(x ast.Expr) loc {
 			return loc{kind: lFrame, off: l.slot}
 		}
 		g.a.load(AX, mb(BP, l.slot), 8, false)
-		if l.off >= 4096 {
-			g.a.nilcheck(AX)
-		}
+		g.a.nilcheck(AX)
 		g.a.lea(AX, mb(AX, l.off))
 		return loc{kind: lReg, reg: AX}
 	case lRegInd:
+		if l.off != 0 {
+			g.a.nilcheck(l.reg)
+		}
 		if l.off != 0 || l.reg != AX {
 			g.a.lea(AX, mb(l.reg, l.off))
 		}

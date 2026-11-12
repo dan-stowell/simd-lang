@@ -57,6 +57,24 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 		extra = append(extra, g.rf.state)
 	}
 	define := s.Tok == token.DEFINE
+	if !define {
+		// the variables assigned on each iteration are assigned inside the body function
+		for _, kv := range []ast.Expr{s.Key, s.Value} {
+			if kv == nil {
+				continue
+			}
+			ast.Inspect(kv, func(m ast.Node) bool {
+				if id, ok := m.(*ast.Ident); ok {
+					if v, ok := g.info.Uses[id].(*types.Var); ok && !v.IsField() {
+						if _, ok := g.vars[v]; ok {
+							extra = append(extra, v)
+						}
+					}
+				}
+				return true
+			})
+		}
+	}
 	clo := g.closure(ysig, s.Body, s.Body, extra, func(cg *gen) {
 		cg.rf = rf
 		cg.root = root

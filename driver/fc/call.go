@@ -247,12 +247,13 @@ func (g *gen) addrOfLoc(l loc) loc {
 			return loc{kind: lFrame, off: l.slot}
 		}
 		g.a.load(AX, mb(BP, l.slot), 8, false)
-		if l.off >= 4096 {
-			g.a.nilcheck(AX)
-		}
+		g.a.nilcheck(AX)
 		g.a.lea(AX, mb(AX, l.off))
 		return loc{kind: lReg, reg: AX}
 	case lRegInd:
+		if l.off != 0 {
+			g.a.nilcheck(l.reg)
+		}
 		if l.off != 0 || l.reg != AX {
 			g.a.lea(AX, mb(l.reg, l.off))
 		}
@@ -509,11 +510,11 @@ func (g *gen) sliceToArrayPtr(l loc, from types.Type, arr *types.Array) loc {
 	}
 	l = g.stash(l, from)
 	m := g.m(l, R13)
-	g.a.load(BX, m.plus(8), 8, false)
-	g.a.movImm(CX, arr.Len())
-	g.a.aluRR(aCMP, 8, BX, CX)
+	g.a.load(CX, m.plus(8), 8, false)
+	g.a.movImm(BX, arr.Len())
+	g.a.aluRR(aCMP, 8, CX, BX)
 	ok := g.a.jcc(ccAE)
-	g.boundsFail("goPanicSliceConvert", false)
+	g.boundsFail("goPanicSliceConvert", false) // x: the array's length, y: the slice's
 	g.a.patch(ok, g.a.pc())
 	g.a.load(AX, g.m(l, R13), 8, false)
 	return loc{kind: lReg, reg: AX}
@@ -663,13 +664,13 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		if name == "String" {
 			g.loadTo(AX, p, pt)
 			g.a.load(BX, mb(BP, n.off), 8, false)
-			g.callRT("unsafestringcheckptr")
+			g.callRT("unsafestring")
 		} else {
 			et := pt.Underlying().(*types.Pointer).Elem()
 			g.a.lea(AX, msym(g.c.typeSym(et), 0))
 			g.loadTo(BX, p, pt)
 			g.a.load(CX, mb(BP, n.off), 8, false)
-			g.callRT("unsafeslicecheckptr")
+			g.callRT("unsafeslice")
 		}
 		res := g.temp(rt)
 		g.loadTo(AX, p, pt)
@@ -881,6 +882,37 @@ func (g *gen) makeCall(e *ast.CallExpr) loc {
 
 func (g *gen) minmax(e *ast.CallExpr, name string) loc {
 	t := g.typeOf(e)
+	if isFloat(t) || isString(t) {
+		// through the runtime: NaNs, signed zeros
+		fn := "f" + name
+		if isString(t) {
+			fn = "str" + name
+		} else if g.c.sizeof(t) == 4 {
+			fn += "32"
+		} else {
+			fn += "64"
+		}
+		acc := g.keep(g.inMem(g.exprAs(e.Args[0], t), t), t)
+		for _, a := range e.Args[1:] {
+			v := g.inMem(g.keep(g.inMem(g.exprAs(a, t), t), t), t)
+			acc = g.inMem(acc, t)
+			if isString(t) {
+				am, vm := g.m(acc, R12), g.m(v, R13)
+				g.a.load(AX, am, 8, false)
+				g.a.load(BX, am.plus(8), 8, false)
+				g.a.load(CX, vm, 8, false)
+				g.a.load(DI, vm.plus(8), 8, false)
+				g.callRT(fn)
+				acc = g.pairResult(t)
+			} else {
+				g.loadTo(X0, acc, t)
+				g.loadTo(X1, v, t)
+				g.callRT(fn)
+				acc = g.stash(loc{kind: lReg, reg: X0}, t)
+			}
+		}
+		return acc
+	}
 	if !isWord(t) {
 		giveUp("%s of %v", name, t)
 	}

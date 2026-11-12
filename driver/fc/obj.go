@@ -47,6 +47,7 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
+	parity     func() // mixed mode: define what stock importers expect of this object
 	instances  map[string]bool
 	instQueue  []*instance
 	rtypeState // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator

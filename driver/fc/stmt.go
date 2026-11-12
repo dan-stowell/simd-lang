@@ -397,7 +397,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 		return
 	}
 	// several targets: destinations, then values, then the stores
-	dsts := make([]loc, len(s.Lhs))
+	late := make([]func() loc, len(s.Lhs))
 	types_ := make([]types.Type, len(s.Lhs))
 	news := make([]*types.Var, len(s.Lhs))
 	mapIx := make([]*ast.IndexExpr, len(s.Lhs))
@@ -412,19 +412,42 @@ func (g *gen) assign(s *ast.AssignStmt) {
 				mapOps = append(mapOps, [2]loc{ml, kl})
 				continue
 			}
-			dsts[i] = g.lvalue(lhs)
+			late[i] = g.lvalueLate(lhs)
 		}
 	}
 	var vals []typedLoc
 	if len(s.Rhs) == 1 {
 		vals = g.multi(s.Rhs[0])
 	} else {
+		// Without calls among them the stock compiler evaluates the right-hand sides last to first
+		// (observable in which of two bad indexes panics); with calls, in order.
+		vals = make([]typedLoc, len(s.Rhs))
+		order := make([]int, len(s.Rhs))
+		calls := false
 		for i, rhs := range s.Rhs {
+			order[i] = len(s.Rhs) - 1 - i
+			ast.Inspect(rhs, func(n ast.Node) bool {
+				switch n := n.(type) {
+				case *ast.CallExpr:
+					calls = true
+				case *ast.UnaryExpr:
+					calls = calls || n.Op == token.ARROW
+				}
+				return !calls
+			})
+		}
+		if calls {
+			for i := range order {
+				order[i] = i
+			}
+		}
+		for _, i := range order {
+			rhs := s.Rhs[i]
 			t := types_[i]
 			if t == nil {
 				t = g.typeOf(rhs)
 			}
-			vals = append(vals, typedLoc{g.keep(g.exprAs(rhs, t), t), t})
+			vals[i] = typedLoc{g.keep(g.exprAs(rhs, t), t), t}
 		}
 	}
 	nm := 0
@@ -450,8 +473,58 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			g.move(dst, v, t)
 			continue
 		}
-		g.move(dsts[i], v, t)
+		if v.kind == lReg || v.kind == lRegInd {
+			v = g.keep(v, t)
+		}
+		g.move(late[i](), v, t)
 	}
+}
+
+// lvalueLate is lvalue for an assignment with several targets: the operands are evaluated now, but an
+// index is checked (and may panic) only when its store is carried out, after the earlier stores; and a
+// pointer that is dereferenced is the one in force now.
+func (g *gen) lvalueLate(e ast.Expr) func() loc {
+	e = ast.Unparen(e)
+	if ix, ok := e.(*ast.IndexExpr); ok {
+		xt := g.typeOf(ix.X)
+		it := g.typeOf(ix.Index)
+		xl := g.indexBase(ix.X, xt)
+		switch xt.Underlying().(type) {
+		case *types.Array:
+			xl = g.pin(xl)
+		default:
+			xl = g.keep(xl, xt)
+		}
+		il := g.expr(ix.Index)
+		if il.kind != lImm {
+			g.loadIndex(AX, il, it)
+			il = g.wordTemp()
+			g.a.store(mb(BP, il.off), AX, 8)
+			if !isUnsignedIndex(it) {
+				it = types.Typ[types.Int]
+			} else {
+				it = types.Typ[types.Uint]
+			}
+		}
+		return func() loc { return g.indexAddr(xt, xl, il, it) }
+	}
+	l := g.pin(g.expr(e))
+	return func() loc { return l }
+}
+
+// pin fixes the memory an lvalue names: the pointer it goes through is copied, so a later assignment to
+// the pointer variable does not move it.
+func (g *gen) pin(l loc) loc {
+	switch l.kind {
+	case lInd:
+		tmp := g.ptrTemp()
+		g.a.load(R13, mb(BP, l.slot), 8, false)
+		g.a.store(mb(BP, tmp.off), R13, 8)
+		return loc{kind: lInd, slot: tmp.off, off: l.off}
+	case lRegInd:
+		return g.stash(l, unsafePtr)
+	}
+	return l
 }
 
 // opAssign: x op= y (y nil: the constant 1).

@@ -180,7 +180,43 @@ func (c *compiler) genWrapper(r wrapperReq) {
 	}
 	g.compileFunc(sig.Recv(), c.pkgPos(), c.pkgPos(), nil, func() {
 		path := r.sel.Index()
+		if _, isPtr := r.recv.Underlying().(*types.Pointer); isPtr && !r.declPtr && len(path) == 1 {
+			// a value method called through a nil pointer: the runtime names it in the panic
+			g.a.load(AX, mb(BP, g.paramLoc(g.abi.in[0]).off), 8, false)
+			g.a.testRR(8, AX, AX)
+			ok := g.a.jcc(ccNE)
+			g.callRT("panicwrap")
+			g.a.ud2()
+			g.a.patch(ok, g.a.pc())
+		}
 		cl, ai, recv := g.methodOn(g.paramLoc(g.abi.in[0]), r.recv, r.method, path, plain, nil)
+		args := []loc{recv}
+		for i := 1; i < len(g.abi.in); i++ {
+			args = append(args, g.paramLoc(g.abi.in[i]))
+		}
+		rs := g.emitCall(ai, args, cl)
+		for i, res := range rs {
+			g.move(g.resHome[i], res, g.abi.out[i].typ)
+		}
+	})
+}
+
+// ifaceMethodWrapper: pkg.I.M, the function form of an interface method (its first parameter is the
+// interface value).
+func (c *compiler) ifaceMethodWrapper(it types.Type, m *types.Func, name string) {
+	sym := c.lookup(name, obj.ABIInternal, "_")
+	if sym.OnList() || c.rtWrap[sym] {
+		return
+	}
+	c.rtWrap[sym] = true
+	msig := m.Type().(*types.Signature)
+	sig := types.NewSignatureType(param(it), nil, nil, msig.Params(), msig.Results(), msig.Variadic())
+	plain := types.NewSignatureType(nil, nil, nil, msig.Params(), msig.Results(), msig.Variadic())
+	g := c.newGen(name, sig, c.info, nil)
+	g.out.sym = sym
+	g.out.flags |= obj.WRAPPER | obj.DUPOK
+	g.compileFunc(sig.Recv(), c.pkgPos(), c.pkgPos(), nil, func() {
+		cl, ai, recv := g.methodOn(g.paramLoc(g.abi.in[0]), it, m, []int{0}, plain, nil)
 		args := []loc{recv}
 		for i := 1; i < len(g.abi.in); i++ {
 			args = append(args, g.paramLoc(g.abi.in[i]))

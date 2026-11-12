@@ -516,8 +516,8 @@ func (g *gen) move(dst, src loc, t types.Type) {
 	}
 	barrier := !dst.inFrame() && g.c.hasPointers(t) && !g.c.noWB
 	if size > 128 {
-		g.a.lea(SI, g.m(src, R12))
-		g.a.lea(DI, g.m(dst, R13))
+		g.addrTo(SI, src)
+		g.addrTo(DI, dst)
 		if barrier {
 			g.a.movRR(BX, DI)
 			g.a.movRR(CX, SI)
@@ -633,12 +633,17 @@ func (g *gen) zero(dst loc, t types.Type) {
 
 // addrTo: reg = the address of the memory location l.
 func (g *gen) addrTo(reg int, l loc) {
+	// (the address may go to the runtime, where a fault is fatal: a nil base must fault here)
 	if l.kind == lInd {
 		g.a.load(reg, mb(BP, l.slot), 8, false)
+		g.a.nilcheck(reg)
 		if l.off != 0 {
 			g.a.lea(reg, mb(reg, l.off))
 		}
 		return
+	}
+	if l.kind == lRegInd {
+		g.a.nilcheck(l.reg)
 	}
 	g.a.lea(reg, g.m(l, R13))
 }

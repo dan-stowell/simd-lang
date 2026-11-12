@@ -139,87 +139,44 @@ func (g *gen) saveCtx() {
 	g.a.store(mb(BP, g.ctxSlot.off), DX, 8)
 }
 
-// bind makes a closure that performs the prepared call (callee c, arguments args of the ABI ai) when it is
-// called. With forward set the closure has the signature sig: its own parameters follow the bound arguments
-// and the results are returned (a method value); otherwise it is a func() (defer, go).
-func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Signature) loc {
+// bindValues makes a closure of signature sig (nil: func()) that carries the given values; body generates
+// its code, given where the values are inside it.
+func (g *gen) bindValues(kind string, vals []typedLoc, sig *types.Signature, body func(cg *gen, vals []loc)) loc {
 	if sig == nil {
 		sig = types.NewSignatureType(nil, nil, nil, nil, nil, false)
 	}
-	// what goes into the object, word by word
-	type word struct {
-		src   loc
-		boxed types.Type // nil: the word is the value
-	}
-	var words []word
-	calleeAt := -1
-	switch c.kind {
-	case 1:
-		calleeAt = len(words)
-		words = append(words, word{src: c.clo})
-	case 2:
-		calleeAt = len(words)
-		words = append(words, word{src: c.iface}, word{src: c.iface.plus(8)})
-	}
-	argAt := make([]int, len(args))
-	for i, a := range args {
-		if c.kind == 2 && i == 0 {
-			argAt[i] = calleeAt + 1 // the receiver is the interface's data word
+	// what goes into the object, word by word: a pointer itself, anything else as the address of a copy
+	at := make([]int, len(vals))
+	var words []int // index of the value of each word
+	for i, v := range vals {
+		if g.c.sizeof(v.t) == 0 {
+			at[i] = -1
 			continue
 		}
-		t := ai.in[i].typ
-		argAt[i] = len(words)
-		switch {
-		case g.c.sizeof(t) == 0:
-			argAt[i] = -1
-		case isPtrWord(t):
-			words = append(words, word{src: a})
-		default:
-			words = append(words, word{src: a, boxed: t})
-		}
+		at[i] = len(words)
+		words = append(words, i)
 	}
 	cg := g.child(g.childName(kind), sig)
 	cg.out.flags |= obj.WRAPPER
 	cg.entry = cg.saveCtx
 	cg.compileFunc(nil, g.lastPos, g.lastPos, nil, func() {
 		ctx := cg.ctxSlot.off
-		var cargs []loc
-		for i := range args {
-			at := argAt[i]
+		locs := make([]loc, len(vals))
+		for i, v := range vals {
 			switch {
-			case at < 0:
-				cargs = append(cargs, loc{kind: lZero})
-			case words[at].boxed == nil:
-				cargs = append(cargs, loc{kind: lInd, slot: ctx, off: int64(8 * (at + 1))})
+			case at[i] < 0:
+				locs[i] = loc{kind: lZero}
+			case isPtrWord(v.t):
+				locs[i] = loc{kind: lInd, slot: ctx, off: int64(8 * (at[i] + 1))}
 			default:
 				box := cg.ptrTemp()
 				cg.a.load(R8, mb(BP, ctx), 8, false)
-				cg.a.load(R8, mb(R8, int64(8*(at+1))), 8, false)
+				cg.a.load(R8, mb(R8, int64(8*(at[i]+1))), 8, false)
 				cg.a.store(mb(BP, box.off), R8, 8)
-				cargs = append(cargs, loc{kind: lInd, slot: box.off})
+				locs[i] = loc{kind: lInd, slot: box.off}
 			}
 		}
-		nbound := len(args)
-		for i := nbound; i < len(ai.in); i++ {
-			cargs = append(cargs, cg.paramLoc(cg.abi.in[i-nbound]))
-		}
-		cc := c
-		switch c.kind {
-		case 1:
-			cc.clo = loc{kind: lInd, slot: ctx, off: int64(8 * (calleeAt + 1))}
-		case 2:
-			cc.iface = loc{kind: lInd, slot: ctx, off: int64(8 * (calleeAt + 1))}
-		}
-		rs := cg.emitCall(ai, cargs, cc)
-		if len(cg.resHome) > 0 {
-			if len(rs) == 1 && (rs[0].kind == lReg) {
-				cg.move(cg.resHome[0], rs[0], cg.abi.out[0].typ)
-			} else {
-				for i, r := range rs {
-					cg.move(cg.resHome[i], r, cg.abi.out[i].typ)
-				}
-			}
-		}
+		body(cg, locs)
 	})
 	if len(words) == 0 {
 		g.a.lea(AX, msym(g.c.staticClosure(cg.out.sym), 0))
@@ -227,29 +184,77 @@ func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Si
 	}
 	// boxes first (each allocation is a call), then the object
 	srcs := make([]loc, len(words))
-	for i, w := range words {
-		if w.boxed == nil {
-			srcs[i] = w.src
+	for w, i := range words {
+		v := vals[i]
+		if isPtrWord(v.t) {
+			srcs[w] = v.l
 			continue
 		}
-		g.a.lea(AX, msym(g.c.typeSym(w.boxed), 0))
+		g.a.lea(AX, msym(g.c.typeSym(v.t), 0))
 		g.callRT("newobject")
 		box := g.ptrTemp()
 		g.a.store(mb(BP, box.off), AX, 8)
-		g.move(loc{kind: lInd, slot: box.off}, w.src, w.boxed)
-		srcs[i] = box
+		g.move(loc{kind: lInd, slot: box.off}, v.l, v.t)
+		srcs[w] = box
 	}
 	p := g.newClosure(cg.out.sym, len(words))
-	for i := range words {
-		g.move(loc{kind: lInd, slot: p.off, off: int64(8 * (i + 1))}, srcs[i], unsafePtr)
+	for w := range words {
+		g.move(loc{kind: lInd, slot: p.off, off: int64(8 * (w + 1))}, srcs[w], unsafePtr)
 	}
 	return p
+}
+
+// bind makes a closure that performs the prepared call (callee c, arguments args of the ABI ai) when it is
+// called. With sig set the closure has that signature: its own parameters follow the bound arguments and
+// the results are returned (a method value); otherwise it is a func() (defer, go).
+func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Signature) loc {
+	var vals []typedLoc
+	switch c.kind {
+	case 1:
+		vals = append(vals, typedLoc{c.clo, unsafePtr})
+	case 2:
+		vals = append(vals, typedLoc{c.iface, unsafePtr}, typedLoc{c.iface.plus(8), unsafePtr})
+	}
+	ncallee := len(vals)
+	for i, a := range args {
+		if c.kind == 2 && i == 0 {
+			continue // the receiver is the interface's data word
+		}
+		vals = append(vals, typedLoc{a, ai.in[i].typ})
+	}
+	return g.bindValues(kind, vals, sig, func(cg *gen, locs []loc) {
+		cc := c
+		var cargs []loc
+		switch c.kind {
+		case 1:
+			cc.clo = locs[0]
+		case 2:
+			cc.iface = locs[0] // the two words are adjacent in the closure object
+			cargs = append(cargs, locs[1])
+		}
+		cargs = append(cargs, locs[ncallee:]...)
+		nbound := len(args)
+		for i := nbound; i < len(ai.in); i++ {
+			cargs = append(cargs, cg.paramLoc(cg.abi.in[i-nbound]))
+		}
+		rs := cg.emitCall(ai, cargs, cc)
+		for i, r := range rs {
+			if i < len(cg.resHome) {
+				cg.move(cg.resHome[i], r, cg.abi.out[i].typ)
+			}
+		}
+	})
 }
 
 // methodValue: x.M as a function value with x bound.
 func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
 	sig := g.typeOf(e).(*types.Signature)
 	c, ai, recv := g.method(e, sel, sig)
+	if c.kind == 2 {
+		// a method value of a nil interface panics here, not when it is called
+		g.a.load(R13, g.m(c.iface, R13), 8, false)
+		g.a.nilcheck(R13)
+	}
 	return g.bind("mv", ai, []loc{recv}, c, sig)
 }
 
@@ -273,6 +278,11 @@ func (g *gen) goStmt(s *ast.GoStmt) {
 
 // deferred: a func() that performs the call later, its callee and arguments evaluated now.
 func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
+	if id := identOf(ast.Unparen(call.Fun)); id != nil {
+		if b, ok := g.info.Uses[id].(*types.Builtin); ok {
+			return g.deferredBuiltin(call, b.Name(), kind)
+		}
+	}
 	ai, args, c, _, _ := g.prepCall(call, false)
 	if c.kind == 1 && len(args) == 0 && len(ai.out) == 0 {
 		return c.clo // already a func()
@@ -303,6 +313,15 @@ func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
 		ps = append(ps, sig.Params().At(i))
 	}
 	msig := types.NewSignatureType(nil, nil, nil, types.NewTuple(ps...), sig.Results(), sig.Variadic())
+	if !isInterface(recvT) && g.env == nil {
+		// the method under this receiver type exists as a symbol: the method itself or its wrapper
+		if sel := types.NewMethodSet(recvT).Lookup(fn.Pkg(), fn.Name()); sel != nil {
+			if _, generic := g.funcRefIsGeneric(fn); !generic {
+				g.a.lea(AX, msym(g.c.staticClosure(g.c.methodSym(recvT, sel)), 0))
+				return loc{kind: lReg, reg: AX}
+			}
+		}
+	}
 	cg := g.child(g.childName("mexpr"), sig)
 	cg.out.flags |= obj.WRAPPER
 	cg.compileFunc(nil, e.Pos(), e.End(), nil, func() {
@@ -318,4 +337,53 @@ func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
 	})
 	g.a.lea(AX, msym(g.c.staticClosure(cg.out.sym), 0))
 	return loc{kind: lReg, reg: AX}
+}
+
+// deferredBuiltin: defer or go of a built-in function: the arguments are evaluated now, the operation is
+// carried out by the closure.
+func (g *gen) deferredBuiltin(call *ast.CallExpr, name, kind string) loc {
+	var vals []typedLoc
+	arg := func(e ast.Expr, t types.Type) {
+		vals = append(vals, typedLoc{g.inMem(g.keep(g.inMem(g.exprAs(e, t), t), t), t), t})
+	}
+	switch name {
+	case "close":
+		arg(call.Args[0], g.typeOf(call.Args[0]))
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) {
+			cg.loadTo(AX, ls[0], vals[0].t)
+			cg.callRT("closechan")
+		})
+	case "panic":
+		arg(call.Args[0], g.c.anyType())
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) {
+			m := cg.m(ls[0], R13)
+			cg.a.load(AX, m, 8, false)
+			cg.a.load(BX, m.plus(8), 8, false)
+			cg.callRT("gopanic")
+			cg.a.ud2()
+		})
+	case "recover":
+		return g.bindValues(kind, nil, nil, func(cg *gen, ls []loc) { cg.callRT("gorecover") })
+	case "delete":
+		mt := g.typeOf(call.Args[0])
+		arg(call.Args[0], mt)
+		arg(call.Args[1], mt.Underlying().(*types.Map).Key())
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) {
+			cg.mapArgs(mt, ls[0], ls[1])
+			cg.callRT("mapdelete")
+		})
+	case "print", "println":
+		for _, a := range call.Args {
+			arg(a, printType(g.typeOf(a)))
+		}
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) {
+			var vs []typedLoc
+			for i, l := range ls {
+				vs = append(vs, typedLoc{cg.inMem(l, vals[i].t), vals[i].t})
+			}
+			cg.printLocs(vs, name == "println")
+		})
+	}
+	giveUp("deferred built-in %s", name)
+	return loc{}
 }

@@ -15,12 +15,17 @@ func Make(n int) []int               { return make([]int, n) }
 func MakeCap(n, c int) []int         { return make([]int, n, c) }
 func MakeI64(n, c int64) []byte      { return make([]byte, n, c) }
 func MakeU8(n uint8) []string        { return make([]string, n) }
-func MakeLenCap(n, c int) (int, int) { s := make([]uint16, n, c); return len(s), cap(s) }
-func MakeNodes(n int) []Node         { return make([]Node, n) }
-func MakeBig(n int) int              { s := make([][64]int64, n); return len(s) * len(s[0]) }
-func Len(s []int) int                { return len(s) }
-func Cap(s []int) int                { return cap(s) }
-func IsNil(s []int) bool             { return s == nil }
+func MakeLenCap(n, c int) (int, int) { s := make([]uint16, n, c); sinkU16 = s; return len(s), cap(s) }
+
+// (the slice escapes: for one that does not, which of the two makeslice panics is raised depends on the
+// stock compiler's escape analysis)
+var sinkU16 []uint16
+
+func MakeNodes(n int) []Node { return make([]Node, n) }
+func MakeBig(n int) int      { s := make([][64]int64, n); return len(s) * len(s[0]) }
+func Len(s []int) int        { return len(s) }
+func Cap(s []int) int        { return cap(s) }
+func IsNil(s []int) bool     { return s == nil }
 func LenNilEmpty() (a, b int, c, d bool) {
 	var n []int
 	e := []int{}

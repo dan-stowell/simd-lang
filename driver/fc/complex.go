@@ -43,6 +43,12 @@ func (g *gen) complexArith(xl, yl loc, op token.Token, t types.Type) loc {
 			g.a.fstore(mb(BP, res.off+off), X0, h)
 		}
 	case token.MUL:
+		if h == 4 {
+			// as the stock compiler: in float64, rounded once
+			wide := types.Typ[types.Complex128]
+			r := g.complexArith(g.complexConv(xl, t, wide), g.complexConv(yl, t, wide), op, wide)
+			return g.complexConv(r, wide, t)
+		}
 		// (a+bi)(c+di) = (ac-bd) + (ad+bc)i
 		part(X0, xl, false) // a
 		part(X1, yl, false) // c
@@ -85,7 +91,21 @@ func (g *gen) complexArith(xl, yl loc, op token.Token, t types.Type) loc {
 }
 
 func (g *gen) complexNeg(l loc, t types.Type) loc {
-	return g.complexArith(loc{kind: lZero}, l, token.SUB, t) // TODO -0 parts
+	h := int(g.c.sizeof(t) / 2)
+	l = g.inMem(l, t)
+	res := g.temp(t)
+	for _, off := range []int64{0, int64(h)} {
+		// flip the sign bit of each part
+		g.a.load(AX, g.m(l, R13).plus(off), h, false)
+		if h == 8 {
+			g.a.movImm(R8, -1<<63)
+			g.a.aluRR(aXOR, 8, AX, R8)
+		} else {
+			g.a.aluImm(aXOR, 4, AX, -1<<31)
+		}
+		g.a.store(mb(BP, res.off+off), AX, h)
+	}
+	return res
 }
 
 func (g *gen) makeComplex(e *ast.CallExpr) loc {
@@ -134,18 +154,27 @@ func (g *gen) complexConv(l loc, from, to types.Type) loc {
 }
 
 // printCall: print and println, as calls of the runtime's printers.
+func printType(t types.Type) types.Type {
+	if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
+		t = types.Default(t)
+		if b.Kind() == types.UntypedNil {
+			t = unsafePtr
+		}
+	}
+	return t
+}
+
 func (g *gen) printCall(e *ast.CallExpr, nl bool) {
 	var vals []typedLoc
 	for _, a := range e.Args {
-		t := g.typeOf(a)
-		if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
-			t = types.Default(t)
-			if b.Kind() == types.UntypedNil {
-				t = unsafePtr
-			}
-		}
+		t := printType(g.typeOf(a))
 		vals = append(vals, typedLoc{g.inMem(g.keep(g.inMem(g.exprAs(a, t), t), t), t), t})
 	}
+	g.printLocs(vals, nl)
+}
+
+// printLocs prints values that are in memory.
+func (g *gen) printLocs(vals []typedLoc, nl bool) {
 	g.callRT("printlock")
 	for i, v := range vals {
 		if i > 0 && nl {
