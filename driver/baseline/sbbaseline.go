@@ -104,7 +104,7 @@ func baselineCompile(fn *ir.Func, worker int) (ok bool) {
 		}
 	}
 	pp := objw.NewProgs(fn, worker)
-	g := &sbGen{fn: fn, pp: pp, homes: map[*ir.Name]sbLoc{}, labels: map[*types.Sym]*sbLabel{}}
+	g := &sbGen{fn: fn, pp: pp, homes: map[*ir.Name]sbLoc{}, labels: map[*types.Sym]*sbLabel{}, loops: map[sbLoopKey]*sbLabel{}}
 	defer func() {
 		if r := recover(); r != nil {
 			why, isBail := r.(sbBail)
@@ -227,6 +227,7 @@ type sbGen struct {
 	freePtr []int64  // released one-word temporaries that hold pointers
 	freeInt []int64  // released one-word temporaries that hold no pointers
 	labels  map[*types.Sym]*sbLabel
+	loops   map[sbLoopKey]*sbLabel // break and continue targets of labelled statements
 	brk     []*sbLabel // innermost last
 	cont    []*sbLabel
 	lastRes []sbLoc // where the results of the most recent call were put
@@ -585,9 +586,7 @@ func (g *sbGen) function() {
 	for i := range g.abi.InParams() {
 		pa := g.abi.InParam(i)
 		off := pa.FrameOffset(g.abi)
-		if pa.Name == nil && len(dclParams) == len(g.abi.InParams()) {
-			pa.Name = dclParams[i] // a wrapper's parameters have names only in the declaration list
-		}
+		// (pa itself may be shared with other back-end workers analysing calls of this function: read only.)
 		if pa.Type.Size() == 0 {
 			continue
 		}
@@ -900,8 +899,8 @@ func (g *sbGen) stmt(n ir.Node) {
 		brk, cont := new(sbLabel), new(sbLabel)
 		if n.Label != nil {
 			// a labelled loop: `break L` and `continue L` arrive as branches to these
-			g.labels[sbLoopSym(n.Label, "break")] = brk
-			g.labels[sbLoopSym(n.Label, "continue")] = cont
+			g.loops[sbLoopKey{n.Label, true}] = brk
+			g.loops[sbLoopKey{n.Label, false}] = cont
 		}
 		top := g.here()
 		var jOut []*obj.Prog
@@ -925,9 +924,9 @@ func (g *sbGen) stmt(n ir.Node) {
 		var l *sbLabel
 		switch {
 		case n.Label != nil && n.Op() == ir.OBREAK:
-			l = g.labels[sbLoopSym(n.Label, "break")]
+			l = g.loops[sbLoopKey{n.Label, true}]
 		case n.Label != nil:
-			l = g.labels[sbLoopSym(n.Label, "continue")]
+			l = g.loops[sbLoopKey{n.Label, false}]
 		case n.Op() == ir.OBREAK && len(g.brk) > 0:
 			l = g.brk[len(g.brk)-1]
 		case n.Op() == ir.OCONTINUE:
@@ -971,7 +970,7 @@ func (g *sbGen) stmt(n ir.Node) {
 		}
 		brk := new(sbLabel)
 		if label != nil {
-			g.labels[sbLoopSym(label, "break")] = brk
+			g.loops[sbLoopKey{label, true}] = brk
 		}
 		g.brk = append(g.brk, brk)
 		g.cont = append(g.cont, nil) // a continue inside belongs to an enclosing loop
@@ -1055,9 +1054,11 @@ func (g *sbGen) stmt(n ir.Node) {
 	}
 }
 
-// sbLoopSym: a private key for the break/continue targets of a labelled loop
-func sbLoopSym(label *types.Sym, what string) *types.Sym {
-	return label.Pkg.Lookup(".sb." + what + "." + label.Name)
+// sbLoopKey names the break or continue target of a labelled statement. (Kept in a map of this function's
+// own: the compiler's symbol tables are not safe to touch from the parallel back-end workers.)
+type sbLoopKey struct {
+	label *types.Sym
+	brk   bool
 }
 
 // assign: x = y; y == nil means the zero value
