@@ -1416,3 +1416,16 @@ start, direct output, oversized request, no `-w`), `tests/sb_early.sh`, `tests/s
 `tests/sb_same.sh`: pass. Standard-library oracle: 129 of 141 (accounted for in iteration 22's
 addendum). MinIO unit tests: 45 packages, the one known failure. Soaks: MinIO 80 of 80,
 kube-apiserver 56 of 56.
+
+## 2026-11-12 20:20 UTC — the 301 "missing" generics were my awk: 46 of 122,860
+
+The previous entry left 346 functions the stock linker keeps and the spike does not, 301 of them
+generic instantiations "to be checked". Checked: the comparison split symbol names at the first space,
+and instantiated names contain spaces (`slices.SortFunc[go.shape.struct { ... }]`). With whole names:
+the stock linker keeps **122,860** functions; the spike's flood reaches 133,733 and misses **46
+(0.04%)**: about 25 assembly routines reached through a table (`scan.expandAVX512_*`), about 16
+methods of function-local types (the two lists spell the local-type suffix differently, so probably
+not misses at all), 2 linker-made markers, 3 others. It keeps 10,919 the stock linker drops.
+
+So from above the flood is complete to within one identifiable case (assembly tables). What F4's
+reachability still needs is the method rule, to remove the 10,919.
