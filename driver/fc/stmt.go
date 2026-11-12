@@ -124,10 +124,14 @@ func (g *gen) labelFor(l *types.Label) *label {
 func (g *gen) branch(s *ast.BranchStmt) {
 	switch s.Tok {
 	case token.GOTO:
-		if g.rf != nil {
-			giveUp("goto in the body of a range-over-func loop")
+		lbl := g.info.Uses[s.Label].(*types.Label)
+		if g.rf != nil && (lbl.Pos() < g.rf.body.Pos() || lbl.Pos() >= g.rf.body.End()) {
+			// out of this loop body: the loop's function jumps
+			g.rf.targets = append(g.rf.targets, rfTarget{s.Tok, s.Label.Name, lbl})
+			g.leaveBody(int64(2 + len(g.rf.targets)))
+			return
 		}
-		g.jmp(g.labelFor(g.info.Uses[s.Label].(*types.Label)))
+		g.jmp(g.labelFor(lbl))
 	case token.FALLTHROUGH:
 		if g.fallthru == nil {
 			giveUp("fallthrough outside a switch")
@@ -154,7 +158,7 @@ func (g *gen) branch(s *ast.BranchStmt) {
 			if s.Label != nil {
 				name = s.Label.Name
 			}
-			g.rf.targets = append(g.rf.targets, rfTarget{s.Tok, name})
+			g.rf.targets = append(g.rf.targets, rfTarget{s.Tok, name, nil})
 			g.leaveBody(int64(2 + len(g.rf.targets)))
 			return
 		}
@@ -365,7 +369,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 		lhs, rhs := s.Lhs[0], s.Rhs[0]
 		t := lhsType(lhs)
 		if t == nil {
-			g.expr(rhs) // _ = e
+			g.nilcheckLoc(g.expr(rhs)) // _ = e (a dereference still faults)
 			return
 		}
 		if v := isNew(lhs); v != nil {

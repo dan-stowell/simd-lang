@@ -217,6 +217,18 @@ func (g *gen) findHeapVars(body ast.Node) {
 				// the body becomes a function: it captures like a literal, and a return inside it
 				// reaches this function's results through the heap
 				rangeBodies = append(rangeBodies, n.Body)
+				if g.deferTok == nil && g.rf == nil {
+					ast.Inspect(n.Body, func(m ast.Node) bool {
+						switch m.(type) {
+						case *ast.FuncLit:
+							return false
+						case *ast.DeferStmt:
+							g.deferTok = types.NewVar(n.Pos(), nil, "", g.c.anyType())
+							g.heapVars[g.deferTok] = true
+						}
+						return true
+					})
+				}
 				if n.Tok == token.ASSIGN {
 					for _, kv := range []ast.Expr{n.Key, n.Value} {
 						if kv != nil {

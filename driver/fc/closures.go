@@ -260,7 +260,19 @@ func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
 
 func (g *gen) deferStmt(s *ast.DeferStmt) {
 	if g.rf != nil {
-		giveUp("defer in the body of a range-over-func loop")
+		// in the body of a range-over-func loop: the call is deferred to the enclosing function, through
+		// the token it got from the runtime on entry
+		tok := g.root.deferTok
+		if tok == nil {
+			giveUp("defer in a loop body without a token")
+		}
+		clo := g.stash(g.deferred(s.Call, "deferwrap"), unsafePtr)
+		tm := g.m(g.vars[tok], R13)
+		g.a.load(BX, tm, 8, false)
+		g.a.load(CX, tm.plus(8), 8, false)
+		g.loadTo(AX, clo, unsafePtr)
+		g.callRT("deferprocat")
+		return
 	}
 	g.hasDefer = true
 	clo := g.deferred(s.Call, "deferwrap")
@@ -284,6 +296,11 @@ func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 		}
 	}
 	ai, args, c, _, _ := g.prepCall(call, false)
+	if c.kind == 2 {
+		// a method of a nil interface: the panic is here, not when the call runs
+		g.a.load(R13, g.m(c.iface, R13), 8, false)
+		g.a.nilcheck(R13)
+	}
 	if c.kind == 1 && len(args) == 0 && len(ai.out) == 0 {
 		return c.clo // already a func()
 	}
@@ -372,6 +389,9 @@ func (g *gen) deferredBuiltin(call *ast.CallExpr, name, kind string) loc {
 			cg.mapArgs(mt, ls[0], ls[1])
 			cg.callRT("mapdelete")
 		})
+	case "clear":
+		arg(call.Args[0], g.typeOf(call.Args[0]))
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) { cg.clearLoc(ls[0], vals[0].t) })
 	case "print", "println":
 		for _, a := range call.Args {
 			arg(a, printType(g.typeOf(a)))

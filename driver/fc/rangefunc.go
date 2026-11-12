@@ -12,16 +12,20 @@ import (
 type rfTarget struct {
 	tok   token.Token
 	label string
+	lbl   *types.Label // goto
 }
 
 type rfCtx struct {
 	state   *types.Var // 0 running or finished, 1 break, 2 return, 3+k: targets[k]
+	body    *ast.BlockStmt
+	run     *types.Var // the runtime's view (abi.RF_State): 1 ready, 2 in the body, 0 left, 3 iterator returned
 	targets []rfTarget
 }
 
 // leaveBody ends the current call of a loop body with the given state: the iterator is told to stop.
 func (g *gen) leaveBody(state int64) {
 	g.a.storeImm(g.m(g.vars[g.rf.state], R13), state, 8)
+	g.a.storeImm(g.m(g.vars[g.rf.run], R13), 0, 8)
 	g.a.storeImm(g.m(g.resultDst(0), R13), 0, 1)
 	g.jmp(g.ret)
 }
@@ -44,10 +48,23 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 	if g.rf != nil {
 		root = g.root
 	}
-	rf := &rfCtx{state: types.NewVar(s.Pos(), nil, "", types.Typ[types.Int])}
-	g.heapVars[rf.state] = true
+	rf := &rfCtx{state: types.NewVar(s.Pos(), nil, "", types.Typ[types.Int]), body: s.Body}
+	rf.run = types.NewVar(s.Pos(), nil, "", types.Typ[types.Int])
+	g.heapVars[rf.state], g.heapVars[rf.run] = true, true
 	g.declareVar(rf.state)
-	extra := []*types.Var{rf.state}
+	g.declareVar(rf.run)
+	g.a.storeImm(g.m(g.vars[rf.run], R13), 1, 8)
+	if root.deferTok != nil && g.rf == nil {
+		// defers made in the loop body hang off a record made now, so that they run before the defers
+		// this function made earlier
+		g.callRT("deferrangefunc")
+		m := g.m(g.vars[root.deferTok], R13)
+		g.a.store(m.plus(8), BX, 8)
+		g.storePtr(g.m(g.vars[root.deferTok], R13).plus(8), BX)
+		g.storePtr(g.m(g.vars[root.deferTok], R13), AX)
+		g.hasDefer = true
+	}
+	extra := []*types.Var{rf.state, rf.run}
 	for _, v := range root.resVars {
 		if _, ok := g.vars[v]; ok {
 			extra = append(extra, v)
@@ -55,6 +72,9 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 	}
 	if g.rf != nil {
 		extra = append(extra, g.rf.state)
+	}
+	if root.deferTok != nil {
+		extra = append(extra, root.deferTok)
 	}
 	define := s.Tok == token.DEFINE
 	if !define {
@@ -78,6 +98,15 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 	clo := g.closure(ysig, s.Body, s.Body, extra, func(cg *gen) {
 		cg.rf = rf
 		cg.root = root
+		// the iterator may call only while the loop is ready for a value
+		rm := cg.m(cg.vars[rf.run], R13)
+		cg.a.load(AX, rm, 8, false)
+		cg.a.aluImm(aCMP, 8, AX, 1)
+		ready := cg.a.jcc(ccE)
+		cg.callRT("panicrangestate")
+		cg.a.ud2()
+		cg.a.patch(ready, cg.a.pc())
+		cg.a.storeImm(cg.m(cg.vars[rf.run], R13), 2, 8)
 		for i, e := range []ast.Expr{s.Key, s.Value} {
 			if e == nil || i >= len(cg.abi.in) {
 				continue
@@ -108,6 +137,7 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 		cg.block(s.Body.List)
 		cg.popScope()
 		cg.place(cont)
+		cg.a.storeImm(cg.m(cg.vars[rf.run], R13), 1, 8)
 		cg.a.storeImm(cg.m(cg.resultDst(0), R13), 1, 1)
 		cg.jmp(cg.ret)
 		cg.place(brk)
@@ -115,6 +145,16 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 	})
 	clo = g.stash(clo, unsafePtr)
 	g.emitCall(g.c.abiOf(xsig), []loc{clo}, callee{kind: 1, clo: fl})
+	// the iterator returned: a body that is still "running" panicked and the iterator swallowed it
+	rm := g.m(g.vars[rf.run], R13)
+	g.a.load(AX, rm, 8, false)
+	g.a.aluImm(aCMP, 8, AX, 2)
+	okRun := g.a.jcc(ccNE)
+	g.a.movImm(AX, 4)
+	g.callRT("panicrangestate")
+	g.a.ud2()
+	g.a.patch(okRun, g.a.pc())
+	g.a.storeImm(g.m(g.vars[rf.run], R13), 3, 8)
 	// what did the body ask for?
 	done := g.newLabel()
 	sm := g.m(g.vars[rf.state], R13)
@@ -132,6 +172,16 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 		next := g.newLabel()
 		g.a.aluMI(aCMP, 8, mb(BP, st.off), int64(3+k))
 		g.jcc(ccNE, next)
+		if t.tok == token.GOTO {
+			if g.rf != nil && (t.lbl.Pos() < g.rf.body.Pos() || t.lbl.Pos() >= g.rf.body.End()) {
+				g.rf.targets = append(g.rf.targets, t)
+				g.leaveBody(int64(2 + len(g.rf.targets)))
+			} else {
+				g.jmp(g.labelFor(t.lbl))
+			}
+			g.place(next)
+			continue
+		}
 		bs := &ast.BranchStmt{Tok: t.tok}
 		if t.label != "" {
 			bs.Label = ast.NewIdent(t.label)

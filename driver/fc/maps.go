@@ -76,8 +76,10 @@ func (g *gen) mapDelete(e *ast.CallExpr) {
 }
 
 func (g *gen) clearCall(e *ast.CallExpr) {
-	t := g.typeOf(e.Args[0])
-	l := g.expr(e.Args[0])
+	g.clearLoc(g.expr(e.Args[0]), g.typeOf(e.Args[0]))
+}
+
+func (g *gen) clearLoc(l loc, t types.Type) {
 	switch u := t.Underlying().(type) {
 	case *types.Map:
 		g.loadTo(BX, l, t)
