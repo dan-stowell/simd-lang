@@ -389,6 +389,15 @@ func (g *gen) deferredBuiltin(call *ast.CallExpr, name, kind string) loc {
 			cg.mapArgs(mt, ls[0], ls[1])
 			cg.callRT("mapdelete")
 		})
+	case "copy":
+		dt := g.typeOf(call.Args[0])
+		arg(call.Args[0], dt)
+		arg(call.Args[1], g.typeOf(call.Args[1]))
+		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) {
+			if ls[0].kind != lZero && ls[1].kind != lZero {
+				cg.copyLocs(cg.keep(ls[0], dt), cg.keep(ls[1], vals[1].t), dt)
+			}
+		})
 	case "clear":
 		arg(call.Args[0], g.typeOf(call.Args[0]))
 		return g.bindValues(kind, vals, nil, func(cg *gen, ls []loc) { cg.clearLoc(ls[0], vals[0].t) })

@@ -180,7 +180,16 @@ func (c *compiler) genWrapper(r wrapperReq) {
 	}
 	g.compileFunc(sig.Recv(), c.pkgPos(), c.pkgPos(), nil, func() {
 		path := r.sel.Index()
-		if _, isPtr := r.recv.Underlying().(*types.Pointer); isPtr && !r.declPtr && len(path) == 1 {
+		recvT := r.recv
+		recvL := g.paramLoc(g.abi.in[0])
+		if p, ok := recvT.Underlying().(*types.Pointer); ok {
+			if _, ok := p.Elem().Underlying().(*types.Pointer); ok {
+				// **T (T not in the heap): the method is *T's
+				recvL = g.deref(recvL)
+				recvT = p.Elem()
+			}
+		}
+		if _, isPtr := r.recv.Underlying().(*types.Pointer); isPtr && !r.declPtr && len(path) == 1 && recvT == r.recv {
 			// a value method called through a nil pointer: the runtime names it in the panic
 			g.a.load(AX, mb(BP, g.paramLoc(g.abi.in[0]).off), 8, false)
 			g.a.testRR(8, AX, AX)
@@ -189,7 +198,7 @@ func (c *compiler) genWrapper(r wrapperReq) {
 			g.a.ud2()
 			g.a.patch(ok, g.a.pc())
 		}
-		cl, ai, recv := g.methodOn(g.paramLoc(g.abi.in[0]), r.recv, r.method, path, plain, nil)
+		cl, ai, recv := g.methodOn(recvL, recvT, r.method, path, plain, nil)
 		args := []loc{recv}
 		for i := 1; i < len(g.abi.in); i++ {
 			args = append(args, g.paramLoc(g.abi.in[i]))

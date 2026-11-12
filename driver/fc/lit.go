@@ -29,7 +29,23 @@ func (g *gen) compositeTo(e *ast.CompositeLit, dst loc, t types.Type) {
 					}
 				}
 				if fi < 0 {
-					giveUp("field %s of a literal", f.Name())
+					// a field promoted from an embedded struct
+					o, path, _ := types.LookupFieldOrMethod(t, false, f.Pkg(), f.Name())
+					if _, ok := o.(*types.Var); !ok {
+						giveUp("field %s of a literal", f.Name())
+					}
+					off := int64(0)
+					ft := t
+					for _, pi := range path {
+						st, ok := ft.Underlying().(*types.Struct)
+						if !ok {
+							giveUp("field %s of a literal, promoted through a pointer", f.Name())
+						}
+						off += g.c.fieldOffsets(st)[pi]
+						ft = st.Field(pi).Type()
+					}
+					g.elemTo(kv.Value, dst.plus(off), ft)
+					continue
 				}
 				val = kv.Value
 			}

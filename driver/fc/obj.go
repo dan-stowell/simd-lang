@@ -47,7 +47,10 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
-	parity     func() // mixed mode: define what stock importers expect of this object
+	globGen    *gen // names the function literals of package-level initializers
+	ninit      int
+	dynInits   []string // variables initialized by code
+	parity     func()   // mixed mode: define what stock importers expect of this object
 	instances  map[string]bool
 	instQueue  []*instance
 	rtypeState // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator

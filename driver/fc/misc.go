@@ -44,6 +44,9 @@ func (c *compiler) rtFunc(name string) *types.Func {
 		return fn
 	}
 	rp := pr.byPath["runtime"]
+	if rp != nil && rp != c.pkg {
+		pr.check(rp)
+	}
 	if rp == nil || rp.tpkg == nil {
 		giveUp("package runtime is not loaded")
 	}

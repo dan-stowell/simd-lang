@@ -184,7 +184,7 @@ func (c *compiler) needsInit() bool {
 		}
 	}
 	for _, in := range c.info.InitOrder {
-		if len(in.Lhs) != 1 || in.Lhs[0].Name() == "_" || !c.isStatic(in.Rhs, in.Lhs[0].Type()) {
+		if len(in.Lhs) != 1 || !c.isStatic(in.Rhs, in.Lhs[0].Type()) {
 			return true
 		}
 	}

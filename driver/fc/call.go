@@ -573,7 +573,15 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 	case "new":
 		t := g.typeOf(e.Args[0])
 		if !g.info.Types[e.Args[0]].IsType() {
-			giveUp("new(expr)")
+			// new(v): a new variable holding v
+			t = g.typeOf(e).Underlying().(*types.Pointer).Elem()
+			v := g.keep(g.exprAs(e.Args[0], t), t)
+			g.a.lea(AX, msym(g.c.typeSym(t), 0))
+			g.callRT("newobject")
+			p := g.ptrTemp()
+			g.a.store(mb(BP, p.off), AX, 8)
+			g.move(loc{kind: lInd, slot: p.off}, v, t)
+			return one(p)
 		}
 		g.a.lea(AX, msym(g.c.typeSym(t), 0))
 		g.callRT("newobject")
@@ -784,10 +792,15 @@ func (g *gen) appendCall(e *ast.CallExpr) loc {
 func (g *gen) copyCall(e *ast.CallExpr) loc {
 	dt := g.typeOf(e.Args[0])
 	srct := g.typeOf(e.Args[1])
-	et := dt.Underlying().(*types.Slice).Elem()
-	es := g.c.sizeof(et)
 	d := g.keep(g.expr(e.Args[0]), dt)
 	s := g.keep(g.expr(e.Args[1]), srct)
+	return g.copyLocs(d, s, dt)
+}
+
+// copyLocs: copy(d, s) for a destination slice of type dt; both values are kept.
+func (g *gen) copyLocs(d, s loc, dt types.Type) loc {
+	et := dt.Underlying().(*types.Slice).Elem()
+	es := g.c.sizeof(et)
 	if d.kind == lZero || s.kind == lZero {
 		return loc{kind: lImm, imm: 0}
 	}

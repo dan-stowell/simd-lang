@@ -149,6 +149,9 @@ func (g *gen) rangeMap(s *ast.RangeStmt, name string, set func(ast.Expr, *types.
 	// the iterator lives on the heap (its type is internal/runtime/maps.Iter; key and elem pointers are its
 	// first two words, and a nil key means the iteration is over)
 	iterPkg := g.c.pr.byPath["internal/runtime/maps"]
+	if iterPkg != nil && iterPkg != g.c.pkg {
+		g.c.pr.check(iterPkg)
+	}
 	if iterPkg == nil || iterPkg.tpkg == nil {
 		giveUp("internal/runtime/maps is not loaded")
 	}

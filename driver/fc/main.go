@@ -308,13 +308,6 @@ func main() {
 	if err := pr.check(target); err != nil {
 		log.Fatalf("fc: type check: %v", err)
 	}
-	for _, need := range []string{"runtime"} {
-		if p := pr.byPath[need]; p != nil && p != target {
-			if err := pr.check(p); err != nil {
-				log.Fatalf("fc: type check of %s: %v", need, err)
-			}
-		}
-	}
 	c := newCompiler(pr, target, o.path, o.trimpath)
 	c.readSymABIs(o.symabis)
 	stock, stockDefs := definedSymsOrder(o.out)
@@ -340,7 +333,7 @@ func main() {
 	c.parity = func() { c.stockParity(stock) }
 	errs := c.compilePackage()
 	if len(errs) == 0 && c.hasInit && !c.forceInit {
-		errs = append(errs, "initialization the stock compiler does at compile time")
+		errs = append(errs, fmt.Sprintf("initialization the stock compiler does at compile time (variables %v, %d init functions)", c.dynInits, c.ninit))
 	}
 	if len(errs) > 0 {
 		for _, e := range errs {

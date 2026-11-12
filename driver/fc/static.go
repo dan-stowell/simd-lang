@@ -62,6 +62,9 @@ func (c *compiler) compilePackage() (errs []string) {
 	for _, in := range c.info.InitOrder {
 		in := in
 		static := false
+		if len(in.Lhs) == 1 && in.Lhs[0].Name() == "_" {
+			try("var _", func() { static = c.isStatic(in.Rhs, in.Lhs[0].Type()) })
+		}
 		if len(in.Lhs) == 1 && in.Lhs[0].Name() != "_" {
 			try("var "+in.Lhs[0].Name(), func() {
 				v := in.Lhs[0]
@@ -73,6 +76,9 @@ func (c *compiler) compilePackage() (errs []string) {
 		}
 		if !static {
 			dyns = append(dyns, in)
+			if len(in.Lhs) > 0 {
+				c.dynInits = append(c.dynInits, in.Lhs[0].Name())
+			}
 		}
 	}
 	// functions
@@ -158,6 +164,7 @@ func (c *compiler) compilePackage() (errs []string) {
 		})
 	}
 	fns = append(fns, inits...)
+	c.ninit = len(inits)
 	// instances of generic functions the code above (and each other) asked for
 	for len(c.instQueue) > 0 {
 		in := c.instQueue[0]
@@ -240,97 +247,301 @@ func (c *compiler) defGlobal(v *types.Var) {
 }
 
 // isStatic: can the value of e, as a t, be written into the data at compile time?
-func (c *compiler) isStatic(e ast.Expr, t types.Type) bool {
+func (c *compiler) isStatic(e ast.Expr, t types.Type) bool { return c.static(nil, 0, e, t, false) }
+
+// writeStatic writes the static value of e at s+off.
+func (c *compiler) writeStatic(s *obj.LSym, off int64, e ast.Expr, t types.Type) {
+	c.static(s, off, e, t, true)
+}
+
+// defStaticVar defines an anonymous static variable of type t (the target of a pointer or the backing
+// array of a slice in a static initializer).
+func (c *compiler) defStaticVar(t types.Type, readonly bool) *obj.LSym {
+	s := c.staticSym("stmp")
+	switch {
+	case readonly:
+		c.defData(s, objabi.SRODATA, c.sizeof(t))
+	case c.hasPointers(t):
+		s.Gotype = c.typeSym(t)
+		c.defData(s, objabi.SBSS, c.sizeof(t))
+	default:
+		c.defData(s, objabi.SNOPTRBSS, c.sizeof(t))
+	}
+	return s
+}
+
+// globalAddr: the symbol and offset of an addressable expression made of a package-level variable, fields
+// and constant indexes.
+func (c *compiler) globalAddr(e ast.Expr) (*obj.LSym, int64, bool) {
+	switch e := ast.Unparen(e).(type) {
+	case *ast.Ident:
+		if v, ok := c.info.Uses[e].(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
+			return c.globalSym(v), 0, true
+		}
+	case *ast.SelectorExpr:
+		sel := c.info.Selections[e]
+		if sel == nil {
+			if v, ok := c.info.Uses[e.Sel].(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
+				return c.globalSym(v), 0, true
+			}
+			return nil, 0, false
+		}
+		if sel.Kind() != types.FieldVal {
+			return nil, 0, false
+		}
+		s, off, ok := c.globalAddr(e.X)
+		if !ok {
+			return nil, 0, false
+		}
+		t := c.info.Types[e.X].Type
+		for _, i := range sel.Index() {
+			st, ok := t.Underlying().(*types.Struct)
+			if !ok {
+				return nil, 0, false // through a pointer
+			}
+			off += c.fieldOffsets(st)[i]
+			t = st.Field(i).Type()
+		}
+		return s, off, true
+	case *ast.IndexExpr:
+		arr, ok := c.info.Types[e.X].Type.Underlying().(*types.Array)
+		iv := c.info.Types[e.Index].Value
+		if !ok || iv == nil {
+			return nil, 0, false
+		}
+		s, off, ok := c.globalAddr(e.X)
+		if !ok {
+			return nil, 0, false
+		}
+		i, _ := constant.Int64Val(constant.ToInt(iv))
+		if i < 0 || i >= arr.Len() {
+			return nil, 0, false
+		}
+		return s, off + i*c.sizeof(arr.Elem()), true
+	}
+	return nil, 0, false
+}
+
+// static checks (write false) or writes (write true, after a successful check) the value of e as a t at
+// s+off.
+func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, write bool) bool {
 	e = ast.Unparen(e)
 	tv := c.info.Types[e]
 	if isInterface(t) {
-		return tv.IsNil()
+		if tv.IsNil() {
+			return true
+		}
+		et := tv.Type
+		if et == nil || isInterface(et) {
+			return false
+		}
+		if b, ok := et.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
+			et = types.Default(et)
+		}
+		if mentionsTypeParam(et) || !c.static(nil, 0, e, et, false) {
+			return false
+		}
+		if write {
+			tsym := c.typeSym(et)
+			word := tsym
+			if !isEmptyIface(t) {
+				word = c.itabSym(et, t)
+			}
+			s.WriteAddr(c.ctxt, off, 8, word, 0)
+			s.AddRel(c.ctxt, obj.Reloc{Type: objabi.R_USEIFACE, Sym: tsym})
+			switch {
+			case c.sizeof(et) == 0:
+				s.WriteAddr(c.ctxt, off+8, 8, c.rtVar("zerobase"), 0)
+			case isDirectIface(et):
+				c.static(s, off+8, e, et, true)
+			default:
+				tmp := c.defStaticVar(et, true)
+				c.static(tmp, 0, e, et, true)
+				s.WriteAddr(c.ctxt, off+8, 8, tmp, 0)
+			}
+		}
+		return true
 	}
 	if tv.Value != nil {
-		if b, ok := t.Underlying().(*types.Basic); ok {
-			return b.Info()&types.IsComplex == 0
+		if _, ok := t.Underlying().(*types.Basic); !ok && !isWord(t) {
+			return false
 		}
-		return isWord(t)
+		if write {
+			c.writeConst(s, off, tv.Value, t)
+		}
+		return true
 	}
 	if tv.IsNil() {
 		return true
 	}
-	if cl, ok := e.(*ast.CompositeLit); ok {
+	switch e := e.(type) {
+	case *ast.CompositeLit:
 		switch u := t.Underlying().(type) {
 		case *types.Struct:
-			for i, el := range cl.Elts {
-				ft := types.Type(nil)
+			offs := c.fieldOffsets(u)
+			for i, el := range e.Elts {
+				fi := i
 				val := el
 				if kv, ok := el.(*ast.KeyValueExpr); ok {
-					ft = c.info.Uses[kv.Key.(*ast.Ident)].(*types.Var).Type()
+					f, _ := c.info.Uses[kv.Key.(*ast.Ident)].(*types.Var)
+					fi = -1
+					for j := 0; j < u.NumFields(); j++ {
+						if u.Field(j) == f {
+							fi = j
+						}
+					}
+					if fi < 0 {
+						return false // a promoted field
+					}
 					val = kv.Value
-				} else {
-					ft = u.Field(i).Type()
 				}
-				if !c.isStatic(val, ft) {
+				if !c.static(s, off+offs[fi], val, u.Field(fi).Type(), write) {
 					return false
 				}
 			}
 			return true
 		case *types.Array:
-			for _, el := range cl.Elts {
-				val := el
+			return c.staticElems(s, off, e, u.Elem(), write)
+		case *types.Slice:
+			n := int64(0)
+			var i int64
+			for _, el := range e.Elts {
 				if kv, ok := el.(*ast.KeyValueExpr); ok {
-					val = kv.Value
+					iv := c.info.Types[kv.Key].Value
+					if iv == nil {
+						return false
+					}
+					i, _ = constant.Int64Val(constant.ToInt(iv))
 				}
-				if !c.isStatic(val, u.Elem()) {
-					return false
+				i++
+				if i > n {
+					n = i
 				}
+			}
+			if !c.staticElems(nil, 0, e, u.Elem(), false) {
+				return false
+			}
+			if write {
+				var data *obj.LSym
+				if n == 0 {
+					data = c.rtVar("zerobase")
+				} else {
+					data = c.defStaticVar(types.NewArray(u.Elem(), n), false)
+					c.staticElems(data, 0, e, u.Elem(), true)
+				}
+				s.WriteAddr(c.ctxt, off, 8, data, 0)
+				s.WriteInt(c.ctxt, off+8, 8, n)
+				s.WriteInt(c.ctxt, off+16, 8, n)
+			}
+			return true
+		case *types.Pointer:
+			// &T{...} with the & elided
+			if !c.static(nil, 0, e, u.Elem(), false) {
+				return false
+			}
+			if write {
+				tmp := c.defStaticVar(u.Elem(), false)
+				c.static(tmp, 0, e, u.Elem(), true)
+				s.WriteAddr(c.ctxt, off, 8, tmp, 0)
 			}
 			return true
 		}
+		return false
+	case *ast.UnaryExpr:
+		if e.Op != token.AND {
+			return false
+		}
+		if cl, ok := ast.Unparen(e.X).(*ast.CompositeLit); ok {
+			et := c.info.Types[cl].Type
+			if et == nil || mentionsTypeParam(et) || !c.static(nil, 0, cl, et, false) {
+				return false
+			}
+			if write {
+				tmp := c.defStaticVar(et, false)
+				c.static(tmp, 0, cl, et, true)
+				s.WriteAddr(c.ctxt, off, 8, tmp, 0)
+			}
+			return true
+		}
+		if as, aoff, ok := c.globalAddr(e.X); ok {
+			if write {
+				s.WriteAddr(c.ctxt, off, 8, as, aoff)
+			}
+			return true
+		}
+		return false
+	case *ast.Ident, *ast.SelectorExpr:
+		id := identOf(e)
+		if se, ok := e.(*ast.SelectorExpr); ok && c.info.Selections[se] != nil {
+			return false
+		}
+		fn, ok := c.info.Uses[id].(*types.Func)
+		if !ok || c.isIntrinsic(fn) {
+			return false
+		}
+		if sig := fn.Type().(*types.Signature); sig.TypeParams().Len() > 0 || sig.Recv() != nil {
+			return false
+		}
+		if _, generic := c.info.Instances[id]; generic {
+			return false
+		}
+		if write {
+			s.WriteAddr(c.ctxt, off, 8, c.staticClosure(c.funcSym(fn)), 0)
+		}
+		return true
+	case *ast.FuncLit:
+		// at package level a function literal captures nothing
+		if write {
+			s.WriteAddr(c.ctxt, off, 8, c.staticFuncLit(e), 0)
+		}
+		return true
+	case *ast.CallExpr:
+		// a conversion that keeps the representation
+		if ftv := c.info.Types[e.Fun]; ftv.IsType() && len(e.Args) == 1 {
+			at := c.info.Types[e.Args[0]].Type
+			if at != nil && !isInterface(at) && (types.Identical(at.Underlying(), t.Underlying()) || isPtrWord(at) && isPtrWord(t)) {
+				return c.static(s, off, e.Args[0], at, write)
+			}
+		}
+		return false
 	}
 	return false
 }
 
-// writeStatic writes the static value of e at s+off.
-func (c *compiler) writeStatic(s *obj.LSym, off int64, e ast.Expr, t types.Type) {
-	e = ast.Unparen(e)
-	tv := c.info.Types[e]
-	if tv.IsNil() {
-		return
-	}
-	if tv.Value != nil {
-		c.writeConst(s, off, tv.Value, t)
-		return
-	}
-	cl := e.(*ast.CompositeLit)
-	switch u := t.Underlying().(type) {
-	case *types.Struct:
-		offs := c.fieldOffsets(u)
-		for i, el := range cl.Elts {
-			fi := i
-			val := el
-			if kv, ok := el.(*ast.KeyValueExpr); ok {
-				f := c.info.Uses[kv.Key.(*ast.Ident)].(*types.Var)
-				for j := 0; j < u.NumFields(); j++ {
-					if u.Field(j) == f {
-						fi = j
-					}
-				}
-				val = kv.Value
+// staticElems: the elements of an array or slice literal.
+func (c *compiler) staticElems(s *obj.LSym, off int64, cl *ast.CompositeLit, et types.Type, write bool) bool {
+	es := c.sizeof(et)
+	var i int64
+	for _, el := range cl.Elts {
+		val := el
+		if kv, ok := el.(*ast.KeyValueExpr); ok {
+			iv := c.info.Types[kv.Key].Value
+			if iv == nil {
+				return false
 			}
-			c.writeStatic(s, off+offs[fi], val, u.Field(fi).Type())
+			i, _ = constant.Int64Val(constant.ToInt(iv))
+			val = kv.Value
 		}
-	case *types.Array:
-		es := c.sizeof(u.Elem())
-		var i int64
-		for _, el := range cl.Elts {
-			val := el
-			if kv, ok := el.(*ast.KeyValueExpr); ok {
-				v, _ := constant.Int64Val(constant.ToInt(c.info.Types[kv.Key].Value))
-				i = v
-				val = kv.Value
-			}
-			c.writeStatic(s, off+i*es, val, u.Elem())
-			i++
+		if !c.static(s, off+i*es, val, et, write) {
+			return false
 		}
+		i++
 	}
+	return true
+}
+
+// staticFuncLit compiles a function literal of a package-level initializer and returns its closure symbol.
+func (c *compiler) staticFuncLit(e *ast.FuncLit) *obj.LSym {
+	c.mu.Lock()
+	if c.globGen == nil {
+		c.globGen = c.newGen(objabi.PathToPrefix(c.path)+".glob.", types.NewSignatureType(nil, nil, nil, nil, nil, false), c.info, nil)
+	}
+	g := c.globGen
+	c.mu.Unlock()
+	sig := c.info.Types[e].Type.(*types.Signature)
+	cg := g.child(g.childName("func"), sig)
+	cg.compileFunc(nil, e.Pos(), e.Body.Rbrace, e.Body, func() { cg.block(e.Body.List) })
+	return c.staticClosure(cg.out.sym)
 }
 
 func (c *compiler) writeConst(s *obj.LSym, off int64, v constant.Value, t types.Type) {
@@ -368,6 +579,16 @@ func (c *compiler) writeConst(s *obj.LSym, off int64, v constant.Value, t types.
 		if str != "" {
 			s.WriteAddr(c.ctxt, off, 8, c.stringSym(str), 0)
 			s.WriteInt(c.ctxt, off+8, 8, int64(len(str)))
+		}
+	case b.Info()&types.IsComplex != 0:
+		re, _ := constant.Float64Val(constant.Real(v))
+		im, _ := constant.Float64Val(constant.Imag(v))
+		if size == 8 {
+			s.WriteFloat32(c.ctxt, off, float32(re))
+			s.WriteFloat32(c.ctxt, off+4, float32(im))
+		} else {
+			s.WriteFloat64(c.ctxt, off, re)
+			s.WriteFloat64(c.ctxt, off+8, im)
 		}
 	default:
 		giveUp("static constant of type %v", t)

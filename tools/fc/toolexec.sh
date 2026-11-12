@@ -8,12 +8,18 @@ tool=$1; shift
 if [ "$(basename "$tool")" != compile ]; then exec "$tool" "$@"; fi
 fc=0; args=()
 for a in "$@"; do case "$a" in -d=fc=*) fc=1;; *) args+=("$a");; esac; done
-"$tool" "${args[@]}" || exit $?
-[ $fc = 1 ] || exit 0
 pkg=; prev=
 for a in "${args[@]}"; do [ "$prev" = -p ] && pkg=$a; prev=$a; done
 # the flag also reaches the package's external test package (<pkg>_test): that one stays with the stock compiler
-[ "$FC_ONLY" = '*' ] || case " $FC_ONLY " in *" $pkg "*) ;; *) exit 0;; esac
+mine=$fc
+[ "$FC_ONLY" = '*' ] || case " $FC_ONLY " in *" $pkg "*) ;; *) mine=0;; esac
+if [ $mine = 1 ] && [ -n "$FC_ESC_COMPILE" ]; then
+  # the export data importers read says every pointer parameter escapes (tools/fc/mkcompile-esc.sh)
+  "$FC_ESC_COMPILE" "${args[@]}" || exit $?
+else
+  "$tool" "${args[@]}" || exit $?
+fi
+[ $mine = 1 ] || exit 0
 if [ -n "$FC_REASONS" ]; then "$FC_BIN" "${args[@]}" 2>> "$FC_REASONS"; rc=$?; else "$FC_BIN" "${args[@]}"; rc=$?; fi
 case $rc in
   0) [ -z "$FC_LOG" ] || echo "$pkg	FC" >> "$FC_LOG"; exit 0;;

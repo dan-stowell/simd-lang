@@ -8,11 +8,12 @@ if [ "$1" = -C ]; then dir=$2; shift 2; fi
 pkg=$1; shift
 export CGO_ENABLED=0 GOTOOLCHAIN=local GOFLAGS= GOCACHE=${FC_GOCACHE:-/home/exedev/targets/fc-gocache}
 export FC_BIN=${FC_BIN:-$here/build/fc} FC_STRICT=${FC_STRICT-1}
+[ -x "$here/build/compile-esc" ] && export FC_ESC_COMPILE=${FC_ESC_COMPILE-$here/build/compile-esc}
 cd "$dir" || exit 2
 plan=$(mktemp /tmp/fcplan.XXXXXX); trap 'rm -f $plan' EXIT
-go list -deps -test -json "$pkg" > "$plan" || exit 2
+go list -deps -test -json "$pkg" runtime > "$plan" || exit 2
 export FC_PLAN=$plan FC_ONLY=$pkg
-hash=$(sha1sum "$FC_BIN" | cut -c1-12)
+hash=$(cat "$FC_BIN" "${FC_ESC_COMPILE:-/dev/null}" | sha1sum | cut -c1-12)
 # tests the dev build is excused from (tests/fc/skips.txt: package, test name pattern, reason)
 skip=$(awk -v p="$pkg" '$1==p{printf "%s%s", sep, $2; sep="|"}' "$here/tests/fc/skips.txt" 2>/dev/null)
 [ -z "$skip" ] || set -- -skip "$skip" "$@"
