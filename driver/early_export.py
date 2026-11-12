@@ -274,3 +274,26 @@ old = '\tinterleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)\n'
 assert s.count(old) == 1
 s = s.replace(old, '\tif os.Getenv("SB_BASELINE") == "" || base.Flag.LowerL != 0 {\n\t\tinterleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)\n\t}\n')
 open(p, 'w').write(s)
+
+# (shards, second version) Function shards drop the other shards' bodies before type checking, and are
+# excused the two complaints that causes.
+p = os.path.join(noderd, 'irgen.go'); s = open(p).read()
+old = '\tdidMidway := false\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tsbShardFilesPre(noders)\n' + old)
+old = '\t\tterr := err.(types2.Error)\n\t\tmsg := terr.Msg\n'
+assert s.count(old) == 1
+s = s.replace(old, '\t\tterr := err.(types2.Error)\n\t\tif SbShard != 0 && (terr.Code == errors.UnusedImport || terr.Code == errors.MissingInitBody) {\n\t\t\treturn\n\t\t}\n\t\tmsg := terr.Msg\n')
+old = '\tbase.ExitIfErrors()\n\tif err != nil {\n\t\tbase.FatalfAt(src.NoXPos, "conf.Check error: %v", err)\n\t}\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tbase.ExitIfErrors()\n\tif err != nil && SbShard == 0 {\n\t\tbase.FatalfAt(src.NoXPos, "conf.Check error: %v", err)\n\t}\n')
+open(p, 'w').write(s)
+
+# Eighth change, in the runtime the compiler is linked with: with SB_POPULATE set, each piece of address
+# space the heap grows into (4 MB at a time) is populated with one madvise(MADV_POPULATE_WRITE) call
+# instead of a thousand page faults. The compiler runs with the collector off and touches every page once.
+p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(d)))), 'runtime', 'mheap.go'); s = open(p).read()
+old = '\tsysMap(unsafe.Pointer(v), nBase-v, &gcController.heapReleased, "heap")\n'
+assert s.count(old) == 1
+s = s.replace(old, old + '\tif environ() != nil && gogetenv("SB_POPULATE") != "" {\n\t\tmadvise(unsafe.Pointer(v), nBase-v, 23) // MADV_POPULATE_WRITE\n\t}\n')
+open(p, 'w').write(s)

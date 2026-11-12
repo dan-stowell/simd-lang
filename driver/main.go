@@ -753,7 +753,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 	// arguments escape to the heap, and those packages are not allowed to allocate.)
 	runtimeish := p.Standard && (p.ImportPath == "runtime" || strings.HasPrefix(p.ImportPath, "runtime/") || strings.HasPrefix(p.ImportPath, "internal/"))
 	if shardBytes > 0 && pipeline && !noEarly && len(p.SFiles) == 0 && !p.sbc && !runtimeish && p.goBytes > shardBytes {
-		p.shards = int(min(8, max(2, p.goBytes/(shardBytes/2))))
+		p.shards = int(min(8, max(3, 1+p.goBytes/(shardBytes/2)))) // shard 0 (data only) and at least two function shards
 	}
 	if len(p.SFiles) == 0 && !p.sbc && p.shards == 0 && !(p.Standard && completeExempt[p.ImportPath]) {
 		argv = append(argv, "-complete")

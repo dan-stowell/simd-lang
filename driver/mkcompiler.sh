@@ -13,6 +13,8 @@ cp driver/baseline/sbbaseline.go "$dst/src/cmd/compile/internal/ssagen/"
 cp driver/baseline/sbshard.go "$dst/src/cmd/compile/internal/noder/"
 cp "$src/src/cmd/compile/internal/noder/unified.go" "$dst/src/cmd/compile/internal/noder/"
 cp "$src/src/cmd/compile/internal/noder/writer.go" "$dst/src/cmd/compile/internal/noder/"
+cp "$src/src/cmd/compile/internal/noder/irgen.go" "$dst/src/cmd/compile/internal/noder/"
+cp "$src/src/runtime/mheap.go" "$dst/src/runtime/"
 cp "$src/src/cmd/compile/internal/reflectdata/reflect.go" "$dst/src/cmd/compile/internal/reflectdata/"
 python3 driver/early_export.py "$dst/src/cmd/compile/internal/gc" "$dst/src/cmd/internal/obj"
 (cd "$dst/src" && GOROOT="$dst" GOTOOLCHAIN=local GOFLAGS= "$dst/bin/go" build -o "$OLDPWD/build/compile-sb" cmd/compile)

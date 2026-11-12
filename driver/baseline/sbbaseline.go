@@ -70,6 +70,37 @@ func sbLog(fn *ir.Func, verdict string) {
 	sbLogMu.Unlock()
 }
 
+// sbStat counts something for the developer (SB_BASELINE_STAT=dir: one file per process, a line per event)
+var sbStatDir = os.Getenv("SB_BASELINE_STAT")
+var sbStatFile *os.File
+
+func sbStat(what string, n ir.Node) {
+	if sbStatDir == "" {
+		return
+	}
+	sbLogMu.Lock()
+	if sbStatFile == nil {
+		sbStatFile, _ = os.OpenFile(fmt.Sprintf("%s/%d.stat", sbStatDir, os.Getpid()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	}
+	x := ""
+	switch n := n.(type) {
+	case *ir.ConvExpr:
+		x = " " + n.X.Op().String()
+	case *ir.UnaryExpr:
+		x = " " + n.X.Op().String()
+	case *ir.SelectorExpr:
+		x = " " + n.X.Op().String()
+	case *ir.StarExpr:
+		x = " " + n.X.Op().String()
+	case *ir.AddrExpr:
+		x = " " + n.X.Op().String()
+	case *ir.Name:
+		x = " " + fmt.Sprint(n.Class)
+	}
+	fmt.Fprintf(sbStatFile, "%s\t%v%s\n", what, n.Op(), x)
+	sbLogMu.Unlock()
+}
+
 // sbPackageOK: packages whose functions the baseline may take. The runtime and what it stands on have
 // rules of their own (no write barriers here, no stack growth there) that the tree does not show.
 func sbPackageOK() bool {
@@ -231,9 +262,21 @@ type sbGen struct {
 	brk     []*sbLabel // innermost last
 	cont    []*sbLabel
 	lastRes []sbLoc // where the results of the most recent call were put
+	// the instructions that stored each register result of that call (nil for a result returned in
+	// memory), its type, and the instruction count just after them: see retarget
+	resStores [][]*obj.Prog
+	resOffs   [][]int64
+	resTypes  []*types.Type
+	resPC     int64
 	resHome []sbLoc // this function's results, by index
 	resHeap []sbLoc // for a result moved to the heap: its pointer slot (kind sbHeapVar); zero value otherwise
 	stable  int     // while > 0, nothing may be put back for reuse (see callFunc)
+
+	// what AX is known to equal, if the next instruction emitted is number axPC: the frame slot axAddr
+	// as loaded by axOp
+	axAddr obj.Addr
+	axOp   obj.As
+	axPC   int64
 	spills  []obj.RegSpill
 
 	argsSym, localsSym *obj.LSym
@@ -277,9 +320,25 @@ func sbRegStoreOp(t *types.Type, reg int16) obj.As {
 func sbR(r int16) obj.Addr   { return obj.Addr{Type: obj.TYPE_REG, Reg: r} }
 func sbImm(v int64) obj.Addr { return obj.Addr{Type: obj.TYPE_CONST, Offset: v} }
 
+func sbFrameMem(a obj.Addr) bool {
+	return a.Type == obj.TYPE_MEM && (a.Name == obj.NAME_AUTO || a.Name == obj.NAME_PARAM) && a.Index == 0
+}
+
 func (g *sbGen) ins(as obj.As, from, to obj.Addr) *obj.Prog {
+	toAX := to.Type == obj.TYPE_REG && to.Reg == x86.REG_AX
+	// The one peephole: a load into AX of the frame slot that the instruction just before stored AX to
+	// (or loaded AX from) with the same width and extension. Adjacent means no jump can land between.
+	if toAX && g.axPC == g.pp.PC && g.axPC != 0 && as == g.axOp && sbFrameMem(from) && from.Name == g.axAddr.Name && from.Offset == g.axAddr.Offset {
+		return new(obj.Prog)
+	}
 	p := g.pp.Prog(as)
 	p.From, p.To = from, to
+	switch {
+	case toAX && sbFrameMem(from) && (as == x86.AMOVQ || as == x86.AMOVL || as == x86.AMOVLQSX || as == x86.AMOVWQSX || as == x86.AMOVWQZX || as == x86.AMOVBQSX || as == x86.AMOVBQZX):
+		g.axAddr, g.axOp, g.axPC = from, as, g.pp.PC
+	case as == x86.AMOVQ && from.Type == obj.TYPE_REG && from.Reg == x86.REG_AX && sbFrameMem(to):
+		g.axAddr, g.axOp, g.axPC = to, as, g.pp.PC
+	}
 	return p
 }
 
@@ -565,6 +624,15 @@ func (g *sbGen) function() {
 		sbGiveUp("debug information wanted") // the DWARF generator reads the SSA back end's frame layout
 	}
 	g.abi = abiForFunc(fn, ssaConfig.ABI0, ssaConfig.ABI1).ABIAnalyze(fn.Type(), true)
+	for _, ps := range [][]abi.ABIParamAssignment{g.abi.InParams(), g.abi.OutParams()} {
+		for _, pa := range ps {
+			for _, r := range pa.Registers {
+				if sbReg(r) == x86.REG_X14 {
+					sbGiveUp("fifteen floating-point parameters or results") // X14 is copy's scratch register
+				}
+			}
+		}
+	}
 	pp := g.pp
 	pp.Pos = fn.Pos()
 
@@ -1019,6 +1087,9 @@ func (g *sbGen) stmt(n ir.Node) {
 			sbGiveUp("%d results for %d variables", len(res), len(n.Lhs))
 		}
 		for i, x := range n.Lhs {
+			if !ir.IsBlank(x) && g.retarget(x, i) {
+				continue
+			}
 			g.assignFrom(x, res[i])
 		}
 	case ir.OAS2DOTTYPE:
@@ -1076,10 +1147,34 @@ func (g *sbGen) assign(x, y ir.Node) {
 		}
 		return
 	}
+	if y != nil && len(y.Init()) == 0 {
+		switch y.Op() {
+		case ir.ORESULT:
+			if g.retarget(x, int(y.(*ir.ResultExpr).Index)) {
+				return
+			}
+		case ir.OCALLFUNC, ir.OCALLINTER:
+			if dst, ok := g.staticLoc(x); ok && dst.inFrame() {
+				g.callFunc(y.(*ir.CallExpr))
+				if len(g.lastRes) == 0 {
+					sbGiveUp("value of a call without results")
+				}
+				if !g.retarget(x, 0) {
+					g.assignFrom(x, g.lastRes[0])
+				}
+				return
+			}
+		case ir.OLITERAL, ir.ONIL:
+			if sbScalar(t) && g.storeConst(x, y) {
+				return
+			}
+		}
+	}
 	if sbScalar(t) {
 		if y == nil {
 			g.ins(x86.AXORL, sbR(x86.REG_AX), sbR(x86.REG_AX))
 		} else {
+			sbStat("assign-scalar", y)
 			g.scalar(y)
 		}
 		g.storeAX(x)
@@ -1097,7 +1192,70 @@ func (g *sbGen) assign(x, y ir.Node) {
 		g.zero(l, t)
 		return
 	}
+	sbStat("assign-value", y)
 	g.assignFrom(x, g.valueLoc(y))
+}
+
+// retarget: x = result i of the call just made, by making the instructions that took the result out of
+// its registers store to x instead of to the temporary. Only when x is a variable of this frame (or a
+// field of one) and not one instruction has been emitted since: then nothing can have looked at x or at
+// the temporary in between, and x gets its value a little earlier than the statement says, unobserved.
+func (g *sbGen) retarget(x ir.Node, i int) bool {
+	if g.resPC == 0 || g.pp.PC != g.resPC || i >= len(g.resStores) || len(g.resStores[i]) == 0 {
+		return false
+	}
+	if x.Type().Size() == 0 || !types.Identical(x.Type(), g.resTypes[i]) {
+		return false
+	}
+	dst, ok := g.staticLoc(x)
+	if !ok || !dst.inFrame() {
+		return false
+	}
+	for j, p := range g.resStores[i] {
+		p.To = dst.plus(g.resOffs[i][j]).addr()
+	}
+	g.resStores[i] = nil
+	g.lastRes[i] = dst
+	g.axPC = 0
+	return true
+}
+
+// storeConst: x = the constant y in one instruction, if that can be done
+func (g *sbGen) storeConst(x, y ir.Node) bool {
+	t := x.Type()
+	if len(y.Init()) != 0 || t.IsFloat() || !(y.Op() == ir.ONIL || y.Op() == ir.OLITERAL && (t.IsBoolean() || t.IsInteger() || t.IsUintptr())) {
+		return false
+	}
+	dst, ok := g.staticLoc(x)
+	if !ok || !(dst.inFrame() || !t.HasPointers()) {
+		return false
+	}
+	v := int64(0)
+	switch {
+	case y.Op() == ir.ONIL:
+	case t.IsBoolean():
+		if ir.BoolVal(y) {
+			v = 1
+		}
+	default:
+		v = ir.IntVal(t, y.Val())
+	}
+	switch t.Size() {
+	case 1:
+		v = int64(int8(v))
+	case 2:
+		v = int64(int16(v))
+	case 4:
+		v = int64(int32(v))
+	case 8:
+		if v != int64(int32(v)) {
+			return false
+		}
+	default:
+		return false
+	}
+	g.ins(sbStoreOp(t), sbImm(v), dst.addr())
+	return true
 }
 
 // assignFrom: x = the value at src (a value of x's type; if src is indirect its base is in AX)
@@ -1112,6 +1270,14 @@ func (g *sbGen) assignFrom(x ir.Node, src sbLoc) {
 	if sbScalar(t) {
 		g.ins(sbLoadOp(t), src.addr(), sbR(x86.REG_AX))
 		g.storeAX(x)
+		return
+	}
+	if dst, ok := g.staticLoc(x); ok { // nothing to compute for the destination
+		if src.kind == sbInd {
+			g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_SI))
+			src.reg = x86.REG_SI
+		}
+		g.copy(dst, src, t)
 		return
 	}
 	var keep sbLoc
@@ -1182,9 +1348,18 @@ func (g *sbGen) copy(dst, src sbLoc, t *types.Type) {
 	words := sbWords(t)
 	barrier := !dst.inFrame()
 	off := int64(0)
-	for i := range words {
+	for i := 0; i < len(words); i++ {
 		if off+8 > t.Size() {
 			break
+		}
+		if off+16 <= t.Size() && i+1 < len(words) && !(barrier && (words[i] || words[i+1])) {
+			// two words at a time through X14 (the last of the argument registers; no copy happens while
+			// an argument or a result waits in a register)
+			g.ins(x86.AMOVUPS, src.plus(off).addr(), sbR(x86.REG_X14))
+			g.ins(x86.AMOVUPS, sbR(x86.REG_X14), dst.plus(off).addr())
+			off += 16
+			i++
+			continue
 		}
 		g.ins(x86.AMOVQ, src.plus(off).addr(), sbR(x86.REG_R8))
 		if words[i] && barrier {
@@ -1229,11 +1404,21 @@ func (g *sbGen) zero(dst sbLoc, t *types.Type) {
 	}
 	words := sbWords(t)
 	barrier := !dst.inFrame()
-	g.ins(x86.AXORL, sbR(x86.REG_R8), sbR(x86.REG_R8))
 	off := int64(0)
-	for i := range words {
+	zeroed := false
+	for i := 0; i < len(words); i++ {
 		if off+8 > t.Size() {
 			break
+		}
+		if off+16 <= t.Size() && i+1 < len(words) && !(barrier && (words[i] || words[i+1])) {
+			g.ins(x86.AMOVUPS, sbR(x86.REG_X15), dst.plus(off).addr()) // X15 is zero in this ABI
+			off += 16
+			i++
+			continue
+		}
+		if !zeroed {
+			g.ins(x86.AXORL, sbR(x86.REG_R8), sbR(x86.REG_R8))
+			zeroed = true
 		}
 		if words[i] && barrier {
 			g.storeScalar(dst.plus(off), types.Types[types.TUNSAFEPTR], x86.REG_R8)
@@ -1247,6 +1432,10 @@ func (g *sbGen) zero(dst sbLoc, t *types.Type) {
 		st obj.As
 	}{{4, x86.AMOVL}, {2, x86.AMOVW}, {1, x86.AMOVB}} {
 		for off+c.n <= t.Size() {
+			if !zeroed {
+				g.ins(x86.AXORL, sbR(x86.REG_R8), sbR(x86.REG_R8))
+				zeroed = true
+			}
 			g.ins(c.st, sbR(x86.REG_R8), dst.plus(off).addr())
 			off += c.n
 		}
@@ -1648,6 +1837,10 @@ func (g *sbGen) storeAX(x ir.Node) {
 func (g *sbGen) storeScalar(l sbLoc, t *types.Type, reg int16) {
 	if !t.HasPointers() || l.inFrame() {
 		g.ins(sbStoreOp(t), sbR(reg), l.addr())
+		if reg == x86.REG_AX && (l.kind == sbAuto || l.kind == sbParam) && !t.IsFloat() {
+			// AX holds the full extension of t, which is what loading the slot back as a t gives
+			g.axAddr, g.axOp, g.axPC = l.addr(), sbLoadOp(t), g.pp.PC
+		}
 		return
 	}
 	wb := obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: ir.Syms.WriteBarrier}
@@ -1923,6 +2116,10 @@ func (g *sbGen) scalar(n ir.Node) {
 	t := n.Type()
 	if !sbScalar(t) {
 		sbGiveUp("%v of type %v as a scalar", n.Op(), t)
+	}
+	if g.leaf(n) {
+		g.leafInto(n, x86.REG_AX)
+		return
 	}
 	g.stmts(n.Init())
 	switch n.Op() {
@@ -2307,32 +2504,89 @@ func (g *sbGen) branch(n ir.Node, when bool) []*obj.Prog {
 	return []*obj.Prog{g.jump(x86.AJEQ)}
 }
 
-// sbLeaf: evaluating n touches no register but the one it is loaded into: a constant, or a variable that
-// lives in this frame or is a global
-func (g *sbGen) leaf(n ir.Node) bool {
-	if len(n.Init()) != 0 || !sbScalar(n.Type()) {
-		return false
+// staticLoc: n names memory whose location needs no code to find: a variable of this frame, a global, or a
+// field of one of those.
+func (g *sbGen) staticLoc(n ir.Node) (sbLoc, bool) {
+	if len(n.Init()) != 0 {
+		return sbLoc{}, false
 	}
 	switch n.Op() {
-	case ir.OLITERAL:
-		t := n.Type()
-		return t.IsBoolean() || t.IsInteger() || t.IsUintptr()
-	case ir.ONIL:
-		return true
 	case ir.ONAME:
 		nn := n.(*ir.Name)
 		switch nn.Class {
 		case ir.PAUTO, ir.PPARAM, ir.PPARAMOUT:
 			l, ok := g.homes[nn]
-			return ok && l.kind != sbHeapVar
+			return l, ok && l.kind != sbHeapVar
 		case ir.PEXTERN:
-			return true
+			return sbLoc{kind: sbGlobal, sym: nn.Linksym()}, true
 		}
+	case ir.OLINKSYMOFFSET:
+		n := n.(*ir.LinksymOffsetExpr)
+		return sbLoc{kind: sbGlobal, sym: n.Linksym, off: n.Offset_}, true
+	case ir.ODOT:
+		n := n.(*ir.SelectorExpr)
+		if l, ok := g.staticLoc(n.X); ok {
+			return l.plus(n.Offset()), true
+		}
+	case ir.OCONVNOP:
+		n := n.(*ir.ConvExpr)
+		if !sbScalar(n.Type()) {
+			return g.staticLoc(n.X)
+		}
+	}
+	return sbLoc{}, false
+}
+
+// leaf: the scalar n can be loaded into any one register using that register alone: a constant, a
+// variable or field found by staticLoc, the length of such a slice, or a field through such a pointer.
+func (g *sbGen) leaf(n ir.Node) bool {
+	t := n.Type()
+	if len(n.Init()) != 0 || !sbScalar(t) || t.IsFloat() {
+		return false
+	}
+	switch n.Op() {
+	case ir.OLITERAL:
+		return t.IsBoolean() || t.IsInteger() || t.IsUintptr()
+	case ir.ONIL:
+		return true
+	case ir.ONAME:
+		if n.(*ir.Name).Class == ir.PFUNC {
+			return false
+		}
+		_, ok := g.staticLoc(n)
+		return ok
+	case ir.ODOT, ir.OLINKSYMOFFSET:
+		_, ok := g.staticLoc(n)
+		return ok
+	case ir.OLEN, ir.OCAP:
+		x := n.(*ir.UnaryExpr).X
+		if !(x.Type().IsSlice() || x.Type().IsString()) {
+			return false
+		}
+		_, ok := g.staticLoc(x)
+		return ok
+	case ir.OSPTR, ir.OITAB, ir.OIDATA:
+		_, ok := g.staticLoc(n.(*ir.UnaryExpr).X)
+		return ok
+	case ir.ODOTPTR:
+		n := n.(*ir.SelectorExpr)
+		if n.Offset() >= 4096 {
+			return false
+		}
+		_, ok := g.staticLoc(n.X)
+		return ok && n.X.Type().IsPtr()
+	case ir.ODEREF:
+		x := n.(*ir.StarExpr).X
+		_, ok := g.staticLoc(x)
+		return ok && x.Type().IsPtr()
+	case ir.OADDR:
+		_, ok := g.staticLoc(n.(*ir.AddrExpr).X)
+		return ok
 	}
 	return false
 }
 
-// leafInto loads the leaf n into reg (its full 64-bit extension)
+// leafInto loads the leaf n into the integer register reg (its full 64-bit extension), using no other register
 func (g *sbGen) leafInto(n ir.Node, reg int16) {
 	t := n.Type()
 	switch n.Op() {
@@ -2347,10 +2601,40 @@ func (g *sbGen) leafInto(n ir.Node, reg int16) {
 		} else {
 			v = ir.IntVal(t, n.Val())
 		}
+		if v == 0 {
+			g.ins(x86.AXORL, sbR(reg), sbR(reg))
+			break
+		}
 		g.ins(x86.AMOVQ, sbImm(v), sbR(reg))
 		g.extend(reg, t)
+	case ir.OLEN, ir.OCAP:
+		l, _ := g.staticLoc(n.(*ir.UnaryExpr).X)
+		off := int64(8)
+		if n.Op() == ir.OCAP {
+			off = 16
+		}
+		g.ins(x86.AMOVQ, l.plus(off).addr(), sbR(reg))
+	case ir.OSPTR, ir.OITAB:
+		l, _ := g.staticLoc(n.(*ir.UnaryExpr).X)
+		g.ins(x86.AMOVQ, l.addr(), sbR(reg))
+	case ir.OIDATA:
+		l, _ := g.staticLoc(n.(*ir.UnaryExpr).X)
+		g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(reg))
+	case ir.ODOTPTR:
+		n := n.(*ir.SelectorExpr)
+		l, _ := g.staticLoc(n.X)
+		g.ins(x86.AMOVQ, l.addr(), sbR(reg))
+		g.ins(sbLoadOp(t), obj.Addr{Type: obj.TYPE_MEM, Reg: reg, Offset: n.Offset()}, sbR(reg))
+	case ir.ODEREF:
+		l, _ := g.staticLoc(n.(*ir.StarExpr).X)
+		g.ins(x86.AMOVQ, l.addr(), sbR(reg))
+		g.ins(sbLoadOp(t), obj.Addr{Type: obj.TYPE_MEM, Reg: reg}, sbR(reg))
+	case ir.OADDR:
+		l, _ := g.staticLoc(n.(*ir.AddrExpr).X)
+		g.ins(x86.ALEAQ, l.addr(), sbR(reg))
 	default:
-		g.ins(sbLoadOp(t), g.nameLoc(n.(*ir.Name)).addr(), sbR(reg))
+		l, _ := g.staticLoc(n)
+		g.ins(sbLoadOp(t), l.addr(), sbR(reg))
 	}
 }
 
@@ -2358,6 +2642,9 @@ func (g *sbGen) leafInto(n ir.Node, reg int16) {
 func (g *sbGen) binop(x, y ir.Node) obj.Addr {
 	if g.leaf(y) {
 		g.scalar(x)
+		if y.Op() == ir.ONIL {
+			return sbImm(0)
+		}
 		if y.Op() == ir.OLITERAL {
 			t := y.Type()
 			v := int64(0)
@@ -2483,6 +2770,7 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 		key *types.Type
 	}
 	var parks []parked
+	leaves := make([]ir.Node, len(info.InParams()))
 	for i := range info.InParams() {
 		pa := info.InParam(i)
 		if pa.Type.Size() == 0 {
@@ -2496,10 +2784,19 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			continue
 		}
 		a := args[i-first]
+		if sbScalar(pa.Type) && sbScalar(a.Type()) && g.leaf(a) && len(pa.Registers) == 1 && !sbIsX(sbReg(pa.Registers[0])) {
+			leaves[i] = a // loaded straight into its register once everything else has been evaluated
+			continue
+		}
+		if a.Op() == ir.OLITERAL && a.Type().IsString() && pa.Type.IsString() && len(pa.Registers) == 2 && len(a.Init()) == 0 {
+			leaves[i] = a // a string constant: its two words likewise
+			continue
+		}
 		if sbScalar(pa.Type) && sbScalar(a.Type()) && !(a.Op() == ir.ONAME && g.leaf(a)) {
 			// A one-word argument that has to be computed waits in a temporary until the registers are
 			// loaded. walk has moved everything that calls out of argument lists, so normally nothing
 			// can look at this frame before the call, and the temporary is not one the collector reads.
+			sbStat("arg-park", a)
 			g.scalar(a)
 			tmp, key := g.park(pa.Type, args[i-first+1:]...)
 			g.ins(x86.AMOVQ, sbR(x86.REG_AX), tmp.addr())
@@ -2507,6 +2804,7 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			parks = append(parks, parked{tmp, key})
 			continue
 		}
+		sbStat("arg-value", a)
 		l := g.valueLoc(a)
 		if l.kind == sbInd {
 			// its base is in AX, which evaluating the next argument will use. (A variable's own home can be
@@ -2530,6 +2828,22 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 	for i := range info.InParams() {
 		pa := info.InParam(i)
 		if pa.Type.Size() == 0 || len(pa.Registers) == 0 {
+			continue
+		}
+		if leaves[i] != nil && len(pa.Registers) == 2 {
+			str := ir.StringVal(leaves[i])
+			r0, r1 := sbReg(pa.Registers[0]), sbReg(pa.Registers[1])
+			if str == "" {
+				g.ins(x86.AXORL, sbR(r0), sbR(r0))
+				g.ins(x86.AXORL, sbR(r1), sbR(r1))
+			} else {
+				g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: staticdata.StringSym(leaves[i].Pos(), str)}, sbR(r0))
+				g.ins(x86.AMOVQ, sbImm(int64(len(str))), sbR(r1))
+			}
+			continue
+		}
+		if leaves[i] != nil {
+			g.leafInto(leaves[i], sbReg(pa.Registers[0]))
 			continue
 		}
 		ts, offs := pa.RegisterTypesAndOffsets()
@@ -2576,8 +2890,10 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 	}
 	// results
 	g.lastRes = g.lastRes[:0]
+	g.resStores, g.resOffs, g.resTypes = g.resStores[:0], g.resOffs[:0], g.resTypes[:0]
 	for i := range info.OutParams() {
 		pa := info.OutParam(i)
+		g.resStores, g.resOffs, g.resTypes = append(g.resStores, nil), append(g.resOffs, nil), append(g.resTypes, pa.Type)
 		if pa.Type.Size() == 0 {
 			g.lastRes = append(g.lastRes, sbLoc{})
 			continue
@@ -2592,9 +2908,12 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			if !sbScalar(ts[j]) {
 				sbGiveUp("result part of type %v", ts[j])
 			}
-			g.ins(sbRegStoreOp(ts[j], sbReg(r)), sbR(sbReg(r)), l.plus(offs[j]).addr())
+			p := g.ins(sbRegStoreOp(ts[j], sbReg(r)), sbR(sbReg(r)), l.plus(offs[j]).addr())
+			g.resStores[i] = append(g.resStores[i], p)
 		}
+		g.resOffs[i] = offs
 	}
+	defer func() { g.resPC = g.pp.PC }()
 	for i := range info.OutParams() {
 		pa := info.OutParam(i)
 		if pa.Type.Size() != 0 && len(pa.Registers) == 0 {
