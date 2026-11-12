@@ -1,0 +1,110 @@
+Runtime metadata / padding review, 2026-11-12
+Scope: e689e6d changes eleven/twelve + driver/x86/sbspan.go.
+Result: no additional correctness regression found. All generated probes below
+pass with identical deterministic output in new, old, and stock modes.
+No implementation or existing test files changed. All source/generators remain
+in /tmp/sb-runtime-review; this file is the only persistent review artifact.
+
+Toolchain: go1.27.3 linux/amd64, /usr/local/go, stock runtime/dependency archives
+and stock go tool link. Patched compiler: repository build/compile-sb, SHA256
+63d9531ee320023d9bffe202a0be3028f802ccd775fe59179a6da842326066ce.
+Main linked with -w deliberately; known no--w linker panic reviewed separately.
+
+Generated sources and recipes (not repository tests):
+  python3 /tmp/sb-runtime-review/generate.py -> runtime.go (5,425 lines)
+  python3 /tmp/sb-runtime-review/extra.py    -> extra.go
+SHA256 runtime.go:
+  3f52e5ec2e5c0de8f45139418cd18c96480d4e165effa589a1abf8ea3a6ec6bb
+SHA256 extra.go:
+  9e8e7ed75d7511c80bb8660b66a485d83ba0e64d8d56485e0b8184e18d9f4088
+SHA256 generate.py:
+  e6a79d3a11899a6d98ed1bdcc96cfbc47a241cfa364fd96cfa966ddd639f8f8e
+SHA256 extra.py:
+  49288bb872df61e2de83dfe56d269d52d02093e9f16860f0e9b4e0cb90649550
+
+Compile/link recipe from repository root:
+  t=/tmp/sb-runtime-review
+  go list -deps -export -f '{{if .Export}}packagefile {{.ImportPath}}={{.Export}}{{end}}' runtime runtime/debug fmt strings sync sync/atomic reflect os > "$t/importcfg"
+  # Choose source: runtime.go or extra.go. Choose mode:
+  # new:   SB_BASELINE=1, compiler=$PWD/build/compile-sb
+  # old:   SB_BASELINE=1 SB_ASM_MULTIPASS=1 SB_KEEP_DWARF=1, same compiler
+  # stock: no SB_* environment, compiler=/usr/local/go/pkg/tool/linux_amd64/compile
+  # Set chosen environment on compiler process only, e.g.:
+  SB_BASELINE=1 build/compile-sb -p main -dwarf=false -l -importcfg "$t/importcfg" -o "$t/repro.a" "$t/runtime.go"
+  go tool link -w -importcfg "$t/importcfg" -o "$t/repro" "$t/repro.a"
+  GOGC=10 GODEBUG=clobberfree=1,gccheckmark=1,invalidptr=1 timeout 60 "$t/repro"
+  # extra.go: GOGC=1, same GODEBUG, also rerun adding asyncpreemptoff=1.
+  # Optional SB_BASELINE_LOG=<existing-dir> and SB_ASMSTAT=1 verify paths/passes.
+
+runtime.go coverage:
+- 96 generated baseline functions with varying forward conditional body lengths
+  (0..72 arithmetic pairs), else lengths (0..18), and backward/mixed loops.
+  Each receives all 11 inputs -5..5: 1,056 runtime.Caller + CallersFrames pairs,
+  checked for exact expected filename, line, and function on both branch arms.
+- Each byte in these 96 functions is scanned using FuncForPC/FileLine. New
+  code totals 98,425 bytes according to go tool nm -size. Final linker alignment
+  tails are allowed (stock likewise maps those bytes to ?:0); internal mapping
+  holes are rejected.
+- Eight goroutines perform 40 recursion/GC tests, depth 120, with [64]*Node
+  slots in every frame, retaining stack and heap roots during stack growth,
+  forced collection, and resumption. Escape diagnostics confirm roots' new(Node)
+  does not escape (stack object), while its referenced local Node is heap-allocated.
+- 40 explicit panic/recover tests, verifying recovered pointer payload and
+  debug.Stack includes panicSite and recovered frames; forced GC in recovery.
+- A 64-entry dense switch uses min(float64, float64) to force baseline bailout
+  to SSA. SB_BASELINE_LOG confirms "ssa min or max of float64"; objdump shows
+  table dispatch via LEAQ followed by JMP 0(DX)(AX*8). Every case and defaults
+  exercised for x=-2..66; matches stock output. Thus actual table relocations,
+  not merely baseline's linear-switch lowering, are covered.
+- SB_ASMSTAT: new roots/grow/probe0/ssaSwitch each 1 pass; old each 3 passes.
+  New/old sizes: roots 629/635, grow 602/601, probe0 315/314,
+  SSA switch 2611/2614 bytes. Confirms real layout/padding differences exercised.
+
+runtime.go stdout, identical new/old/stock (exit 0):
+  roots 1520
+  branches 55867299985306596
+  switch 7164315273944480928
+  recover 13181547347454602100
+  pcln ok
+
+extra.go coverage:
+- 48 generated baseline functions with varying padding/forward branches;
+  16 each fault by nil dereference, bounds check, integer division by zero.
+  Four inputs each: 192 signal/runtime panic recovery tests. Deferred recovery
+  invokes debug.Stack, checks the fault function and exact fault source line,
+  then forces GC. All named result values match stock.
+- SSA fallback function with defer/recover and branches, called 100 times,
+  exercising SSA's open-coded-defer metadata after changed span layout.
+- Eight goroutines, each running 10 long no-call SSA pointer-chasing loops,
+  concurrent with forced GC + runtime.Stack(all=true); GOMAXPROCS=2. Checks
+  live pointer values and successful all-goroutine tracebacks during execution.
+  SSA loop and defer function confirmed as fallback in baseline logs.
+- Default async preemption setting AND asyncpreemptoff=1 control pass for all
+  three compilation modes with GOGC=1 and gccheckmark/clobberfree enabled.
+  Default runs saw 2/2/2 snapshots with live SSA loop (new/old/stock); no literal
+  runtime.asyncPreempt frames were present in snapshots. This is concurrent
+  GC/live-loop traceback coverage, not proof of capturing an async-preempt frame.
+
+extra.go stdout, identical new/old/stock, default and noasync (exit 0):
+  extra 10810
+Diagnostic stderr default:
+  new:   snapshots 3 live-ssa-spin 2 asyncpreempt 0
+  old:   snapshots 4 live-ssa-spin 2 asyncpreempt 0
+  stock: snapshots 3 live-ssa-spin 2 asyncpreempt 0
+Diagnostic stderr noasync:
+  new:   snapshots 3 live-ssa-spin 1 asyncpreempt 0
+  old:   snapshots 3 live-ssa-spin 2 asyncpreempt 0
+  stock: snapshots 3 live-ssa-spin 2 asyncpreempt 0
+
+Other evidence files in /tmp/sb-runtime-review:
+  {new,old,stock}.out and .compile.log for runtime.go;
+  extra-{new,old,stock}.{out,err,compile.log};
+  extra-{new,old,stock}-noasync.{out,err}; {newlog,oldlog}/ PID files.
+
+Static inspection:
+- cmd/internal/obj/plist.go runs architecture Assemble, then linkpcln, then
+  populateDWARF. Change twelve returns only in populateDWARF, after pcln.
+- x86 span6 finalizes all Prog.Pc values before writing JumpTables relocation
+  addends. Temporary instruction indexes from sbPresize are not consumed there.
+- Remaining loop alignment padding still splices NOP Progs with final PCs;
+  disabling JCC mitigation padding does not bypass pcln/stack-map generation.

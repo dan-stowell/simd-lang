@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 17)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 18)
 
 ## The trace, before and after
 
@@ -12,13 +12,14 @@ Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.
 | end of the 2026-11-11 run (`08-huge-shard`) | 12.3-13.3 s, 80 core-s | 24.1-25.2 s, 158 core-s |
 | `09-forkserver` (today) | 12.5-15.6 s (four runs; noisy host) | 22.5-24.5 s |
 | `10-onepass` (today) | 11.6-13.5 s (four runs), 67 core-s | 21.1-23.2 s, 137 core-s |
-| **now (`11-headstart`)** | **11.6-12.8 s** (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | **20.5-23.8 s** |
+| `11-headstart` (today) | 11.6-12.8 s (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | 20.5-23.8 s |
+| **now (`12-directout`)** | **11.5-12.3 s** (four runs), 71 core-s | **20.1-22.3 s**, 135 core-s |
 
 The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
 single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
 1.6 core-s and no wall clock; the one-pass assembler is worth 6 core-s and about 0.7 s (compile
 core-s min 67.4 -> 60.9, mean 74.9 -> 68.8 over four rounds). Against the fair row the technique is
-worth 32.5 -> ~12 s on MinIO and 51.2 -> ~22 s on kube-apiserver; the rest of the distance from 54 s is
+worth 32.5 -> ~11.7 s on MinIO and 51.2 -> ~21 s on kube-apiserver; the rest of the distance from 54 s is
 things turned off.
 
 **The materialization tax** (MinIO; kube is in TRACE.md):
@@ -78,6 +79,9 @@ the front end is 35% of the row, not 20%.
   Worth **0.2-0.4 s**, which today's host noise hides in cold wall clock (interleaved cold means 11.91
   vs 11.96 s; warm 12.15 vs 11.72 s).
 
+- **Direct output** (`-directout`): the linker writes the binary in place instead of to tmpfs followed
+  by a copy. Link + write 1,459 -> 1,316 ms. Same bytes.
+
 ## Ideas tried and killed (all by measurement; IDEAS.md and JOURNAL iteration 16)
 
 - Process start as a large cost: 3.6 core-s, not 12.
@@ -85,17 +89,25 @@ the front end is 35% of the row, not 20%.
   CPU; the cost is the package's own IR round trip.
 - A never-free bump allocator: Go's own (`GODEBUG=sbrk=1`) gains nothing and deadlocks.
 - Emitting each shared type descriptor once across the build: 28.6% are duplicates, worth 1.6 core-s.
+- Starting the linker early and streaming objects into it: loading objects is 55 ms of the link's
+  1,220; the rest needs every object. Also found: the stock linker's output depends on load order.
 - "Compile each function shape once" (20.8% repeats, an upper bound); reachability before code
   generation (iteration 9); interface-first export (simulated: 9.9 s at best against 10.3 s).
 
-## Review disagreements worth your attention
+## Reviews worth your attention
 
-- The skeptic has said three times that the compile and link "floors" in TRACE.md are copy budgets, not
-  floors. Accepted each time; the floors are still in the table with that label. If you want them out or
+- The correctness reviewer (sol) earned its keep twice today: a lost reply from the fork-server was
+  read as "compile succeeded", and a baseline object linked without `-w` crashed the stock linker. Both
+  reproduced from its cases, both fixed with regression tests (`reviews/forkserver-2026-11-12/`,
+  `reviews/instruction-encoding-2026-11-12/`). Its 10,800-result and 25,515-call differential runs found
+  no fault in the one-pass assembler.
+- The skeptic has said four times that the compile and link "floors" in TRACE.md are copy budgets, not
+  floors. Accepted each time; they are still in the table with that label. If you want them out or
   replaced by a measured semantic floor, say so.
-- The skeptic's standing proposal is a declaration/body split inside the existing compiler. Last
-  night's simulation says the build is CPU-bound, so overlap bought by repeating work does not pay.
-  Today's table agrees. I am not building it unless you disagree.
+- The skeptic's standing proposal is a consumed F2/F3 skeleton (own lowering for a function subset).
+  `05-sbc` was that and lost 2 s, because a taken function still pays its package's stock front end.
+  I think the first slice that pays is whole packages leaving the stock compiler; that needs export
+  data written without it. Not started.
 
 ## Every behaviour difference of the dev build
 
@@ -115,7 +127,9 @@ the front end is 35% of the row, not 20%.
   binary. None seen in about 50 MinIO builds, 8 kube builds, 6,000 test forks and the reviewer's 648.
 - New today: baseline code has no jump padding to 32-byte boundaries (the Intel JCC erratum mitigation:
   speed on some Intel cores, not correctness) and forward branches further than 12 instructions use the
-  long encoding. No per-function DWARF at all, so the binary must be linked with `-w` (it is).
+  long encoding. No per-function DWARF when the driver's link has `-w` (the reviewer showed that a link
+  without `-w` panicked; the compiler now leaves DWARF out only when the driver says the link strips it).
+- Our wall clock includes syncing the binary to disk; the stock rows do not sync theirs.
 
 ## Decisions that are yours
 

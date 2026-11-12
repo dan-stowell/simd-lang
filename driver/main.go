@@ -261,8 +261,15 @@ func (h *headPkg) adopt(p *Pkg, c int, goversion string, extra []string, exporte
 // compileEnv: SB_COMPILE_ENV="K=V,K2=V2" (commas or spaces) is added to the environment of every compiler process (and only
 // those: a setting like GODEBUG=sbrk=1 must not reach the driver or the linker).
 func compileEnv() []string {
-	return strings.FieldsFunc(os.Getenv("SB_COMPILE_ENV"), func(r rune) bool { return r == ' ' || r == ',' })
+	env := strings.FieldsFunc(os.Getenv("SB_COMPILE_ENV"), func(r rune) bool { return r == ' ' || r == ',' })
+	if linkStripsDWARF {
+		env = append(env, "SB_NODWARFSYMS=1") // the compiler may leave out per-function DWARF: the link drops it
+	}
+	return env
 }
+
+// linkStripsDWARF: the link has -w, so no DWARF is wanted from the compiler either.
+var linkStripsDWARF bool
 
 // errZygoteUnavailable: the request never reached the fork-server; the caller falls back to exec.
 var errZygoteUnavailable = fmt.Errorf("zygote unavailable")
@@ -465,6 +472,7 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	directOut := flag.Bool("directout", false, "the linker writes the binary to its destination, not to the work directory first")
 	headFlag := flag.Bool("headstart", false, "compile the runtime and what it needs while the plan is being made (needs -plan=self)")
 	flag.BoolVar(&zygoteOn, "zygote", false, "fork compiles from one warm compiler process (needs the patched compiler)")
 	flag.StringVar(&compiler, "compiler", "", "compiler binary (default: go tool compile)")
@@ -486,6 +494,11 @@ func main() {
 	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
 	flag.Parse()
+	for _, f := range strings.Fields(*ldflags) {
+		if f == "-w" {
+			linkStripsDWARF = true
+		}
+	}
 	pkgArg := "."
 	if flag.NArg() > 0 {
 		pkgArg = flag.Arg(0)
@@ -974,6 +987,14 @@ func main() {
 	cfgPath := filepath.Join(workdir, "importcfg.link")
 	os.WriteFile(cfgPath, cfg.Bytes(), 0o644)
 	exe := filepath.Join(workdir, "a.out")
+	if *directOut && !dryRun {
+		// The linker writes the binary where it is wanted (it maps its output file): no second copy of
+		// 160 MB from tmpfs to the disk afterwards. The driver still syncs it, so the write is counted.
+		if abs, err := filepath.Abs(*out); err == nil {
+			exe = abs
+			os.Remove(exe)
+		}
+	}
 	linkTool := filepath.Join(tooldir, "link")
 	if *linker != "" {
 		linkTool = *linker
@@ -1002,20 +1023,30 @@ func main() {
 
 	// ---- write output: the binary goes to the disk, and is synced so the write is counted
 	st = ms()
-	b, err := os.ReadFile(exe)
-	if err != nil {
-		die("%v", err)
+	if *directOut {
+		f, err := os.OpenFile(exe, os.O_RDWR, 0)
+		if err != nil {
+			die("%v", err)
+		}
+		f.Sync()
+		f.Close()
+		phase("write output", st, fi.Size(), 0, 0, "the linker wrote the file in place; this row is the sync")
+	} else {
+		b, err := os.ReadFile(exe)
+		if err != nil {
+			die("%v", err)
+		}
+		f, err := os.OpenFile(*out, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+		if err != nil {
+			die("%v", err)
+		}
+		if _, err := f.Write(b); err != nil {
+			die("%v", err)
+		}
+		f.Sync()
+		f.Close()
+		phase("write output", st, int64(len(b)), 0, 0, "")
 	}
-	f, err := os.OpenFile(*out, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
-	if err != nil {
-		die("%v", err)
-	}
-	if _, err := f.Write(b); err != nil {
-		die("%v", err)
-	}
-	f.Sync()
-	f.Close()
-	phase("write output", st, int64(len(b)), 0, 0, "")
 
 	var ru syscall.Rusage
 	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)

@@ -1,0 +1,2 @@
+ok  	cmd/internal/obj/x86	3.631s
+ok  	cmd/asm/internal/asm	1.161s

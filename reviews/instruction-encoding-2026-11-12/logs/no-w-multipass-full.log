@@ -1,0 +1,15 @@
+panic: trying to get oreader for invalid sym 0
+
+
+
+goroutine 46 [running]:
+cmd/link/internal/loader.(*Loader).Relocs(0x251fee41a708?, 0x1?)
+	cmd/link/internal/loader/loader.go:1974 +0x139
+cmd/link/internal/ld.(*dwctxt).writedebugaddr(0x251fee4840f0, 0x251fee514270, 0x10a05?)
+	cmd/link/internal/ld/dwarf.go:2165 +0x253
+cmd/link/internal/ld.(*dwctxt).dwUnitPortion(0x251fee4840f0, 0x251fee514270, 0x10983, 0x251feeb48e18)
+	cmd/link/internal/ld/dwarf.go:2130 +0x9f
+cmd/link/internal/ld.(*dwctxt).dwarfGenerateDebugSyms.func4(0x251fee514270, 0x251feeb48e18)
+	cmd/link/internal/ld/dwarf.go:2290 +0xb6
+created by cmd/link/internal/ld.(*dwctxt).dwarfGenerateDebugSyms in goroutine 1
+	cmd/link/internal/ld/dwarf.go:2284 +0xa68

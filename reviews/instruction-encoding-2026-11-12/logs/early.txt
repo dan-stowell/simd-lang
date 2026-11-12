@@ -1,0 +1,2 @@
+PASS patched compiler, idle: 60 files and the binary byte-identical to stock
+PASS early export: 2954 symbols with the same names, sizes and types as stock; sections 1141351 29076 219184

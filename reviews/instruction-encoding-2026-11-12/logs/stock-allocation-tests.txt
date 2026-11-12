@@ -1,0 +1,12 @@
+--- FAIL: TestNewBufferShallow (0.00s)
+    buffer_test.go:109: allocations occurred while shallow copying
+FAIL
+FAIL	bytes	0.139s
+--- FAIL: TestAllocationsDecode (0.00s)
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+FAIL
+FAIL	unicode/utf16	0.004s
+FAIL

@@ -1,0 +1,39 @@
+--- FAIL: TestNewBufferShallow (0.00s)
+    buffer_test.go:109: allocations occurred while shallow copying
+FAIL
+FAIL	bytes	0.426s
+--- FAIL: TestAllocationsDecode (0.00s)
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+    utf16_test.go:138: Decode allocated 1 times
+FAIL
+FAIL	unicode/utf16	0.005s
+FAIL
+packages ok: 27 of 29; functions compiled by the baseline: 46493, sent to SSA: 826
+    160 body of a range-over-func loop
+    155 pragma
+     95 type assertion DYNAMICDOTTYPE2
+     74 NAME
+     52 expression SLICE2ARRPTR
+     51 ABI0 function
+     38 variable ~p0 has no home
+     30 expression DYNAMICDOTTYPE
+     23 conversion of a 64-bit unsigned integer to floating point
+     22 expression real
+     19 intrinsic call
+     16 variable ~p1 has no home
+     13 conversion of floating point to a 64-bit unsigned integer
+     12 variable hmac.unique has no home
+     11 value complex
+      8 expression +
+      7 frame over 64 kB
+      5 min or max of float32
+      5 literal
+      5 expression imag
+      5 comparison of complex128
+      4 value CONV
+      3 new of a type known only at run time
+      2 variable v has no home
+      2 variable unique has no home
+log kept in /dev/shm/sbstd.f6Q3gR

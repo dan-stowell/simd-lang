@@ -1,0 +1,2 @@
+PASS giant stdout lines do not hang the pipeline
+PASS -noearly ignores an inherited SB_EARLY_EXPORT

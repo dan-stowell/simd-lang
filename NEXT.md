@@ -1,18 +1,23 @@
 # NEXT
 
-State at 2026-11-12 13:25 UTC (JOURNAL iteration 17): MinIO cold 11.6-12.8 s (interleaved), kube-apiserver
-20.5-23.8 s, configuration `11-headstart` (fork-server, one-pass assembler, head start). Fair stock rows:
-MinIO 32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md (`tools/trace/cpuphases.sh`).
+State at 2026-11-12 13:35 UTC (JOURNAL iteration 18): MinIO cold 11.5-12.3 s, kube-apiserver
+20.1-22.3 s, configuration `12-directout` (`tools/trace/run09.sh <minio|kube> <label> -zygote
+-headstart -directout`). Fair stock rows: MinIO 32.5 s, kube 51.2 s. The exact CPU table is in TRACE.md
+(`tools/trace/cpuphases.sh`): walk + generate + assemble 28.7 core-s, export-IR round trip 17, type
+check 10, objects + export 6.7.
 
-1. In progress: the tail. Link + write output is 1.5 s at 1.5 cores, the largest serial item (F4).
-   Measure the linker's phases on the baseline build's objects (`-ldflags=-benchmark=cpu`), then decide
-   between overlapping it with the compile tail and replacing layout + relocation (LINKING.md).
-2. Stream the whole plan into the scheduler (the head start is its first slice): compile a package when
-   its imports are resolved, not when the last planning round ends. Bounded by the plan's idle cores:
-   about 0.5 s.
-3. F2 proper, in the form the measurements leave standing: compiler IR built directly from checked
-   syntax (no export-IR round trip for the package being compiled: 15 core-s), and whole packages
-   bypassing the stock compiler (needs export data produced without it). Large; start with a design
-   note and the smallest package that can go end to end.
-4. Triage `reviews/inbox/*-sol.md` (correctness review of the one-pass assembler, fired 13:12 UTC; its
-   answer arrives as a commit in /home/exedev/strand-w under reviews/).
+Every cheap step is taken; what is left is the two big ones. Start the next session with a design
+note for one of them, not with another measurement.
+
+1. F4, the link (1.2 s serial, the whole tail). Numbers to design against (JOURNAL iteration 18):
+   loadlib 439 ms of which reading objects is 55 and symbol resolution ~390; deadcode 246; asmb 118;
+   pclntab 114; dodata 112. The stock linker's output depends on load order, so an incremental link
+   needs its own deterministic order. First slice to consider: the compilers hand out dense symbol IDs
+   (the driver knows the whole graph), so resolution is a table write as objects arrive.
+2. F2/F3: whole packages leaving the stock compiler. The export-IR round trip (17 core-s) and the
+   assembler path (`obj.Prog`, 8.8% of compile samples after the one-pass change) are what a second
+   compiler would not pay; `05-sbc` showed that taking single functions does not pay. Needs export data
+   for stock-compiled importers produced without the stock front end, or a leaf-first rollout (main
+   packages and packages only sbc-compiled packages import).
+3. Smaller, if a session has an hour to spare: stream the whole plan into the scheduler (about 0.3 s);
+   baseline coverage of the 2% of functions still sent to SSA (they cost 4.7% of compile samples).

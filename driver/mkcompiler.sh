@@ -27,6 +27,8 @@ sed -i 's|^\tgc.Main(archInit)|\tsbZygote()\n\tgc.Main(archInit)|' "$dst/src/cmd
 python3 driver/early_export.py "$dst/src/cmd/compile/internal/gc" "$dst/src/cmd/internal/obj"
 (cd "$dst/src" && GOROOT="$dst" GOTOOLCHAIN=local GOFLAGS= "$dst/bin/go" build -o "$OLDPWD/build/compile-sb" cmd/compile)
 # the stock linker, linked with the patched runtime (SB_HUGE, SB_POPULATE)
+cp "$src/src/cmd/link/internal/ld/lib.go" "$dst/src/cmd/link/internal/ld/"
+rm -f "$dst/src/cmd/link/internal/ld/sbstream.go"
 (cd "$dst/src" && GOROOT="$dst" GOTOOLCHAIN=local GOFLAGS= "$dst/bin/go" build -o "$OLDPWD/build/link-sb" cmd/link)
 (cd "$dst/src/cmd/compile/internal/gc" && diff -u "$src/src/cmd/compile/internal/gc/main.go" main.go; diff -u "$src/src/cmd/compile/internal/gc/obj.go" obj.go; diff -u "$src/src/cmd/internal/obj/objfile.go" ../../../internal/obj/objfile.go; diff -u "$src/src/cmd/compile/internal/ssagen/pgen.go" ../ssagen/pgen.go) > driver/early_export.diff || true
 echo "built build/compile-sb"

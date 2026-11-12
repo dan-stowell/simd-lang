@@ -361,14 +361,16 @@ s = s.replace(old, '\tif sbOnePass {\n\t\treturn padJumpsCtx(0)\n\t}\n' + old)
 open(p, 'w').write(s)
 
 # Twelfth change: with -dwarf=false the stock compiler still builds a DWARF subprogram entry and a line
-# table for every function (the linker drops them under -w). The baseline build does not.
+# table for every function (the linker drops them under -w). With SB_NODWARFSYMS set the baseline build
+# does not. The stock linker needs those symbols unless it is given -w (without them it panics in
+# writedebugaddr: review 2026-11-12), so only the driver sets the variable, and only when its link has -w.
 p = os.path.join(objd, 'dwarf.go'); s = open(p).read()
 old = '\tinfo, loc, ranges, absfunc, lines := ctxt.dwarfSym(s)\n\tif info.Size != 0 {'
 assert s.count(old) == 1
 s = s.replace(old, '\tif sbNoDwarf && ctxt.DebugInfo == nil {\n\t\treturn\n\t}\n' + old)
 if '\t"os"\n' not in s:
     s = s.replace('import (', 'import (\n\t"os"', 1)
-s += '\nvar sbNoDwarf = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_KEEP_DWARF") == ""\n'
+s += '\nvar sbNoDwarf = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_NODWARFSYMS") != ""\n'
 open(p, 'w').write(s)
 
 # Thirteenth change (measurement only): with SB_TYPELOG=<dir>, log every runtime type descriptor this

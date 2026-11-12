@@ -15,8 +15,8 @@ if diff -rq "$t/exec" "$t/fork" > "$t/diff.txt" && cmp "$t/exec.bin" "$t/fork.bi
   echo "PASS fork-server: $(find "$t/exec" -name '_pkg_.*' | wc -l) export files and objects and the binary byte-identical to one exec per compile"
 else head "$t/diff.txt"; echo "FAIL fork-server"; exit 1; fi
 # Head start (-headstart): the runtime's closure is compiled during the plan, in other directories; the
-# archives and the binary must be the same bytes.
-rm -rf "$t/w"; run -o "$t/head.bin" -zygote -headstart; mv "$t/w" "$t/head"
+# archives and the binary must be the same bytes. Also with -directout (the linker writes the binary in place).
+rm -rf "$t/w"; run -o "$t/head.bin" -zygote -headstart -directout; mv "$t/w" "$t/head"
 sums() { find "$1" -name '_pkg_.*' -exec sha256sum {} + | awk '{print $1}' | sort | sha256sum; }
 if cmp "$t/exec.bin" "$t/head.bin" && [ "$(sums "$t/exec")" = "$(sums "$t/head")" ] && [ -d "$t/head/head" ]; then
   echo "PASS head start: $(find "$t/head/head" -name '_pkg_.a' | wc -l) packages compiled during the plan; every archive and the binary byte-identical"
@@ -32,4 +32,9 @@ big=$(head -c 90000 /dev/zero | tr '\0' x)
 if env GOGC=off SB_BIG1=$big SB_BIG2=$big SB_BIG3=$big SB_BIG4=$big SB_BIG5=$big build/sb -C "$t/big" -o "$t/big.bin" -plan=self -decl "$PWD/build/godecl" -compiler "$PWD/build/compile-sb" -pipeline -zygote . > "$t/big.out" 2>&1 && "$t/big.bin"; then
   echo "PASS fork-server: a 450 kB environment is compiled by exec instead"
 else tail -3 "$t/big.out"; echo "FAIL fork-server: oversized request"; exit 1; fi
+# A baseline build linked without -w (review 2026-11-12: the stock linker needs the per-function DWARF
+# symbols then, so the compiler must not leave them out) must link and run.
+if env GOGC=off SB_BASELINE=1 build/sb -C "$t/big" -o "$t/now.bin" -plan=self -decl "$PWD/build/godecl" -compiler "$PWD/build/compile-sb" -pipeline -zygote "-gcflags=-dwarf=false -l" . > "$t/now.out" 2>&1 && "$t/now.bin"; then
+  echo "PASS baseline build without -w links and runs"
+else tail -3 "$t/now.out"; echo "FAIL baseline build without -w"; exit 1; fi
 

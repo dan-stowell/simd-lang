@@ -827,3 +827,60 @@ a linker in the hour and a half left: no measurement yet of where the stock link
 the baseline build's objects* (last night's profile was of the optimized build with DWARF). That
 measurement is the next step, and it decides between overlapping the link with the compile tail and
 replacing layout + relocation.
+
+## 2026-11-12 13:35 UTC — iteration 18: the tail. Direct output (-0.14 s), a streaming-link spike killed in 25 minutes, a review finding fixed
+
+(Times in these headers are the VM's clock, which ran slow against my sense of elapsed time today; the
+order of entries is right.)
+
+**Trace.** MinIO cold, four runs of `12-directout`: **11.5, 12.3, 11.6, 11.6 s** (71 core-s in the
+first); kube-apiserver, two: **20.1, 22.3 s**. Both pass smoke; MinIO passes the stress test. Link +
+write output: 1,459 -> 1,316 ms (three interleaved rounds; these two rows are serial and quiet).
+
+**Where the linker's 1.22 s goes on the baseline build's objects** (`-benchmark=cpu` on a kept work
+directory; 1,312 archives, 573 MB): loadlib 439 ms, deadcode 246, asmb 118, pclntab 114, dodata 112,
+symtab 52, everything else about 140. Explicit huge pages are worth 0.2 s of it (1.39 -> 1.16-1.23 s).
+
+**Direct output (consumed).** The linker wrote the binary to tmpfs and the driver copied 160 MB to the
+disk and synced. With `-directout` the linker maps the destination file itself and the driver only
+syncs: write row 250-271 -> 89-105 ms, link row unchanged. Same bytes (`tests/sb_zygote.sh` compares).
+A note on fairness that cuts against us: our total includes the sync of the binary; the stock rows do
+not sync theirs (stock.sh syncs after its clock stops). I have left it that way.
+
+**Spike: start the linker early and stream objects into it (negative).** Idea from the divergence
+rounds and the skeptic: the link is serial and last; let it ingest objects as compiles finish. Built a
+60-line patch to cmd/link (`SB_LINK_STREAM=<fd>`: load each object as its line arrives, then the
+ordinary loop skips what is loaded). Two findings:
+1. *The output depends on load order.* The same 1,312 objects streamed in plan order, reversed and
+   shuffled give three different binaries (first definition of a duplicate-allowed symbol wins, and
+   symbol indices follow load order). Streamed in the stock linker's own order (main's imports
+   breadth-first, in source order) the binary is byte-identical, but `minio/cmd` is third in that order
+   and last to finish compiling, so the stock order cannot be streamed. A deterministic order of our
+   own (say by size) would work and change the bytes.
+2. *It is not worth it anyway.* Loading the objects is **55 ms** of loadlib's 440; the other ~390 ms
+   is symbol resolution over everything, which needs every object. Kill threshold was 150 ms.
+   **Dead; patch removed.** What it leaves for F4: an incremental linker has to resolve symbols as
+   objects arrive (dense IDs handed out by the compiler would make that a table write), and deadcode
+   (246 ms) is the next serial piece behind it.
+
+**Review (correctness, one-pass assembler; `reviews/instruction-encoding-2026-11-12/`).** Its
+differential work found no branch-sizing fault: 10,800 generated results and a 25,515-call boundary
+sweep across displacement 128 match stock and the old path; every function assembled in one pass
+where the old path took 2-7; runtime metadata checks (Callers, stack growth, panics with exact lines)
+match. One confirmed finding, **P1: a baseline object linked without `-w` makes the stock linker
+panic** (`writedebugaddr` wants the per-function DWARF symbols I skip). I had written "requires -w"
+in the journal and not enforced it. Fixed: the compiler skips those symbols only when told to
+(`SB_NODWARFSYMS`), and only the driver sets that, when its own link flags contain `-w`. Regression
+case in `tests/sb_zygote.sh` (baseline build without `-w` links and runs). The trace configuration is
+unaffected (objects still 573 MB).
+
+**What serializes the tail now (in writing).** After `minio/cmd`'s front end (1.1 s on one core per
+shard) and back end, the link is 1.2 s at 1.7 cores and the sync 0.1 s. Nothing can overlap the link
+with the stock loader, by the measurement above. The tail is F4 or nothing.
+
+**Scope check.** Most ambitious next: F4's first consumed slice: our own layout and relocation for a
+subset of the image, or symbol resolution moved into the compilers (dense IDs) so the loader's 390 ms
+becomes a table. Why not now: it needs a design that survives contact with pclntab and deadcode, and
+LINKING.md predates everything measured today. The next session should start there with the numbers
+in this entry. For the rest of this session: keep MORNING.md exact, and stop spending usage on steps
+worth a tenth of a second.
