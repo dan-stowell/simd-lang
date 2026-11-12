@@ -1,12 +1,13 @@
 # NEXT
 
-State: MinIO cold 21.3-24.2 s (stock 54.2 s) without sbc; with sbc (4,458 leaf functions taken) about 1 s more.
-kube-apiserver 43.9 s (stock 86.3 s). All differential tests and both smoke tests pass.
+State: MinIO cold 20.4 s with the baseline code generator (stock 54.2 s; 21.9-25.1 s without the baseline in
+the same hour). 80% of functions bypass SSA. Std tests: 29 of 29 packages pass with the baseline on.
 
-1. Overlap sbc with the compiles of the packages it never touches (runtime, internal/*, ...), so its ~1 s
-   whole-program check is off the critical path.
-2. sbc with stack frames: locals in typed slots, one stack map per function (all pointer slots, zeroed at
-   entry), register arguments spilled at entry, the stack-growth prologue with obj.RegSpill, calls through
-   ABIInternal. Extend tests/sbc_gen.py with locals, loops, calls, deep recursion and allocation pressure.
-3. Then widen types: strings, slices, interfaces (multi-register values), value receivers, globals.
-4. Still open: persistent godecl; modinfo in the link; divergence step (due now: run in the background).
+1. Baseline coverage, by what the log says is missing (tests/sb_stdtest.sh prints the reasons):
+   closure variables, intrinsic calls (call the real function), defer, append, type assertions
+   (AS2DOTTYPE, DOTTYPE), floats, STR2BYTESTMP/BYTES2STRTMP, min/max, AS2FUNC, jump tables, go statements.
+   After each: tests/sb_stdtest.sh, MinIO smoke, tests/sb_bisect.py on any failure.
+2. Wider oracle: more std packages; MinIO's unit tests built with SB_BASELINE=1 (GOROOT copy toolchain).
+3. kube-apiserver with the baseline; cold trace with REPS=3 for both.
+4. Baseline output size (binary 153 MB vs 100 MB): reuse of slots, fewer redundant loads.
+5. Still open: sbc overlap, persistent godecl, modinfo, second divergence step.

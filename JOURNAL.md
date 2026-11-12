@@ -369,3 +369,65 @@ see, so the differential harness has to grow with it (calls, recursion deep enou
 stack, allocation pressure to make the collector scan the frames). Doing that next. Before it, one
 cheap fix: let the packages sbc never touches (the runtime and its dependencies) start compiling
 while sbc is still checking, so its second is not on the critical path.
+
+## 2026-11-12 00:50 UTC — iteration 11: rung 5 for real. A baseline code generator inside the compiler moves the trace.
+
+**Why inside the compiler.** The second skeptic review (REVIEWS.md) argued for a hybrid back end inside
+the stock compiler rather than my outside one: keep its typing and its runtime lowering, intercept
+functions before SSA, fall back for the rest. sbc had proved the seam, but from outside it has to redo
+every lowering (range, maps, strings, interfaces, closures) and cannot ask for type descriptors. Before
+committing, I measured the ceiling: the patched compiler recorded the operations in every function's
+lowered tree (`SB_OPSTATS`, `tools/trace/opstats.py`; 209,794 functions for MinIO). With about 45
+operations a code generator covers 35-40% of back-end time; with interface calls and type assertions,
+most of it.
+
+**Did.** `driver/baseline/sbbaseline.go` (1,750 lines, compiled into cmd/compile/internal/ssagen by
+`driver/mkcompiler.sh`, on with `SB_BASELINE=1`). Every function reaches it before SSA. It walks the
+tree that `walk` left and writes machine code directly: no SSA construction, no optimization passes,
+no register allocation. Whatever it does not understand makes it give up (a panic with the reason,
+recovered at the top, logged with `SB_BASELINE_LOG`) and the function goes to SSA untouched.
+The design is the simplest one that is safe under the runtime:
+- every variable lives in memory (register parameters in their ABI spill slots, locals and temporaries
+  in typed frame slots); a value is in AX between two tree nodes and nowhere across a call;
+- the frame is zeroed on entry and there is one stack map, every pointer word of every slot, live
+  throughout (two entries: at entry only the parameters, afterwards also results kept on the stack);
+- the whole body is an unsafe point, so the function is preempted only at calls;
+- pointer stores outside the frame go through the write barrier; variables whose address escapes are
+  allocated where they are declared, as the stock back end does.
+It handles integers of every width, pointers, strings, slices, interfaces, structs and arrays; field,
+index and slice expressions with their bounds panics; division and shifts with Go's corner cases;
+static, closure and interface calls with register and stack arguments and results; wrappers; switches.
+Not yet: closures' captured variables, defer, floating point, `append`, type assertions, intrinsics.
+
+**The oracle.** `tests/sb_stdtest.sh` builds and runs the standard library's own tests with the
+baseline on (the patched compiler is installed in a copy of GOROOT). Stage 1 (scalars and static
+calls): 29 of 29 packages passed, 3,017 functions. Stage 2 first run: 11 of 29. `tests/sb_bisect.py`
+halves the set of functions the baseline may take by a hash of the symbol name; in ten runs it pinned
+encoding/base64's failure on one function, the package's `init`. Cause: a local whose address escapes
+is moved to the heap by the *back end* (not by `walk`), and I was giving it a stack slot. With that
+fixed: **29 of 29 packages pass, 33,760 functions (71%) compiled by the baseline.** Two more bugs were
+found by small programs before the oracle ran: indexes that `walk` marks as proven may point one past
+the end (I was checking them), and DIV takes its operand in the other slot of the instruction.
+
+**Trace.** MinIO: **158,874 of 199,662 functions (80%) go through the baseline**, the binary passes the
+S3 smoke test. Cold, interleaved with the previous configuration because the host drifts:
+
+| | wall s (two cold runs each) | compile core-s |
+|---|---|---|
+| run `04-selfplan` (SSA for everything) | 25.1, 21.9 | 157, 139 |
+| run `06-baseline` | **20.4, 20.4** | **119** |
+
+Warm it is 18.5 s. The binary is 153 MB instead of 100 MB: unoptimized code is bigger. Link time is
+unchanged at 1.5 s.
+
+**What serializes it now.** Still work: 119 core-s / 8 = 15 s. The front end (parse, check, two IR
+conversions: about 30 core-s) is now the largest piece the baseline does not touch, then the 20% of
+functions still going to SSA (which are the big ones), then the assembler, which now encodes a third
+more instructions.
+
+**Scope check.** Most ambitious: the remaining 20% of functions (closures, defer, append, type
+assertions, floats), which by time are much more than 20% of the back end; then make the baseline's own
+output smaller, since every byte of it is assembled, written, read by the linker and written again.
+Both are the same rung continuing. Doing that, with the oracle after every step. In parallel the
+correctness evidence has to widen: more of the standard library, and MinIO's own unit tests built with
+the baseline (the charter's "unit tests of the packages we touch": this touches all of them).
