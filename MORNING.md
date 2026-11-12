@@ -31,9 +31,9 @@ indicative only.
 | | stock | fair stock | this build |
 |---|---|---|---|
 | tool processes started | 1,483 | 1,483 | 172 + 1,315 forked from one warm compiler |
-| page faults, whole machine | 11.9 M | 11.0 M | 1.4 M |
-| intermediates written | 1,899 MB (disk, twice) | 1,383 MB | 665 MB (tmpfs, once) |
-| intermediates read back | 2,731 MB | 1,996 MB | 1,190 MB |
+| page faults, whole machine | 11.9 M | 11.0 M | 1.3 M |
+| intermediates written | 1,899 MB (disk, twice) | 1,383 MB | 618 MB (tmpfs, once) |
+| intermediates read back | 2,731 MB | 1,996 MB | 1,143 MB |
 
 **Where the compile row's CPU goes, measured exactly** (each compiler logs its own rusage at every phase
 boundary; one warm MinIO build after the one-pass assembler, 74 core-s in the row):
@@ -92,13 +92,11 @@ was measured order-balanced for that reason, and the A/B script now alternates o
   function 3.3 times (by bytes) to size branches and pad jumps. Baseline builds now assemble once, and
   skip the per-function DWARF the stock compiler builds even at `-dwarf=false`. **3-6 core-s** (see the
   correction above), objects 641 -> 573 MB.
-
 - **The first edge of the DAG, streamed** (`-headstart`): the runtime and the 28 packages under it are
   planned and compiled while the plan of the whole build is still being made, then adopted by the
   scheduler. Byte-identical output. `runtime` is ready when the plan ends instead of 0.45 s later.
-  Worth **0.2-0.4 s**, which today's host noise hides in cold wall clock (interleaved cold means 11.91
+  Worth **0 to 0.4 s**: today's host noise hides it in cold wall clock (interleaved cold means 11.91
   vs 11.96 s; warm 12.15 vs 11.72 s).
-
 - **Work removed: speculative pointer-type descriptors.** For every type it describes the stock
   compiler also describes the pointer to it, weakly referenced; for unnamed types the linker drops
   nearly all of them. In MinIO that is 148 k of 371 k descriptors. The baseline build no longer writes
@@ -144,7 +142,9 @@ was measured order-balanced for that reason, and the A/B script now alternates o
   Known tests that wait for a finalizer and so never finish: `net/http` `TestTransportGCRequest`; the
   sync/reflect promptness tests listed in JOURNAL iteration 12. Four standard-library tests that count
   allocations fail, as they do with the stock compiler at `-l`.
-- MinIO's own unit tests (repeated today with the final compiler, after the assembler change): 45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the baseline off.
+- MinIO's own unit tests (run twice today with the final compiler, after the assembler and descriptor
+  changes): 45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the
+  baseline off.
 - No module build info in the binary (`go version -m` shows no dependency list).
 - Huge pages: the trace configuration reserves 3,072 2 MB pages (MinIO) or 5,120 (kube) with
   `sudo sysctl vm.nr_hugepages` for the duration of the build and puts the old value (0) back.
@@ -167,7 +167,8 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 2. **Keep the fork-server on by default?** It is correct as far as I and the reviewer can test and buys
    almost nothing today. I left it on in the trace configuration and off by default in the driver.
    Same question for `-headstart`.
-4. **The host.** The same build cost between 61 and 84 core-seconds within an hour today, and it drifts
+3. **The host.** The same build cost between 61 and 84 core-seconds within an hour today, and it drifts
    over minutes. Differences under about half a second cannot be seen in single cold runs here, and an
-   A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the trace sharper.
-3. **The floors in TRACE.md** (see the review disagreement above).
+   A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the
+   trace sharper.
+4. **The floors in TRACE.md** (see the reviews section above).
