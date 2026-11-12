@@ -21,7 +21,9 @@ package ssagen
 
 import (
 	"fmt"
+	"go/constant"
 	"hash/fnv"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -76,7 +78,7 @@ func sbPackageOK() bool {
 	}
 	p := base.Ctxt.Pkgpath
 	if base.Flag.Std && (strings.HasPrefix(p, "internal/") || p == "reflect" || p == "sync" || strings.HasPrefix(p, "sync/") ||
-		p == "syscall" || p == "os" || p == "time" || strings.HasPrefix(p, "runtime") || p == "unsafe" || p == "math" || strings.HasPrefix(p, "math/")) {
+		p == "syscall" || p == "os" || p == "time" || strings.HasPrefix(p, "runtime") || p == "unsafe" || p == "math" || p == "math/bits") {
 		return false
 	}
 	return true
@@ -240,9 +242,33 @@ var sbIntRegs = []int16{x86.REG_AX, x86.REG_BX, x86.REG_CX, x86.REG_DI, x86.REG_
 
 func sbReg(r abi.RegIndex) int16 {
 	if int(r) >= len(sbIntRegs) {
-		sbGiveUp("floating-point register")
+		return x86.REG_X0 + int16(int(r)-len(sbIntRegs)) // the floating-point argument registers follow
 	}
 	return sbIntRegs[r]
+}
+
+func sbIsX(reg int16) bool { return reg >= x86.REG_X0 && reg <= x86.REG_X15 }
+
+// regLoad / regStore move one register-sized part of a value between memory and an ABI register.
+func (g *sbGen) regLoad(t *types.Type, a obj.Addr, reg int16) {
+	switch {
+	case !sbIsX(reg):
+		g.ins(sbLoadOp(t), a, sbR(reg))
+	case t.Size() == 4:
+		g.ins(x86.AMOVSS, a, sbR(reg))
+	default:
+		g.ins(x86.AMOVSD, a, sbR(reg))
+	}
+}
+
+func sbRegStoreOp(t *types.Type, reg int16) obj.As {
+	switch {
+	case !sbIsX(reg):
+		return sbStoreOp(t)
+	case t.Size() == 4:
+		return x86.AMOVSS
+	}
+	return x86.AMOVSD
 }
 
 // ---- emission helpers
@@ -315,7 +341,9 @@ func sbScalar(t *types.Type) bool {
 	if t == nil {
 		return false
 	}
-	return t.IsInteger() || t.IsBoolean() || t.IsPtrShaped() || t.IsUintptr() || t.IsUnsafePtr()
+	// A float32 or float64 counts too: between tree nodes it travels as its bit pattern in the integer
+	// accumulator, and only arithmetic, comparison, conversion and the calling convention look inside.
+	return t.IsInteger() || t.IsBoolean() || t.IsPtrShaped() || t.IsUintptr() || t.IsUnsafePtr() || t.IsFloat()
 }
 
 func sbLoadOp(t *types.Type) obj.As {
@@ -406,6 +434,111 @@ func (g *sbGen) release(l sbLoc, t *types.Type) {
 	} else {
 		g.freeInt = append(g.freeInt, l.off)
 	}
+}
+
+// sbPassingAddresses finds the compiler's own temporaries that only ever hold the address of an element
+// whose index walk has marked as needing no check. Lowering append and copy produces them: the
+// destination of a memmove, &s[len(s)], which for a copy of nothing is one past the end of the array.
+// The stock back end keeps such a value in a register for the few instructions it lives; here every
+// variable is a stack slot that the collector reads for as long as the function runs, and a stale
+// one-past-the-end pointer there is a crash. So these temporaries get slots the collector does not read.
+// That is safe because the slice they point into is itself in a variable of this frame, which keeps the
+// array alive, and because nothing that could move the stack happens between the temporary's
+// assignment and its use as an argument.
+func sbPassingAddresses(fn *ir.Func) map[*ir.Name]bool {
+	var yes, no map[*ir.Name]bool
+	note := func(x ir.Node, rhs ir.Node) {
+		name, ok := x.(*ir.Name)
+		if !ok || name.Class != ir.PAUTO || !name.AutoTemp() || !name.Type().IsPtr() {
+			return
+		}
+		for rhs != nil && rhs.Op() == ir.OCONVNOP {
+			rhs = rhs.(*ir.ConvExpr).X
+		}
+		if rhs != nil && rhs.Op() == ir.OADDR {
+			inner := rhs.(*ir.AddrExpr).X
+			if ix, ok := inner.(*ir.IndexExpr); ok && ix.Op() == ir.OINDEX && ix.Bounded() {
+				if yes == nil {
+					yes = map[*ir.Name]bool{}
+				}
+				yes[name] = true
+				return
+			}
+		}
+		if no == nil {
+			no = map[*ir.Name]bool{}
+		}
+		no[name] = true
+	}
+	ir.VisitList(fn.Body, func(n ir.Node) {
+		switch n := n.(type) {
+		case *ir.AssignStmt:
+			note(n.X, n.Y)
+		case *ir.AssignListStmt:
+			for _, x := range n.Lhs {
+				note(x, nil)
+			}
+		case *ir.AddrExpr:
+			note(n.X, nil) // its own address is taken: an ordinary variable
+		}
+	})
+	for n := range no {
+		delete(yes, n)
+	}
+	return yes
+}
+
+// sbMayCall: evaluating n might make a call that returns, that is, might reach a point where the garbage
+// collector looks at this frame. (Calls that only panic, the write barrier, and the runtime's memory
+// movers are not such points.) Conservative: anything not known to be call-free counts.
+func sbMayCall(n ir.Node) bool {
+	if n == nil {
+		return false
+	}
+	found := false
+	var visit func(ir.Node)
+	visit = func(x ir.Node) {
+		if found || x == nil {
+			return
+		}
+		if len(x.Init()) != 0 {
+			found = true
+			return
+		}
+		switch x.Op() {
+		case ir.ONAME, ir.OLITERAL, ir.ONIL, ir.OLINKSYMOFFSET, ir.OCFUNC, ir.ORESULT, ir.OTYPE:
+			return
+		case ir.ODOT, ir.ODOTPTR, ir.ODEREF, ir.OADDR, ir.OINDEX, ir.OCONV, ir.OCONVNOP, ir.OLEN, ir.OCAP, ir.OSPTR, ir.OITAB, ir.OIDATA,
+			ir.OADD, ir.OSUB, ir.OMUL, ir.ODIV, ir.OMOD, ir.OAND, ir.OOR, ir.OXOR, ir.OANDNOT, ir.OLSH, ir.ORSH, ir.ONEG, ir.OBITNOT, ir.ONOT,
+			ir.OEQ, ir.ONE, ir.OLT, ir.OLE, ir.OGT, ir.OGE, ir.OANDAND, ir.OOROR, ir.OUNSAFEADD, ir.OMAKEFACE, ir.OSLICEHEADER, ir.OSTRINGHEADER,
+			ir.OSLICE, ir.OSLICEARR, ir.OSLICESTR, ir.OSLICE3, ir.OSLICE3ARR, ir.OBYTES2STRTMP, ir.OSTR2BYTESTMP, ir.OMIN, ir.OMAX:
+			ir.DoChildren(x, func(c ir.Node) bool {
+				visit(c)
+				return found
+			})
+		default:
+			found = true // a call, an allocation, a type assertion, or something this list does not know
+		}
+	}
+	visit(n)
+	return found
+}
+
+// park: a one-word temporary for a value of type t that must survive the evaluation of the nodes in
+// during. It is a slot the collector scans only if the value can contain a pointer *and* a call can
+// return while it waits: an address that is merely passing through (it may legitimately point one past
+// the end of an object, on its way to memmove) must never sit where the collector will read it.
+func (g *sbGen) park(t *types.Type, during ...ir.Node) (sbLoc, *types.Type) {
+	key := types.Types[types.TUINTPTR]
+	if t.HasPointers() {
+		for _, d := range during {
+			if sbMayCall(d) {
+				key = types.Types[types.TUNSAFEPTR]
+				break
+			}
+		}
+	}
+	return g.temp(key), key
 }
 
 // ---- the function
@@ -516,13 +649,17 @@ func (g *sbGen) function() {
 	}
 	var heapParams []heapParam
 	g.resHeap = make([]sbLoc, len(g.resHome))
+	passing := sbPassingAddresses(fn)
 	for _, n := range fn.Dcl {
 		switch n.Class {
 		case ir.PAUTO:
-			if n.OnStack() {
-				g.homes[n] = g.newSlot(n.Type())
-			} else {
+			switch {
+			case !n.OnStack():
 				g.homes[n] = g.heapHome()
+			case passing[n]:
+				g.homes[n] = g.newSlot(types.Types[types.TUINTPTR]) // see sbPassingAddresses
+			default:
+				g.homes[n] = g.newSlot(n.Type())
 			}
 		case ir.PPARAM, ir.PPARAMOUT:
 			home, ok := g.homes[n]
@@ -551,10 +688,14 @@ func (g *sbGen) function() {
 
 	// prologue (after the stack check the assembler adds): register parameters to their slots, then zero the frame
 	for _, rp := range regParams {
-		g.ins(sbStoreOp(rp.t), sbR(rp.reg), rp.loc.addr())
+		g.ins(sbRegStoreOp(rp.t, rp.reg), sbR(rp.reg), rp.loc.addr())
 		// what the assembler does around the call to morestack: the same stores, and the loads back
 		a := obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_SP, Offset: rp.loc.off + 8}
-		g.spills = append(g.spills, obj.RegSpill{Reg: rp.reg, Addr: a, Spill: sbStoreOp(rp.t), Unspill: sbPlainLoad(rp.t)})
+		unspill := sbPlainLoad(rp.t)
+		if sbIsX(rp.reg) {
+			unspill = sbRegStoreOp(rp.t, rp.reg) // MOVSS and MOVSD load as well as store
+		}
+		g.spills = append(g.spills, obj.RegSpill{Reg: rp.reg, Addr: a, Spill: sbRegStoreOp(rp.t, rp.reg), Unspill: unspill})
 	}
 	lea := g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_AUTO, Reg: x86.REG_SP}, sbR(x86.REG_DI))
 	cnt := g.ins(x86.AMOVQ, sbImm(0), sbR(x86.REG_CX))
@@ -695,7 +836,7 @@ func (g *sbGen) epilogue() {
 		home := g.resHome[i]
 		ts, offs := pa.RegisterTypesAndOffsets()
 		for j, r := range pa.Registers {
-			g.ins(sbLoadOp(ts[j]), home.plus(offs[j]).addr(), sbR(sbReg(r)))
+			g.regLoad(ts[j], home.plus(offs[j]).addr(), sbReg(r))
 		}
 	}
 	g.pp.Prog(obj.ARET)
@@ -943,9 +1084,6 @@ func (g *sbGen) assign(x, y ir.Node) {
 		g.storeAX(x)
 		return
 	}
-	if t.IsFloat() || t.IsComplex() {
-		sbGiveUp("floating-point assignment")
-	}
 	if y == nil || sbIsZeroLit(y) {
 		if y != nil {
 			g.stmts(y.Init())
@@ -976,8 +1114,9 @@ func (g *sbGen) assignFrom(x ir.Node, src sbLoc) {
 		return
 	}
 	var keep sbLoc
+	var keepKey *types.Type
 	if src.kind == sbInd { // its base is in AX, which finding x's address may need
-		keep = g.temp(types.Types[types.TUNSAFEPTR])
+		keep, keepKey = g.park(types.Types[types.TUNSAFEPTR], x)
 		g.ins(x86.AMOVQ, sbR(x86.REG_AX), keep.addr())
 	}
 	dst := g.loc(x)
@@ -987,7 +1126,7 @@ func (g *sbGen) assignFrom(x ir.Node, src sbLoc) {
 	}
 	if src.kind == sbInd {
 		g.ins(x86.AMOVQ, keep.addr(), sbR(x86.REG_SI))
-		g.release(keep, types.Types[types.TUNSAFEPTR])
+		g.release(keep, keepKey)
 		src.reg = x86.REG_SI
 	}
 	g.copy(dst, src, t)
@@ -1146,9 +1285,6 @@ func (g *sbGen) valueLoc(n ir.Node) sbLoc {
 		}
 		return g.lastRes[i]
 	}
-	if t.IsFloat() || t.IsComplex() {
-		sbGiveUp("floating-point value")
-	}
 	slot := g.newSlot(t)
 	if sbScalar(t) {
 		g.scalar(n)
@@ -1229,7 +1365,7 @@ func (g *sbGen) valueLoc(n ir.Node) sbLoc {
 func (g *sbGen) dottype(n *ir.TypeAssertExpr, commaok bool) (val, ok sbLoc) {
 	dst := n.Type()
 	srcT := n.X.Type()
-	if n.UseNilPanic || dst.IsFloat() || dst.IsComplex() {
+	if n.UseNilPanic {
 		sbGiveUp("type assertion (special case)")
 	}
 	if dst.IsInterface() {
@@ -1420,9 +1556,6 @@ func (g *sbGen) appendTo(n *ir.CallExpr, slot sbLoc) {
 	}
 	st := n.Type()
 	et := st.Elem()
-	if et.IsFloat() || et.IsComplex() {
-		sbGiveUp("append of floating-point elements")
-	}
 	nargs := int64(len(n.Args) - 1)
 	tp := g.temp(types.Types[types.TUNSAFEPTR])
 	tn := g.temp(types.Types[types.TINT]) // new length
@@ -1501,11 +1634,11 @@ func (g *sbGen) storeAX(x ir.Node) {
 		return
 	}
 	// The address needs computing, which takes AX: park the value.
-	tmp := g.temp(t)
+	tmp, key := g.park(t, x)
 	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tmp.addr())
 	l := g.loc(x) // base, if any, in AX
 	g.ins(x86.AMOVQ, tmp.addr(), sbR(x86.REG_CX))
-	g.release(tmp, t)
+	g.release(tmp, key)
 	g.storeScalar(l, t, x86.REG_CX)
 }
 
@@ -1809,9 +1942,15 @@ func (g *sbGen) scalar(n ir.Node) {
 			}
 			g.ins(x86.AMOVQ, sbImm(b), sbR(x86.REG_AX))
 		case t.IsInteger() || t.IsUintptr():
-			_ = v
 			g.ins(x86.AMOVQ, sbImm(ir.IntVal(t, v)), sbR(x86.REG_AX))
 			g.extend(x86.REG_AX, t)
+		case t.IsFloat():
+			f, _ := constant.Float64Val(constant.ToFloat(v))
+			bits := int64(math.Float64bits(f))
+			if t.Size() == 4 {
+				bits = int64(math.Float32bits(float32(f)))
+			}
+			g.ins(x86.AMOVQ, sbImm(bits), sbR(x86.REG_AX))
 		default:
 			sbGiveUp("literal of type %v", t)
 		}
@@ -1856,7 +1995,7 @@ func (g *sbGen) scalar(n ir.Node) {
 	case ir.OMIN, ir.OMAX:
 		n := n.(*ir.CallExpr)
 		if !(t.IsInteger() || t.IsUintptr()) {
-			sbGiveUp("min or max of %v", t)
+			sbGiveUp("min or max of %v", t) // floats: NaN and the sign of zero have rules of their own
 		}
 		g.scalar(n.Args[0])
 		for _, a := range n.Args[1:] {
@@ -1914,6 +2053,10 @@ func (g *sbGen) scalar(n ir.Node) {
 		g.call(ir.Syms.Newobject)
 	case ir.ODIV, ir.OMOD:
 		n := n.(*ir.BinaryExpr)
+		if t.IsFloat() && n.Op() == ir.ODIV {
+			g.floatArith(n.Op(), n.X, n.Y, t) // no panic: dividing by zero gives an infinity or a NaN
+			break
+		}
 		if !(t.IsInteger() || t.IsUintptr()) {
 			sbGiveUp("division of %v", t)
 		}
@@ -1999,6 +2142,10 @@ func (g *sbGen) scalar(n ir.Node) {
 	case ir.OCONV:
 		n := n.(*ir.ConvExpr)
 		ft := n.X.Type()
+		if ft.IsFloat() || t.IsFloat() {
+			g.floatConv(n.X, ft, t)
+			break
+		}
 		if !(ft.IsInteger() || ft.IsUintptr() || ft.IsBoolean()) || !(t.IsInteger() || t.IsUintptr()) {
 			if !(ft.IsUnsafePtr() || ft.IsUintptr() || ft.IsPtr()) || !(t.IsUnsafePtr() || t.IsUintptr() || t.IsPtr()) {
 				sbGiveUp("conversion from %v to %v", ft, t)
@@ -2011,6 +2158,14 @@ func (g *sbGen) scalar(n ir.Node) {
 		g.ins(x86.AXORL, sbImm(1), sbR(x86.REG_AX))
 	case ir.ONEG:
 		g.scalar(n.(*ir.UnaryExpr).X)
+		if t.IsFloat() { // flip the sign bit
+			if t.Size() == 4 {
+				g.ins(x86.ABTCL, sbImm(31), sbR(x86.REG_AX))
+			} else {
+				g.ins(x86.ABTCQ, sbImm(63), sbR(x86.REG_AX))
+			}
+			break
+		}
 		g.ins1(x86.ANEGQ, sbR(x86.REG_AX))
 		g.extend(x86.REG_AX, t)
 	case ir.OBITNOT:
@@ -2048,6 +2203,10 @@ func (g *sbGen) scalar(n ir.Node) {
 		if !sbScalar(ot) || !sbScalar(n.Y.Type()) {
 			sbGiveUp("comparison of %v", ot)
 		}
+		if ot.IsFloat() {
+			g.floatCompare(n.Op(), n.X, n.Y, ot)
+			break
+		}
 		y := g.binop(n.X, n.Y) // X in AX
 		g.ins(x86.ACMPQ, sbR(x86.REG_AX), y)
 		signed := 0
@@ -2058,6 +2217,10 @@ func (g *sbGen) scalar(n ir.Node) {
 		g.ins(x86.AMOVBQZX, sbR(x86.REG_AX), sbR(x86.REG_AX))
 	case ir.OADD, ir.OSUB, ir.OMUL, ir.OAND, ir.OOR, ir.OXOR:
 		n := n.(*ir.BinaryExpr)
+		if t.IsFloat() && (n.Op() == ir.OADD || n.Op() == ir.OSUB || n.Op() == ir.OMUL) {
+			g.floatArith(n.Op(), n.X, n.Y, t)
+			break
+		}
 		if !(t.IsInteger() || t.IsUintptr()) {
 			sbGiveUp("arithmetic on %v", t)
 		}
@@ -2120,7 +2283,7 @@ func (g *sbGen) branch(n ir.Node, when bool) []*obj.Prog {
 	case ir.OEQ, ir.ONE, ir.OLT, ir.OLE, ir.OGT, ir.OGE:
 		n := n.(*ir.BinaryExpr)
 		ot := n.X.Type()
-		if len(n.Init()) != 0 || !sbScalar(ot) || !sbScalar(n.Y.Type()) {
+		if len(n.Init()) != 0 || !sbScalar(ot) || !sbScalar(n.Y.Type()) || ot.IsFloat() {
 			break
 		}
 		y := g.binop(n.X, n.Y)
@@ -2238,12 +2401,12 @@ func (g *sbGen) binary(x, y ir.Node) {
 		return
 	}
 	g.scalar(x)
-	tmp := g.temp(x.Type())
+	tmp, key := g.park(x.Type(), y)
 	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tmp.addr())
 	g.scalar(y)
 	g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_CX))
 	g.ins(x86.AMOVQ, tmp.addr(), sbR(x86.REG_AX))
-	g.release(tmp, x.Type())
+	g.release(tmp, key)
 }
 
 // ---- calls
@@ -2314,6 +2477,11 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 	}
 	// evaluate
 	locs := make([]sbLoc, len(info.InParams()))
+	type parked struct {
+		l   sbLoc
+		key *types.Type
+	}
+	var parks []parked
 	for i := range info.InParams() {
 		pa := info.InParam(i)
 		if pa.Type.Size() == 0 {
@@ -2327,6 +2495,17 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			continue
 		}
 		a := args[i-first]
+		if sbScalar(pa.Type) && sbScalar(a.Type()) && !(a.Op() == ir.ONAME && g.leaf(a)) {
+			// A one-word argument that has to be computed waits in a temporary until the registers are
+			// loaded. walk has moved everything that calls out of argument lists, so normally nothing
+			// can look at this frame before the call, and the temporary is not one the collector reads.
+			g.scalar(a)
+			tmp, key := g.park(pa.Type, args[i-first+1:]...)
+			g.ins(x86.AMOVQ, sbR(x86.REG_AX), tmp.addr())
+			locs[i] = tmp
+			parks = append(parks, parked{tmp, key})
+			continue
+		}
 		l := g.valueLoc(a)
 		if l.kind == sbInd {
 			// its base is in AX, which evaluating the next argument will use. (A variable's own home can be
@@ -2357,11 +2536,14 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			if !sbScalar(ts[j]) {
 				sbGiveUp("argument part of type %v", ts[j])
 			}
-			g.ins(sbLoadOp(ts[j]), locs[i].plus(offs[j]).addr(), sbR(sbReg(r)))
+			g.regLoad(ts[j], locs[i].plus(offs[j]).addr(), sbReg(r))
 		}
 	}
 	if w := info.ArgWidth(); w > g.maxarg {
 		g.maxarg = w
+	}
+	for _, pk := range parks {
+		g.release(pk.l, pk.key)
 	}
 	if n.Pos().IsKnown() {
 		g.pp.Pos = n.Pos() // what a traceback and runtime.Caller report for this call
@@ -2409,7 +2591,7 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 			if !sbScalar(ts[j]) {
 				sbGiveUp("result part of type %v", ts[j])
 			}
-			g.ins(sbStoreOp(ts[j]), sbR(sbReg(r)), l.plus(offs[j]).addr())
+			g.ins(sbRegStoreOp(ts[j], sbReg(r)), sbR(sbReg(r)), l.plus(offs[j]).addr())
 		}
 	}
 	for i := range info.OutParams() {
@@ -2431,10 +2613,130 @@ func sbRealFunction(n *ir.CallExpr) bool {
 		return false
 	}
 	switch callee.Sym().Pkg.Path {
-	case "sync/atomic", "math/bits", "internal/runtime/atomic", "internal/runtime/math":
+	case "sync/atomic", "math/bits", "internal/runtime/atomic", "internal/runtime/math", "math":
 		return true
 	case "runtime":
 		return callee.Sym().Name == "KeepAlive"
 	}
 	return false
+}
+
+// ---- floating point: values are bit patterns in AX/CX until an operation needs them in X0/X1
+
+func (g *sbGen) toX(reg, x int16, t *types.Type) {
+	g.ins(x86.AMOVQ, sbR(reg), sbR(x))
+}
+
+func (g *sbGen) fromX(x int16, t *types.Type) {
+	g.ins(x86.AMOVQ, sbR(x), sbR(x86.REG_AX))
+	if t.Size() == 4 {
+		g.ins(x86.AMOVL, sbR(x86.REG_AX), sbR(x86.REG_AX))
+	}
+}
+
+func (g *sbGen) floatArith(op ir.Op, x, y ir.Node, t *types.Type) {
+	g.binary(x, y)
+	g.toX(x86.REG_AX, x86.REG_X0, t)
+	g.toX(x86.REG_CX, x86.REG_X1, t)
+	var as obj.As
+	switch {
+	case op == ir.OADD && t.Size() == 8:
+		as = x86.AADDSD
+	case op == ir.OADD:
+		as = x86.AADDSS
+	case op == ir.OSUB && t.Size() == 8:
+		as = x86.ASUBSD
+	case op == ir.OSUB:
+		as = x86.ASUBSS
+	case op == ir.OMUL && t.Size() == 8:
+		as = x86.AMULSD
+	case op == ir.OMUL:
+		as = x86.AMULSS
+	case t.Size() == 8:
+		as = x86.ADIVSD
+	default:
+		as = x86.ADIVSS
+	}
+	g.ins(as, sbR(x86.REG_X1), sbR(x86.REG_X0))
+	g.fromX(x86.REG_X0, t)
+}
+
+// floatCompare leaves x op y in AX as 0 or 1. Every comparison with a NaN is false, except !=.
+func (g *sbGen) floatCompare(op ir.Op, x, y ir.Node, t *types.Type) {
+	g.binary(x, y)
+	a, b := int16(x86.REG_X0), int16(x86.REG_X1)
+	if op == ir.OLT || op == ir.OLE { // x < y is y > x: "above" is the condition a NaN does not satisfy
+		a, b = b, a
+		if op == ir.OLT {
+			op = ir.OGT
+		} else {
+			op = ir.OGE
+		}
+	}
+	g.toX(x86.REG_AX, x86.REG_X0, t)
+	g.toX(x86.REG_CX, x86.REG_X1, t)
+	cmp := x86.AUCOMISD
+	if t.Size() == 4 {
+		cmp = x86.AUCOMISS
+	}
+	g.ins(cmp, sbR(b), sbR(a)) // flags as for a - b; unordered sets zero, parity and carry together
+	switch op {
+	case ir.OEQ:
+		g.ins1(x86.ASETEQ, sbR(x86.REG_AX))
+		g.ins1(x86.ASETPC, sbR(x86.REG_CX))
+		g.ins(x86.AANDL, sbR(x86.REG_CX), sbR(x86.REG_AX))
+	case ir.ONE:
+		g.ins1(x86.ASETNE, sbR(x86.REG_AX))
+		g.ins1(x86.ASETPS, sbR(x86.REG_CX))
+		g.ins(x86.AORL, sbR(x86.REG_CX), sbR(x86.REG_AX))
+	case ir.OGT:
+		g.ins1(x86.ASETHI, sbR(x86.REG_AX))
+	case ir.OGE:
+		g.ins1(x86.ASETCC, sbR(x86.REG_AX))
+	}
+	g.ins(x86.AMOVBQZX, sbR(x86.REG_AX), sbR(x86.REG_AX))
+}
+
+// floatConv: conversions with a floating-point type on either side
+func (g *sbGen) floatConv(x ir.Node, ft, t *types.Type) {
+	big := func(u *types.Type) bool { return (u.IsInteger() || u.IsUintptr()) && !u.IsSigned() && u.Size() == 8 }
+	switch {
+	case ft.IsFloat() && t.IsFloat():
+		g.scalar(x)
+		if ft.Size() == t.Size() {
+			return
+		}
+		g.toX(x86.REG_AX, x86.REG_X0, ft)
+		if t.Size() == 8 {
+			g.ins(x86.ACVTSS2SD, sbR(x86.REG_X0), sbR(x86.REG_X0))
+		} else {
+			g.ins(x86.ACVTSD2SS, sbR(x86.REG_X0), sbR(x86.REG_X0))
+		}
+		g.fromX(x86.REG_X0, t)
+	case t.IsFloat() && (ft.IsInteger() || ft.IsUintptr()):
+		if big(ft) {
+			sbGiveUp("conversion of a 64-bit unsigned integer to floating point")
+		}
+		g.scalar(x) // the integer's full 64-bit extension: a signed 64-bit conversion is exact for every narrower type
+		if t.Size() == 8 {
+			g.ins(x86.ACVTSQ2SD, sbR(x86.REG_AX), sbR(x86.REG_X0))
+		} else {
+			g.ins(x86.ACVTSQ2SS, sbR(x86.REG_AX), sbR(x86.REG_X0))
+		}
+		g.fromX(x86.REG_X0, t)
+	case ft.IsFloat() && (t.IsInteger() || t.IsUintptr()):
+		if big(t) {
+			sbGiveUp("conversion of floating point to a 64-bit unsigned integer")
+		}
+		g.scalar(x)
+		g.toX(x86.REG_AX, x86.REG_X0, ft)
+		if ft.Size() == 8 {
+			g.ins(x86.ACVTTSD2SQ, sbR(x86.REG_X0), sbR(x86.REG_AX))
+		} else {
+			g.ins(x86.ACVTTSS2SQ, sbR(x86.REG_X0), sbR(x86.REG_AX))
+		}
+		g.extend(x86.REG_AX, t)
+	default:
+		sbGiveUp("conversion from %v to %v", ft, t)
+	}
 }

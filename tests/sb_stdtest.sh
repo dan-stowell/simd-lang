@@ -15,7 +15,7 @@ pkgs=("$@")
 log=$(mktemp -d /dev/shm/sbstd.XXXXXX)
 cache=$(mktemp -d /dev/shm/sbstdcache.XXXXXX)
 (cd "$G/src" && systemd-run --user --scope -q -p MemoryMax=14G env GOROOT="$G" GOTOOLCHAIN=local GOFLAGS= GOCACHE="$cache" \
-   SB_BASELINE=1 SB_BASELINE_LOG="$log" "$G/bin/go" test -short -count=1 -p 4 "-gcflags=all=${SB_GCFLAGS:--dwarf=false -l}" -ldflags=-w "${pkgs[@]}" 2>&1) | tee "$log/test.out" | grep -v '^ok ' | head -${SB_SHOW:-40}
+   SB_BASELINE=1 SB_BASELINE_LOG="$log" "$G/bin/go" test -short ${SB_TESTARGS:--count=1} -p 4 "-gcflags=all=${SB_GCFLAGS:--dwarf=false -l}" -ldflags=-w "${pkgs[@]}" 2>&1) | tee "$log/test.out" | grep -v '^ok ' | head -${SB_SHOW:-40}
 ok=$(grep -c '^ok ' "$log/test.out"); bad=$(grep -c '^FAIL\|^---\|panic:' "$log/test.out")
 b=$(cat "$log"/[0-9]*.txt 2>/dev/null | grep -c '	baseline$'); s=$(cat "$log"/[0-9]*.txt 2>/dev/null | grep -c '	ssa	')
 echo "packages ok: $ok of ${#pkgs[@]}; functions compiled by the baseline: $b, sent to SSA: $s"
