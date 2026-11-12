@@ -75,7 +75,8 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 		}
 		sym := c.funcSym(fn)
 		name := sym.Name
-		linknamed := c.linknameOf(fn.Pkg(), fn.Name()) != ""
+		c.pr.linknames(c.pkg)
+		linknamed := c.pkg.linknamed[fn.Name()] || c.pkg.linknamedStd[fn.Name()]
 		switch {
 		case fd.Body == nil && c.abis.defs[name]:
 			// assembly: Go callers come in through an ABIInternal wrapper

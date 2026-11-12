@@ -98,6 +98,8 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 		case "FuncPCABI0", "FuncPCABIInternal":
 			return true
 		}
+	case "crypto/internal/constanttime":
+		return fn.Name() == "boolToUint8" // its body panics: "must be intrinsicified"
 	}
 	return false
 }
@@ -106,6 +108,9 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 	ax := []loc{{kind: lReg, reg: AX}}
 	switch fn.Name() {
+	case "boolToUint8":
+		g.loadTo(AX, g.expr(e.Args[0]), types.Typ[types.Bool])
+		return ax
 	case "getcallerpc", "GetCallerPC":
 		g.a.load(AX, mb(BP, 8), 8, false)
 		return ax

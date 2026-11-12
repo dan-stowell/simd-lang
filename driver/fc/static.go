@@ -36,20 +36,25 @@ func (c *compiler) compilePackage() (errs []string) {
 			if !ok || gd.Tok != token.VAR {
 				continue
 			}
-			if hasDirective(gd.Doc, "//go:embed") {
-				errs = append(errs, "go:embed")
-			}
 			for _, sp := range gd.Specs {
 				vs := sp.(*ast.ValueSpec)
-				if hasDirective(vs.Doc, "//go:embed") {
-					errs = append(errs, "go:embed")
+				var embeds []string
+				if len(gd.Specs) == 1 {
+					embeds = embedPatterns(gd.Doc, vs.Doc)
+				} else {
+					embeds = embedPatterns(vs.Doc)
 				}
 				for _, n := range vs.Names {
 					if n.Name == "_" {
 						continue
 					}
 					v := c.info.Defs[n].(*types.Var)
-					try("var "+n.Name, func() { c.defGlobal(v) })
+					try("var "+n.Name, func() {
+						c.defGlobal(v)
+						if len(embeds) > 0 {
+							c.embedVar(v, embeds)
+						}
+					})
 				}
 			}
 		}

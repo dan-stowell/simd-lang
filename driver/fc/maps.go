@@ -4,6 +4,9 @@ package main
 import (
 	"go/ast"
 	"go/types"
+
+	"cmd/internal/obj"
+	"cmd/internal/objabi"
 )
 
 func (g *gen) mapType(e ast.Expr) *types.Map { return g.typeOf(e).Underlying().(*types.Map) }
@@ -36,15 +39,24 @@ func (g *gen) mapIndex(e *ast.IndexExpr, commaOK bool) []loc {
 func (g *gen) mapIndexLocs(e *ast.IndexExpr, ml, kl loc, commaOK bool) []loc {
 	mt := g.typeOf(e.X)
 	et := mt.Underlying().(*types.Map).Elem()
-	if g.c.sizeof(et) > 1024 {
-		giveUp("map element larger than the runtime's zero value")
-	}
+	fat := g.c.sizeof(et) > 1024 // larger than the runtime's own zero value: pass one
 	g.mapArgs(mt, ml, kl)
+	if fat {
+		g.a.lea(DI, msym(g.c.zeroSym(g.c.sizeof(et)), 0))
+	}
 	if !commaOK {
-		g.callRT("mapaccess1")
+		if fat {
+			g.callRT("mapaccess1_fat")
+		} else {
+			g.callRT("mapaccess1")
+		}
 		return []loc{{kind: lRegInd, reg: AX}}
 	}
-	g.callRT("mapaccess2")
+	if fat {
+		g.callRT("mapaccess2_fat")
+	} else {
+		g.callRT("mapaccess2")
+	}
 	p := g.ptrTemp()
 	g.a.store(mb(BP, p.off), AX, 8)
 	okl := g.wordTemp()
@@ -193,4 +205,24 @@ func (g *gen) rangeVar(e ast.Expr) *types.Var {
 		return v
 	}
 	return nil
+}
+
+// zeroSym: read-only zeros, at least size bytes (the value of a missing map entry that is larger than the
+// runtime's own zero value).
+func (c *compiler) zeroSym(size int64) *obj.LSym {
+	size = align(size, 4096)
+	c.mu.Lock()
+	if c.zeroSyms == nil {
+		c.zeroSyms = map[int64]*obj.LSym{}
+	}
+	s := c.zeroSyms[size]
+	c.mu.Unlock()
+	if s == nil {
+		s = c.staticSym("zero")
+		c.defData(s, objabi.SNOPTRBSS, size)
+		c.mu.Lock()
+		c.zeroSyms[size] = s
+		c.mu.Unlock()
+	}
+	return s
 }

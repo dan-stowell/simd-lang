@@ -47,6 +47,8 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
+	embed      *embedCfg // from -embedcfg (mixed mode)
+	zeroSyms   map[int64]*obj.LSym
 	globGen    *gen // names the function literals of package-level initializers
 	ninit      int
 	dynInits   []string // variables initialized by code
@@ -339,6 +341,10 @@ func (c *compiler) writeObject(path string) {
 	}
 	fmt.Fprintf(out, "!\n")
 	obj.WriteObjFile(c.ctxt, out)
+	// The stock reader takes the address of the first byte after the relocation block even when a symbol
+	// has no relocations; in an object with no data, no function and no referenced names that byte would
+	// be past the end.
+	out.Write(make([]byte, 8))
 	if err := out.Close(); err != nil {
 		log.Fatal(err)
 	}

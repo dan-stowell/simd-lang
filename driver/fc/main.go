@@ -34,9 +34,9 @@ var valueFlags = map[string]bool{"o": true, "p": true, "importcfg": true, "trimp
 	"json": true, "env": true, "memprofile": true, "cpuprofile": true, "I": true}
 
 type options struct {
-	out, path, importcfg, trimpath, symabis, lang string
-	std                                           bool
-	files                                         []string
+	out, path, importcfg, trimpath, symabis, lang, embedcfg string
+	std                                                     bool
+	files                                                   []string
 }
 
 func parseArgs(args []string) options {
@@ -70,6 +70,8 @@ func parseArgs(args []string) options {
 			o.trimpath = val
 		case "symabis":
 			o.symabis = val
+		case "embedcfg":
+			o.embedcfg = val
 		case "lang":
 			o.lang = val
 		case "std":
@@ -273,6 +275,10 @@ func (c *compiler) alignWithStock(defs []stockDef) (missing []string) {
 
 func main() {
 	log.SetFlags(0)
+	if len(os.Args) > 1 && os.Args[1] == "checkobj" {
+		checkObjs(os.Args[2:])
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "build" {
 		buildMode(os.Args[2:])
 		return
@@ -310,6 +316,9 @@ func main() {
 	}
 	c := newCompiler(pr, target, o.path, o.trimpath)
 	c.readSymABIs(o.symabis)
+	if o.embedcfg != "" {
+		c.embed = readEmbedCfg(o.embedcfg)
+	}
 	stock, stockDefs := definedSymsOrder(o.out)
 	if m := os.Getenv("FC_TYPEDIFF"); m != "" {
 		typeDiff(pr, target, o.path, o.trimpath, o.out) // rtype_diff.go
@@ -447,7 +456,7 @@ func (c *compiler) stockParity(stock map[string]bool) {
 			for i := 0; i < ms.Len(); i++ {
 				sel := ms.At(i)
 				if n, _ := c.methodSymName(recv, sel.Obj().(*types.Func)); stock[n] {
-					c.methodSym(recv, sel)
+					c.methodSymFor(recv, sel)
 				}
 			}
 		}
@@ -518,6 +527,73 @@ func (c *compiler) indexRefs(archives map[string]string) {
 		for _, s := range list {
 			seen[s] = true
 			visit(s)
+		}
+	}
+}
+
+// checkObjs (debugging): every symbol reference in the given objects or archives must be in range.
+func checkObjs(files []string) {
+	for _, f := range files {
+		data, err := os.ReadFile(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var objs [][]byte
+		if bytes.HasPrefix(data, []byte("!<arch>\n")) {
+			for _, m := range readArchive(f) {
+				if m.name != "__.PKGDEF" {
+					objs = append(objs, m.data)
+				}
+			}
+		} else {
+			objs = append(objs, data)
+		}
+		for k, d := range objs {
+			i := bytes.Index(d, []byte("\n!\n"))
+			if i < 0 {
+				continue
+			}
+			r := goobj.NewReaderFromBytes(d[i+3:], false)
+			if r == nil {
+				fmt.Printf("%s[%d]: not a Go object\n", f, k)
+				continue
+			}
+			ndef := r.NSym() + r.NHashed64def() + r.NHasheddef() + r.NNonpkgdef()
+			n := ndef + r.NNonpkgref()
+			npkg := len(r.Pkglist())
+			check := func(what string, owner int, ref goobj.SymRef) {
+				bad := false
+				switch ref.PkgIdx {
+				case goobj.PkgIdxSelf:
+					bad = int(ref.SymIdx) >= r.NSym()
+				case goobj.PkgIdxHashed64:
+					bad = int(ref.SymIdx) >= r.NHashed64def()
+				case goobj.PkgIdxHashed:
+					bad = int(ref.SymIdx) >= r.NHasheddef()
+				case goobj.PkgIdxNone:
+					bad = int(ref.SymIdx) >= r.NNonpkgdef()+r.NNonpkgref()
+				case goobj.PkgIdxBuiltin, goobj.PkgIdxInvalid:
+				default:
+					bad = int(ref.PkgIdx) >= npkg
+					if !bad {
+						fmt.Printf("%s[%d]: %s of %s: indexed reference into package %s (#%d)\n", f, k, what, r.Sym(uint32(owner)).Name(r), r.Pkglist()[ref.PkgIdx], ref.SymIdx)
+					}
+				}
+				if bad {
+					fmt.Printf("%s[%d]: %s of %s: bad reference %v\n", f, k, what, r.Sym(uint32(owner)).Name(r), ref)
+				}
+			}
+			for j := 0; j < ndef; j++ {
+				rs := r.Relocs(uint32(j))
+				for x := range rs {
+					check("reloc", j, rs[x].Sym())
+				}
+				as := r.Auxs(uint32(j))
+				for x := range as {
+					check("aux", j, as[x].Sym())
+				}
+			}
+			_ = n
 		}
 	}
 }

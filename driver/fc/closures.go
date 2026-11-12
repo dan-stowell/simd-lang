@@ -334,7 +334,7 @@ func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
 		// the method under this receiver type exists as a symbol: the method itself or its wrapper
 		if sel := types.NewMethodSet(recvT).Lookup(fn.Pkg(), fn.Name()); sel != nil {
 			if _, generic := g.funcRefIsGeneric(fn); !generic {
-				g.a.lea(AX, msym(g.c.staticClosure(g.c.methodSym(recvT, sel)), 0))
+				g.a.lea(AX, msym(g.c.staticClosure(g.c.methodSymFor(recvT, sel)), 0))
 				return loc{kind: lReg, reg: AX}
 			}
 		}

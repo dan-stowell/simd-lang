@@ -214,10 +214,14 @@ func (c *compiler) genWrapper(r wrapperReq) {
 // interface value).
 func (c *compiler) ifaceMethodWrapper(it types.Type, m *types.Func, name string) {
 	sym := c.lookup(name, obj.ABIInternal, "_")
-	if sym.OnList() || c.rtWrap[sym] {
+	c.rtMu.Lock()
+	c.rtInit()
+	done := sym.OnList() || c.rtWrap[sym]
+	c.rtWrap[sym] = true
+	c.rtMu.Unlock()
+	if done {
 		return
 	}
-	c.rtWrap[sym] = true
 	msig := m.Type().(*types.Signature)
 	sig := types.NewSignatureType(param(it), nil, nil, msig.Params(), msig.Results(), msig.Variadic())
 	plain := types.NewSignatureType(nil, nil, nil, msig.Params(), msig.Results(), msig.Variadic())

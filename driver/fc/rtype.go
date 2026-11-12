@@ -809,3 +809,11 @@ func (c *compiler) methods(t types.Type) []methodSig {
 	c.rtMeth[key] = ms
 	return ms
 }
+
+// methodSymFor is methodSym for callers outside the descriptor writer (it takes the lock).
+func (c *compiler) methodSymFor(recv types.Type, sel *types.Selection) *obj.LSym {
+	c.rtMu.Lock()
+	defer c.rtMu.Unlock()
+	c.rtInit()
+	return c.methodSym(recv, sel)
+}
