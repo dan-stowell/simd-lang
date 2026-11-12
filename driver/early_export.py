@@ -28,6 +28,29 @@ s = s.replace(anchor, '''\t// sb: pipelining. Everything the export data records
 \t\tos.Stdout.WriteString("sb:export-ready\\n")
 \t}
 ''' + anchor)
+# Third change: functions another compiler provides. With SB_DROP_BODIES set, a function that has a
+# definition in the -symabis file (the same mechanism that says "this one is written in assembly") loses
+# its Go body right after type checking: the stock compiler then treats it as implemented elsewhere, with
+# the ABI the symabis line gives, and compiles nothing for it. sbc emits it into another object of the
+# same package archive.
+anchor2 = '\tnoder.LoadPackage(flag.Args())\n'
+assert s.count(anchor2) == 1
+s = s.replace(anchor2, anchor2 + '''
+\tif os.Getenv("SB_DROP_BODIES") != "" {
+\t\tfor _, fn := range typecheck.Target.Funcs {
+\t\t\tif len(fn.Body) != 0 && fn.Nname != nil && !ir.IsBlank(fn.Nname) && symABIs.HasDef(fn.Sym()) {
+\t\t\t\tfn.Body = nil
+\t\t\t\tvar params []*ir.Name
+\t\t\t\tfor _, n := range fn.Dcl {
+\t\t\t\t\tif n.Class == ir.PPARAM || n.Class == ir.PPARAMOUT {
+\t\t\t\t\t\tparams = append(params, n)
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\tfn.Dcl = params
+\t\t\t}
+\t\t}
+\t}
+''')
 open(p, 'w').write(s)
 p = os.path.join(d, 'obj.go'); s = open(p).read()
 old = '''	dumpobj1(base.Flag.LowerO, modeCompilerObj)

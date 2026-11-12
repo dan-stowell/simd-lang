@@ -1,6 +1,28 @@
 --- /usr/local/go/src/cmd/compile/internal/gc/main.go	2026-10-19 22:20:36.000000000 +0000
-+++ main.go	2026-11-11 22:46:33.019822951 +0000
-@@ -313,6 +313,16 @@
++++ main.go	2026-11-11 23:53:05.300937580 +0000
+@@ -217,6 +217,21 @@
+ 	// Parse and typecheck input.
+ 	noder.LoadPackage(flag.Args())
+ 
++	if os.Getenv("SB_DROP_BODIES") != "" {
++		for _, fn := range typecheck.Target.Funcs {
++			if len(fn.Body) != 0 && fn.Nname != nil && !ir.IsBlank(fn.Nname) && symABIs.HasDef(fn.Sym()) {
++				fn.Body = nil
++				var params []*ir.Name
++				for _, n := range fn.Dcl {
++					if n.Class == ir.PPARAM || n.Class == ir.PPARAMOUT {
++						params = append(params, n)
++					}
++				}
++				fn.Dcl = params
++			}
++		}
++	}
++
+ 	// As a convenience to users (toolchain maintainers, in particular),
+ 	// when compiling a package named "main", we default the package
+ 	// path to "main" if the -p flag was not specified.
+@@ -313,6 +328,16 @@
  	//
  	// There are cyclic dependencies between all of these phases, so we
  	// need to iterate all of them until we reach a fixed point.
@@ -18,7 +40,7 @@
  	for nextFunc, nextExtern := 0, 0; ; {
  		reflectdata.WriteRuntimeTypes()
 --- /usr/local/go/src/cmd/compile/internal/gc/obj.go	2026-10-19 22:20:36.000000000 +0000
-+++ obj.go	2026-11-11 22:46:33.019822951 +0000
++++ obj.go	2026-11-11 23:53:05.300937580 +0000
 @@ -41,12 +41,17 @@
  	modeLinkerObj
  )
@@ -39,7 +61,7 @@
  }
  
 --- /usr/local/go/src/cmd/internal/obj/objfile.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../../../internal/obj/objfile.go	2026-11-11 22:46:33.019822951 +0000
++++ ../../../internal/obj/objfile.go	2026-11-11 23:53:05.300937580 +0000
 @@ -548,10 +548,20 @@
  			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
  			h.Write(tmp[:4])

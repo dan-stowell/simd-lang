@@ -1,9 +1,10 @@
 # JOURNAL
 
-Append-only. Each entry: timestamp (absolute, UTC), what I did, what moved in TRACE.md,
+Append-only (one correction: on 2026-11-12 00:01 the headings of iterations 1-9 were reset to the times of
+their commits; I had been writing estimated times and they ran up to 70 minutes fast). Each entry: timestamp (absolute, UTC), what I did, what moved in TRACE.md,
 scope check ("most ambitious next thing; why not that").
 
-## 2026-11-11 22:30 UTC — iteration 1: rung 0, the profile
+## 2026-11-11 22:25 UTC — iteration 1: rung 0, the profile
 
 **Did.** Cloned MinIO (`7aac2a2c`) and Kubernetes (`2cb26b34`) under `/home/exedev/targets/`, Go 1.27.3
 (`GOTOOLCHAIN=local`). `tools/trace/stock.sh` does one instrumented cold build (fresh GOCACHE, dropped
@@ -46,7 +47,7 @@ be tested against MinIO's own behaviour; without the skeleton a new back end has
 first (hours, not days), then the chain (item 2), which a patch to the compiler can cut without a new
 back end.
 
-## 2026-11-11 22:40 UTC — iteration 2: rung 1, the skeleton
+## 2026-11-11 22:36 UTC — iteration 2: rung 1, the skeleton
 
 **Did.** `build/sb` (driver/main.go) builds MinIO end to end, cold: plan (`go list`) -> read every Go
 file in parallel -> Strand golex over the 75.5 MB concatenation -> `go tool compile`/`asm` per package
@@ -77,7 +78,7 @@ package waits for its dependencies' *code generation*, which it does not need) a
 (optimization level, debug info, GC settings, all of which the charter lets me relax). Rung 2 is the
 chain, via a patch to cmd/compile that writes export data before the back end runs.
 
-## 2026-11-11 23:05 UTC — iteration 3: rung 2, the chain
+## 2026-11-11 22:55 UTC — iteration 3: rung 2, the chain
 
 **Did.** Patched cmd/compile (`driver/early_export.py`, built by `driver/mkcompiler.sh` into
 `build/compile-sb`): with `-linkobj` and `SB_EARLY_EXPORT` set, the export data is written as soon as the
@@ -106,7 +107,7 @@ test passes.
 **Trace.** 47.6 s -> 39.9 s cold. Chain 38.5 s -> about 12 s. Cores busy 5.6 -> 6.8. Core-seconds went
 *up*, 265 -> 273: hundreds of back ends alive at once (432 at the peak, 13 GB) cost something.
 
-## 2026-11-11 23:10 UTC — iteration 4: rung 3, less work (the budgeted optimization iteration)
+## 2026-11-11 23:02 UTC — iteration 4: rung 3, less work (the budgeted optimization iteration)
 
 After rung 2 the build is bound by work: 273 core-s / 8 = 34 s. The charter lets optimization level and
 debug info go. Measured one at a time on the full MinIO build, each binary smoke-tested:
@@ -134,7 +135,7 @@ and its core computation (a histogram of identifier spellings over all tokens) i
 build that is Strand-shaped and whose output would be consumed. That is the next iteration (a spike,
 with a kill test).
 
-## 2026-11-11 23:20 UTC — iteration 5: spike, "don't compile what the linker discards". Killed.
+## 2026-11-11 23:10 UTC — iteration 5: spike, "don't compile what the linker discards". Killed.
 
 **Kill test.** Built MinIO keeping the objects, listed every function symbol in the 1,312 archives
 (`go tool nm -size`) and in the linked binary. Of 44.1 MB of compiled function text, the linker discards
@@ -163,7 +164,7 @@ that is where the work is (lexing all of MinIO is 0.2 s; the stock compiler's sc
 would be about 0.4 core-s of 144), so nothing short of that moves the compile row by a large factor.
 Doing: the divergence step (due now), and kube-apiserver through the driver while the subagents think.
 
-## 2026-11-11 23:45 UTC — iteration 6: second codebase, divergence step, and where the work is
+## 2026-11-11 23:21 UTC — iteration 6: second codebase, divergence step, and where the work is
 
 **kube-apiserver through the driver.** Cold, same configuration: **53.4 s** (stock 86.3 s), 2,079
 packages. `tests/kube_smoke.sh` (etcd 3.7.1 as pinned by Kubernetes, `/healthz`, then a ConfigMap
@@ -197,7 +198,7 @@ of the whole 2 s budget) followed by a separate read of the same files. Rung 4: 
 package graph itself from the sources, in the same pass that reads them, with the import lists coming
 from Strand's declaration pass, differential-tested against `go list` on both targets.
 
-## 2026-11-12 00:10 UTC — iteration 7: rung 4, the plan without `go list`
+## 2026-11-11 23:36 UTC — iteration 7: rung 4, the plan without `go list`
 
 **Did.** `driver/plan.go`: the driver finds the package graph itself while it reads the sources.
 go.mod / go.work / vendor/modules.txt give the modules; each round lists the directories of the packages
@@ -223,7 +224,7 @@ imports 0.07 s.
   the same 75.5 MB): ten process starts, and the pool does not spread a 6 MB input over eight cores the
   way it spreads 75 MB. A persistent godecl fed over a pipe would get most of that back. Not done.
 - **The host is noisy.** The same build, same flags, cost 139 compile core-seconds at 23:00 and 157 at
-  00:05; four consecutive cold runs gave 24.1, 24.1, 23.8, 22.1 s where an hour earlier they gave
+  23:30; four consecutive cold runs gave 24.1, 24.1, 23.8, 22.1 s where half an hour earlier they gave
   21.3-22.0. Steal time is small (2-3.5 s); the cores are simply slower at times (shared hardware
   threads, presumably). `tools/trace/sb.sh` now takes `REPS=n` and TRACE.md prints every wall clock.
   Differences under about 2 s between single runs are not evidence; I compare phase rows.
@@ -236,7 +237,7 @@ That is a pure optimization iteration; the last one was iteration 4, so the budg
 the template back end's kill test 2 (shape histogram), the one cheap experiment that says whether the
 end state's back end can be stencils.
 
-## 2026-11-12 00:35 UTC — iteration 8: optimization of the compile row (budgeted). Three negatives.
+## 2026-11-11 23:45 UTC — iteration 8: optimization of the compile row (budgeted). Three negatives.
 
 All measured with `tools/trace/ab.sh` (configurations run in turn, twice, page cache warm, because the
 host drifts), each binary smoke-tested.
@@ -268,7 +269,7 @@ whole program costs, and whether Go function bodies fall into few enough shapes 
 trace should say what "2 s on N cores" means for the pipeline as it stands: simulate the measured
 action graph on N cores.
 
-## 2026-11-12 01:00 UTC — iteration 9: two measurements for the next compiler (spike)
+## 2026-11-11 23:49 UTC — iteration 9: two measurements for the next compiler (spike)
 
 `explore/wholeprog` (built as `build/wholeprog`) reads the driver's plan and works on the whole of
 MinIO in one process: 1,312 packages, 75.5 MB.
@@ -323,3 +324,48 @@ is in the binary that the smoke test runs, and from then on widening it is measu
 That is rung 5's skeleton. Staged so that a failure leaves something: (A) one hand-made function through
 cmd/internal/obj into a running program; (B) the body-dropping patch and the driver plumbing; (C) a
 real subset over the whole-program type information; (D) a differential harness.
+
+## 2026-11-12 00:10 UTC — iteration 10: rung 5's skeleton. A second compiler is in the build.
+
+**Did.** `driver/sbc` (built by `driver/mksbc.sh` into `build/sbc`): parses and type-checks the whole
+program with go/parser and go/types, picks the functions it can compile, writes their machine code
+through cmd/internal/obj into one extra object per package, and lists them in a symabis file. The
+patched stock compiler (third change in `driver/early_export.py`) drops the Go body of any function
+that has a definition in the symabis file, exactly as if it were written in assembly. The driver runs
+sbc after the plan, passes each package its list, and appends sbc's object to the package archive.
+
+Version 0 takes frameless leaf functions: `if cond { return e }` ... `return e`, one result, parameters
+and result each one integer register, expressions made of parameters, constants, field loads through
+pointers (nested structs, embedded pointers), integer arithmetic at every width, comparisons and
+short-circuit `&&`/`||`. No calls, no stack frame, so no stack map and no prologue.
+
+**The seam held at every stage.** (A) Two hand-made functions linked into a Go program whose source
+declares them without bodies: ran first time, including the nil-receiver panic. (B) The body-dropping
+patch: the same program with real bodies in the source runs sbc's versions. (C) MinIO: **4,458 of
+99,194 functions in 412 packages are sbc's** (126 kB of code), the binary passes the S3 smoke test,
+and `go tool objdump` shows sbc's code under MinIO's own symbols with the right file and line.
+
+**Checked.** `tests/sbc_diff.sh`: random programs inside the subset (`tests/sbc_gen.py`: every integer
+width, nested and embedded structs, conditional returns, nil arguments), built by the stock compiler
+alone and with sbc taking the functions. 2,000 functions over 10 programs, 24,000 results including
+nil-dereference panics: identical. The harness found one thing the MinIO smoke test could not have:
+before it, sbc declined every function containing a comparison (go/types gives `a < b` the type
+"untyped bool"), so MinIO had passed with 2,117 functions; with the fix, 4,458.
+Three bugs on the way, all caught before MinIO: the planner did not add the runtime to a program that
+imports nothing; the assembler's tables are initialised on first use without a lock, so parallel
+emitters raced; without a debug-info function count the link overflowed a one-byte index.
+
+**Trace.** Worse, as predicted: 23.7 s cold against 21.3-24.2 s for the same configuration without
+sbc. sbc's whole-program parse and check is 1.0 s of wall clock, at present before the first compile
+starts; the 4,458 functions it takes save the stock compiler next to nothing. This rung is the
+skeleton: every function sbc takes from here on is in the binary the smoke test runs, and coverage
+is now a number that can be pushed (4.5% of functions, 0.3% of text).
+
+**Scope check.** Most ambitious: functions with stack frames, so that sbc can take functions that call
+other functions. That is the real compiler: a frame layout, a stack map for the garbage collector,
+the stack-growth prologue with its register spills, the calling convention on both sides. It is also
+where a mistake stops being a wrong answer and becomes memory corruption that a smoke test may not
+see, so the differential harness has to grow with it (calls, recursion deep enough to grow the
+stack, allocation pressure to make the collector scan the frames). Doing that next. Before it, one
+cheap fix: let the packages sbc never touches (the runtime and its dependencies) start compiling
+while sbc is still checking, so its second is not on the critical path.

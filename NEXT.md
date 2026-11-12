@@ -1,13 +1,12 @@
 # NEXT
 
-State: MinIO cold 21.3-24.1 s depending on the hour (stock 54.2 s); kube-apiserver 43.9 s (stock 86.3 s).
-Run `04-selfplan`: the driver plans by itself (Strand godecl consumed), pipelined patched compiler,
--dwarf=false -l, GOGC=off. All differential tests and both smoke tests pass.
+State: MinIO cold 21.3-24.2 s (stock 54.2 s) without sbc; with sbc (4,458 leaf functions taken) about 1 s more.
+kube-apiserver 43.9 s (stock 86.3 s). All differential tests and both smoke tests pass.
 
-1. Budgeted optimization of the compile row (A/B interleaved, because the host drifts):
-   optional SSA passes off via -d=ssa/<pass>/off; remove per-pass time.Now in ssa.Compile (patch);
-   limit oversubscription of back ends without stalling front ends (SIGSTOP/SIGCONT beyond a cap).
-2. Spike: shape histogram for a template back end (IDEAS, kill test 2).
-3. A persistent godecl (one process, rounds over a pipe) to bring the declaration pass from 220 to ~100 ms.
-4. modinfo in the link (SCALAR_LEDGER.md).
-5. Divergence step again at journal entry 10.
+1. Overlap sbc with the compiles of the packages it never touches (runtime, internal/*, ...), so its ~1 s
+   whole-program check is off the critical path.
+2. sbc with stack frames: locals in typed slots, one stack map per function (all pointer slots, zeroed at
+   entry), register arguments spilled at entry, the stack-growth prologue with obj.RegSpill, calls through
+   ABIInternal. Extend tests/sbc_gen.py with locals, loops, calls, deep recursion and allocation pressure.
+3. Then widen types: strings, slices, interfaces (multi-register values), value receivers, globals.
+4. Still open: persistent godecl; modinfo in the link; divergence step (due now: run in the background).

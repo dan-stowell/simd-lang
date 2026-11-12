@@ -579,7 +579,10 @@ func (pl *planner) run(mainDir string) []*Pkg {
 	}
 	root := &Pkg{ImportPath: mainPath, Dir: mainDir, mod: mainMod}
 	pl.pkgs[mainPath] = root
-	frontier := []*Pkg{root}
+	// Every program needs the runtime whether or not anything imports it (cmd/go adds it the same way).
+	rt := &Pkg{ImportPath: "runtime", Dir: filepath.Join(pl.facts.GOROOT, "src", "runtime"), Standard: true}
+	pl.pkgs["runtime"] = rt
+	frontier := []*Pkg{root, rt}
 	for len(frontier) > 0 {
 		pl.rounds++
 		tRound := ms()
@@ -740,6 +743,7 @@ func (pl *planner) run(mainDir string) []*Pkg {
 		}
 		pl.order = append(pl.order, p)
 	}
+	visit(rt)
 	visit(root)
 	if root.Name == "main" {
 		root.DefaultGODEBUG = pl.defaultGODEBUG()

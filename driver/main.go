@@ -54,6 +54,7 @@ type Pkg struct {
 	archive  string // what the linker reads
 	export   string // what importers read (the same file unless pipelining)
 	stubOnly bool
+	sbc      bool // sbc wrote an object and a list of the functions it took for this package
 	mod      *modInfo
 }
 
@@ -165,6 +166,8 @@ func main() {
 	factsPath := flag.String("facts", "", "toolchain facts file (default: sb.facts next to this binary)")
 	mkfactsFlag := flag.Bool("mkfacts", false, "write the toolchain facts file and exit")
 	dumpPlan := flag.String("dumpplan", "", "write the plan (packages, files, imports) as JSON, for diffing against go list")
+	sbc := flag.String("sbc", "", "second compiler (build/sbc): takes over the functions it can, the stock compiler drops their bodies (needs -pipeline and the patched compiler)")
+	sbcOnly := flag.String("sbconly", "", "let sbc take functions only from packages whose path contains this (bisecting)")
 	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
 	flag.Parse()
@@ -305,6 +308,37 @@ func main() {
 		j, _ := json.Marshal(pkgs)
 		os.WriteFile(*dumpPlan, j, 0o644)
 	}
+	for i, p := range pkgs {
+		p.objdir = filepath.Join(workdir, fmt.Sprintf("b%04d", i))
+	}
+
+	// ---- sbc: the second compiler takes the functions it can (whole-program parse and check of its own)
+	if *sbc != "" && !dryRun {
+		if !pipeline {
+			die("-sbc needs -pipeline")
+		}
+		st := ms()
+		j, _ := json.Marshal(pkgs)
+		planPath := filepath.Join(workdir, "plan.json")
+		os.WriteFile(planPath, j, 0o644)
+		argv := []string{*sbc, "-plan", planPath, "-work", workdir}
+		if *sbcOnly != "" {
+			argv = append(argv, "-only", *sbcOnly)
+		}
+		u, s, out, err := run(workdir, argv, nil, nil)
+		if err != nil {
+			die("%v", err)
+		}
+		n := 0
+		for _, p := range pkgs {
+			if _, err := os.Stat(filepath.Join(p.objdir, "sbc.symabis")); err == nil {
+				p.sbc = true
+				n++
+			}
+		}
+		note := strings.TrimSpace(strings.SplitN(string(out), "\n", 2)[0])
+		phase("second compiler (sbc; whole-program parse + check, leaf functions)", st, 0, u, s, strings.TrimPrefix(note, "sbc: "))
+	}
 
 	if *planMode != "self" {
 		// ---- read inputs: every source file, in parallel
@@ -424,8 +458,7 @@ func main() {
 	var firstErr error
 	var cu, cs float64
 	extra := strings.Fields(*gcflags)
-	for i, p := range pkgs {
-		p.objdir = filepath.Join(workdir, fmt.Sprintf("b%04d", i))
+	for _, p := range pkgs {
 		p.archive = filepath.Join(p.objdir, "_pkg_.a")
 		p.export = p.archive
 		if pipeline {
@@ -710,7 +743,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 	if p.Standard {
 		argv = append(argv, "-std")
 	}
-	if len(p.SFiles) == 0 && !(p.Standard && completeExempt[p.ImportPath]) {
+	if len(p.SFiles) == 0 && !p.sbc && !(p.Standard && completeExempt[p.ImportPath]) {
 		argv = append(argv, "-complete")
 	}
 	argv = append(argv, "-goversion", goversion)
@@ -724,7 +757,15 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 		if err = do(a); err != nil {
 			return
 		}
+		if p.sbc { // the functions sbc took are "defined elsewhere" just like the assembly ones
+			extra, _ := os.ReadFile(filepath.Join(p.objdir, "sbc.symabis"))
+			f, _ := os.OpenFile(symabis, os.O_APPEND|os.O_WRONLY, 0)
+			f.Write(extra)
+			f.Close()
+		}
 		argv = append(argv, "-symabis", symabis)
+	} else if p.sbc {
+		argv = append(argv, "-symabis", filepath.Join(p.objdir, "sbc.symabis"))
 	}
 	argv = append(argv, fmt.Sprintf("-c=%d", c), "-nolocalimports", "-importcfg", cfgPath)
 	if len(p.EmbedPatterns) > 0 {
@@ -750,7 +791,7 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 		argv = append(argv, filepath.Join(p.Dir, f))
 	}
 	if pipeline && !dryRun {
-		u, s, e := runCompile(p.Dir, argv, exported)
+		u, s, e := runCompile(p.Dir, argv, exported, p.sbc)
 		user += u
 		sys += s
 		cmds = append(cmds, strings.Join(argv, " "))
@@ -773,6 +814,9 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 		if !dryRun {
 			err = appendArchive(p.archive, objs)
 		}
+	}
+	if err == nil && p.sbc && !dryRun {
+		err = appendArchive(p.archive, []string{filepath.Join(p.objdir, "sbc.o")})
 	}
 	return
 }
@@ -871,7 +915,7 @@ func embedcfg(p *Pkg) ([]byte, error) {
 
 // runCompile runs the patched compiler, which prints "sb:export-ready" when the file importers need
 // is complete; exported is called at that moment.
-func runCompile(dir string, argv []string, exported func(pid int)) (float64, float64, error) {
+func runCompile(dir string, argv []string, exported func(pid int), dropBodies bool) (float64, float64, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
 	for _, kv := range os.Environ() { // never inherit the switch: -noearly must mean stock behaviour
@@ -881,6 +925,9 @@ func runCompile(dir string, argv []string, exported func(pid int)) (float64, flo
 	}
 	if !noEarly {
 		cmd.Env = append(cmd.Env, "SB_EARLY_EXPORT=1")
+	}
+	if dropBodies {
+		cmd.Env = append(cmd.Env, "SB_DROP_BODIES=1")
 	}
 	var errb bytes.Buffer
 	cmd.Stderr = &errb
