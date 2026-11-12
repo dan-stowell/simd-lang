@@ -1,5 +1,5 @@
 --- /usr/local/go/src/cmd/compile/internal/gc/main.go	2026-10-19 22:20:36.000000000 +0000
-+++ main.go	2026-11-12 02:26:47.780270284 +0000
++++ main.go	2026-11-12 03:11:59.426811841 +0000
 @@ -217,6 +217,21 @@
  	// Parse and typecheck input.
  	noder.LoadPackage(flag.Args())
@@ -85,7 +85,7 @@
  			nextExtern++
  			continue
 --- /usr/local/go/src/cmd/compile/internal/gc/obj.go	2026-10-19 22:20:36.000000000 +0000
-+++ obj.go	2026-11-12 02:26:47.780270284 +0000
++++ obj.go	2026-11-12 03:11:59.426811841 +0000
 @@ -41,12 +41,22 @@
  	modeLinkerObj
  )
@@ -122,7 +122,7 @@
  	if reflectdata.ZeroSize > 0 {
  		zero := base.PkgLinksym("go:map", "zero", obj.ABI0)
 --- /usr/local/go/src/cmd/internal/obj/objfile.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../../../internal/obj/objfile.go	2026-11-12 02:26:47.776270216 +0000
++++ ../../../internal/obj/objfile.go	2026-11-12 03:11:59.422811773 +0000
 @@ -548,10 +548,20 @@
  			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
  			h.Write(tmp[:4])
@@ -153,7 +153,7 @@
 +// so that packages that import by name and packages that import by index compute the same hash.
 +var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""
 --- /usr/local/go/src/cmd/compile/internal/ssagen/pgen.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../ssagen/pgen.go	2026-11-12 02:26:47.776270216 +0000
++++ ../ssagen/pgen.go	2026-11-12 03:11:59.422811773 +0000
 @@ -6,6 +6,7 @@
  
  import (

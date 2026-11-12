@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One cold build with the driver (build/sb), instrumented like stock.sh, then the target's smoke test.
 #   sb.sh <name> <srcdir> <pkg> <label> [sb flags...]     -> $TRACES/<name>/sb-<label>/
-# WARM=1 leaves the page cache alone. NOLEX=' ' leaves out the token pass (nothing consumes it). SBENV='GOGC=off' sets the environment of every tool. The build runs in a
+# WARM=1 leaves the page cache alone. HUGEPAGES=n reserves a pool of 2 MB pages for the run. NOLEX=' ' leaves out the token pass (nothing consumes it). SBENV='GOGC=off' sets the environment of every tool. The build runs in a
 # memory-limited scope (SBMEM, default 22G) so that a runaway cannot take the machine down.
 set -u
 name=$1; src=$2; pkg=$3; label=$4; shift 4
@@ -9,6 +9,11 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 TRACES=${TRACES:-/home/exedev/targets/traces}
 out=$TRACES/$name/sb-$label${WARM:+-warm}
 rm -rf "$out"; mkdir -p "$out"
+# HUGEPAGES=n: reserve n explicit 2 MB pages for the run (the tools take their heaps from the pool when SB_HUGE
+# is set; this kernel has no transparent huge pages) and put the setting back afterwards.
+hp0=$(cat /proc/sys/vm/nr_hugepages)
+[ -z "${HUGEPAGES:-}" ] || sudo sysctl -q -w vm.nr_hugepages=$HUGEPAGES
+trap 'sudo sysctl -q -w vm.nr_hugepages=$hp0' EXIT
 sync
 [ -n "${WARM:-}" ] || echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
 disk() { awk '$3=="vda"{print $6*512, $10*512}' /proc/diskstats; }
@@ -25,6 +30,7 @@ sync
 read r1 w1 < <(disk)
 {
   echo "name $name"; echo "label $label"; echo "rc $rc"; echo "flags ${SBENV:+$SBENV }$*" | sed "s|$here/||g"
+  echo "hugepages $(cat /proc/sys/vm/nr_hugepages)"
   echo "t0 $t0"; echo "t1 $t1"
   echo "wall_ms $(echo "($t1 - $t0) * 1000 / 1" | bc)"
   cat "$out/time.txt"

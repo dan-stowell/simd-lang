@@ -532,3 +532,83 @@ collector pressure did, in minutes. The stress run is now part of the oracle.
 night: consolidate. The pipeline is 3.3x faster than stock on MinIO and 3.0x on kube-apiserver with a
 code generator that is five hours old; the most valuable thing left is evidence that it is right, a
 smaller generated binary (176 MB against 100), and a report the user can act on.
+
+## 2026-11-12 03:20 UTC — iteration 14: where the CPU really goes; huge pages (spike, positive); the giant package sharded
+
+**Trace.** MinIO cold, four runs: **13.3, 12.3, 12.6, 12.9 s** (iteration 13: 16.4-17.5; stock 54.2).
+kube-apiserver cold, two runs: **24.1, 25.2 s** (was 28.5-29.1; stock 86.3). Both pass their smoke tests;
+MinIO passes the stress test. Configuration `08-huge-shard`.
+
+**What moved it, largest first.**
+
+1. *Explicit huge pages for the tools' heaps (weird-idea spike; -2.6 s on MinIO, -4 s on kube).* The
+   question was why 20 of MinIO's 87 compile core-seconds are kernel time. Answer, counted from
+   /proc/vmstat: the compilers run with the collector off, touch 30 GB of fresh memory, and take 7.8
+   million page faults at about 3.6 us each (a 4 kB fault under KVM costs about fifteen times what
+   zeroing the page does). This kernel has no transparent huge pages (HARDWARE.md) but it does have
+   hugetlbfs. The patched runtime (`SB_HUGE=1`) maps each 4 MB piece of heap growth from the explicit
+   pool, falling back to ordinary pages when the pool is empty; the first 4 MB of every process stay
+   ordinary, so the thousand small compiles never touch the pool. One compile of `minio/cmd`: 4.1 s
+   -> 3.0 s wall, kernel time 1.45 -> 0.29 s, and user time falls too (5.6 -> 4.9 s: fewer TLB misses).
+   Whole build: faults 7.8 M -> 1.7 M; kernel 21 -> 11 core-s; user 71-78 -> 65-68. The linker built
+   against the same runtime (`build/link-sb`, `-linker`) links in 1.28 s instead of 1.48.
+   *Cost and caveat:* it needs `sudo sysctl vm.nr_hugepages=N` (3,072 = 6 GB for MinIO, whose peak use
+   was 4.2 GB; kube exhausted 10 GB and fell back for the rest). `tools/trace/sb.sh HUGEPAGES=n`
+   reserves the pool before the run and puts the old value back afterwards. Hugetlb memory is not
+   counted by the scope's MemoryMax, so the kube run lowers that cap to 16 G. This is machine
+   configuration, not a cache: it holds nothing from a previous build. It is still a decision for the
+   user, so MORNING.md gives the numbers both ways. (The cheaper variant, `SB_POPULATE=1`: one
+   madvise(MADV_POPULATE_WRITE) per 4 MB instead of a thousand faults, no pool needed: halves the
+   kernel time of a big compile, about -2.5 core-s on the whole build.)
+
+2. *The one giant package compiled as shards (-1.0 s on MinIO).* The utilisation timeline of the build
+   has two idle stretches: the first two seconds (plan, then the runtime's front end alone) and the
+   last five (`minio/cmd`'s front end on one core, seven idle). Shards now drop other shards' bodies
+   before type checking (`sbShardFilesPre`), shard 0 type-checks everything (initialisation order needs
+   that) and emits the data. Measured: a function shard has about 1.15 core-s of fixed cost (parse,
+   declarations, imports, object), so sharding everything above 400 kB costs 108 core-s against 87 and
+   loses; eight shards for `cmd` lose to four for the same reason; four shards for the one package
+   above 3 MB win a second. kube's giant (`pkg/generated/openapi`, 19 s under SSA) takes 2 s with the
+   baseline and is no longer the tail; kube is CPU-bound from start to finish.
+
+3. *Denser baseline code (-5 core-s, binary 180 -> 160 MB).* An instruction census of the baseline's
+   output for five library packages (68 k instructions against 28 k optimized): 54% frame loads and
+   stores, 19% word-by-word copies through R8. Now: two words at a time through X14 (and zeroing from
+   X15), call results stored straight into the destination variable when nothing has been emitted
+   since the call (the stores are retargeted, not repeated), constants stored in one instruction, more
+   operand forms loaded directly into argument registers (fields, lengths, `&x`, string constants).
+   60 k instructions on the same sample. The assembler is the largest single item in the compile
+   profile (12 core-s), so instructions not emitted are saved three times: generator, assembler, linker.
+
+**Measured and not built: interface-first export** (the skeptic's proposal, twice). A scheduling
+simulation over the real trace (per-package front-end and back-end CPU, real dependency graph, 8
+cores): today's rule gives 10.3 s for the compile row, the CPU bound is 9.3 s, and exporting
+interfaces before bodies gives 9.9 s at best (if an interface pass costs 15% of a front end, and only
+for the 150 largest packages) and 10.4-12.3 s otherwise. The build is CPU-bound; overlap bought by
+repeating work is paid for in the same currency. Recorded as negative without building it.
+
+**Evidence of correctness added.**
+- MinIO's own unit tests (`tests/minio_unit.sh`: `go test -short ./...` with the patched toolchain,
+  baseline on, the build's flags): 45 packages pass; `cmd` (245 s of tests) has one failure,
+  `TestTrackingResponseWriter`, which fails identically with the baseline off (the test writes a body
+  after status 123 and this Go's httptest refuses). Caveat: I rebuilt the compiler twice while that run
+  was in progress, so it is a run of three consecutive baselines, not one. To be repeated with the
+  final compiler before morning.
+- A limitation found by widening the stress set: `net/http`'s `TestTransportGCRequest` never finishes.
+  It waits for a request to be garbage-collected, and a baseline frame keeps every slot alive until
+  the function returns: the transport's read loop is still holding the last request while it waits for
+  the next one. No crash, no wrong answer, and nothing Go promises, but a program that relies on a
+  finalizer firing while a long-lived goroutine sits in a loop will wait longer. Same class as the
+  sync/reflect promptness tests of iteration 12. Listed in MORNING.md as a real difference in behaviour.
+- The standard-library oracle (both flag sets), the stress subset, MinIO smoke and stress, kube smoke:
+  pass with the final compiler of this iteration.
+- The correctness reviewer's session died of a stalled model request after five minutes. Fired again.
+
+**Scope check.** Most ambitious next thing: a front end of our own feeding the baseline generator
+(whole-program go/types of MinIO is 1.4 s wall). Why not that: the compile profile is now 46 core-s
+of compiler work under 75 of compile row; type check + IR write + IR read are 14 of them, and replacing
+those means replacing `walk`, which is where the baseline gets its input. Not an overnight step, and
+tonight's two largest wins came from asking where the time goes rather than from replacing a phase.
+What I do instead: (1) the remaining kernel and start-up time (1.7 M faults left, 1,312 process
+starts at 9 ms); (2) the head of the build (plan, then the runtime alone: 2 s at 1-2 cores);
+(3) repeat the evidence with the final compiler.

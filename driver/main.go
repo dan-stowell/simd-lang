@@ -160,6 +160,7 @@ func main() {
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
 	flag.StringVar(&compiler, "compiler", "", "compiler binary (default: go tool compile)")
+	linker := flag.String("linker", "", "linker binary (default: go tool link)")
 	flag.BoolVar(&pipeline, "pipeline", false, "release a package's importers when its export data is written, before its back end runs (needs the patched compiler)")
 	workdirFlag := flag.String("workdir", "", "use exactly this work directory (for reproducible comparisons)")
 	flag.BoolVar(&noEarly, "noearly", false, "pipelining plumbing without the early export (the compiler behaves as stock): for differential tests")
@@ -535,7 +536,9 @@ func main() {
 			}
 			myPid := 0
 			u, s, cmds, err := buildPkg(p, c, goversion, extra, func(pid int) {
-				renice(pid)
+				if p.shards <= 1 { // (a sharded package is a giant near the end of the build: nothing is waiting behind it)
+					renice(pid)
+				}
 				mu.Lock()
 				a.Export = ms()
 				tokens += held
@@ -615,7 +618,11 @@ func main() {
 	cfgPath := filepath.Join(workdir, "importcfg.link")
 	os.WriteFile(cfgPath, cfg.Bytes(), 0o644)
 	exe := filepath.Join(workdir, "a.out")
-	argv := []string{filepath.Join(tooldir, "link"), "-o", exe, "-importcfg", cfgPath}
+	linkTool := filepath.Join(tooldir, "link")
+	if *linker != "" {
+		linkTool = *linker
+	}
+	argv := []string{linkTool, "-o", exe, "-importcfg", cfgPath}
 	if main.DefaultGODEBUG != "" {
 		argv = append(argv, "-X=runtime.godebugDefault="+main.DefaultGODEBUG)
 	}
@@ -754,6 +761,9 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 	runtimeish := p.Standard && (p.ImportPath == "runtime" || strings.HasPrefix(p.ImportPath, "runtime/") || strings.HasPrefix(p.ImportPath, "internal/"))
 	if shardBytes > 0 && pipeline && !noEarly && len(p.SFiles) == 0 && !p.sbc && !runtimeish && p.goBytes > shardBytes {
 		p.shards = int(min(8, max(3, 1+p.goBytes/(shardBytes/2)))) // shard 0 (data only) and at least two function shards
+		if k, _ := strconv.Atoi(os.Getenv("SB_SHARDK")); k > 2 {
+			p.shards = k
+		}
 	}
 	if len(p.SFiles) == 0 && !p.sbc && p.shards == 0 && !(p.Standard && completeExempt[p.ImportPath]) {
 		argv = append(argv, "-complete")
@@ -824,7 +834,11 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 				wg.Add(1)
 				go func(k int, a []string) {
 					defer wg.Done()
+					t0 := ms()
 					u, s, e := runCompile(p.Dir, a, func(int) {}, p.sbc, fmt.Sprintf("SB_SHARD=%d/%d", k, p.shards))
+					if os.Getenv("SB_SHARDTIME") != "" {
+						fmt.Fprintf(os.Stderr, "shard %d/%d of %s: %.0f..%.0f ms, cpu %.0f ms\n", k, p.shards, p.ImportPath, t0, ms(), u+s)
+					}
 					smu.Lock()
 					user += u
 					sys += s
@@ -835,7 +849,11 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 				}(k, a)
 			}
 		}
+		t0 := ms()
 		u, s, e := runCompile(p.Dir, argv, exported, p.sbc, env...)
+		if p.shards > 1 && os.Getenv("SB_SHARDTIME") != "" {
+			fmt.Fprintf(os.Stderr, "shard 0/%d of %s: %.0f..%.0f ms, cpu %.0f ms\n", p.shards, p.ImportPath, t0, ms(), u+s)
+		}
 		wg.Wait()
 		smu.Lock()
 		user += u

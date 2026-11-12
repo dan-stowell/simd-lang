@@ -295,5 +295,14 @@ open(p, 'w').write(s)
 p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(d)))), 'runtime', 'mheap.go'); s = open(p).read()
 old = '\tsysMap(unsafe.Pointer(v), nBase-v, &gcController.heapReleased, "heap")\n'
 assert s.count(old) == 1
-s = s.replace(old, old + '\tif environ() != nil && gogetenv("SB_POPULATE") != "" {\n\t\tmadvise(unsafe.Pointer(v), nBase-v, 23) // MADV_POPULATE_WRITE\n\t}\n')
+s = s.replace(old, old + '''\tif environ() != nil && gogetenv("SB_HUGE") != "" && v%(2<<20) == 0 && (nBase-v)%(2<<20) == 0 {
+\t\t// Explicit huge pages (the kernel here has no transparent ones): map the new piece of heap from the
+\t\t// hugetlb pool. If the pool is empty the call fails before it touches the mapping made above.
+\t\tif p, err := mmap(unsafe.Pointer(v), nBase-v, _PROT_READ|_PROT_WRITE, _MAP_ANON|_MAP_FIXED|_MAP_PRIVATE|0x40000, -1, 0); err != 0 || uintptr(p) != v {
+\t\t\tmmap(unsafe.Pointer(v), nBase-v, _PROT_READ|_PROT_WRITE, _MAP_ANON|_MAP_FIXED|_MAP_PRIVATE, -1, 0)
+\t\t}
+\t} else if environ() != nil && gogetenv("SB_POPULATE") != "" {
+\t\tmadvise(unsafe.Pointer(v), nBase-v, 23) // MADV_POPULATE_WRITE
+\t}
+''')
 open(p, 'w').write(s)
