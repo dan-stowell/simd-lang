@@ -324,7 +324,6 @@ func main() {
 			os.Exit(3)
 		}
 	}
-	c.stockDefs = stock
 	pp := objabi.PathToPrefix(o.path)
 	c.forceInit = stock[pp+"..inittask"]
 	depInit := map[*Pkg]bool{}

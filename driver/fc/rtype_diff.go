@@ -323,10 +323,6 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		return
 	}
 	c := newCompiler(pr, p, path, trimpath)
-	c.stockDefs = map[string]bool{}
-	for name := range stock {
-		c.stockDefs[name] = true
-	}
 	var report strings.Builder
 	bails := map[string]string{}
 	try := func(what string, f func()) {
@@ -380,50 +376,15 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 	}
 	sort.Strings(names)
-	// a name the package does not mention may be a pointer to, a slice of or an array of one it does
-	var derive func(name string) types.Type
-	derive = func(name string) types.Type {
-		if t := byName[name]; t != nil {
-			return t
+	// a name the package does not mention is parsed: types of other packages, instances of generic types,
+	// and pointers, slices, arrays, maps, channels and functions of whatever can be found
+	np := &nameParser{c: c, byName: byName, pkgs: map[string]*types.Package{}}
+	for _, d := range pr.byPath {
+		if d.tpkg != nil {
+			np.pkgs[c.pkgPrefix(d.tpkg)] = d.tpkg
 		}
-		var t types.Type
-		switch {
-		case strings.HasPrefix(name, "noalg.*"):
-			if e := derive("noalg." + name[7:]); e != nil {
-				t = types.NewPointer(e)
-			}
-		case strings.HasPrefix(name, "noalg.["):
-			// the array behind a slice literal and the like: an array type marked as having no algorithms
-			if i := strings.Index(name, "]"); i > 0 {
-				if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
-					if e := derive(name[i+1:]); e != nil {
-						t = types.NewArray(e, n)
-						c.rtNoalg[t] = true
-					}
-				}
-			}
-		case strings.HasPrefix(name, "*"):
-			if e := derive(name[1:]); e != nil {
-				t = types.NewPointer(e)
-			}
-		case strings.HasPrefix(name, "[]"):
-			if e := derive(name[2:]); e != nil {
-				t = types.NewSlice(e)
-			}
-		case strings.HasPrefix(name, "["):
-			if i := strings.Index(name, "]"); i > 0 {
-				if n, err := strconv.ParseInt(name[1:i], 10, 64); err == nil {
-					if e := derive(name[i+1:]); e != nil {
-						t = types.NewArray(e, n)
-					}
-				}
-			}
-		}
-		if t != nil {
-			byName[name] = t
-		}
-		return t
 	}
+	derive := np.lookup
 	// force the descriptors the stock object has: maps first (they bring their groups), then the rest
 	force := func(maps bool) {
 		for _, name := range names {
@@ -527,4 +488,395 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 	}
 	os.Stderr.WriteString(report.String())
+}
+
+// nameParser turns the link name of a type back into the type.
+type nameParser struct {
+	c      *compiler
+	byName map[string]types.Type // the types the package mentions, and what was parsed before
+	pkgs   map[string]*types.Package
+	s      string
+	pos    int
+	fresh  bool // the outermost struct must be a new type, not one the package mentions
+}
+
+// lookup returns the type with the descriptor name (after "type:"), or nil.
+func (p *nameParser) lookup(name string) (t types.Type) {
+	if t, ok := p.byName[name]; ok {
+		return t
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(bail); !ok {
+				panic(r)
+			}
+			t = nil
+		}
+		p.byName[name] = t
+	}()
+	switch {
+	case strings.HasPrefix(name, "noalg.*"):
+		if e := p.lookup("noalg." + name[7:]); e != nil {
+			t = types.NewPointer(e)
+		}
+		return t
+	case strings.HasPrefix(name, "noalg.["):
+		// the array behind a slice literal and the like: an array type marked as having no algorithms
+		if i := strings.Index(name, "]"); i > 0 {
+			if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
+				if e := p.lookup(name[i+1:]); e != nil {
+					t = types.NewArray(e, n)
+					p.c.rtNoalg[t] = true
+				}
+			}
+		}
+		return t
+	case strings.HasPrefix(name, "noalg.struct {"):
+		// a closure and the like: a struct of the compiler's own, marked as having no algorithms
+		q := &nameParser{c: p.c, byName: p.byName, pkgs: p.pkgs, s: name[6:], fresh: true}
+		t = q.typ()
+		if t == nil || q.pos != len(q.s) {
+			return nil
+		}
+		p.c.rtNoalg[t] = true
+	case strings.HasPrefix(name, "noalg."):
+		return nil
+	default:
+		q := &nameParser{c: p.c, byName: p.byName, pkgs: p.pkgs, s: name}
+		t = q.typ()
+		if t == nil || q.pos != len(name) {
+			return nil
+		}
+	}
+	// the parse stands only if the type's name is the name asked for
+	p.c.rtMu.Lock()
+	got := p.c.typeSymName(t)
+	p.c.rtMu.Unlock()
+	if got != name {
+		return nil
+	}
+	return t
+}
+
+func (p *nameParser) eat(prefix string) bool {
+	if strings.HasPrefix(p.s[p.pos:], prefix) {
+		p.pos += len(prefix)
+		return true
+	}
+	return false
+}
+
+// balanced returns the text from pos through the brace that closes the first one opened.
+func (p *nameParser) balanced() string {
+	depth := 0
+	for i := p.pos; i < len(p.s); i++ {
+		switch p.s[i] {
+		case '"':
+			q, err := strconv.QuotedPrefix(p.s[i:])
+			if err != nil {
+				return ""
+			}
+			i += len(q) - 1
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return p.s[p.pos : i+1]
+			}
+		}
+	}
+	return ""
+}
+
+func (p *nameParser) typ() types.Type {
+	rest := p.s[p.pos:]
+	switch {
+	case p.eat("*"):
+		if e := p.typ(); e != nil {
+			return types.NewPointer(e)
+		}
+	case p.eat("[]"):
+		if e := p.typ(); e != nil {
+			return types.NewSlice(e)
+		}
+	case strings.HasPrefix(rest, "["):
+		i := strings.Index(rest, "]")
+		if i < 0 {
+			return nil
+		}
+		n, err := strconv.ParseInt(rest[1:i], 10, 64)
+		if err != nil {
+			return nil
+		}
+		p.pos += i + 1
+		if e := p.typ(); e != nil {
+			return types.NewArray(e, n)
+		}
+	case p.eat("map["):
+		k := p.typ()
+		if k == nil || !p.eat("]") {
+			return nil
+		}
+		if e := p.typ(); e != nil {
+			return types.NewMap(k, e)
+		}
+	case p.eat("<-chan "):
+		if e := p.typ(); e != nil {
+			return types.NewChan(types.RecvOnly, e)
+		}
+	case p.eat("chan<- "):
+		if e := p.typ(); e != nil {
+			return types.NewChan(types.SendOnly, e)
+		}
+	case p.eat("chan "):
+		paren := p.eat("(")
+		e := p.typ()
+		if e == nil || paren && !p.eat(")") {
+			return nil
+		}
+		return types.NewChan(types.SendRecv, e)
+	case p.eat("func("):
+		if sig := p.sig(); sig != nil {
+			return sig
+		}
+	case strings.HasPrefix(rest, "struct {"), strings.HasPrefix(rest, "interface {"):
+		// a literal type: one the package mentions, or parsed
+		fresh := p.fresh
+		p.fresh = false
+		lit := p.balanced()
+		if t := p.byName[lit]; t != nil && lit != "" && !fresh {
+			p.pos += len(lit)
+			return t
+		}
+		if p.eat("struct {") {
+			return p.structLit()
+		}
+		p.eat("interface {")
+		return p.interfaceLit()
+	default:
+		return p.named()
+	}
+	return nil
+}
+
+func (p *nameParser) params() (vs []*types.Var, variadic, ok bool) {
+	if p.eat(")") {
+		return nil, false, true
+	}
+	for {
+		dots := p.eat("...")
+		t := p.typ()
+		if t == nil {
+			return nil, false, false
+		}
+		if dots {
+			t, variadic = types.NewSlice(t), true
+		}
+		vs = append(vs, types.NewParam(0, nil, "", t))
+		if p.eat(")") {
+			return vs, variadic, true
+		}
+		if dots || !p.eat(", ") {
+			return nil, false, false
+		}
+	}
+}
+
+// named parses a basic type or pkg.Name, pkg.Name[args].
+func (p *nameParser) named() types.Type {
+	start := p.pos
+	for p.pos < len(p.s) && !strings.ContainsRune(",] )[;", rune(p.s[p.pos])) {
+		p.pos++
+	}
+	name := p.s[start:p.pos]
+	if name == "" {
+		return nil
+	}
+	if !p.eat("[") {
+		if t := p.byName[name]; t != nil {
+			return t
+		}
+		if tn := p.typeName(name); tn != nil {
+			if n, ok := tn.Type().(*types.Named); ok && n.TypeParams().Len() == 0 {
+				return n
+			}
+		}
+		return nil
+	}
+	var args []types.Type
+	for {
+		t := p.typ()
+		if t == nil {
+			return nil
+		}
+		args = append(args, t)
+		if p.eat("]") {
+			break
+		}
+		if !p.eat(",") {
+			return nil
+		}
+	}
+	tn := p.typeName(name)
+	if tn == nil {
+		return nil
+	}
+	n, ok := tn.Type().(*types.Named)
+	if !ok || n.TypeParams().Len() != len(args) {
+		return nil
+	}
+	t, err := types.Instantiate(p.c.pr.tctx, n, args, false)
+	if err != nil {
+		return nil
+	}
+	return t
+}
+
+// typeName finds the package-level type prefix.Name.
+func (p *nameParser) typeName(name string) *types.TypeName {
+	i := strings.LastIndex(name, ".")
+	if i < 0 {
+		return nil
+	}
+	pkg := p.pkgs[name[:i]]
+	if pkg == nil {
+		return nil
+	}
+	tn, _ := pkg.Scope().Lookup(name[i+1:]).(*types.TypeName)
+	if tn == nil || tn.IsAlias() {
+		return nil
+	}
+	return tn
+}
+
+// sig parses a signature after its opening parenthesis.
+func (p *nameParser) sig() *types.Signature {
+	params, variadic, ok := p.params()
+	if !ok {
+		return nil
+	}
+	var results []*types.Var
+	if p.eat(" (") {
+		results, _, ok = p.params()
+		if !ok {
+			return nil
+		}
+	} else if r := p.s[p.pos:]; len(r) > 1 && r[0] == ' ' && r[1] != '}' && r[1] != '"' {
+		p.pos++
+		t := p.typ()
+		if t == nil {
+			return nil
+		}
+		results = []*types.Var{types.NewParam(0, nil, "", t)}
+	}
+	return types.NewSignatureType(nil, nil, nil, types.NewTuple(params...), types.NewTuple(results...), variadic)
+}
+
+// qualified splits "prefix.name" (the name of an unexported field or method) into package and name.
+func (p *nameParser) qualified(name string) (*types.Package, string, bool) {
+	i := strings.LastIndex(name, ".")
+	if i < 0 {
+		return nil, name, true
+	}
+	pkg := p.pkgs[name[:i]]
+	return pkg, name[i+1:], pkg != nil
+}
+
+// structLit parses the fields of a struct after "struct {".
+func (p *nameParser) structLit() types.Type {
+	var fields []*types.Var
+	var tags []string
+	if p.eat("}") {
+		return types.NewStruct(nil, nil)
+	}
+	for {
+		if !p.eat(" ") {
+			return nil
+		}
+		rest := p.s[p.pos:]
+		i := strings.IndexAny(rest, " ;}")
+		if i <= 0 {
+			return nil
+		}
+		var f *types.Var
+		if rest[i] == ' ' && i+1 < len(rest) && rest[i+1] != '}' && rest[i+1] != '"' {
+			// name type, or name = type for an embedded field whose name is not its type's
+			pkg, name, ok := p.qualified(rest[:i])
+			if !ok {
+				return nil
+			}
+			p.pos += i + 1
+			embedded := p.eat("= ")
+			t := p.typ()
+			if t == nil {
+				return nil
+			}
+			f = types.NewField(0, pkg, name, t, embedded)
+		} else {
+			t := p.typ()
+			if t == nil {
+				return nil
+			}
+			e := types.Unalias(t)
+			if pt, ok := e.(*types.Pointer); ok {
+				e = types.Unalias(pt.Elem())
+			}
+			n, ok := e.(*types.Named)
+			if !ok {
+				return nil
+			}
+			f = types.NewField(0, n.Obj().Pkg(), n.Obj().Name(), t, true)
+		}
+		tag := ""
+		if strings.HasPrefix(p.s[p.pos:], " \"") {
+			q, err := strconv.QuotedPrefix(p.s[p.pos+1:])
+			if err != nil {
+				return nil
+			}
+			tag, _ = strconv.Unquote(q)
+			p.pos += 1 + len(q)
+		}
+		fields = append(fields, f)
+		tags = append(tags, tag)
+		if p.eat(" }") {
+			return types.NewStruct(fields, tags)
+		}
+		if !p.eat(";") {
+			return nil
+		}
+	}
+}
+
+// interfaceLit parses the methods of an interface after "interface {".
+func (p *nameParser) interfaceLit() types.Type {
+	var ms []*types.Func
+	if p.eat("}") {
+		return types.NewInterfaceType(nil, nil).Complete()
+	}
+	for {
+		if !p.eat(" ") {
+			return nil
+		}
+		i := strings.Index(p.s[p.pos:], "(")
+		if i <= 0 {
+			return nil
+		}
+		pkg, name, ok := p.qualified(p.s[p.pos : p.pos+i])
+		if !ok {
+			return nil
+		}
+		p.pos += i + 1
+		sig := p.sig()
+		if sig == nil {
+			return nil
+		}
+		ms = append(ms, types.NewFunc(0, pkg, name, sig))
+		if p.eat(" }") {
+			return types.NewInterfaceType(ms, nil).Complete()
+		}
+		if !p.eat(";") {
+			return nil
+		}
+	}
 }

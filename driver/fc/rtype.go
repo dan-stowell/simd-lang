@@ -23,23 +23,19 @@ import (
 
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
-	rtMu     sync.Mutex
-	rtDone   map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
-	rtMeth   map[string][]methodSig       // method tables, by type symbol name
-	rtNoalg  map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
-	rtGroup  map[*types.Struct]*types.Map // the map a group struct belongs to
-	rtGroups map[string]*types.Struct     // group struct by the map's link name
-	rtVargen map[*types.Package]map[token.Pos]int
-	rtWrap   map[*obj.LSym]bool
-	rtAlg    map[string]bool
-	rtPtrTo  map[string]bool // link names X such that the package mentions *X (stock: Type.IsPtrElem)
-	rtPtrSet bool
-	rtNames  int // counter of package-qualified name data (stock: dnameCount)
-
-	// stockDefs, when set (mixed mode), names the symbols the stock compiler's object for this package
-	// defines. It settles the one thing about a descriptor that depends on the stock compiler's internal
-	// state: whether **T existed (ptrToThis of *T).
-	stockDefs map[string]bool
+	rtMu        sync.Mutex
+	rtDone      map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
+	rtMeth      map[string][]methodSig       // method tables, by type symbol name
+	rtNoalg     map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
+	rtGroup     map[*types.Struct]*types.Map // the map a group struct belongs to
+	rtGroups    map[string]*types.Struct     // group struct by the map's link name
+	rtVargen    map[*types.Package]map[token.Pos]int
+	rtWrap      map[*obj.LSym]bool
+	rtAlg       map[string]bool
+	rtPtrTo     map[string]bool          // link names X such that the package mentions *X (stock: Type.IsPtrElem)
+	rtPtrToInst map[*types.TypeName]bool // generic types G such that generic code mentions **G[...]
+	rtPtrSet    bool
+	rtNames     int // counter of package-qualified name data (stock: dnameCount)
 
 	// What the code generator must write. The descriptors refer to these symbols; their bodies are code.
 	needEq      []algReq     // type:.eq.<sig>: func(p, q unsafe.Pointer) bool, ABIInternal, DUPOK
@@ -149,8 +145,21 @@ func (c *compiler) writeDeclaredTypes() {
 	}
 }
 
-// unwrittenTypeCode gives the package up when a descriptor needs code nobody writes yet. To be deleted
-// when the code generator writes the bodies of needEq, needHash and needWrapper.
+// eqFuncSym is the closure (a func(p, q unsafe.Pointer) bool value) that compares two values of the
+// comparable type t: of a runtime function, or type:.eqfunc.<signature>. hashFuncSym likewise hashes.
+func (c *compiler) eqFuncSym(t types.Type) *obj.LSym {
+	c.rtMu.Lock()
+	defer c.rtMu.Unlock()
+	c.rtInit()
+	return c.eqClosure(t)
+}
+
+func (c *compiler) hashFuncSym(t types.Type) *obj.LSym {
+	c.rtMu.Lock()
+	defer c.rtMu.Unlock()
+	c.rtInit()
+	return c.hashClosure(t)
+}
 
 // declaredTypes lists the package's defined types: package level by name, then local ones in source order.
 // Generic types have no descriptor (their instances do), nor do types declared inside generic functions.
@@ -771,7 +780,7 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		fn := sel.Obj().(*types.Func)
 		sig := fn.Type().(*types.Signature)
 		if sig.TypeParams().Len() > 0 {
-			giveUp("generic method %v", fn)
+			continue // a generic method is no part of the method table: it cannot be called through an interface
 		}
 		var isel *types.Selection
 		if irecv == t {

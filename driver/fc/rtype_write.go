@@ -262,22 +262,29 @@ func (c *compiler) abiKind(t types.Type) abi.Kind {
 }
 
 // isPtrElem: did the stock compiler ever form the type *t for the pointer type t? Only then does t's
-// descriptor point to *t's. That is a fact about the stock compiler's run, not about the program: in mixed
-// mode its object answers; otherwise the answer is whether the package's own types mention *t.
+// descriptor point to *t's. That is a fact about the stock compiler's run (which pointer types its front end
+// made before the descriptor was written), not about the program; whether the package's own types mention
+// *t predicts it best (over the standard library: 7 descriptors differ; taking "the stock object defines
+// type:**T" as the answer instead gives 90, never pointing gives 42).
 func (c *compiler) isPtrElem(t types.Type) bool {
-	if c.stockDefs != nil {
-		return c.stockDefs["type:*"+c.typeSymName(t)]
-	}
 	if !c.rtPtrSet {
 		c.rtPtrSet = true
 		c.rtPtrTo = map[string]bool{}
+		c.rtPtrToInst = map[*types.TypeName]bool{}
 		c.forEachType(func(x types.Type) {
 			if p, ok := x.(*types.Pointer); ok {
-				if _, ok := types.Unalias(p.Elem()).(*types.Pointer); ok && !mentionsTypeParamRT(p, nil) {
-					c.rtPtrTo[c.typeLinkName(p.Elem())] = true
+				if e, ok := types.Unalias(p.Elem()).(*types.Pointer); ok {
+					if !mentionsTypeParamRT(p, nil) {
+						c.rtPtrTo[c.typeLinkName(e)] = true
+					} else if n, ok := types.Unalias(e.Elem()).(*types.Named); ok {
+						c.rtPtrToInst[n.Obj()] = true // **G[T] in generic code: every instance of G
+					}
 				}
 			}
 		})
+	}
+	if n, ok := types.Unalias(t.Underlying().(*types.Pointer).Elem()).(*types.Named); ok && n.TypeArgs().Len() > 0 && c.rtPtrToInst[n.Obj()] {
+		return true
 	}
 	return c.rtPtrTo[c.typeLinkName(t)]
 }
