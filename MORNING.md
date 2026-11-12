@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 16)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 17)
 
 ## The trace, before and after
 
@@ -11,7 +11,8 @@ Cold builds, 8 vCPUs, binary passes the target's smoke test. Full tables: TRACE.
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
 | end of the 2026-11-11 run (`08-huge-shard`) | 12.3-13.3 s, 80 core-s | 24.1-25.2 s, 158 core-s |
 | `09-forkserver` (today) | 12.5-15.6 s (four runs; noisy host) | 22.5-24.5 s |
-| **now (`10-onepass`)** | **11.6-13.5 s** (four runs), 67 core-s | **21.1-23.2 s**, 137 core-s |
+| `10-onepass` (today) | 11.6-13.5 s (four runs), 67 core-s | 21.1-23.2 s, 137 core-s |
+| **now (`11-headstart`)** | **11.6-12.8 s** (four interleaved cold runs; the trace's own four fell in a noisy stretch: 13.0-15.8) | **20.5-23.8 s** |
 
 The host was noisy today (the same warm build cost 61 to 84 compile core-seconds within an hour), so
 single runs overlap between configurations. Interleaved A/B is the evidence: the fork-server is worth
@@ -30,7 +31,7 @@ things turned off.
 | intermediates read back | 2,731 MB | 1,996 MB | 1,190 MB |
 
 **Where the compile row's CPU goes, measured exactly** (each compiler logs its own rusage at every phase
-boundary; one warm MinIO build after the one-pass assembler, about 70 core-s in the row):
+boundary; one warm MinIO build after the one-pass assembler, 74 core-s in the row):
 
 | | core-s | |
 |---|---|---|
@@ -46,9 +47,9 @@ boundary; one warm MinIO build after the one-pass assembler, about 70 core-s in 
 
 ## What this says (the one thing to read)
 
-Fusing the stock compiler's work into one address space can remove about 27 of 70 core-seconds (setup
-3, object and export writing 7, the export-IR round trip 17). What is left, about 45 core-s, is compiling:
-5.6 s on 8 cores. **Two seconds on this machine needs the compiling itself to get about three times
+Fusing the stock compiler's work into one address space can remove about 27 of 74 core-seconds (setup
+3, object and export writing 7, the export-IR round trip 17). What is left, about 47 core-s, is compiling:
+5.9 s on 8 cores. **Two seconds on this machine needs the compiling itself to get about three times
 cheaper as well** (our own lowering, and an emitter that writes bytes instead of going through the Go
 assembler's instruction lists). Fusion is necessary and not sufficient. The ladder's F2-F4 should be
 read as "a cheaper compiler that is also fused", not "the stock compiler, fused".
@@ -70,6 +71,12 @@ the front end is 35% of the row, not 20%.
   function 3.3 times (by bytes) to size branches and pad jumps. Baseline builds now assemble once, and
   skip the per-function DWARF the stock compiler builds even at `-dwarf=false`. **-6 core-s, about
   -0.7 s**, objects 641 -> 573 MB.
+
+- **The first edge of the DAG, streamed** (`-headstart`): the runtime and the 28 packages under it are
+  planned and compiled while the plan of the whole build is still being made, then adopted by the
+  scheduler. Byte-identical output. `runtime` is ready when the plan ends instead of 0.45 s later.
+  Worth **0.2-0.4 s**, which today's host noise hides in cold wall clock (interleaved cold means 11.91
+  vs 11.96 s; warm 12.15 vs 11.72 s).
 
 ## Ideas tried and killed (all by measurement; IDEAS.md and JOURNAL iteration 16)
 
@@ -114,6 +121,10 @@ the front end is 35% of the row, not 20%.
 
 1. **Is "2 s on N cores" acceptable, or must it be this VM?** Fused stock work ends near 50 core-s
    (25 cores for 2 s). On 8 cores the compiler itself has to be replaced, which is months, not nights.
-2. **Keep the fork-server on by default?** It is correct as far as I can test and buys almost nothing
-   today. I left it on in the trace configuration and off by default in the driver.
+2. **Keep the fork-server on by default?** It is correct as far as I and the reviewer can test and buys
+   almost nothing today. I left it on in the trace configuration and off by default in the driver.
+   Same question for `-headstart`.
+4. **The host.** The same build cost between 61 and 84 core-seconds within an hour today. Differences
+   under about half a second cannot be seen in single cold runs here; I used interleaved A/B and say so
+   wherever a number is that small. A quieter machine (or pinned cores) would make the trace sharper.
 3. **The floors in TRACE.md** (see the review disagreement above).

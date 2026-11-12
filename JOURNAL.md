@@ -706,7 +706,7 @@ once in one address space and hand typed packages to back ends in memory. Why no
 F1 were the charter's next rungs and F0's table is what tells me which half of F2 pays (the 17 core-s
 round trip, not the 3.6 of process start). Next iteration goes at F2's cheapest consumed slice.
 
-## 2026-11-12 13:30 UTC — iteration 16: divergence round, four ideas killed by measurement, a one-pass assembler (-6 core-s), review fixes
+## 2026-11-12 13:05 UTC — iteration 16: divergence round, four ideas killed by measurement, a one-pass assembler (-6 core-s), review fixes
 
 **Trace.** MinIO cold, four runs of `10-onepass`: **11.7, 11.6, 13.5, 12.9 s** (67 core-s in the first;
 `09`: 12.5-15.6). kube-apiserver, two: **21.1, 23.2 s** (137 core-s; `09`: 22.5-24.5). Both pass smoke;
@@ -782,3 +782,48 @@ only when whole packages leave the stock compiler, which needs export data writt
 do instead, in the fusion direction and on the trace: the first edge of the DAG is not streamed. The
 planner runs for 0.9 s on 2 cores while 6 idle, and only then does `runtime` (which everything waits
 for) start compiling. Start the runtime's closure at time zero, in parallel with the plan.
+
+## 2026-11-12 13:25 UTC — iteration 17: the first edge of the DAG, streamed (head start); worth 0.2-0.4 s, below today's noise in cold wall clock
+
+**Trace.** MinIO cold, four runs of `11-headstart`: 13.8, 15.8, 13.0, 13.2 s; kube-apiserver, two:
+23.8, 20.5 s. Those four MinIO runs fell in a noisy stretch (79 core-s for a build that costs 61 in a
+quiet minute), so they say nothing about the change. The evidence is an interleaved cold A/B run
+straight after, four rounds, same configuration with and without `-headstart`:
+
+    off  11.37  11.84  12.31  12.12 s     compile core-s 61.4  64.9  68.0  66.8
+    on   11.56  11.59  12.79  11.89 s                    65.5  63.6  73.3  66.2
+
+Raw means 11.91 vs 11.96 s: nothing. The two rounds where both runs cost the same CPU show -0.25 and
+-0.23 s; correcting the other two for their extra CPU (0.145 s of wall per core-s, from the off runs)
+gives -0.40 and -0.30. Warm page cache, four rounds: mean 12.15 -> 11.72 s, min 11.44 -> 10.76 s. I
+call it **0.2-0.4 s, not resolvable in cold wall clock on this host today**.
+
+**What was built.** The planner takes 0.6 s warm and 0.9-1.0 s cold on about two cores, and only then
+does the scheduler start `runtime`, which everything waits for. With `-headstart` the driver makes a
+second, tiny plan at time zero (the runtime's closure: 29 packages; `planner.run("")`) and compiles it
+while the real plan is being made, in its own directories. When the real plan arrives, the scheduler
+adopts each of those packages if the plan describes it identically (directory, files, imports), by
+swapping `buildPkg` for a function that waits for the head start's export and exit. Same command
+lines, so the same bytes.
+
+**What it does to the graph** (structural, so not subject to the noise): `runtime`'s export data is
+ready when the plan ends (before: 445 ms later); `fmt` starts at 1,088 ms instead of 1,426; cores busy
+during the plan row 2.3 -> 5.1.
+
+**Why the gain is small, in writing (the charter's question).** What serializes the head is the plan,
+and the head start does not shorten the plan: it fills five idle cores for half a second, 2.5
+core-s of capacity in a build bound by 61 core-s of work. The remaining idle time at the head is the
+plan's own: rounds of directory reads waiting on a cold disk. Streaming the *whole* plan into the
+scheduler (compile a package when its imports are resolved, not when the last round ends) would use
+the same idle cores for more than 29 packages; the head start is the cheap first slice of that.
+
+**Evidence.** `tests/sb_zygote.sh` has a head-start case: 29 packages compiled during the plan, every
+archive and the binary byte-identical to the ordinary build (cmd/go). MinIO: binary SHA-256 identical
+with and without; smoke passes in every run above; kube smoke passes.
+
+**Scope check.** Most ambitious next: F4, the link. It is the largest serial item left (1.2 s link +
+0.3 s write at 1.5 cores, 13% of the build) and nothing built so far touches it. Why I am not building
+a linker in the hour and a half left: no measurement yet of where the stock linker's time goes *on
+the baseline build's objects* (last night's profile was of the optimized build with DWARF). That
+measurement is the next step, and it decides between overlapping the link with the compile tail and
+replacing layout + relocation.

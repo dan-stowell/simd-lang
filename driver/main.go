@@ -133,6 +133,131 @@ func zygoteStop() {
 	}
 }
 
+// ---- head start: the first edge of the build graph, streamed.
+// Every Go program needs the runtime and the two dozen packages under it, and everything else waits for
+// them. The plan of the whole build takes most of a second on two cores, so while it runs, a second, tiny
+// plan (the runtime's closure only) is made and compiled. When the real plan arrives, its scheduler adopts
+// those packages: same commands, same bytes, started 0.9 s earlier.
+type headPkg struct {
+	p        *Pkg
+	exported chan struct{} // closed when importers may start
+	done     chan struct{}
+	user     float64
+	sys      float64
+	cmds     []string
+	err      error
+}
+
+type headStart struct {
+	planned  chan struct{} // closed when pkgs is filled
+	pkgs     map[string]*headPkg
+	startMs  float64
+	endMs    float64
+	finished sync.WaitGroup
+}
+
+func startHead(factsPath, decl, workdir string, jobs int, extra []string) *headStart {
+	hs := &headStart{planned: make(chan struct{}), pkgs: map[string]*headPkg{}, startMs: ms()}
+	hdir := filepath.Join(workdir, "head")
+	os.MkdirAll(hdir, 0o755)
+	pl := newPlanner(factsPath, decl, hdir, jobs)
+	goroot = pl.facts.GOROOT
+	tooldir = filepath.Join(goroot, "pkg", "tool", "linux_amd64")
+	if compiler == "" {
+		compiler = filepath.Join(tooldir, "compile")
+	}
+	goversion := pl.facts.GOVERSION
+	hs.finished.Add(1)
+	go func() {
+		defer hs.finished.Done()
+		pkgs := pl.run("")
+		by := map[string]*Pkg{}
+		for i, p := range pkgs {
+			by[p.ImportPath] = p
+			p.objdir = filepath.Join(hdir, fmt.Sprintf("h%04d", i))
+			p.archive = filepath.Join(p.objdir, "_pkg_.a")
+			p.export = p.archive
+			if pipeline {
+				p.export = filepath.Join(p.objdir, "_pkg_.x")
+			}
+			hs.pkgs[p.ImportPath] = &headPkg{p: p, exported: make(chan struct{}), done: make(chan struct{})}
+		}
+		for _, p := range pkgs {
+			for _, imp := range p.Imports {
+				if m, ok := p.ImportMap[imp]; ok {
+					imp = m
+				}
+				if imp != "unsafe" {
+					p.deps = append(p.deps, by[imp])
+				}
+			}
+		}
+		close(hs.planned)
+		var wg sync.WaitGroup
+		for _, p := range pkgs {
+			wg.Add(1)
+			go func(h *headPkg) {
+				defer wg.Done()
+				defer close(h.done)
+				var once sync.Once
+				release := func() { once.Do(func() { close(h.exported) }) }
+				defer release()
+				for _, d := range h.p.deps {
+					<-hs.pkgs[d.ImportPath].exported
+					if hs.pkgs[d.ImportPath].failed() {
+						h.err = fmt.Errorf("head start: dependency %s failed", d.ImportPath)
+						return
+					}
+				}
+				c := 1
+				switch {
+				case h.p.goBytes > 1500000:
+					c = 8
+				case h.p.goBytes > 300000:
+					c = 4
+				case h.p.goBytes > 100000:
+					c = 2
+				}
+				h.user, h.sys, h.cmds, h.err = buildPkg(h.p, c, goversion, extra, func(pid int) {
+					renice(pid)
+					release()
+				})
+			}(hs.pkgs[p.ImportPath])
+		}
+		wg.Wait()
+		hs.endMs = ms()
+	}()
+	return hs
+}
+
+// failed: only meaningful once exported is closed. A package that failed closes exported on its way out
+// with err set; one that released its importers early has err unset until done.
+func (h *headPkg) failed() bool {
+	select {
+	case <-h.done:
+		return h.err != nil
+	default:
+		return false
+	}
+}
+
+// same: the real plan describes this package exactly as the head start compiled it.
+func (h *headPkg) same(p *Pkg) bool {
+	eq := func(a, b []string) bool { return strings.Join(a, "\x00") == strings.Join(b, "\x00") }
+	return h.p.Dir == p.Dir && h.p.Standard == p.Standard && eq(h.p.GoFiles, p.GoFiles) && eq(h.p.SFiles, p.SFiles) &&
+		eq(h.p.Imports, p.Imports) && eq(h.p.EmbedPatterns, p.EmbedPatterns) && len(h.p.ImportMap) == len(p.ImportMap)
+}
+
+// adopt stands in for buildPkg in the scheduler: the work is already under way or done.
+func (h *headPkg) adopt(p *Pkg, c int, goversion string, extra []string, exported func(pid int)) (float64, float64, []string, error) {
+	<-h.exported
+	if pipeline && !h.failed() {
+		exported(0)
+	}
+	<-h.done
+	return h.user, h.sys, h.cmds, h.err
+}
+
 // compileEnv: SB_COMPILE_ENV="K=V,K2=V2" (commas or spaces) is added to the environment of every compiler process (and only
 // those: a setting like GODEBUG=sbrk=1 must not reach the driver or the linker).
 func compileEnv() []string {
@@ -340,6 +465,7 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	headFlag := flag.Bool("headstart", false, "compile the runtime and what it needs while the plan is being made (needs -plan=self)")
 	flag.BoolVar(&zygoteOn, "zygote", false, "fork compiles from one warm compiler process (needs the patched compiler)")
 	flag.StringVar(&compiler, "compiler", "", "compiler binary (default: go tool compile)")
 	linker := flag.String("linker", "", "linker binary (default: go tool link)")
@@ -401,6 +527,7 @@ func main() {
 		}()
 	}
 
+	var head *headStart
 	var pkgs []*Pkg
 	byPath := map[string]*Pkg{}
 	var goversion string
@@ -416,6 +543,9 @@ func main() {
 		st := ms()
 		if *decl == "" {
 			die("-plan=self needs -decl <godecl binary>")
+		}
+		if *headFlag && !dryRun {
+			head = startHead(*factsPath, *decl, workdir, *jobs, strings.Fields(*gcflags))
 		}
 		pl := newPlanner(*factsPath, *decl, workdir, *jobs)
 		dir := *srcdir
@@ -499,6 +629,16 @@ func main() {
 	}
 	for i, p := range pkgs {
 		p.objdir = filepath.Join(workdir, fmt.Sprintf("b%04d", i))
+	}
+	adopted := map[*Pkg]*headPkg{}
+	if head != nil {
+		<-head.planned
+		for _, p := range pkgs {
+			if h := head.pkgs[p.ImportPath]; h != nil && h.same(p) {
+				adopted[p] = h
+				p.objdir = h.p.objdir
+			}
+		}
 	}
 
 	// ---- sbc: the second compiler takes the functions it can (whole-program parse and check of its own)
@@ -717,7 +857,11 @@ func main() {
 				cond.Broadcast()
 			}
 			myPid := 0
-			u, s, cmds, err := buildPkg(p, c, goversion, extra, func(pid int) {
+			build := buildPkg
+			if h := adopted[p]; h != nil {
+				build = h.adopt
+			}
+			u, s, cmds, err := build(p, c, goversion, extra, func(pid int) {
 				if p.shards <= 1 { // (a sharded package is a giant near the end of the build: nothing is waiting behind it)
 					renice(pid)
 				}
@@ -782,6 +926,13 @@ func main() {
 	mu.Unlock()
 	if firstErr != nil {
 		die("%v", firstErr)
+	}
+	if head != nil {
+		head.finished.Wait()
+		traceMu.Lock()
+		trace.Phases = append(trace.Phases, Phase{"head start (runtime closure compiled during the plan), inside the rows above", head.startMs, head.endMs, 0, 0, 0,
+			fmt.Sprintf("%d of its %d packages adopted by the plan; their CPU is in the compile row", len(adopted), len(head.pkgs))})
+		traceMu.Unlock()
 	}
 	zygoteStop()
 	var objBytes int64

@@ -14,6 +14,13 @@ run -o "$t/fork.bin" -zygote;  mv "$t/w" "$t/fork"
 if diff -rq "$t/exec" "$t/fork" > "$t/diff.txt" && cmp "$t/exec.bin" "$t/fork.bin"; then
   echo "PASS fork-server: $(find "$t/exec" -name '_pkg_.*' | wc -l) export files and objects and the binary byte-identical to one exec per compile"
 else head "$t/diff.txt"; echo "FAIL fork-server"; exit 1; fi
+# Head start (-headstart): the runtime's closure is compiled during the plan, in other directories; the
+# archives and the binary must be the same bytes.
+rm -rf "$t/w"; run -o "$t/head.bin" -zygote -headstart; mv "$t/w" "$t/head"
+sums() { find "$1" -name '_pkg_.*' -exec sha256sum {} + | awk '{print $1}' | sort | sha256sum; }
+if cmp "$t/exec.bin" "$t/head.bin" && [ "$(sums "$t/exec")" = "$(sums "$t/head")" ] && [ -d "$t/head/head" ]; then
+  echo "PASS head start: $(find "$t/head/head" -name '_pkg_.a' | wc -l) packages compiled during the plan; every archive and the binary byte-identical"
+else echo "FAIL head start"; exit 1; fi
 mkdir -p "$t/bad" && printf 'module bad\ngo 1.27\n' > "$t/bad/go.mod" && printf 'package main\nfunc main() { undefinedName() }\n' > "$t/bad/main.go"
 if out=$(env GOGC=off build/sb -C "$t/bad" -o "$t/bad.bin" -plan=self -decl "$PWD/build/godecl" -compiler "$PWD/build/compile-sb" -pipeline -zygote . 2>&1); then
   echo "FAIL fork-server: a build with a type error succeeded"; exit 1
