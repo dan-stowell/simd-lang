@@ -12,8 +12,8 @@ func DotFloat64(a, b []float64) float64 {
 }
 func DotUint16(a, b []uint16) uint16 { return Dot[uint16](a, b) }
 
-func SwapIntStr(a int, b string) (string, int)   { return Swap(a, b) }
-func SwapPointAny(a Point, b any) (any, Point)   { return Swap(a, b) }
+func SwapIntStr(a int, b string) (string, int)           { return Swap(a, b) }
+func SwapPointAny(a Point, b any) (any, Point)           { return Swap(a, b) }
 func SwapFloatPtr(a float64, b *Point) (*Point, float64) { return Swap[float64, *Point](a, b) }
 
 func MapItoa(xs []int) []string { return Map(xs, Itoa) }
@@ -56,34 +56,34 @@ func IndexStringer(xs []Stringer, x Stringer) int {
 	return Index(xs, x)
 }
 
-func EqualAny(a, b any) bool         { return Equal(a, b) }
-func EqualStr(a, b string) bool      { return Equal(a, b) }
+func EqualAny(a, b any) bool                    { return Equal(a, b) }
+func EqualStr(a, b string) bool                 { return Equal(a, b) }
 func EqualPair(a, b Pair[string, float64]) bool { return Equal(a, b) }
 
-func MaxInt(a, b int) int             { return Max(a, b) }
-func MaxStr(a, b string) string       { return Max(a, b) }
-func MaxFloat(a, b float64) float64   { return Max(a, b) }
-func MaxMyStr(a, b MyStr) MyStr       { return Max(a, b) }
-func MaxUint8(a, b uint8) uint8       { return Max(a, b) }
-func Min3Int(a, b, c int) int         { return Min3(a, b, c) }
+func MaxInt(a, b int) int               { return Max(a, b) }
+func MaxStr(a, b string) string         { return Max(a, b) }
+func MaxFloat(a, b float64) float64     { return Max(a, b) }
+func MaxMyStr(a, b MyStr) MyStr         { return Max(a, b) }
+func MaxUint8(a, b uint8) uint8         { return Max(a, b) }
+func Min3Int(a, b, c int) int           { return Min3(a, b, c) }
 func Min3Float(a, b, c float64) float64 { return Min3(a, b, c) }
-func Min3Str(a, b, c string) string   { return Min3(a, b, c) }
-func ClampInt(x, lo, hi int) int      { return Clamp(x, lo, hi) }
-func ClampStr(x, lo, hi string) string { return Clamp(x, lo, hi) }
-func LessInt8(a, b int8) bool         { return Less(a, b) }
-func LessUint8(a, b uint8) bool       { return Less(a, b) }
-func LessFloat32(a, b float32) bool   { return Less(a, b) }
-func LessStr(a, b string) bool        { return Less(a, b) }
+func Min3Str(a, b, c string) string     { return Min3(a, b, c) }
+func ClampInt(x, lo, hi int) int        { return Clamp(x, lo, hi) }
+func ClampStr(x, lo, hi string) string  { return Clamp(x, lo, hi) }
+func LessInt8(a, b int8) bool           { return Less(a, b) }
+func LessUint8(a, b uint8) bool         { return Less(a, b) }
+func LessFloat32(a, b float32) bool     { return Less(a, b) }
+func LessStr(a, b string) bool          { return Less(a, b) }
 
 func Zeros() (int, string, Point, *Point, any, []int, float64, [3]bool) {
 	return Zero[int](), Zero[string](), Zero[Point](), Zero[*Point](), Zero[any](), Zero[[]int](), Zero[float64](), Zero[[3]bool]()
 }
 
-func IsZeroInt(x int) bool     { return IsZero(x) }
-func IsZeroStr(x string) bool  { return IsZero(x) }
-func IsZeroPoint(x Point) bool { return IsZero(x) }
-func IsZeroPtr(x *Point) bool  { return IsZero(x) }
-func IsZeroAny(x any) bool     { return IsZero(x) }
+func IsZeroInt(x int) bool       { return IsZero(x) }
+func IsZeroStr(x string) bool    { return IsZero(x) }
+func IsZeroPoint(x Point) bool   { return IsZero(x) }
+func IsZeroPtr(x *Point) bool    { return IsZero(x) }
+func IsZeroAny(x any) bool       { return IsZero(x) }
 func IsZeroFloat(x float64) bool { return IsZero(x) }
 
 func DoubleInt(x int) int       { return Double(x) }
@@ -96,12 +96,12 @@ func JoinPoints(xs []Point, sep string) string       { return Join(xs, sep) }
 func JoinStringers(xs []Stringer, sep string) string { return Join(xs, sep) }
 func DescribeMyInt(x MyInt) string                   { return Describe(x) }
 
-func IntToFloat(x int) float64     { return Convert[int, float64](x) }
-func FloatToInt8(x float64) int8   { return Convert[float64, int8](x) }
-func Uint64ToFloat32(x uint64) float32 { return Convert[uint64, float32](x) }
-func Int64ToUint8(x int64) uint8   { return Convert[int64, uint8](x) }
-func MyIntToInt16(x MyInt) int16   { return Convert[MyInt, int16](x) }
-func Int8ToUint64(x int8) uint64   { return Convert[int8, uint64](x) }
+func IntToFloat(x int) float64           { return Convert[int, float64](x) }
+func FloatToInt8(x float64) int8         { return Convert[float64, int8](x) }
+func Uint64ToFloat32(x uint64) float32   { return Convert[uint64, float32](x) }
+func Int64ToUint8(x int64) uint8         { return Convert[int64, uint8](x) }
+func MyIntToInt16(x MyInt) int16         { return Convert[MyInt, int16](x) }
+func Int8ToUint64(x int8) uint64         { return Convert[int8, uint64](x) }
 func Float32ToFloat64(x float32) float64 { return Convert[float32, float64](x) }
 
 func ShlInt8(x int8, n uint) int8       { return ShiftL(x, n) }
@@ -119,15 +119,15 @@ func NegInt8(x int8) int8               { return Neg(x) }
 func NegFloat(x float64) float64        { return Neg(x) }
 func NegUint16(x uint16) uint16         { return Neg(x) }
 
-func KindAny(x any) string        { return Kind(x) }
-func KindInt(x int) string        { return Kind(x) }
-func KindStr(x string) string     { return Kind(x) }
-func KindMyInt(x MyInt) string    { return Kind(x) }
-func KindPoint(x Point) string    { return Kind(x) }
-func KindPtr(x *Point) string     { return Kind(x) }
-func KindSlice(x []int) string    { return Kind(x) }
-func KindErr(x error) string      { return Kind(x) }
-func KindFloat(x float64) string  { return Kind(x) }
+func KindAny(x any) string           { return Kind(x) }
+func KindInt(x int) string           { return Kind(x) }
+func KindStr(x string) string        { return Kind(x) }
+func KindMyInt(x MyInt) string       { return Kind(x) }
+func KindPoint(x Point) string       { return Kind(x) }
+func KindPtr(x *Point) string        { return Kind(x) }
+func KindSlice(x []int) string       { return Kind(x) }
+func KindErr(x error) string         { return Kind(x) }
+func KindFloat(x float64) string     { return Kind(x) }
 func KindStringer(x Stringer) string { return Kind(x) }
 
 func PtrInt(x int) int {
@@ -147,13 +147,13 @@ func PtrStr(s string) string {
 	return *p + s
 }
 
-func SliceOfInts(a, b, c int) []int      { return SliceOf(a, b, c) }
-func SliceOfNone() int                   { return len(SliceOf[string]()) }
-func SliceOfAny(a int, b string) []any   { return SliceOf[any](a, b, nil) }
-func SliceOfSpread(xs []Point) []Point   { return SliceOf(xs...) }
-func LenIDs(ids IDs) int                 { return Len(ids) }
-func ReverseIDs(ids IDs) IDs             { return Reverse(ids) }
-func ReverseStrs(xs []string) []string   { return Reverse(xs) }
+func SliceOfInts(a, b, c int) []int    { return SliceOf(a, b, c) }
+func SliceOfNone() int                 { return len(SliceOf[string]()) }
+func SliceOfAny(a int, b string) []any { return SliceOf[any](a, b, nil) }
+func SliceOfSpread(xs []Point) []Point { return SliceOf(xs...) }
+func LenIDs(ids IDs) int               { return Len(ids) }
+func ReverseIDs(ids IDs) IDs           { return Reverse(ids) }
+func ReverseStrs(xs []string) []string { return Reverse(xs) }
 
 func SortInts(xs []int) []int {
 	out := append([]int(nil), xs...)
@@ -191,9 +191,9 @@ func FuncTable(x int) []int {
 	}
 	return out
 }
-func AddN(k, x int) int             { return MakeAdder(k)(x) }
-func AddNF(k, x float32) float32    { return MakeAdder(k)(x) }
-func Accumulate(xs []int) []int     { return Map(xs, Accumulator[int]()) }
+func AddN(k, x int) int          { return MakeAdder(k)(x) }
+func AddNF(k, x float32) float32 { return MakeAdder(k)(x) }
+func Accumulate(xs []int) []int  { return Map(xs, Accumulator[int]()) }
 func AccumulateF(xs []float64) []float64 {
 	acc := Accumulator[float64]()
 	out := []float64{}

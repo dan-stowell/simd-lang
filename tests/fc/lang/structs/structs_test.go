@@ -18,9 +18,9 @@ func TestAuto(t *testing.T) {
 	chk.All(t, autoFuncs, map[string][]chk.Opt{
 		"Build":   {chk.Arg(0, 0, 1, 2, 10, 1000, -1)},
 		"HugeGet": few, "HugeSet": few, "HugeA": few, "HugeB": few, "HugeSetB": few, "HugeAddrB": few, "HugeChain": few, "CopyHuge": few,
-		"HugePad":      {chk.Arg(1, 0, 1, 69999, 70000, -1), chk.Limit(12)},
-		"NilArrayElem": {chk.Arg(1, 0, 99999, 100000, -1), chk.Limit(6)},
-		"ArrayField":   {chk.Arg(1, 0, 1, 2, -1)},
+		"HugePad":       {chk.Arg(1, 0, 1, 69999, 70000, -1), chk.Limit(12)},
+		"NilArrayElem":  {chk.Arg(1, 0, 99999, 100000, -1), chk.Limit(6)},
+		"ArrayField":    {chk.Arg(1, 0, 1, 2, -1)},
 		"StructInArray": {chk.Arg(1, 0, 1, 2, 3, -1)},
 		"StructInSlice": {chk.Arg(1, 0, 1, 2, 3, 8, -1), chk.Limit(600)},
 	})

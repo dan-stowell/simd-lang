@@ -218,8 +218,10 @@ func ShadowParamInClosure(x int) int {
 func ShadowSwitch(v any) int {
 	switch v := v.(type) {
 	case int:
-		v := v + 1
-		return v
+		{
+			v := v + 1
+			return v
+		}
 	case string:
 		return len(v)
 	}
@@ -242,10 +244,10 @@ type blankT struct {
 	B int64
 }
 
-func (_ blankT) Sum() int      { return 0 }
-func (t blankT) Get() int      { return int(t.A) + int(t.B) }
-func two() (int, int)          { return bump(), 7 }
-func BlankInit() (int, int)    { return kept, blankCount }
+func (_ blankT) Sum() int                   { return 0 }
+func (t blankT) Get() int                   { return int(t.A) + int(t.B) }
+func two() (int, int)                       { return bump(), 7 }
+func BlankInit() (int, int)                 { return kept, blankCount }
 func BlankParam(_ int, b int, _ string) int { return b }
 
 type getter interface{ Get() int }
@@ -301,19 +303,21 @@ const (
 func BigConsts() []int {
 	return []int{bigA, bigB, bigC, shiftF, runeK, notZ, negDiv, negMod, helloN, int(hello[1]), int(uint8(^uint8(0)))}
 }
-func BigUint() uint64             { return bigD }
-func ConstBools() []bool          { return []bool{exact, third == 1, fHuge == 10, big > mask64, 'a' < "b"[0]} }
-func ConstFloats() []float64      { return []float64{fHuge, third, big, 1 << 62, mask64, 0.1 + 0.2, 1 / 3.0} }
-func WithMask(x uint64) uint64    { return x&mask64 ^ (mask64 >> 60) }
+func BigUint() uint64    { return bigD }
+func ConstBools() []bool { return []bool{exact, third == 1, fHuge == 10, big > mask64, 'a' < "b"[0]} }
+func ConstFloats() []float64 {
+	return []float64{fHuge, third, big, 1 << 62, mask64, 0.1 + 0.2, 1 / 3.0}
+}
+func WithMask(x uint64) uint64       { return x&mask64 ^ (mask64 >> 60) }
 func FloatFromBig(x float64) float64 { return x * big / (big >> 3) }
-func VarFloatSum(a, b float64) bool { return a+b == 0.3 } // not exact at run time
+func VarFloatSum(a, b float64) bool  { return a+b == 0.3 } // not exact at run time
 
 // ---- len constants ----
 
 var lenCalls int
 
-func arrFn() [4]int      { lenCalls++; return [4]int{} }
-func arrPtrFn() *[5]int  { lenCalls++; return new([5]int) }
+func arrFn() [4]int     { lenCalls++; return [4]int{} }
+func arrPtrFn() *[5]int { lenCalls++; return new([5]int) }
 
 func LenConsts(s string) ([]int, int) {
 	const n = len("hello")
@@ -367,7 +371,7 @@ func UntypedKinds(s uint) []string {
 }
 
 func UntypedValues(s uint) []any {
-	return []any{1 << 3, 1.0 << 3, 'a' + 1, 1 / 2, 1 / 2.0, 1 << s, 5 % 3 * 1i == 2i, "abc"[1], 07 + 0x10 + 0b11 + 0o7, 1_000 * 1e-3}
+	return []any{1 << 3, 1.0 << 3, 'a' + 1, 1 / 2, 1 / 2.0, 1 << s, 5%3*1i == 2i, "abc"[1], 07 + 0x10 + 0b11 + 0o7, 1_000 * 1e-3}
 }
 
 // ---- iota ----
@@ -422,8 +426,8 @@ func Iotas() []int {
 	)
 	return []int{int(B0), int(B1), int(B3), int(BAll), sq0, sq1, sq2, sq3, rep2, rep3, ia, ib, ic, id, ie, ig, single, l0, l1, l2, l3, ch0, ch1}
 }
-func IotaStrings() []string  { return []string{rep0, rep1, string(rune(ch1))} }
-func IotaFloats() []float64  { return []float64{half0, half1, half2} }
+func IotaStrings() []string { return []string{rep0, rep1, string(rune(ch1))} }
+func IotaFloats() []float64 { return []float64{half0, half1, half2} }
 
 // ---- bit twiddling ----
 
@@ -483,8 +487,8 @@ func Reverse64(x uint64) (r uint64) {
 	return
 }
 
-func RotL(x uint64, k int) uint64   { return x<<(uint(k)&63) | x>>(-uint(k)&63) }
-func RotL32(x uint32, k uint) uint32 { return x<<(k%32) | x>>((32-k%32)%32) }
+func RotL(x uint64, k int) uint64     { return x<<(uint(k)&63) | x>>(-uint(k)&63) }
+func RotL32(x uint32, k uint) uint32  { return x<<(k%32) | x>>((32-k%32)%32) }
 func RotL16(x uint16, k uint8) uint16 { return x<<(k&15) | x>>(16-k&15) }
 func ByteSwap(x uint32) uint32 {
 	return x>>24 | x>>8&0xff00 | x<<8&0xff0000 | x<<24
@@ -524,7 +528,7 @@ func Interleave(x, y uint16) (z uint32) {
 	}
 	return
 }
-func AndNot(x, y uint8) uint8      { return x &^ y }
+func AndNot(x, y uint8) uint8 { return x &^ y }
 func SetClearToggle(x uint16, b uint) (uint16, uint16, uint16, bool) {
 	return x | 1<<b, x &^ (1 << b), x ^ 1<<b, x&(1<<b) != 0
 }
@@ -584,8 +588,8 @@ func Kinds(args ...any) string {
 	return s
 }
 func KindsNone() string                 { return Kinds() }
-func KindsNil() string                  { return Kinds(nil) }       // one nil argument
-func KindsNilSpread() string            { return Kinds(nil...) }    // no arguments
+func KindsNil() string                  { return Kinds(nil) }    // one nil argument
+func KindsNilSpread() string            { return Kinds(nil...) } // no arguments
 func KindsMixed(i int, s string) string { return Kinds(i, s, nil, 2.5, 'x', i > 0, uint8(i), 1i) }
 func KindsSlice(xs []any) string        { return Kinds(xs) + Kinds(xs...) } // one argument, then len(xs)
 
@@ -599,7 +603,9 @@ func Prefix(p string, xs ...string) string {
 	}
 	return out
 }
-func CallPrefix(p string, a, b string) string { return Prefix(p) + "|" + Prefix(p, a) + "|" + Prefix(p, a, b) }
+func CallPrefix(p string, a, b string) string {
+	return Prefix(p) + "|" + Prefix(p, a) + "|" + Prefix(p, a, b)
+}
 
 type joiner struct{ sep string }
 

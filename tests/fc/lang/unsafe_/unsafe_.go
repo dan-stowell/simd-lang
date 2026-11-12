@@ -279,7 +279,7 @@ func SliceEmpty(p *Empty, n int) int { return len(unsafe.Slice(p, n)) }
 
 func DataOf(xs []int32) *int32 { return unsafe.SliceData(xs) }
 
-func BytesToString(b []byte) string { return unsafe.String(unsafe.SliceData(b), len(b)) }
+func BytesToString(b []byte) string  { return unsafe.String(unsafe.SliceData(b), len(b)) }
 func StringOf(p *byte, n int) string { return unsafe.String(p, n) }
 
 func StringBytes(s string) []byte { return unsafe.Slice(unsafe.StringData(s), len(s)) }

@@ -93,17 +93,17 @@ func NextDay(d Weekday) Weekday {
 func HasFlag(f, bit Flags) bool { return f&bit != 0 }
 
 // Typed constants take part in run-time arithmetic with their type's wraparound.
-func AddMaxI8(x int8) int8       { return MaxI8 + x }
-func SubMinI8(x int8) int8       { return MinI8 - x }
-func AddMaxU16(x uint16) uint16  { return MaxU16 + x }
-func AddMaxU64(x uint64) uint64  { return MaxU64 + x }
-func DivMinI64(x int64) int64    { return MinI64 / x }
-func ScalePi32(x float32) float32 { return Pi32 * x }
-func ScalePi64(x float64) float64 { return Pi64 * x }
+func AddMaxI8(x int8) int8         { return MaxI8 + x }
+func SubMinI8(x int8) int8         { return MinI8 - x }
+func AddMaxU16(x uint16) uint16    { return MaxU16 + x }
+func AddMaxU64(x uint64) uint64    { return MaxU64 + x }
+func DivMinI64(x int64) int64      { return MinI64 / x }
+func ScalePi32(x float32) float32  { return Pi32 * x }
+func ScalePi64(x float64) float64  { return Pi64 * x }
 func ScaleRatio(x float64) float64 { return Ratio * x }
-func ScaleHuge(x float64) float64 { return TypedF * x }
-func HelloAt(i int) byte         { return Hello[i] }
-func HelloLen() (int, int)       { return HelloN, len(Hello) }
-func LetterPlus(d rune) rune     { return Letter + d }
-func SmallFromHuge(x int) int    { return x*HugeLow + MaskTop }
-func YesAnd(b bool) bool         { return Yes && b }
+func ScaleHuge(x float64) float64  { return TypedF * x }
+func HelloAt(i int) byte           { return Hello[i] }
+func HelloLen() (int, int)         { return HelloN, len(Hello) }
+func LetterPlus(d rune) rune       { return Letter + d }
+func SmallFromHuge(x int) int      { return x*HugeLow + MaskTop }
+func YesAnd(b bool) bool           { return Yes && b }

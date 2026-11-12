@@ -92,21 +92,21 @@ var (
 
 // functions and interfaces
 var (
-	Fn             = double
-	FnLit          = func(x int) int { return x*3 + offset }
-	Fns            = []func(int) int{double, FnLit, func(x int) int { return -x }, nil}
-	FnMap          = map[string]func(int) int{"double": double, "lit": FnLit}
-	Method         = P.Bump // bound method value
-	MethodExpr     = (*Rec).Bump
-	Iface    any   = 42
-	IfaceS   any   = "str"
-	IfaceP   any   = P
-	IfaceRec any   = Rec{Name: "boxed", Val: 7}
-	Err      error = errors.New("boom")
-	Str      Stringer = Rec{Name: "stringer"}
-	StrDay   Stringer = Wednesday
-	Ifaces            = []any{1, "two", 3.0, nil, Key{4, "four"}, &counter, [2]bool{true, false}, Friday}
-	offset            = 1000
+	Fn                  = double
+	FnLit               = func(x int) int { return x*3 + offset }
+	Fns                 = []func(int) int{double, FnLit, func(x int) int { return -x }, nil}
+	FnMap               = map[string]func(int) int{"double": double, "lit": FnLit}
+	Method              = P.Bump // bound method value
+	MethodExpr          = (*Rec).Bump
+	Iface      any      = 42
+	IfaceS     any      = "str"
+	IfaceP     any      = P
+	IfaceRec   any      = Rec{Name: "boxed", Val: 7}
+	Err        error    = errors.New("boom")
+	Str        Stringer = Rec{Name: "stringer"}
+	StrDay     Stringer = Wednesday
+	Ifaces              = []any{1, "two", 3.0, nil, Key{4, "four"}, &counter, [2]bool{true, false}, Friday}
+	offset              = 1000
 )
 
 // nested composite literals
@@ -196,41 +196,41 @@ func ZerosOK() bool {
 	return ZeroI == 0 && ZeroS == "" && ZeroP == nil && ZeroRec.Name == "" && ZeroRec.Next == nil &&
 		ZeroRec.Tags == nil && ZeroRec.Attr == nil && ZeroRec.F == nil && ZeroRec.Any == nil
 }
-func ArrAt(i int) int         { return Arr[i] }
-func ArrIdxAt(i int) string   { return ArrIdx[i] }
-func ArrIdxLen() int          { return len(ArrIdx) }
-func SlAt(i int) int          { return Sl[i] }
-func SlSlAt(i, j int) string  { return SlSl[i][j] }
-func SlSlNil(i int) bool      { return SlSl[i] == nil }
-func MAt(k string) (int, bool) { v, ok := M[k]; return v, ok }
-func MKeyAt(a int, b string) *Rec { return MKey[Key{a, b}] }
+func ArrAt(i int) int                     { return Arr[i] }
+func ArrIdxAt(i int) string               { return ArrIdx[i] }
+func ArrIdxLen() int                      { return len(ArrIdx) }
+func SlAt(i int) int                      { return Sl[i] }
+func SlSlAt(i, j int) string              { return SlSl[i][j] }
+func SlSlNil(i int) bool                  { return SlSl[i] == nil }
+func MAt(k string) (int, bool)            { v, ok := M[k]; return v, ok }
+func MKeyAt(a int, b string) *Rec         { return MKey[Key{a, b}] }
 func MNestedAt(s string, i, j int) string { return MNested[s][i][j] }
-func SparseAt(i int) int32    { return Sparse[i] }
+func SparseAt(i int) int32                { return Sparse[i] }
 func SparseSum() (s int64) {
 	for _, v := range Sparse {
 		s += int64(v)
 	}
 	return
 }
-func SquareAt(i int) int32    { return Squares[i] }
-func BigAt(i int) *Rec        { return &Big[i] }
-func BytesAt(i int) byte      { return Bytes[i] }
-func RuneAt(i int) rune       { return Runes[i] }
-func TableAt(i int) Entry     { return Table[i] }
-func TableLen() int           { return len(Table) }
+func SquareAt(i int) int32 { return Squares[i] }
+func BigAt(i int) *Rec     { return &Big[i] }
+func BytesAt(i int) byte   { return Bytes[i] }
+func RuneAt(i int) rune    { return Runes[i] }
+func TableAt(i int) Entry  { return Table[i] }
+func TableLen() int        { return len(Table) }
 func LinkSym(i int) string {
 	if l := Table[i].Link; l != nil {
 		return l.Sym
 	}
 	return ""
 }
-func CallFn(i, x int) int          { return Fns[i](x) }
+func CallFn(i, x int) int           { return Fns[i](x) }
 func CallFnMap(k string, x int) int { return FnMap[k](x) }
-func CallFnVar(x int) int          { return Fn(x) + FnLit(x) }
-func FnIsNil(i int) bool           { return Fns[i] == nil }
-func IfaceAt(i int) any            { return Ifaces[i] }
-func ErrText() string              { return Err.Error() }
-func StrText() string              { return Str.String() + "," + StrDay.String() }
+func CallFnVar(x int) int           { return Fn(x) + FnLit(x) }
+func FnIsNil(i int) bool            { return Fns[i] == nil }
+func IfaceAt(i int) any             { return Ifaces[i] }
+func ErrText() string               { return Err.Error() }
+func StrText() string               { return Str.String() + "," + StrDay.String() }
 func RingWalk(n int) string {
 	s := ""
 	for r := Ring; n > 0; n, r = n-1, r.Next {
@@ -241,10 +241,10 @@ func RingWalk(n int) string {
 
 // ---- mutation: globals alias each other as declared ----
 
-func Count() int        { counter++; return counter }
-func CountViaPtr() int  { *PCounter += 10; return counter }
-func SetArr(i, v int)   { Arr[i] = v }
-func ElemViaPtr() int   { return *PElem }
+func Count() int          { counter++; return counter }
+func CountViaPtr() int    { *PCounter += 10; return counter }
+func SetArr(i, v int)     { Arr[i] = v }
+func ElemViaPtr() int     { return *PElem }
 func SlOfArrAt(i int) int { return SlOfArr[i] }
 func SetNestedY(v float64) float64 {
 	old := *PField

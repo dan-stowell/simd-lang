@@ -144,7 +144,7 @@ var sink int
 
 func TestDeep(t *testing.T) {
 	for _, c := range []struct {
-		n, every int
+		n, every  int
 		goroutine bool
 	}{{0, 0, false}, {1, 1, false}, {50, 7, true}, {3000, 100, true}, {20000, 5000, false}, {100000, 0, true}} {
 		sum, bad := gc.DeepRun(c.n, c.every, c.goroutine)

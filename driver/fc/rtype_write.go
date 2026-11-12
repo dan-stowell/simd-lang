@@ -288,7 +288,8 @@ func (c *compiler) writeCommon(s *obj.LSym, t types.Type) {
 	pt, isPtr := t.Underlying().(*types.Pointer)
 	var sptr *obj.LSym
 	weak := true
-	if !isPtr || c.isPtrElem(t) {
+	// (a defined pointer type is written before the stock compiler forms the pointer to it)
+	if !isPtr || !hasSym(t) && c.isPtrElem(t) {
 		tptr := types.NewPointer(t)
 		if hasSym(t) || len(c.methods(tptr)) > 0 {
 			weak = false

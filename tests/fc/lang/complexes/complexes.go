@@ -26,10 +26,10 @@ func Parts128(c complex128) (float64, float64) {
 }
 func FromInts(r, i int) complex128 { return complex(float64(r), float64(i)) }
 
-func Eq128(a, b complex128) bool { return a == b }
-func Ne128(a, b complex128) bool { return a != b }
-func Eq64(a, b complex64) bool   { return a == b }
-func Ne64(a, b complex64) bool   { return a != b }
+func Eq128(a, b complex128) bool  { return a == b }
+func Ne128(a, b complex128) bool  { return a != b }
+func Eq64(a, b complex64) bool    { return a == b }
+func Ne64(a, b complex64) bool    { return a != b }
 func IsZero128(c complex128) bool { return c == 0 }
 func IsI64(c complex64) bool      { return c == 1i }
 
@@ -38,8 +38,8 @@ func To128(c complex64) complex128 { return complex128(c) }
 
 type C128 complex128
 
-func Named(c complex128) C128     { return C128(c) * C128(c) }
-func (c C128) Twice() C128        { return c + c }
+func Named(c complex128) C128      { return C128(c) * C128(c) }
+func (c C128) Twice() C128         { return c + c }
 func NamedTwice(c complex128) C128 { return C128(c).Twice() }
 
 func Conj(c complex128) complex128 { return complex(real(c), -imag(c)) }
@@ -58,9 +58,9 @@ func Recip(c complex128) complex128            { return 1 / c }
 func Half(c complex64) complex64               { return c / 2 }
 
 const (
-	K1 = 1i * 1i
-	K2 = (1 + 2i) / (3 - 4i)
-	K3 = (0.1 + 0.2i) * (0.3 + 0.4i)
+	K1           = 1i * 1i
+	K2           = (1 + 2i) / (3 - 4i)
+	K3           = (0.1 + 0.2i) * (0.3 + 0.4i)
 	K4 complex64 = 1.0 / 3i
 )
 

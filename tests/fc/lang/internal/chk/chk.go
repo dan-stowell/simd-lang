@@ -6,6 +6,7 @@
 package chk
 
 import (
+	"bytes"
 	"fmt"
 	"hash/fnv"
 	"math"
@@ -84,9 +85,12 @@ var stringPats = []string{"", "a", "b", "ab", "abc", "abd", "ABC", "0", "-123", 
 var sliceLens = []int{-1, 0, 1, 2, 3, 8, 17, 64}
 
 type gen struct {
-	rng *rand.Rand
-	bad string
+	rng    *rand.Rand
+	bad    string
+	onPath map[reflect.Type]int // pointer types being filled: a recursive type recurs twice at most
 }
+
+func isBasic(k reflect.Kind) bool { return k >= reflect.Bool && k <= reflect.Complex128 }
 
 func setter(v reflect.Value) reflect.Value {
 	if v.CanSet() || !v.CanAddr() {
@@ -124,12 +128,12 @@ func (g *gen) fill(v reflect.Value, depth int) {
 		}
 		v.Set(s)
 	case reflect.Array:
-		for i := 0; i < t.Len(); i++ {
-			if i >= 256 {
-				v.Index(i).Set(v.Index(i % 256))
-			} else {
-				g.fill(v.Index(i), depth+1)
-			}
+		n := t.Len()
+		for i := 0; i < n && i < 256; i++ {
+			g.fill(v.Index(i), depth+1)
+		}
+		for i := 256; i < n; i *= 2 { // the rest repeats the first 256
+			reflect.Copy(v.Slice(i, n), v.Slice(0, i))
 		}
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
@@ -139,11 +143,16 @@ func (g *gen) fill(v reflect.Value, depth int) {
 			g.fill(setter(v.Field(i)), depth+1)
 		}
 	case reflect.Pointer:
-		if depth > 6 {
+		if depth > 6 || g.onPath[t] >= 2 {
 			return
 		}
+		if g.onPath == nil {
+			g.onPath = map[reflect.Type]int{}
+		}
+		g.onPath[t]++
 		p := reflect.New(t.Elem())
 		g.fill(p.Elem(), depth+1)
+		g.onPath[t]--
 		v.Set(p)
 	case reflect.Map:
 		m := reflect.MakeMap(t)
@@ -262,11 +271,19 @@ func clone(dst, v reflect.Value, memo map[unsafe.Pointer]reflect.Value) {
 			return
 		}
 		s := reflect.MakeSlice(to, v.Len(), v.Cap())
-		for i := 0; i < v.Len(); i++ {
-			clone(s.Index(i), v.Index(i), memo)
+		if to.Elem() == v.Type().Elem() && isBasic(to.Elem().Kind()) {
+			reflect.Copy(s, v)
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				clone(s.Index(i), v.Index(i), memo)
+			}
 		}
 		dst.Set(s)
 	case k == reflect.Array:
+		if to.Elem() == v.Type().Elem() && isBasic(to.Elem().Kind()) && v.CanAddr() {
+			reflect.Copy(dst, v)
+			return
+		}
 		for i := 0; i < v.Len(); i++ {
 			clone(dst.Index(i), v.Index(i), memo)
 		}
@@ -379,6 +396,9 @@ func (d *differ) diff(a, b reflect.Value, path string) string {
 	case reflect.Array:
 		if a.Len() != b.Len() {
 			return fmt.Sprintf("%s: array len %d / %d", path, a.Len(), b.Len())
+		}
+		if a.Type().Elem().Kind() == reflect.Uint8 && a.CanAddr() && b.CanAddr() && bytes.Equal(a.Bytes(), b.Bytes()) {
+			return ""
 		}
 		for i := 0; i < a.Len(); i++ {
 			if s := d.diff(a.Index(i), b.Index(i), fmt.Sprintf("%s[%d]", path, i)); s != "" {
