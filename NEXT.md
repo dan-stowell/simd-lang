@@ -24,8 +24,9 @@ evidence even order-balanced. Two big rungs, and one cheap vein worth an hour be
 1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iterations 25, 26):
    resolve + reachability + layout + relocate everything is 0.20 s on 8 cores (resolution 110 ms with a
    lock-free table: memory latency; reachability 23-42 ms; layout + relocation 40 ms). Its live set
-   contains 98% of the stock linker's functions (`F4LINK_DUMPLIVE` against `go tool nm` of a stock link);
-   missing: runtime builtins by number, linkname and ABI-wrapper edges, the method rule. Tried and reverted: pc tables as plain symbols (link
+   contains 99.7% of the stock linker's functions (`F4LINK_DUMPLIVE` against `go tool nm` of a stock
+   link, `.abi0` suffixes stripped); 346 missing (301 generic instantiations: check spelling first), 13,066
+   extra (the method rule). Tried and reverted: pc tables as plain symbols (link
    +76 ms, binary +2.3%: the stock loader's cost is not the hashing of those). Next: (a) compare full keys on a hit (keep `F4LINK_CHECK` as the slow reference), and try a
    range-partitioned insert (Strand-shaped: SCALAR_LEDGER entry if it stays in Go); (b) profile the stock loader's `addSym` to see what its 300 ms are; (c) add the Go
    method rule to the reachability pass (diff the live set against the stock linker's, `-dumpdep`), and

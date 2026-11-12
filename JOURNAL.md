@@ -1389,3 +1389,21 @@ names of the spike's live functions, `F4LINK_DUMPLIVE`):
 So: the cost estimate stands within 10 ms; the pass is 98% of a correct one from above and needs the
 Go method rule, builtin references and linkname edges before its live set can be diffed to zero
 against the stock linker's, which is the test F4 has to pass.
+
+## 2026-11-12 19:50 UTC — the spike's live set against the stock linker's: 99.7%
+
+Two more steps on the comparison of the previous entry. (1) The spike now follows references to
+runtime builtins (the compiler refers to them by number). (2) Most of the 2,376 "misses" were
+artifacts of the comparison: `go tool nm` prints ABI0 wrappers with an `.abi0` suffix, and FIPS code
+lives in its own text kind that my dump skipped.
+
+With both fixed: the stock linker keeps 121,013 functions; the spike's flood (method tables followed)
+reaches 133,733 and **misses 346 of the stock's (0.3%)**: 301 generic instantiations (to be checked:
+probably how the two lists spell shape types), 35 others (linker-made markers such as
+`go:textfipsstart`, assembly reached through jump tables, methods of function-local types), 6 methods,
+4 unnamed. It keeps 13,066 the stock linker drops: methods that no reachable interface can call, which
+is exactly what the Go method rule removes. Timing unchanged (reachability 40-45 ms, link core about
+0.20 s).
+
+This is the test F4 has to drive to zero in both directions, and it took an afternoon to get within
+0.3% from above. That is the best evidence so far that F4 is a rung of weeks, not months.

@@ -124,9 +124,11 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
   as a frontier-parallel flood (23-42 ms; stock dead-code pass 246 ms), layout of 213 MB by prefix sums
   (4 ms), copy and 3.4 M relocations (35 ms): **about 0.20 s** for what takes the stock linker about
   0.9 s of its 1.1 s. Missing: pclntab, the Go rule for keeping methods, ELF, and being right: checked
-  against a stock link, the flood reaches 98% of the 121,052 functions the stock linker keeps, misses
-  2,376 and keeps 13,940 more. Reading: F4 could take the link from 1.1 s to perhaps 0.3 s, and it is
-  the only large item left on this machine that is not "replace the compiler". Two of my own errors in
+  against a stock link, the flood reaches 99.7% of the 121,013 functions the stock linker keeps (misses
+  346, mostly generic instantiations spelled differently) and keeps 13,066 more (methods the Go method
+  rule would drop). Reading: F4 could take the link from 1.1 s to perhaps 0.3 s; it is
+  the only large item left on this machine that is not "replace the compiler", and getting within 0.3%
+  of the stock live set in an afternoon suggests weeks, not months. Two of my own errors in
   this spike were caught by checking against a slower reference (a hash key that merged +x with -x; a
   wrong root set), which is the argument for building F4 with the stock linker as a permanent oracle.
 - **A consumed F4 slice, tried and reverted**: per-function pc tables as plain symbols instead of

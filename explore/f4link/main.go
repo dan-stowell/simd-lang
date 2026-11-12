@@ -347,8 +347,11 @@ func main() {
 	}
 	target := func(o *object, ref goobj.SymRef) uint64 {
 		switch ref.PkgIdx {
-		case goobj.PkgIdxInvalid, goobj.PkgIdxBuiltin:
+		case goobj.PkgIdxInvalid:
 			return 0
+		case goobj.PkgIdxBuiltin: // a runtime function known to the compiler by number
+			name, abi := goobj.BuiltinName(int(ref.SymIdx))
+			return tab.get(nameKey(name, uint16(abi)))
 		case goobj.PkgIdxSelf:
 			return o.canon[ref.SymIdx]
 		case goobj.PkgIdxHashed64:
@@ -446,7 +449,7 @@ func main() {
 				for j := 0; j < o.ndef+o.nh64+o.nh+o.nnonpkg; j++ {
 					gid := o.gid0 + uint64(j) + 1
 					if o.canon[j] == gid && live[gid>>5].Load()&(1<<(gid&31)) != 0 {
-						if sy := o.r.Sym(uint32(j)); objabi.SymKind(sy.Type()) == objabi.STEXT {
+						if sy := o.r.Sym(uint32(j)); objabi.SymKind(sy.Type()) == objabi.STEXT || objabi.SymKind(sy.Type()) == objabi.STEXTFIPS {
 							names = append(names, sy.Name(o.r))
 						}
 					}
