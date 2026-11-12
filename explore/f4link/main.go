@@ -12,6 +12,7 @@ package main
 import (
 	"bytes"
 	"cmd/internal/goobj"
+	"cmd/internal/objabi"
 	"encoding/binary"
 	"fmt"
 	"hash/maphash"
@@ -332,6 +333,115 @@ func main() {
 	})
 	lap("3. resolve every symbol slot", fmt.Sprintf("%d slots, %d references to symbols no object defines (the linker makes those)", nsyms, unresolved.Load()))
 
+	// ---- 3b. reachability: a frontier-parallel flood over relocation and aux edges from the entry
+	// points and every package's init task. NOT the Go linker's dead-code pass: that one keeps a method
+	// only if an interface or reflection can call it; here an edge is an edge (weak ones are skipped,
+	// method-table edges are counted both ways). It measures what a parallel traversal of this graph costs.
+	starts := make([]uint64, len(objs))
+	for i, o := range objs {
+		starts[i] = o.gid0
+	}
+	objOf := func(gid uint64) (*object, int) {
+		k := sort.Search(len(starts), func(i int) bool { return starts[i] >= gid }) - 1
+		return objs[k], int(gid - 1 - objs[k].gid0)
+	}
+	target := func(o *object, ref goobj.SymRef) uint64 {
+		switch ref.PkgIdx {
+		case goobj.PkgIdxInvalid, goobj.PkgIdxBuiltin:
+			return 0
+		case goobj.PkgIdxSelf:
+			return o.canon[ref.SymIdx]
+		case goobj.PkgIdxHashed64:
+			return o.canon[o.ndef+int(ref.SymIdx)]
+		case goobj.PkgIdxHashed:
+			return o.canon[o.ndef+o.nh64+int(ref.SymIdx)]
+		case goobj.PkgIdxNone:
+			return o.canon[o.ndef+o.nh64+o.nh+int(ref.SymIdx)]
+		}
+		if p := primary[o.r.Pkg(int(ref.PkgIdx))]; p != nil && int(ref.SymIdx) < p.ndef {
+			return p.gid0 + uint64(ref.SymIdx) + 1
+		}
+		return 0
+	}
+	for _, methods := range []bool{true, false} {
+		live := make([]atomic.Uint32, nsyms/32+1)
+		mark := func(gid uint64) bool {
+			w, b := &live[gid>>5], uint32(1)<<(gid&31)
+			for {
+				old := w.Load()
+				if old&b != 0 {
+					return false
+				}
+				if w.CompareAndSwap(old, old|b) {
+					return true
+				}
+			}
+		}
+		var frontier []uint64
+		for _, root := range []struct {
+			name string
+			abi  uint16
+		}{{"main.main", 1}, {"_rt0_amd64_linux", 0}, {"runtime.rt0_go", 0}, {"runtime.main", 1}} {
+			if g := tab.get(nameKey(root.name, root.abi)); g != 0 && mark(g) {
+				frontier = append(frontier, g)
+			}
+		}
+		for _, o := range objs {
+			for j := 0; j < o.ndef; j++ {
+				if s := o.r.Sym(uint32(j)); s.IsPkgInit() && mark(o.gid0+uint64(j)+1) {
+					frontier = append(frontier, o.gid0+uint64(j)+1)
+				}
+			}
+		}
+		nroots, levels := len(frontier), 0
+		var nlive, liveBytes, nedges atomic.Int64
+		for len(frontier) > 0 {
+			levels++
+			nw := runtime.GOMAXPROCS(0)
+			next := make([][]uint64, nw*8)
+			cur := frontier
+			par(len(next), func(c int) {
+				var out []uint64
+				lb, ne := 0, 0
+				for _, gid := range cur[c*len(cur)/len(next) : (c+1)*len(cur)/len(next)] {
+					o, j := objOf(gid)
+					if j >= o.ndef+o.nh64+o.nh+o.nnonpkg {
+						continue // a reference nothing defines
+					}
+					lb += int(o.r.Sym(uint32(j)).Siz())
+					for _, rl := range o.r.Relocs(uint32(j)) {
+						ne++
+						t := objabi.RelocType(rl.Type())
+						if t&objabi.R_WEAK != 0 || (!methods && t&^objabi.R_WEAK == objabi.R_METHODOFF) {
+							continue
+						}
+						if g := target(o, rl.Sym()); g != 0 && mark(g) {
+							out = append(out, g)
+						}
+					}
+					for _, a := range o.r.Auxs(uint32(j)) {
+						if g := target(o, a.Sym()); g != 0 && mark(g) {
+							out = append(out, g)
+						}
+					}
+				}
+				next[c] = out
+				nlive.Add(int64((c+1)*len(cur)/len(next) - c*len(cur)/len(next)))
+				liveBytes.Add(int64(lb))
+				nedges.Add(int64(ne))
+			})
+			frontier = frontier[:0]
+			for _, l := range next {
+				frontier = append(frontier, l...)
+			}
+		}
+		what := "3b. reachability, method tables as edges"
+		if !methods {
+			what = "3c. reachability, method tables skipped"
+		}
+		lap(what, fmt.Sprintf("%d roots, %d levels, %d symbols live, %d MB, %d edges followed", nroots, levels, nlive.Load(), liveBytes.Load()>>20, nedges.Load()))
+	}
+
 	// ---- 4. layout: prefix sum of the sizes of the definitions each object owns, then of the objects
 	par(len(objs), func(i int) {
 		o := objs[i]
@@ -359,10 +469,6 @@ func main() {
 	for _, o := range objs {
 		o.base = total
 		total += o.size
-	}
-	starts := make([]uint64, len(objs))
-	for i, o := range objs {
-		starts[i] = o.gid0
 	}
 	addrOf := func(gid uint64) int64 {
 		if gid == 0 {

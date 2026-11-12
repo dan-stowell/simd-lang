@@ -1331,3 +1331,30 @@ cores (0.71 s on one).
 Worth keeping from this: the string-keyed version was slow and was the oracle that caught the fast
 one. F4 needs that pair permanently: a slow, obviously-right resolver to diff the fast one against on
 every build, exactly as the stock toolchain is for the compiler phases.
+
+## 2026-11-12 18:40 UTC — iteration 28: reachability in the link spike: 14-32 ms
+
+The spike lacked the two serial algorithms of a link. This adds the first: reachability as a
+frontier-parallel flood over relocation and aux edges, from the entry points and every package's init
+task (821 roots), marking with compare-and-swap on a bitmap.
+
+    MinIO, 8 cores                               ms     levels   symbols live   bytes live   edges followed
+    method tables followed like any edge       31-32      35       703,853        159 MB        2.14 M
+    method tables not followed                 14-19      40       334,818        100 MB        1.10 M
+    (one core: 154 and 73 ms. Stock linker's dead-code pass: 246 ms.)
+
+The two rows bracket the Go linker's rule, which keeps a method only if some reachable interface or
+reflection can call it: its live set lies between them, and its algorithm is the same flood with a
+deferred queue for methods. It is **not** implemented here, so this is a cost, not a correct pass.
+
+**The spike's link core, all together** (map 7-13, claim 82-106, resolve 24, reachability about 30,
+layout 4, copy + relocate 32-37): **about 0.19 s on 8 cores** for what takes the stock linker about
+0.9 s of its 1.1 (loadlib 440, deadcode 246, dodata + asmb 230). Still missing: pclntab (114 ms in
+stock; per-function tables concatenated with offsets by prefix sum: Strand-shaped), the Go method
+rule, symbol table and ELF headers (small), and the hard part, which is not speed: being right.
+An honest reading for the ladder: F4 could take the link from 1.1 s to perhaps 0.3 s, about 0.8 s of an
+11.5 s build, and it is the only item left on this machine that is both large and not "replace the
+compiler".
+
+**Scope check.** Most ambitious: make the spike emit a binary that runs. That is F4 itself, and it is
+where the next session should start; the measurements say it is worth it and roughly what it costs.
