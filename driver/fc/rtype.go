@@ -144,19 +144,41 @@ func (c *compiler) writeDeclaredTypes() {
 	}
 }
 
-// unwrittenTypeCode gives the package up when a descriptor needs code nobody writes yet. To be deleted
-// when the code generator writes the bodies of needEq, needHash and needWrapper.
+// unwrittenTypeCode gives the package up when a descriptor needs code nobody writes yet and no placeholder
+// can stand for: equality and hash functions and the wrappers of unnamed and instantiated types (DUPOK:
+// main.go's placeholders are for the stock object's indexed symbols only, which the wrappers of the
+// package's own defined types are). To be deleted when the code generator writes the bodies of needEq,
+// needHash and needWrapper.
 func (c *compiler) unwrittenTypeCode() {
 	c.rtMu.Lock()
 	defer c.rtMu.Unlock()
+	for _, w := range c.needWrapper {
+		if w.dupok {
+			giveUp("method wrapper %s", w.sym.Name)
+		}
+	}
 	switch {
-	case len(c.needWrapper) > 0:
-		giveUp("method wrapper %s (and %d more)", c.needWrapper[0].sym.Name, len(c.needWrapper)-1)
 	case len(c.needEq) > 0:
 		giveUp("equality function %s", c.needEq[0].sym.Name)
 	case len(c.needHash) > 0:
 		giveUp("hash function %s", c.needHash[0].sym.Name)
 	}
+}
+
+// eqFuncSym is the closure (a func(p, q unsafe.Pointer) bool value) that compares two values of the
+// comparable type t: of a runtime function, or type:.eqfunc.<signature>. hashFuncSym likewise hashes.
+func (c *compiler) eqFuncSym(t types.Type) *obj.LSym {
+	c.rtMu.Lock()
+	defer c.rtMu.Unlock()
+	c.rtInit()
+	return c.eqClosure(t)
+}
+
+func (c *compiler) hashFuncSym(t types.Type) *obj.LSym {
+	c.rtMu.Lock()
+	defer c.rtMu.Unlock()
+	c.rtInit()
+	return c.hashClosure(t)
 }
 
 // declaredTypes lists the package's defined types: package level by name, then local ones in source order.
