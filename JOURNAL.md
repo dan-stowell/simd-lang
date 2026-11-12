@@ -1189,3 +1189,50 @@ twenty: 80 of 80. No hang, no failed fork, no failed smoke test. A kube-apiserve
   objects 1,323 MB); new 20.33, 23.19, 21.02, 19.85 s (mean 21.10; 133.7 core-s; 1,802 ms; 1,043 MB).
   **-1.9 s (8%), -10 compile core-s, -0.55 s of link + write.** Same shape as MinIO's -1.4 s (11%):
   the comparison point is not overfitted to.
+
+## 2026-11-12 17:10 UTC — iteration 25 (spike): the core of a link on MinIO's real objects, done the data-parallel way: 0.26 s
+
+**Why.** The skeptic has said four times that the link "floor" in TRACE.md (17 ms) is a copy budget
+with no model of symbol resolution or relocation, and the link is the tail of the build. F4 has no
+measured number. This spike makes one. One iteration, in `explore/f4link` (270 lines of Go, built
+inside the Go tree for `cmd/internal/goobj`; `explore/f4link/mk.sh`).
+
+**What it does.** Reads the `importcfg.link` of a real build and, on all cores: maps every archive and
+finds the Go objects; enters every definition that is found by name or by content hash into a sharded
+table (lowest object wins, so the result does not depend on thread timing); resolves every symbol slot
+of every object to its definition; lays every owned definition out by prefix sums (per object, then
+over objects); copies the data into one image and applies every relocation.
+**What it does not do:** dead-code elimination, pclntab, the symbol table, ELF, or the semantics of
+relocation types (each writes target + addend). It is not a linker and produces no program.
+
+**Measured** (MinIO, 1,312 archives, 1,424 objects, 501 MB; 8 cores; ms):
+
+    map archives, find objects            6-12
+    claim names and content hashes      132-189    2.59 M claims, 960 k distinct
+    resolve every symbol slot              62-65    2.72 M slots
+    layout by prefix sums                      4    213 MB image (everything, no dead code removed)
+    copy data, apply relocations           34-41    180 MB, 3.43 M relocations
+    total                              about 260    (one core: 1,270)
+
+The stock linker on the same objects: 1,130 ms, of which loading and resolving is 440, dead code 246,
+copying and relocating (asmb + dodata) 230, pclntab 114.
+
+**What the numbers say for F4.**
+- Layout and relocation, the parts LINKING.md calls Strand-shaped, are 40 ms together. They are not the
+  problem and never were.
+- **Resolution is the cost: about 200 of the 260 ms, and it is hashing.** The symbol census explains
+  it: 419 k symbols are found by package index (a table read), 300 k are defined by name, 121 k are
+  references by name, and **1.84 M are content-addressed** (per-function pc tables, stack maps, string
+  constants: things the compiler emits as separate little symbols so the linker can deduplicate them by
+  a 32-byte hash). Two thirds of everything the linker resolves exists only to be deduplicated.
+- So F4's first slice is not "a faster relocation pass". It is: the compilers stop emitting pc tables
+  and stack maps as content-addressed symbols (write them into the function's own record, or dedup
+  them per package where almost all the duplication is), and hand out dense ids for what is left.
+  Then resolution is the 62 ms pass, and a link of this shape is under 0.15 s plus dead code and
+  pclntab, which are the next two things to measure the same way.
+- The dead-code flood (246 ms in stock) is the one serial algorithm left; as a frontier-parallel
+  graph traversal over 3.4 M edges it should be tens of ms, untested.
+
+**Scope check.** This was the spike budget (none used today until now). Most ambitious next is to
+make this consumed: emit an image that runs. Not in the hour left; the measurement is what the next
+session starts from, and it changes what F4's first step is.

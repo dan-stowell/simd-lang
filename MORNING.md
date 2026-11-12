@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 24)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 25)
 
 ## The trace, before and after
 
@@ -111,6 +111,14 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 - **Direct output** (`-directout`): the linker writes the binary in place instead of to tmpfs followed
   by a copy. Link + write 1,459 -> 1,316 ms. Same bytes.
 
+- **F4 spike, measured, not consumed** (`explore/f4link`): the core of a link on MinIO's real objects
+  (resolve all 2.7 M symbols, lay out 213 MB by prefix sums, apply 3.4 M relocations) takes **0.26 s on
+  8 cores**; the stock linker's corresponding phases take 0.67 s of its 1.13 s. Layout and relocation
+  are 40 ms; **resolution is 200 ms and it is hashing**: 1.84 M of the 2.7 M symbols are
+  content-addressed fragments (per-function pc tables, stack maps, strings) that exist only so the
+  linker can deduplicate them. F4's first step is therefore in the compiler (stop emitting those as
+  symbols), not in a faster relocation pass. No dead-code elimination or pclntab in the spike.
+
 ## Ideas tried and killed (all by measurement; IDEAS.md and JOURNAL iteration 16)
 
 - Process start as a large cost: 3.6 core-s, not 12.
@@ -195,4 +203,6 @@ was measured order-balanced for that reason, and the A/B script now alternates o
    over minutes. Differences under about half a second cannot be seen in single cold runs here, and an
    A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the
    trace sharper.
-4. **The floors in TRACE.md** (see the reviews section above).
+4. **The floors in TRACE.md** (see the reviews section above). There is now a measured number for the
+   link's core (0.26 s, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
+   table without your say.

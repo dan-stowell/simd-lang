@@ -19,11 +19,13 @@ or min-of-N on single packages; never old-then-new in a fixed order. Two big run
    emitted (223 k left after iteration 20, most of them anonymous); compare with what survives in the
    binary (`go tool nm -type`), and do the same for method wrappers and equality/hash functions.
 
-1. F4, the link (1.2 s serial, the whole tail). Numbers to design against (JOURNAL iteration 18):
-   loadlib 439 ms of which reading objects is 55 and symbol resolution ~390; deadcode 246; asmb 118;
-   pclntab 114; dodata 112. The stock linker's output depends on load order, so an incremental link
-   needs its own deterministic order. First slice to consider: the compilers hand out dense symbol IDs
-   (the driver knows the whole graph), so resolution is a table write as objects arrive.
+1. F4, the link (1.1 s serial, the whole tail). Start from `explore/f4link` (JOURNAL iteration 25):
+   resolve + layout + relocate everything is 0.26 s on 8 cores, 200 ms of it hashing 1.84 M
+   content-addressed symbols (pc tables, stack maps, strings). First slice: make the compilers stop
+   emitting those as separate symbols (or dedup per package), measure resolution again (expect ~60 ms),
+   then add dead code (frontier-parallel flood over 3.4 M relocation edges) and pclntab to the spike,
+   then make it emit an image that runs. The stock linker's output depends on load order (iteration
+   18); ours must define its own deterministic order (the spike's rule: lowest object index wins).
 2. F2/F3: whole packages leaving the stock compiler. The export-IR round trip (17 core-s) and the
    assembler path (`obj.Prog`, 8.8% of compile samples after the one-pass change) are what a second
    compiler would not pay; `05-sbc` showed that taking single functions does not pay. Needs export data
