@@ -266,3 +266,11 @@ s = s.replace(old, old + '''	if noder.SbShard != 0 {
 	}
 ''')
 open(p, 'w').write(s)
+
+# Seventh change: with the baseline on and inlining off (-l), skip the devirtualize-and-inline pass. With
+# nothing to inline all it does is turn some interface calls into direct ones: an optimization.
+p = os.path.join(d, 'main.go'); s = open(p).read()
+old = '\tinterleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tif os.Getenv("SB_BASELINE") == "" || base.Flag.LowerL != 0 {\n\t\tinterleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)\n\t}\n')
+open(p, 'w').write(s)

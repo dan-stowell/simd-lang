@@ -1,5 +1,5 @@
 --- /usr/local/go/src/cmd/compile/internal/gc/main.go	2026-10-19 22:20:36.000000000 +0000
-+++ main.go	2026-11-12 01:55:45.336043658 +0000
++++ main.go	2026-11-12 02:00:31.276967201 +0000
 @@ -217,6 +217,21 @@
  	// Parse and typecheck input.
  	noder.LoadPackage(flag.Args())
@@ -22,7 +22,18 @@
  	// As a convenience to users (toolchain maintainers, in particular),
  	// when compiling a package named "main", we default the package
  	// path to "main" if the -p flag was not specified.
-@@ -274,7 +289,9 @@
+@@ -256,7 +271,9 @@
+ 
+ 	// Interleaved devirtualization and inlining.
+ 	base.Timer.Start("fe", "devirtualize-and-inline")
+-	interleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)
++	if os.Getenv("SB_BASELINE") == "" || base.Flag.LowerL != 0 {
++		interleaved.DevirtualizeAndInlinePackage(typecheck.Target, profile)
++	}
+ 
+ 	for _, fn := range typecheck.Target.Funcs {
+ 		if ir.MatchAstDump(fn, "devirtualize-and-inline") {
+@@ -274,7 +291,9 @@
  	ir.CurFunc = nil
  
  	// Build init task, if needed.
@@ -33,7 +44,7 @@
  
  	// Generate ABI wrappers. Must happen before escape analysis
  	// and doesn't benefit from dead-coding or inlining.
-@@ -313,6 +330,16 @@
+@@ -313,6 +332,16 @@
  	//
  	// There are cyclic dependencies between all of these phases, so we
  	// need to iterate all of them until we reach a fixed point.
@@ -50,7 +61,7 @@
  	base.Timer.Start("be", "compilefuncs")
  	for nextFunc, nextExtern := 0, 0; ; {
  		reflectdata.WriteRuntimeTypes()
-@@ -320,11 +347,19 @@
+@@ -320,11 +349,19 @@
  		if nextExtern < len(typecheck.Target.Externs) {
  			switch n := typecheck.Target.Externs[nextExtern]; n.Op() {
  			case ir.ONAME:
@@ -74,7 +85,7 @@
  			nextExtern++
  			continue
 --- /usr/local/go/src/cmd/compile/internal/gc/obj.go	2026-10-19 22:20:36.000000000 +0000
-+++ obj.go	2026-11-12 01:55:45.340043727 +0000
++++ obj.go	2026-11-12 02:00:31.276967201 +0000
 @@ -41,12 +41,22 @@
  	modeLinkerObj
  )
@@ -111,7 +122,7 @@
  	if reflectdata.ZeroSize > 0 {
  		zero := base.PkgLinksym("go:map", "zero", obj.ABI0)
 --- /usr/local/go/src/cmd/internal/obj/objfile.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../../../internal/obj/objfile.go	2026-11-12 01:55:45.336043658 +0000
++++ ../../../internal/obj/objfile.go	2026-11-12 02:00:31.272967132 +0000
 @@ -548,10 +548,20 @@
  			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
  			h.Write(tmp[:4])
@@ -142,7 +153,7 @@
 +// so that packages that import by name and packages that import by index compute the same hash.
 +var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""
 --- /usr/local/go/src/cmd/compile/internal/ssagen/pgen.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../ssagen/pgen.go	2026-11-12 01:55:45.336043658 +0000
++++ ../ssagen/pgen.go	2026-11-12 02:00:31.272967132 +0000
 @@ -6,6 +6,7 @@
  
  import (

@@ -484,3 +484,51 @@ stock compiler's lowered tree, which only its front end produces; a second lower
 work I avoided by moving inside the compiler. What is left tonight inside this design: the last 3% of
 functions (floating point), an optimization-only pass that still runs, and correctness evidence
 (MinIO's own unit tests under the baseline).
+
+## 2026-11-12 02:20 UTC — iteration 13: floating point; two memory-safety bugs and a compiler race, found by stress
+
+**Floating point** in the baseline: a float travels between tree nodes as its bit pattern in the
+integer accumulator, so loads, stores, temporaries and copies needed no new code; arithmetic,
+comparison (with NaN's rules), conversion and the calling convention use the SSE registers. 98% of
+functions in the oracle's packages and 97% of MinIO's now bypass SSA. The devirtualize-and-inline pass
+is skipped in baseline mode with `-l` (it has nothing to inline and the rest is optimization).
+
+**The important part: bugs that only repetition finds.**
+1. One run in five of the oracle died in compress/flate with a dump of heap words and no test failure.
+   Repeating the tests (`-count=8`) at three collector settings made it reliable: `found bad pointer in
+   Go heap`, and go/printer with `found pointer to free object`. The "object" in the report was a
+   goroutine stack and the pointer was exactly one past the end of an allocation. The lowered tree
+   computes such addresses on purpose (`&s[len(s)]`, the destination of a copy of nothing) and hands them
+   straight to memmove; the stock back end keeps them in a register for three instructions. My design
+   parked every pointer-typed intermediate in a stack slot that the collector reads for the rest of the
+   function. Two fixes, both from one rule I should have started with: *an intermediate needs to be
+   visible to the collector only if a returning call can happen while it waits.* Argument and operand
+   temporaries are now unscanned unless that is the case (`sbMayCall`), and the compiler's own
+   temporaries that only ever hold an unchecked element address get unscanned slots
+   (`sbPassingAddresses`; found by mapping the reported stack address to a frame offset to a store
+   instruction to a source line: `want = append(want, abcabc[:n]...)`).
+2. One MinIO build in ten failed: the *compiler* crashed with `concurrent map read and map write`. I
+   was calling the package symbol table from the parallel back-end workers to make keys for labelled
+   break/continue. A map of the function's own now.
+
+**Evidence after the fixes.**
+- 15 packages x 8 repetitions x GOGC 5/20/100: clean.
+- 107 standard-library packages x 3 at GOGC=10 with the build's flags: the only failures are four tests
+  that count allocations, and the same four fail with the unmodified compiler at `-l`.
+- `tests/minio_stress.sh`: the server at GOGC=5, 300 objects of mixed sizes written, read back, compared,
+  listed, deleted, eight at a time: passes.
+- Ten consecutive MinIO builds: ten successes.
+
+**Trace.** MinIO cold, four runs: 16.4, 16.7, 17.5, 16.6 s. kube-apiserver cold: 29.1 s. No real change
+from iteration 12: the functions that were left were few.
+
+**What this says about the approach.** The baseline's safety argument was "everything is in memory and
+always live, so the collector can never miss anything". True, and not the whole requirement: the
+collector must also never *see* something that is not a pointer. Always-live maps trade one for the
+other. The standard library's tests did not find it in a single pass; the same tests repeated under
+collector pressure did, in minutes. The stress run is now part of the oracle.
+
+**Scope check.** Most ambitious: unchanged (front end). What I am doing instead for the rest of the
+night: consolidate. The pipeline is 3.3x faster than stock on MinIO and 3.0x on kube-apiserver with a
+code generator that is five hours old; the most valuable thing left is evidence that it is right, a
+smaller generated binary (176 MB against 100), and a report the user can act on.
