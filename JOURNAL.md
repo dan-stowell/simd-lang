@@ -533,7 +533,7 @@ night: consolidate. The pipeline is 3.3x faster than stock on MinIO and 3.0x on 
 code generator that is five hours old; the most valuable thing left is evidence that it is right, a
 smaller generated binary (176 MB against 100), and a report the user can act on.
 
-## 2026-11-12 03:20 UTC — iteration 14: where the CPU really goes; huge pages (spike, positive); the giant package sharded
+## 2026-11-12 03:16 UTC — iteration 14: where the CPU really goes; huge pages (spike, positive); the giant package sharded
 
 **Trace.** MinIO cold, four runs: **13.3, 12.3, 12.6, 12.9 s** (iteration 13: 16.4-17.5; stock 54.2).
 kube-apiserver cold, two runs: **24.1, 25.2 s** (was 28.5-29.1; stock 86.3). Both pass their smoke tests;
