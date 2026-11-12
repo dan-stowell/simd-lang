@@ -370,7 +370,7 @@ stack, allocation pressure to make the collector scan the frames). Doing that ne
 cheap fix: let the packages sbc never touches (the runtime and its dependencies) start compiling
 while sbc is still checking, so its second is not on the critical path.
 
-## 2026-11-12 00:50 UTC — iteration 11: rung 5 for real. A baseline code generator inside the compiler moves the trace.
+## 2026-11-12 00:34 UTC — iteration 11: rung 5 for real. A baseline code generator inside the compiler moves the trace.
 
 **Why inside the compiler.** The second skeptic review (REVIEWS.md) argued for a hybrid back end inside
 the stock compiler rather than my outside one: keep its typing and its runtime lowering, intercept
@@ -431,3 +431,56 @@ output smaller, since every byte of it is assembled, written, read by the linker
 Both are the same rung continuing. Doing that, with the oracle after every step. In parallel the
 correctness evidence has to widen: more of the standard library, and MinIO's own unit tests built with
 the baseline (the charter's "unit tests of the packages we touch": this touches all of them).
+
+## 2026-11-12 01:10 UTC — iteration 12: the baseline to 97% of functions; sharding a package (works, does not pay here)
+
+**Baseline, stages 3 and 4** (each step through `tests/sb_stdtest.sh`, MinIO's smoke test, and
+`tests/sb_bisect.py` when something broke). Added: captured variables, `defer` and `go`, `append`, type
+assertions to concrete and to interface types, interface type switches, `select`, calls of assembly
+(ABI0) functions and of functions the optimizer would have replaced by instructions, jump tables,
+`min`/`max`, `unsafe.Add`, slices moved from the stack to the heap, copies and clears of large values;
+then fewer instructions: conditions jump directly, small constants are immediates, simple operands are
+loaded without a temporary.
+
+Bugs the oracle found, all by bisection to one function and then a 20-line reproducer:
+- a closure that is called where it is written gets its captured variables as extra parameters, not
+  through the context register (slices' TestGrow: a deferred closure read a nil pointer);
+- every call owes its callee a spill area at the bottom of the frame, also the runtime helpers I call
+  without an ABI analysis (container/heap: growslice overwrote my temporaries);
+- `runtime.Caller` and `log` want the call's own position, not that of its argument set-up.
+
+Two kinds of test fail with the baseline and are not bugs: tests that count frames across *inlined*
+calls (the baseline writes no inline tree; my builds use `-l`), and tests that count allocations or wait
+for prompt collection (no inlining; and a slot that once held a pointer keeps its object alive until
+the function returns). With the build's flags the wide run (110 standard-library packages, 127,185
+functions through the baseline) has no other failures.
+
+**Trace.** MinIO, cold, three runs: **16.3, 18.0, 16.4 s** (stock 54.2 s). 96.8% of functions bypass
+SSA; compile is 87 core-s. kube-apiserver cold: **28.5 s** (stock 86.3 s; 43.9 s before the baseline),
+smoke test passes. The binary is 176 MB (optimized: 100 MB); the link is still 1.4 s.
+
+**Where the compile CPU is now** (profile, 70 s): the front end 31% (type check 7.5, export IR written
+4.5 and read back 9.1), emitting machine code 22% (the baseline's walk about a third of that, the
+assembler the rest), escape analysis / wrappers / runtime types 13%, lowering 9%, the SSA that is
+left 8% (for 3% of functions: the ones with floating point), objects 7%.
+
+**The chain is back.** With the back end cheap, `minio/cmd` (5 MB) starts when the last front end
+before it is done (9.6 s) and then takes 4.7 s nearly alone. Two attempts:
+- *Pause back ends beyond a cap* (`-running n`) or run them under SCHED_IDLE (`-idle`): the package
+  starts up to 2 s earlier and the build ends no sooner; the work only moves.
+- *Shards* (`driver/baseline/sbshard.go`, `-shard bytes`): K compiler processes for one package, each
+  type-checks all of it and then keeps its share of the function bodies; shard 0 alone emits data,
+  types, initialization and export data; the others' objects join its archive. It works: MinIO with
+  every package over 20 kB sharded passes the smoke test (after four fixes: static temporaries belong
+  to the shard that uses them, methods named `init`, object fingerprints, instantiated generic types).
+  It does not pay on 8 cores: on an idle machine 8 shards finish `minio/cmd` in 3.1 s against 4.3 s
+  unsharded, because every shard repeats the 1.1 s type check, and in the real build that extra CPU
+  competes with everything else: 17.3-17.8 s against 15.9-16.3 s. Off by default. It would pay with
+  more cores, or if the shards other than 0 dropped bodies before type checking.
+
+**Scope check.** Most ambitious: replace the front end too (whole-program go/types, measured at 1.4 s
+wall in iteration 9, feeding the baseline's kind of generator). Why not now: the baseline consumes the
+stock compiler's lowered tree, which only its front end produces; a second lowering is the months of
+work I avoided by moving inside the compiler. What is left tonight inside this design: the last 3% of
+functions (floating point), an optimization-only pass that still runs, and correctness evidence
+(MinIO's own unit tests under the baseline).

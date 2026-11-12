@@ -25,6 +25,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"unsafe"
 )
 
 type Module struct {
@@ -55,6 +56,7 @@ type Pkg struct {
 	export   string // what importers read (the same file unless pipelining)
 	stubOnly bool
 	sbc      bool // sbc wrote an object and a list of the functions it took for this package
+	shards   int  // > 1: compiled as this many parallel shards
 	mod      *modInfo
 }
 
@@ -103,6 +105,8 @@ var dryRun bool
 var compiler string
 var pipeline bool
 var noEarly bool
+var idlePolicy bool
+var shardBytes int64
 
 func die(f string, a ...any) {
 	if cleanup != "" {
@@ -167,6 +171,8 @@ func main() {
 	mkfactsFlag := flag.Bool("mkfacts", false, "write the toolchain facts file and exit")
 	dumpPlan := flag.String("dumpplan", "", "write the plan (packages, files, imports) as JSON, for diffing against go list")
 	sbc := flag.String("sbc", "", "second compiler (build/sbc): takes over the functions it can, the stock compiler drops their bodies (needs -pipeline and the patched compiler)")
+	flag.Int64Var(&shardBytes, "shard", 0, "pipelining: compile a package with more than this many bytes of Go as parallel shards (needs the patched compiler); 0 = never")
+	flag.BoolVar(&idlePolicy, "idle", false, "pipelining: run back ends under SCHED_IDLE, not just nice 19")
 	sbcOnly := flag.String("sbconly", "", "let sbc take functions only from packages whose path contains this (bisecting)")
 	flag.BoolVar(&dryRun, "n", false, "dry run: write the config files and log the commands, run nothing")
 	dumpCmds := flag.String("dumpcmds", "", "write every tool command line here (for diffing against go build)")
@@ -743,7 +749,13 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 	if p.Standard {
 		argv = append(argv, "-std")
 	}
-	if len(p.SFiles) == 0 && !p.sbc && !(p.Standard && completeExempt[p.ImportPath]) {
+	// (Not the runtime and what it is built on: a function whose callee is "elsewhere" must assume its
+	// arguments escape to the heap, and those packages are not allowed to allocate.)
+	runtimeish := p.Standard && (p.ImportPath == "runtime" || strings.HasPrefix(p.ImportPath, "runtime/") || strings.HasPrefix(p.ImportPath, "internal/"))
+	if shardBytes > 0 && pipeline && !noEarly && len(p.SFiles) == 0 && !p.sbc && !runtimeish && p.goBytes > shardBytes {
+		p.shards = int(min(8, max(2, p.goBytes/(shardBytes/2))))
+	}
+	if len(p.SFiles) == 0 && !p.sbc && p.shards == 0 && !(p.Standard && completeExempt[p.ImportPath]) {
 		argv = append(argv, "-complete")
 	}
 	argv = append(argv, "-goversion", goversion)
@@ -791,12 +803,55 @@ func buildPkg(p *Pkg, c int, goversion string, extra []string, exported func(pid
 		argv = append(argv, filepath.Join(p.Dir, f))
 	}
 	if pipeline && !dryRun {
-		u, s, e := runCompile(p.Dir, argv, exported, p.sbc)
+		var env []string
+		var wg sync.WaitGroup
+		var smu sync.Mutex
+		var shardErr error
+		if p.shards > 1 {
+			// Shards 1..K-1 compile their share of the functions while shard 0 (below) does its own and
+			// everything that is not a function. Each writes an object; they join shard 0's archive.
+			env = []string{fmt.Sprintf("SB_SHARD=0/%d", p.shards)}
+			for k := 1; k < p.shards; k++ {
+				a := append([]string{}, argv...)
+				for i := range a {
+					switch {
+					case a[i] == "-o":
+						a[i+1] = filepath.Join(p.objdir, fmt.Sprintf("_s%d.x", k))
+					case a[i] == "-linkobj":
+						a[i+1] = filepath.Join(p.objdir, fmt.Sprintf("_s%d.a", k))
+					}
+				}
+				wg.Add(1)
+				go func(k int, a []string) {
+					defer wg.Done()
+					u, s, e := runCompile(p.Dir, a, func(int) {}, p.sbc, fmt.Sprintf("SB_SHARD=%d/%d", k, p.shards))
+					smu.Lock()
+					user += u
+					sys += s
+					if e != nil && shardErr == nil {
+						shardErr = e
+					}
+					smu.Unlock()
+				}(k, a)
+			}
+		}
+		u, s, e := runCompile(p.Dir, argv, exported, p.sbc, env...)
+		wg.Wait()
+		smu.Lock()
 		user += u
 		sys += s
+		smu.Unlock()
 		cmds = append(cmds, strings.Join(argv, " "))
 		if err = e; err != nil {
 			return
+		}
+		if err = shardErr; err != nil {
+			return
+		}
+		for k := 1; k < p.shards; k++ {
+			if err = appendShard(p.archive, filepath.Join(p.objdir, fmt.Sprintf("_s%d.a", k)), fmt.Sprintf("shard%d.o", k)); err != nil {
+				return
+			}
 		}
 	} else if err = do(argv); err != nil {
 		return
@@ -915,7 +970,7 @@ func embedcfg(p *Pkg) ([]byte, error) {
 
 // runCompile runs the patched compiler, which prints "sb:export-ready" when the file importers need
 // is complete; exported is called at that moment.
-func runCompile(dir string, argv []string, exported func(pid int), dropBodies bool) (float64, float64, error) {
+func runCompile(dir string, argv []string, exported func(pid int), dropBodies bool, extraEnv ...string) (float64, float64, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	cmd.Dir = dir
 	for _, kv := range os.Environ() { // never inherit the switch: -noearly must mean stock behaviour
@@ -929,6 +984,7 @@ func runCompile(dir string, argv []string, exported func(pid int), dropBodies bo
 	if dropBodies {
 		cmd.Env = append(cmd.Env, "SB_DROP_BODIES=1")
 	}
+	cmd.Env = append(cmd.Env, extraEnv...)
 	var errb bytes.Buffer
 	cmd.Stderr = &errb
 	out, err := cmd.StdoutPipe()
@@ -979,7 +1035,45 @@ func renice(pid int) {
 		for _, e := range ents {
 			if tid, err := strconv.Atoi(e.Name()); err == nil {
 				syscall.Setpriority(syscall.PRIO_PROCESS, tid, 19)
+				if idlePolicy {
+					// SCHED_IDLE: runs only when nothing else wants the core. Niceness alone is not enough
+					// here: hundreds of nice-19 threads together weigh as much as the eight front ends.
+					var param [1]int32
+					syscall.Syscall(syscall.SYS_SCHED_SETSCHEDULER, uintptr(tid), 5, uintptr(unsafe.Pointer(&param[0])))
+				}
 			}
 		}
 	}
+}
+
+// appendShard takes the object out of a shard's one-member archive and adds it to the package's archive.
+func appendShard(archive, shard, name string) error {
+	b, err := os.ReadFile(shard)
+	if err != nil {
+		return err
+	}
+	const arHeader = 8 + 60
+	if len(b) < arHeader || string(b[:8]) != "!<arch>\n" {
+		return fmt.Errorf("%s: not an archive", shard)
+	}
+	size, err := strconv.Atoi(strings.TrimSpace(string(b[8+48 : 8+58])))
+	if err != nil || arHeader+size > len(b) {
+		return fmt.Errorf("%s: bad archive header", shard)
+	}
+	obj := b[arHeader : arHeader+size]
+	f, err := os.OpenFile(archive, os.O_WRONLY|os.O_APPEND, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	fi, _ := f.Stat()
+	if fi.Size()%2 == 1 {
+		f.Write([]byte{0})
+	}
+	fmt.Fprintf(f, "%-16s%-12d%-6d%-6d%-8o%-10d`\n", name, 0, 0, 0, 0o644, len(obj))
+	f.Write(obj)
+	if len(obj)%2 == 1 {
+		f.Write([]byte{0})
+	}
+	return nil
 }

@@ -168,3 +168,101 @@ func sbRecord(fn *ir.Func, start time.Time) {
 }
 '''
 open(p, 'w').write(s)
+
+# Sixth change: package shards (driver/baseline/sbshard.go has the description and the body-dropping).
+noderd = os.path.join(os.path.dirname(d), 'noder')
+reflectd = os.path.join(os.path.dirname(d), 'reflectdata')
+p = os.path.join(noderd, 'unified.go'); s = open(p).read()
+old = '\tpkg, info, otherInfo := checkFiles(m, noders)\n\n\tpw := newPkgWriter(m, pkg, info, otherInfo)\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tpkg, info, otherInfo := checkFiles(m, noders)\n\tsbShardFiles(noders, info)\n\n\tpw := newPkgWriter(m, pkg, info, otherInfo)\n')
+open(p, 'w').write(s)
+
+p = os.path.join(d, 'main.go'); s = open(p).read()
+old = '''\t\t\tcase ir.ONAME:
+\t\t\t\tdumpGlobal(n)
+\t\t\tcase ir.OLITERAL:
+\t\t\t\tdumpGlobalConst(n)
+\t\t\tcase ir.OTYPE:
+\t\t\t\treflectdata.NeedRuntimeType(n.Type())
+\t\t\t}
+'''
+assert s.count(old) == 1
+s = s.replace(old, '''\t\t\tcase ir.ONAME:
+\t\t\t\t// The package's variables and types are shard 0's to emit. Static temporaries (the data of
+\t\t\t\t// composite literals) belong to whichever shard compiled the function that uses them.
+\t\t\t\tif name := n.Sym().Name; noder.SbShard == 0 || (len(name) >= len(obj.StaticNamePrefix) && name[:len(obj.StaticNamePrefix)] == obj.StaticNamePrefix) {
+\t\t\t\t\tdumpGlobal(n)
+\t\t\t\t}
+\t\t\tcase ir.OLITERAL:
+\t\t\t\tif noder.SbShard == 0 {
+\t\t\t\t\tdumpGlobalConst(n)
+\t\t\t\t}
+\t\t\tcase ir.OTYPE:
+\t\t\t\tif noder.SbShard == 0 {
+\t\t\t\t\treflectdata.NeedRuntimeType(n.Type())
+\t\t\t\t}
+\t\t\t}
+''')
+old = '\tpkginit.MakeTask()\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tif noder.SbShard == 0 {\n\t\tpkginit.MakeTask()\n\t}\n')
+open(p, 'w').write(s)
+
+p = os.path.join(d, 'obj.go'); s = open(p).read()
+old = '\tdumpembeds()\n'
+assert s.count(old) == 1
+s = s.replace(old, '\tif noder.SbShard == 0 {\n\t\tdumpembeds()\n\t}\n')
+open(p, 'w').write(s)
+
+p = os.path.join(reflectd, 'reflect.go'); s = open(p).read()
+old = '''\tcase sym.Pkg == types.LocalPkg:
+\t\t// Local defined type; our responsibility.
+\t\treturn true
+'''
+assert s.count(old) == 1
+s = s.replace(old, '''\tcase sym.Pkg == types.LocalPkg:
+\t\t// Local defined type; our responsibility.
+\t\t// (sb: unless this process is a shard other than 0 and the type is declared at package level:
+\t\t// shard 0 emits those. A type declared inside a function belongs to whoever compiles the function;
+\t\t// its symbol name carries a "\\u00b7" and a number. An instantiated generic type belongs to whoever needs
+\t\t// it, as it does across packages; the linker keeps one copy.)
+\t\tif SbShardOther && !strings.Contains(sym.Name, "\\u00b7") && !typ.IsFullyInstantiated() && !typ.HasShape() {
+\t\t\treturn false
+\t\t}
+\t\treturn true
+''')
+s += '''
+// SbShardOther: this compiler process is a shard of its package, and not shard 0 (see noder/sbshard.go).
+var SbShardOther = func() bool {
+	k, n, ok := strings.Cut(os.Getenv("SB_SHARD"), "/")
+	return ok && k != "0" && n != ""
+}()
+'''
+if '"os"' not in s.split(')')[0]:
+    s = s.replace('import (\n', 'import (\n\t"os"\n', 1)
+open(p, 'w').write(s)
+
+# (shards, continued) A method named init whose body went to another shard is not a missing package
+# initializer: the stock check looks only at the name.
+p = os.path.join(noderd, 'writer.go'); s = open(p).read()
+old = 'if base.Flag.Complete || decl.Name.Value == "init" {'
+assert s.count(old) == 1
+s = s.replace(old, 'if base.Flag.Complete || (decl.Name.Value == "init" && (decl.Recv == nil || SbShards == 0)) {')
+open(p, 'w').write(s)
+
+# (shards, continued) Only shard 0's object speaks for the package's export data: the others carry no
+# fingerprint, like objects made by the assembler, or the linker would see two packages in one archive.
+p = os.path.join(d, 'obj.go'); s = open(p).read()
+old = '''	if !earlyExport {
+		dumpobj1(base.Flag.LowerO, modeCompilerObj)
+	}
+'''
+assert s.count(old) == 1
+s = s.replace(old, old + '''	if noder.SbShard != 0 {
+		for i := range base.Ctxt.Fingerprint {
+			base.Ctxt.Fingerprint[i] = 0
+		}
+	}
+''')
+open(p, 'w').write(s)

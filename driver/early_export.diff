@@ -1,5 +1,5 @@
 --- /usr/local/go/src/cmd/compile/internal/gc/main.go	2026-10-19 22:20:36.000000000 +0000
-+++ main.go	2026-11-12 00:48:31.950646353 +0000
++++ main.go	2026-11-12 01:02:53.325547309 +0000
 @@ -217,6 +217,21 @@
  	// Parse and typecheck input.
  	noder.LoadPackage(flag.Args())
@@ -22,7 +22,18 @@
  	// As a convenience to users (toolchain maintainers, in particular),
  	// when compiling a package named "main", we default the package
  	// path to "main" if the -p flag was not specified.
-@@ -313,6 +328,16 @@
+@@ -274,7 +289,9 @@
+ 	ir.CurFunc = nil
+ 
+ 	// Build init task, if needed.
+-	pkginit.MakeTask()
++	if noder.SbShard == 0 {
++		pkginit.MakeTask()
++	}
+ 
+ 	// Generate ABI wrappers. Must happen before escape analysis
+ 	// and doesn't benefit from dead-coding or inlining.
+@@ -313,6 +330,16 @@
  	//
  	// There are cyclic dependencies between all of these phases, so we
  	// need to iterate all of them until we reach a fixed point.
@@ -39,9 +50,32 @@
  	base.Timer.Start("be", "compilefuncs")
  	for nextFunc, nextExtern := 0, 0; ; {
  		reflectdata.WriteRuntimeTypes()
+@@ -320,11 +347,19 @@
+ 		if nextExtern < len(typecheck.Target.Externs) {
+ 			switch n := typecheck.Target.Externs[nextExtern]; n.Op() {
+ 			case ir.ONAME:
+-				dumpGlobal(n)
++				// The package's variables and types are shard 0's to emit. Static temporaries (the data of
++				// composite literals) belong to whichever shard compiled the function that uses them.
++				if name := n.Sym().Name; noder.SbShard == 0 || (len(name) >= len(obj.StaticNamePrefix) && name[:len(obj.StaticNamePrefix)] == obj.StaticNamePrefix) {
++					dumpGlobal(n)
++				}
+ 			case ir.OLITERAL:
+-				dumpGlobalConst(n)
++				if noder.SbShard == 0 {
++					dumpGlobalConst(n)
++				}
+ 			case ir.OTYPE:
+-				reflectdata.NeedRuntimeType(n.Type())
++				if noder.SbShard == 0 {
++					reflectdata.NeedRuntimeType(n.Type())
++				}
+ 			}
+ 			nextExtern++
+ 			continue
 --- /usr/local/go/src/cmd/compile/internal/gc/obj.go	2026-10-19 22:20:36.000000000 +0000
-+++ obj.go	2026-11-12 00:48:31.950646353 +0000
-@@ -41,12 +41,17 @@
++++ obj.go	2026-11-12 01:02:53.329547379 +0000
+@@ -41,12 +41,22 @@
  	modeLinkerObj
  )
  
@@ -57,11 +91,27 @@
 +	if !earlyExport {
 +		dumpobj1(base.Flag.LowerO, modeCompilerObj)
 +	}
++	if noder.SbShard != 0 {
++		for i := range base.Ctxt.Fingerprint {
++			base.Ctxt.Fingerprint[i] = 0
++		}
++	}
  	dumpobj1(base.Flag.LinkObj, modeLinkerObj)
  }
  
+@@ -118,7 +128,9 @@
+ func dumpdata() {
+ 	reflectdata.WriteGCSymbols()
+ 	reflectdata.WritePluginTable()
+-	dumpembeds()
++	if noder.SbShard == 0 {
++		dumpembeds()
++	}
+ 
+ 	if reflectdata.ZeroSize > 0 {
+ 		zero := base.PkgLinksym("go:map", "zero", obj.ABI0)
 --- /usr/local/go/src/cmd/internal/obj/objfile.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../../../internal/obj/objfile.go	2026-11-12 00:48:31.950646353 +0000
++++ ../../../internal/obj/objfile.go	2026-11-12 01:02:53.325547309 +0000
 @@ -548,10 +548,20 @@
  			binary.LittleEndian.PutUint32(tmp[:4], uint32(rs.SymIdx))
  			h.Write(tmp[:4])
@@ -92,7 +142,7 @@
 +// so that packages that import by name and packages that import by index compute the same hash.
 +var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""
 --- /usr/local/go/src/cmd/compile/internal/ssagen/pgen.go	2026-10-19 22:20:36.000000000 +0000
-+++ ../ssagen/pgen.go	2026-11-12 00:48:31.950646353 +0000
++++ ../ssagen/pgen.go	2026-11-12 01:02:53.325547309 +0000
 @@ -6,6 +6,7 @@
  
  import (
