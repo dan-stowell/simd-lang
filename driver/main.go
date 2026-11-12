@@ -137,7 +137,10 @@ func zygoteStop() {
 // Every Go program needs the runtime and the two dozen packages under it, and everything else waits for
 // them. The plan of the whole build takes most of a second on two cores, so while it runs, a second, tiny
 // plan (the runtime's closure only) is made and compiled. When the real plan arrives, its scheduler adopts
-// those packages: same commands, same bytes, started 0.9 s earlier.
+// those packages: same commands, same bytes, started 0.9 s earlier. With -headstd the real plan also
+// reports each standard-library package it meets, round by round, and the head start plans and compiles
+// those too: the standard library depends only on itself, so its part of the graph is complete long
+// before the plan has finished crawling the module cache.
 type headPkg struct {
 	p        *Pkg
 	exported chan struct{} // closed when importers may start
@@ -149,7 +152,9 @@ type headPkg struct {
 }
 
 type headStart struct {
-	planned  chan struct{} // closed when pkgs is filled
+	planned  chan struct{}   // closed when pkgs is complete (after roots is closed)
+	roots    chan []string   // standard packages the real plan has met, round by round
+	mu       sync.Mutex      // pkgs, while the head start is still planning
 	pkgs     map[string]*headPkg
 	startMs  float64
 	endMs    float64
@@ -157,7 +162,7 @@ type headStart struct {
 }
 
 func startHead(factsPath, decl, workdir string, jobs int, extra []string) *headStart {
-	hs := &headStart{planned: make(chan struct{}), pkgs: map[string]*headPkg{}, startMs: ms()}
+	hs := &headStart{planned: make(chan struct{}), pkgs: map[string]*headPkg{}, startMs: ms(), roots: make(chan []string, 256)}
 	hdir := filepath.Join(workdir, "head")
 	os.MkdirAll(hdir, 0o755)
 	pl := newPlanner(factsPath, decl, hdir, jobs)
@@ -167,63 +172,85 @@ func startHead(factsPath, decl, workdir string, jobs int, extra []string) *headS
 		compiler = filepath.Join(tooldir, "compile")
 	}
 	goversion := pl.facts.GOVERSION
+	tok := make(chan struct{}, jobs) // front ends running at once, like the scheduler's tokens
 	hs.finished.Add(1)
 	go func() {
 		defer hs.finished.Done()
-		pkgs := pl.run("")
-		by := map[string]*Pkg{}
-		for i, p := range pkgs {
-			by[p.ImportPath] = p
-			p.objdir = filepath.Join(hdir, fmt.Sprintf("h%04d", i))
-			p.archive = filepath.Join(p.objdir, "_pkg_.a")
-			p.export = p.archive
-			if pipeline {
-				p.export = filepath.Join(p.objdir, "_pkg_.x")
-			}
-			hs.pkgs[p.ImportPath] = &headPkg{p: p, exported: make(chan struct{}), done: make(chan struct{})}
-		}
-		for _, p := range pkgs {
-			for _, imp := range p.Imports {
-				if m, ok := p.ImportMap[imp]; ok {
-					imp = m
-				}
-				if imp != "unsafe" {
-					p.deps = append(p.deps, by[imp])
-				}
-			}
-		}
-		close(hs.planned)
 		var wg sync.WaitGroup
-		for _, p := range pkgs {
-			wg.Add(1)
-			go func(h *headPkg) {
-				defer wg.Done()
-				defer close(h.done)
-				var once sync.Once
-				release := func() { once.Do(func() { close(h.exported) }) }
-				defer release()
-				for _, d := range h.p.deps {
-					<-hs.pkgs[d.ImportPath].exported
-					if hs.pkgs[d.ImportPath].failed() {
-						h.err = fmt.Errorf("head start: dependency %s failed", d.ImportPath)
-						return
+		n := 0
+		var batch []string
+		for {
+			// plan what is new (first time round: the runtime's closure) and start compiling it
+			pkgs := pl.runRoots("", batch)
+			hs.mu.Lock()
+			for _, p := range pkgs {
+				p.objdir = filepath.Join(hdir, fmt.Sprintf("h%04d", n))
+				n++
+				p.archive = filepath.Join(p.objdir, "_pkg_.a")
+				p.export = p.archive
+				if pipeline {
+					p.export = filepath.Join(p.objdir, "_pkg_.x")
+				}
+				hs.pkgs[p.ImportPath] = &headPkg{p: p, exported: make(chan struct{}), done: make(chan struct{})}
+			}
+			for _, p := range pkgs {
+				for _, imp := range p.Imports {
+					if m, ok := p.ImportMap[imp]; ok {
+						imp = m
+					}
+					if imp != "unsafe" {
+						p.deps = append(p.deps, hs.pkgs[imp].p)
 					}
 				}
-				c := 1
-				switch {
-				case h.p.goBytes > 1500000:
-					c = 8
-				case h.p.goBytes > 300000:
-					c = 4
-				case h.p.goBytes > 100000:
-					c = 2
+			}
+			for _, p := range pkgs {
+				wg.Add(1)
+				h := hs.pkgs[p.ImportPath]
+				var deps []*headPkg
+				for _, d := range p.deps {
+					deps = append(deps, hs.pkgs[d.ImportPath])
 				}
-				h.user, h.sys, h.cmds, h.err = buildPkg(h.p, c, goversion, extra, func(pid int) {
-					renice(pid)
-					release()
-				})
-			}(hs.pkgs[p.ImportPath])
+				go func() {
+					defer wg.Done()
+					defer close(h.done)
+					var once sync.Once
+					release := func() { once.Do(func() { close(h.exported) }) }
+					defer release()
+					for _, d := range deps {
+						<-d.exported
+						if d.failed() {
+							h.err = fmt.Errorf("head start: dependency %s failed", d.p.ImportPath)
+							return
+						}
+					}
+					c := 1
+					switch {
+					case h.p.goBytes > 1500000:
+						c = 8
+					case h.p.goBytes > 300000:
+						c = 4
+					case h.p.goBytes > 100000:
+						c = 2
+					}
+					tok <- struct{}{}
+					var tokOnce sync.Once
+					giveBack := func() { tokOnce.Do(func() { <-tok }) }
+					defer giveBack()
+					h.user, h.sys, h.cmds, h.err = buildPkg(h.p, c, goversion, extra, func(pid int) {
+						renice(pid)
+						giveBack()
+						release()
+					})
+				}()
+			}
+			hs.mu.Unlock()
+			b, ok := <-hs.roots
+			if !ok {
+				break
+			}
+			batch = b
 		}
+		close(hs.planned)
 		wg.Wait()
 		hs.endMs = ms()
 	}()
@@ -472,6 +499,7 @@ func main() {
 	gcflags := flag.String("gcflags", "", "extra flags for every compile")
 	ldflags := flag.String("ldflags", "", "extra flags for the link")
 	keep := flag.Bool("keep", false, "keep the work directory")
+	headStd := flag.Bool("headstd", false, "with -headstart: also compile standard-library packages as the plan discovers them")
 	directOut := flag.Bool("directout", false, "the linker writes the binary to its destination, not to the work directory first")
 	headFlag := flag.Bool("headstart", false, "compile the runtime and what it needs while the plan is being made (needs -plan=self)")
 	flag.BoolVar(&zygoteOn, "zygote", false, "fork compiles from one warm compiler process (needs the patched compiler)")
@@ -561,6 +589,21 @@ func main() {
 			head = startHead(*factsPath, *decl, workdir, *jobs, strings.Fields(*gcflags))
 		}
 		pl := newPlanner(*factsPath, *decl, workdir, *jobs)
+		if head != nil && *headStd {
+			pl.onStd = func(paths []string) {
+				// (not the toolchain's own commands: GOROOT/src/cmd is a module with its own vendor
+				// directory, which the head start's planner does not load)
+				var std []string
+				for _, p := range paths {
+					if p != "cmd" && !strings.HasPrefix(p, "cmd/") {
+						std = append(std, p)
+					}
+				}
+				if len(std) > 0 {
+					head.roots <- std
+				}
+			}
+		}
 		dir := *srcdir
 		if pkgArg != "." {
 			dir = filepath.Join(*srcdir, pkgArg)
@@ -568,6 +611,9 @@ func main() {
 		abs, _ := filepath.Abs(dir)
 		pl.loadModules(abs)
 		pkgs = pl.run(abs)
+		if head != nil {
+			close(head.roots)
+		}
 		goroot, goversion = pl.facts.GOROOT, pl.facts.GOVERSION
 		for _, p := range pkgs {
 			byPath[p.ImportPath] = p

@@ -89,6 +89,8 @@ type planner struct {
 	stdDir   map[string]bool   // GOROOT/src/<path> exists
 	pkgs     map[string]*Pkg
 	order    []*Pkg
+	visited  map[*Pkg]bool
+	onStd    func(paths []string) // called once per round with the standard packages first seen in it
 	files    []*srcFile
 	decl     string // godecl binary
 	workdir  string
@@ -560,9 +562,15 @@ func (pl *planner) declare(files []*srcFile) (names []string, imports [][]string
 
 // ---- the loop
 
-// run plans the build of the main package in mainDir. With mainDir == "" it plans only what every Go
-// program needs, the runtime and its dependency closure (the driver's head start).
-func (pl *planner) run(mainDir string) []*Pkg {
+// run plans the build of the main package in mainDir.
+func (pl *planner) run(mainDir string) []*Pkg { return pl.runRoots(mainDir, nil) }
+
+// runRoots plans the main package in mainDir (if not "") and the standard-library packages in stdRoots,
+// with everything they need, and returns the packages this call added, dependencies first. With no
+// main package it plans what every Go program needs (the runtime's closure) plus stdRoots: the driver's
+// head start calls it once with nothing and again each time the real plan meets new standard packages.
+func (pl *planner) runRoots(mainDir string, stdRoots []string) []*Pkg {
+	n0 := len(pl.order)
 	var root *Pkg
 	if mainDir != "" {
 		mainDir, _ = filepath.Abs(mainDir)
@@ -585,11 +593,19 @@ func (pl *planner) run(mainDir string) []*Pkg {
 		pl.pkgs[mainPath] = root
 	}
 	// Every program needs the runtime whether or not anything imports it (cmd/go adds it the same way).
-	rt := &Pkg{ImportPath: "runtime", Dir: filepath.Join(pl.facts.GOROOT, "src", "runtime"), Standard: true}
-	pl.pkgs["runtime"] = rt
-	frontier := []*Pkg{rt}
+	var frontier []*Pkg
 	if root != nil {
-		frontier = []*Pkg{root, rt}
+		frontier = append(frontier, root)
+	}
+	var roots []*Pkg
+	for _, path := range append([]string{"runtime"}, stdRoots...) {
+		q := pl.pkgs[path]
+		if q == nil {
+			q = &Pkg{ImportPath: path, Dir: filepath.Join(pl.facts.GOROOT, "src", path), Standard: true}
+			pl.pkgs[path] = q
+			frontier = append(frontier, q)
+		}
+		roots = append(roots, q)
 	}
 	for len(frontier) > 0 {
 		pl.rounds++
@@ -707,6 +723,7 @@ func (pl *planner) run(mainDir string) []*Pkg {
 		}
 		wg.Wait()
 		var nf []*Pkg
+		var newStd []string
 		for i, p := range frontier {
 			for j, im := range p.Imports {
 				r := resolved[i][j]
@@ -723,6 +740,9 @@ func (pl *planner) run(mainDir string) []*Pkg {
 					q := &Pkg{ImportPath: r.path, Dir: r.dir, mod: r.mod, Standard: r.std}
 					pl.pkgs[r.path] = q
 					nf = append(nf, q)
+					if r.std {
+						newStd = append(newStd, r.path)
+					}
 				}
 			}
 		}
@@ -730,16 +750,21 @@ func (pl *planner) run(mainDir string) []*Pkg {
 			fmt.Fprintf(os.Stderr, "round %2d: %4d packages %5d files  read %6.1f ms  decl %6.1f ms  resolve %6.1f ms\n",
 				pl.rounds, len(frontier), len(files), tRead-tRound, tDecl-tRead, ms()-tDecl)
 		}
+		if pl.onStd != nil && len(newStd) > 0 {
+			pl.onStd(newStd)
+		}
 		frontier = nf
 	}
 	// dependencies before dependents, the main package last
-	state := map[*Pkg]int{}
+	if pl.visited == nil {
+		pl.visited = map[*Pkg]bool{}
+	}
 	var visit func(p *Pkg)
 	visit = func(p *Pkg) {
-		if state[p] != 0 {
+		if pl.visited[p] {
 			return
 		}
-		state[p] = 1
+		pl.visited[p] = true
 		for _, im := range p.Imports {
 			if im == "unsafe" {
 				continue
@@ -751,14 +776,16 @@ func (pl *planner) run(mainDir string) []*Pkg {
 		}
 		pl.order = append(pl.order, p)
 	}
-	visit(rt)
+	for _, q := range roots {
+		visit(q)
+	}
 	if root != nil {
 		visit(root)
 		if root.Name == "main" {
 			root.DefaultGODEBUG = pl.defaultGODEBUG()
 		}
 	}
-	return pl.order
+	return pl.order[n0:]
 }
 
 func uniq(s []string) []string {

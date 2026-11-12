@@ -16,7 +16,7 @@ if diff -rq "$t/exec" "$t/fork" > "$t/diff.txt" && cmp "$t/exec.bin" "$t/fork.bi
 else head "$t/diff.txt"; echo "FAIL fork-server"; exit 1; fi
 # Head start (-headstart): the runtime's closure is compiled during the plan, in other directories; the
 # archives and the binary must be the same bytes. Also with -directout (the linker writes the binary in place).
-rm -rf "$t/w"; run -o "$t/head.bin" -zygote -headstart -directout; mv "$t/w" "$t/head"
+rm -rf "$t/w"; run -o "$t/head.bin" -zygote -headstart -headstd -directout; mv "$t/w" "$t/head"
 sums() { find "$1" -name '_pkg_.*' -exec sha256sum {} + | awk '{print $1}' | sort | sha256sum; }
 if cmp "$t/exec.bin" "$t/head.bin" && [ "$(sums "$t/exec")" = "$(sums "$t/head")" ] && [ -d "$t/head/head" ]; then
   echo "PASS head start: $(find "$t/head/head" -name '_pkg_.a' | wc -l) packages compiled during the plan; every archive and the binary byte-identical"

@@ -884,3 +884,41 @@ becomes a table. Why not now: it needs a design that survives contact with pclnt
 LINKING.md predates everything measured today. The next session should start there with the numbers
 in this entry. For the rest of this session: keep MORNING.md exact, and stop spending usage on steps
 worth a tenth of a second.
+
+## 2026-11-12 13:50 UTC — iteration 19: the head start widened to the standard library (no measurable gain); unit tests with the final compiler
+
+**Trace.** Unchanged: `12-directout` stays the trace configuration (MinIO cold 11.5-12.3 s,
+kube-apiserver 20.1-22.3 s).
+
+**What was built.** `-headstd`: as the real plan meets standard-library packages, round by round, it
+hands them to the head start, which plans their closure (the standard library depends only on itself,
+so that part of the graph is complete long before the plan has finished crawling the module cache)
+and compiles them under its own eight tokens. For MinIO all 264 standard packages are compiled this
+way and adopted; for cmd/go, 246. Byte-identical output (`tests/sb_zygote.sh` now runs with it).
+A bug the Go toolchain corpus found at once: packages under `GOROOT/src/cmd` look standard but belong
+to a module with its own vendor directory, which the head start's planner never loads; they are left
+to the real plan.
+
+**What it is worth: nothing I can measure.** Interleaved, same flags with and without `-headstd`:
+
+    warm, 4 rounds   without 11.29 11.78 11.26 11.57 s    with 11.66 12.28 10.68 11.72 s
+    cold, 3 rounds   without 13.01 12.38 12.93 s          with 11.63 12.50 11.62 s
+
+The cold rounds look like a win until the CPU column is read: the two "slow" runs without it cost 9-10
+core-s more (host noise), and corrected for that the difference is 0 +/- 0.2 s. It makes sense: the
+build is bound by about 62 core-s of work; this moves perhaps two of them into the plan's window. It
+stays as a flag, off in the trace configuration. **Negative result.**
+
+**Lesson for the ladder.** Three scheduling steps in a row (fork-server aside): head start 0.2-0.4 s,
+direct output 0.14 s, wider head start 0. The schedule is as good as it needs to be at this work
+volume; only removing work moves the trace now. Today's one real mover was the one that removed work
+(one assembler pass: -6 core-s).
+
+**Evidence refreshed.** MinIO's own unit tests with the final compiler (one-pass assembler in every
+function): 45 packages pass; `cmd` (254 s) has the one known failure, `TestTrackingResponseWriter`,
+identical with the baseline off. The standard-library oracle at `-count=3` under GOGC=10 is running
+as I write; result in MORNING.md.
+
+**Scope check.** Most ambitious next is unchanged (F4, or whole packages leaving the stock compiler).
+Why not now: both start with a design that I would rather hand over with today's numbers than begin
+badly in the last stretch of a session. NEXT.md has them in order with the numbers to design against.
