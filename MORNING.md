@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 28)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 28 and its correction)
 
 ## The trace, before and after
 
@@ -121,13 +121,14 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
 
 - **F4 spike, measured, not consumed** (`explore/f4link`): the core of a link on MinIO's real objects,
   on 8 cores: resolve all 2.7 M symbols with a lock-free table (about 110 ms, memory latency), reachability
-  as a frontier-parallel flood (14-32 ms; stock dead-code pass 246 ms), layout of 213 MB by prefix sums
-  (4 ms), copy and 3.4 M relocations (35 ms): **about 0.19 s** for what takes the stock linker about
-  0.9 s of its 1.1 s. Missing: pclntab, the Go rule for keeping methods, ELF, and being right. Reading:
-  F4 could take the link from 1.1 s to perhaps 0.3 s, and it is the only large item left on this
-  machine that is not "replace the compiler". The fast table's first version merged float constants
-  differing only in sign (+x with -x); the slow string-keyed version it replaced caught it, and F4 will
-  need such a slow reference resolver permanently.
+  as a frontier-parallel flood (23-42 ms; stock dead-code pass 246 ms), layout of 213 MB by prefix sums
+  (4 ms), copy and 3.4 M relocations (35 ms): **about 0.20 s** for what takes the stock linker about
+  0.9 s of its 1.1 s. Missing: pclntab, the Go rule for keeping methods, ELF, and being right: checked
+  against a stock link, the flood reaches 98% of the 121,052 functions the stock linker keeps, misses
+  2,376 and keeps 13,940 more. Reading: F4 could take the link from 1.1 s to perhaps 0.3 s, and it is
+  the only large item left on this machine that is not "replace the compiler". Two of my own errors in
+  this spike were caught by checking against a slower reference (a hash key that merged +x with -x; a
+  wrong root set), which is the argument for building F4 with the stock linker as a permanent oracle.
 - **A consumed F4 slice, tried and reverted**: per-function pc tables as plain symbols instead of
   content-addressed ones (about a million of the 1.84 M hashed symbols the linker resolves). It works,
   and the link gets 76 ms *slower* and the binary 2.3% bigger: the sharing those hashes buy is worth
@@ -218,5 +219,5 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
    A/B in a fixed order can invent one (see above). A quieter machine (or pinned cores) would make the
    trace sharper.
 4. **The floors in TRACE.md** (see the reviews section above). There is now a measured number for the
-   link's core (0.19 s with reachability, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
+   link's core (0.20 s with reachability, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
    table without your say.

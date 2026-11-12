@@ -1365,3 +1365,27 @@ where the next session should start; the measurements say it is worth it and rou
 twenty an hour earlier had a median of 19.8 s: the same binary-identical configuration, a host 1.5 s
 slower. Totals for the final configuration today: MinIO 80 of 80, kube-apiserver 56 of 56, no hang and
 no failed fork in either.
+
+## 2026-11-12 19:30 UTC — correction to iteration 28: the reachability claim, checked against the stock linker
+
+Iteration 28 said the stock linker's live set "lies between" the spike's two variants. I had not
+checked it. Checked now (functions kept by a stock link of the same objects, `go tool nm`, against the
+names of the spike's live functions, `F4LINK_DUMPLIVE`):
+
+- As written in iteration 28 the claim was **false**: the stock linker keeps 121,052 functions and the
+  spike's wider variant reached 106,976, missing 26,659 of the stock's. The roots were wrong: I had
+  used the symbols flagged as package init *functions*; the things that make inits reachable are the
+  `..inittask` records.
+- With init tasks as roots (2,034 roots): the wider variant reaches 132,616 functions and contains all
+  but **2,376 (2%)** of the stock's 121,052: 1,530 plain functions (runtime builtins referenced by
+  number, some linknames and ABI wrappers: edges the spike does not follow), 408 generic
+  instantiations and 363 methods (partly naming differences between the two lists), 66 inits, 9
+  assembly-local. It keeps 13,940 the stock linker drops (methods no interface can reach). The narrow
+  variant is not a subset of the stock set (1,960 extra, mostly package `init` functions the stock
+  linker proves dead), so "bracket" was the wrong word for it too.
+- Timing with the right roots: **41-42 ms** following method tables (821 k symbols live, 2.57 M edges),
+  **23-24 ms** without. The link core is then about **0.20 s** on 8 cores, not 0.19.
+
+So: the cost estimate stands within 10 ms; the pass is 98% of a correct one from above and needs the
+Go method rule, builtin references and linkname edges before its live set can be diffed to zero
+against the stock linker's, which is the test F4 has to pass.

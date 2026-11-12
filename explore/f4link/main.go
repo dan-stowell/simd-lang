@@ -388,7 +388,7 @@ func main() {
 		}
 		for _, o := range objs {
 			for j := 0; j < o.ndef; j++ {
-				if s := o.r.Sym(uint32(j)); s.IsPkgInit() && mark(o.gid0+uint64(j)+1) {
+				if s := o.r.Sym(uint32(j)); (s.IsPkgInit() || strings.HasSuffix(s.Name(o.r), "..inittask")) && mark(o.gid0+uint64(j)+1) {
 					frontier = append(frontier, o.gid0+uint64(j)+1)
 				}
 			}
@@ -438,6 +438,26 @@ func main() {
 		what := "3b. reachability, method tables as edges"
 		if !methods {
 			what = "3c. reachability, method tables skipped"
+		}
+		if dir := os.Getenv("F4LINK_DUMPLIVE"); dir != "" {
+			// names of the live functions, to compare with what the stock linker keeps (go tool nm)
+			var names []string
+			for _, o := range objs {
+				for j := 0; j < o.ndef+o.nh64+o.nh+o.nnonpkg; j++ {
+					gid := o.gid0 + uint64(j) + 1
+					if o.canon[j] == gid && live[gid>>5].Load()&(1<<(gid&31)) != 0 {
+						if sy := o.r.Sym(uint32(j)); objabi.SymKind(sy.Type()) == objabi.STEXT {
+							names = append(names, sy.Name(o.r))
+						}
+					}
+				}
+			}
+			sort.Strings(names)
+			f := dir + "/live-methods.txt"
+			if !methods {
+				f = dir + "/live-nomethods.txt"
+			}
+			os.WriteFile(f, []byte(strings.Join(names, "\n")+"\n"), 0o644)
 		}
 		lap(what, fmt.Sprintf("%d roots, %d levels, %d symbols live, %d MB, %d edges followed", nroots, levels, nlive.Load(), liveBytes.Load()>>20, nedges.Load()))
 	}
