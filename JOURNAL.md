@@ -1079,3 +1079,25 @@ three identical error outputs. Fixed (each build must exit 0 and print all 39 li
 and several of them carry real risk; the session's remaining value is in the report being exact. The
 wide standard-library oracle (the 100-odd packages of last night's run, twice, under GOGC=10) is
 running with the final compiler; its result goes into MORNING.md.
+
+## 2026-11-12 15:20 UTC — addendum to iteration 22: the wide oracle, and a wrong sentence
+
+The last line of iteration 22 said the wide oracle was "the 100-odd packages of last night's run". It
+was not: the list I had extracted from last night's logs held nine packages (those logs keep only
+failures). I built a real list instead: every standard-library package with tests except the ones
+that need the network, the runtime's own, and the known hangs: **141 packages**, `-short`, GOGC=10,
+final compiler, 160,403 functions through the baseline and 4,452 through SSA.
+
+**129 of 141 pass.** The twelve, each run again with the baseline off and the same flags as control:
+- nine packages fail only tests that count allocations (`crypto/ed25519`, `crypto/internal/fips140test`,
+  `crypto/rand`, `crypto/rsa`, `crypto/sha256`, `crypto/sha512`, `encoding/json/jsontext`, `math/big`,
+  `unicode/utf16`): identical failures with the baseline off (no inlining changes what escapes);
+- `reflect`: `TestMapIterSet` (allocation count, same in control) and `TestCallReturnsEmpty` (waits
+  for a cleanup: the liveness class);
+- `crypto/internal/fips140cache` `TestCache`: **new to the list.** It loops on `runtime.GC()` until a
+  weak-pointer cache entry is evicted and times out; with the baseline off it passes. Same class as
+  `TestTransportGCRequest`: a baseline frame keeps every slot alive until the function returns;
+- `internal/copyright`: the files I add to the patched GOROOT have no Go copyright header. Not a
+  compiler matter.
+
+No crash, no wrong result. The liveness class now has three named tests in MORNING.md.

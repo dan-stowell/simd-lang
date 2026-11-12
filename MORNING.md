@@ -143,9 +143,12 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 - Unoptimized code from the baseline generator; no inlining (`-l`); no DWARF; `-s -w` (no symbol table).
 - Binary 160 MB against 100 MB for fair stock (147 MB for plain stock).
 - Longer object liveness: a baseline frame keeps every slot alive until the function returns.
-  Known tests that wait for a finalizer and so never finish: `net/http` `TestTransportGCRequest`; the
-  sync/reflect promptness tests listed in JOURNAL iteration 12. Four standard-library tests that count
-  allocations fail, as they do with the stock compiler at `-l`.
+  Known tests that wait for a finalizer, cleanup or weak pointer and so never finish or fail: `net/http`
+  `TestTransportGCRequest`; `crypto/internal/fips140cache` `TestCache` (found today); `reflect`
+  `TestCallReturnsEmpty`; the sync/reflect promptness tests listed in JOURNAL iteration 12.
+- Standard-library tests with the final compiler (141 packages, GOGC=10): 129 pass. Of the other twelve,
+  ten fail only tests that count allocations, identically with the baseline off; one is the weak-pointer
+  test above; one checks copyright headers of files I added to the patched GOROOT.
 - MinIO's own unit tests (run twice today with the final compiler, after the assembler and descriptor
   changes): 45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the
   baseline off.
