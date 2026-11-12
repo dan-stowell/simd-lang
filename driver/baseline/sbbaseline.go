@@ -36,6 +36,7 @@ import (
 	"cmd/compile/internal/rttype"
 	"cmd/compile/internal/staticdata"
 	"cmd/compile/internal/typebits"
+	"cmd/compile/internal/typecheck"
 	"cmd/compile/internal/types"
 	"cmd/internal/obj"
 	"cmd/internal/obj/x86"
@@ -229,6 +230,7 @@ type sbGen struct {
 	lastRes []sbLoc // where the results of the most recent call were put
 	resHome []sbLoc // this function's results, by index
 	resHeap []sbLoc // for a result moved to the heap: its pointer slot (kind sbHeapVar); zero value otherwise
+	stable  int     // while > 0, nothing may be put back for reuse (see callFunc)
 	spills  []obj.RegSpill
 
 	argsSym, localsSym *obj.LSym
@@ -294,6 +296,11 @@ func (g *sbGen) place(l *sbLabel) {
 }
 
 func (g *sbGen) call(sym *obj.LSym) {
+	// Any callee may store its register arguments in the spill area the caller owes it, at the bottom of
+	// this frame: nine integer registers at most for the runtime helpers called without an ABI analysis.
+	if g.maxarg < 9*8 {
+		g.maxarg = 9 * 8
+	}
 	p := g.pp.Prog(obj.ACALL)
 	p.To.Type = obj.TYPE_MEM
 	p.To.Name = obj.NAME_EXTERN
@@ -408,17 +415,14 @@ func (g *sbGen) function() {
 	if fn.ABI != obj.ABIInternal {
 		sbGiveUp("ABI0 function")
 	}
-	if fn.HasDefer() {
-		sbGiveUp("defer")
-	}
-	if len(fn.ClosureVars) > 0 {
-		sbGiveUp("closure variables")
+	if fn.RangeParent != nil {
+		sbGiveUp("body of a range-over-func loop")
 	}
 	if fn.Pragma&^(ir.Noinline) != 0 {
 		sbGiveUp("pragma")
 	}
-	if fn.ABIWrapper() || fn.Needctxt() {
-		sbGiveUp("ABI wrapper or needs context")
+	if fn.ABIWrapper() {
+		sbGiveUp("ABI wrapper")
 	}
 	if base.Flag.Race || base.Flag.MSan || base.Flag.ASan || base.Flag.Cfg.Instrumenting {
 		sbGiveUp("instrumented build")
@@ -439,9 +443,18 @@ func (g *sbGen) function() {
 	var regParams []regParam
 	argBits := bitvec.New(int32(types.RoundUp(g.abi.ArgWidth(), 8) / 8))     // at entry: the parameters
 	argBitsBody := bitvec.New(int32(types.RoundUp(g.abi.ArgWidth(), 8) / 8)) // after the prologue: and the results that live on the stack
+	var dclParams []*ir.Name // the parameters as the function declares them, in order
+	for _, n := range fn.Dcl {
+		if n.Class == ir.PPARAM {
+			dclParams = append(dclParams, n)
+		}
+	}
 	for i := range g.abi.InParams() {
 		pa := g.abi.InParam(i)
 		off := pa.FrameOffset(g.abi)
+		if pa.Name == nil && len(dclParams) == len(g.abi.InParams()) {
+			pa.Name = dclParams[i] // a wrapper's parameters have names only in the declaration list
+		}
 		if pa.Type.Size() == 0 {
 			continue
 		}
@@ -550,6 +563,38 @@ func (g *sbGen) function() {
 	}
 	pp.NextLive = objw.StackMapIndex(1)
 	pp.NextUnsafe = true
+	if fn.Needctxt() {
+		// (A closure that is called on the spot gets its captured variables as extra parameters instead, and
+		// does not need the context register: walk has already rewritten it.)
+		// The closure object arrived in DX, which the prologue does not touch. Each captured variable is
+		// either a copy inside that object (captured by value) or a pointer to the variable.
+		clo := g.newSlot(types.Types[types.TUNSAFEPTR])
+		g.ins(x86.AMOVQ, sbR(x86.REG_DX), clo.addr())
+		it := typecheck.NewClosureStructIter(fn.ClosureVars)
+		for {
+			n, _, off := it.Next()
+			if n == nil {
+				break
+			}
+			g.ins(x86.AMOVQ, clo.addr(), sbR(x86.REG_SI))
+			switch {
+			case n.Byval() && !n.Addrtaken():
+				slot := g.newSlot(n.Type())
+				g.copy(slot, sbLoc{kind: sbInd, reg: x86.REG_SI, off: off}, n.Type())
+				g.homes[n] = slot
+			case n.Byval(): // its address is taken: the one in the closure object is the variable
+				h := g.heapHome()
+				g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_SI, Offset: off}, sbR(x86.REG_AX))
+				g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbLoc{kind: sbAuto, off: h.off}.addr())
+				g.homes[n] = h
+			default:
+				h := g.heapHome()
+				g.ins(x86.AMOVQ, obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_SI, Offset: off}, sbR(x86.REG_AX))
+				g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbLoc{kind: sbAuto, off: h.off}.addr())
+				g.homes[n] = h
+			}
+		}
+	}
 	for _, hp := range heapParams {
 		g.newHeap(hp.n)
 		if hp.n.Class == ir.PPARAM { // the value that arrived moves to the heap copy
@@ -627,6 +672,12 @@ func sbStackMap(entry, body bitvec.BitVec) *obj.LSym {
 
 // epilogue: results from their homes into the ABI's registers, and return
 func (g *sbGen) epilogue() {
+	if g.fn.HasDefer() {
+		// Run the deferred calls. After a recovered panic the runtime also resumes right here, at the first
+		// such call in the function: every one of them is followed by the complete return sequence.
+		g.ins(x86.AXCHGL, sbR(x86.REG_AX), sbR(x86.REG_AX))
+		g.call(ir.Syms.Deferreturn)
+	}
 	for i := range g.abi.OutParams() { // a result that was moved to the heap comes back to where the caller looks
 		if h := g.resHeap[i]; h.kind == sbHeapVar && g.abi.OutParam(i).Type.Size() != 0 {
 			g.ins(x86.AMOVQ, sbLoc{kind: sbAuto, off: h.off}.addr(), sbR(x86.REG_SI))
@@ -665,10 +716,12 @@ func (g *sbGen) label(s *types.Sym) *sbLabel {
 }
 
 func (g *sbGen) stmt(n ir.Node) {
+	if len(n.Init()) > 0 {
+		g.stmts(n.Init())
+	}
 	if n.Pos().IsKnown() {
 		g.pp.Pos = n.Pos()
 	}
-	g.stmts(n.Init())
 	switch n.Op() {
 	case ir.OBLOCK:
 		g.stmts(n.(*ir.BlockStmt).List)
@@ -778,6 +831,56 @@ func (g *sbGen) stmt(n ir.Node) {
 		g.stmts(n.Compiled)
 		g.brk, g.cont = g.brk[:len(g.brk)-1], g.cont[:len(g.cont)-1]
 		g.place(brk)
+	case ir.ODEFER, ir.OGO:
+		// walk has turned the call into a closure without arguments: hand it to the runtime
+		n := n.(*ir.GoDeferStmt)
+		if n.DeferAt != nil {
+			sbGiveUp("defer inside a range-over-func loop")
+		}
+		call, ok := n.Call.(*ir.CallExpr)
+		if !ok || call.Op() != ir.OCALLFUNC || len(call.Args) != 0 || call.Fun.Type().NumResults() != 0 {
+			sbGiveUp("%v of something other than a closure without arguments", n.Op())
+		}
+		g.stmts(call.Init())
+		g.scalar(call.Fun)
+		if n.Op() == ir.ODEFER {
+			g.call(ir.Syms.Deferproc)
+		} else {
+			g.call(ir.Syms.Newproc)
+		}
+	case ir.OAS2FUNC:
+		n := n.(*ir.AssignListStmt)
+		g.callFunc(n.Rhs[0].(*ir.CallExpr))
+		res := append([]sbLoc(nil), g.lastRes...)
+		if len(res) != len(n.Lhs) {
+			sbGiveUp("%d results for %d variables", len(res), len(n.Lhs))
+		}
+		for i, x := range n.Lhs {
+			g.assignFrom(x, res[i])
+		}
+	case ir.OAS2DOTTYPE:
+		n := n.(*ir.AssignListStmt)
+		ta, ok := n.Rhs[0].(*ir.TypeAssertExpr)
+		if !ok || ta.Op() != ir.ODOTTYPE2 {
+			sbGiveUp("type assertion %v", n.Rhs[0].Op())
+		}
+		val, okSlot := g.dottype(ta, true)
+		g.assignFrom(n.Lhs[0], val)
+		g.assignFrom(n.Lhs[1], okSlot)
+	case ir.OJUMPTABLE:
+		// a dense switch: here simply one comparison per case
+		n := n.(*ir.JumpTableStmt)
+		it := n.Idx.Type()
+		if !(it.IsInteger() || it.IsUintptr()) {
+			sbGiveUp("jump table on %v", it)
+		}
+		g.scalar(n.Idx)
+		for i, c := range n.Cases {
+			g.ins(x86.AMOVQ, sbImm(ir.IntVal(it, c)), sbR(x86.REG_CX))
+			g.extend(x86.REG_CX, it)
+			g.ins(x86.ACMPQ, sbR(x86.REG_AX), sbR(x86.REG_CX))
+			g.jumpTo(x86.AJEQ, g.label(n.Targets[i]))
+		}
 	case ir.OINLMARK:
 		// with the function inlined here gone from tracebacks, nothing else changes
 	case ir.OCHECKNIL:
@@ -832,7 +935,23 @@ func (g *sbGen) assign(x, y ir.Node) {
 		g.zero(l, t)
 		return
 	}
-	src := g.valueLoc(y)
+	g.assignFrom(x, g.valueLoc(y))
+}
+
+// assignFrom: x = the value at src (a value of x's type; if src is indirect its base is in AX)
+func (g *sbGen) assignFrom(x ir.Node, src sbLoc) {
+	if ir.IsBlank(x) {
+		return
+	}
+	t := x.Type()
+	if t.Size() == 0 {
+		return
+	}
+	if sbScalar(t) {
+		g.ins(sbLoadOp(t), src.addr(), sbR(x86.REG_AX))
+		g.storeAX(x)
+		return
+	}
 	var keep sbLoc
 	if src.kind == sbInd { // its base is in AX, which finding x's address may need
 		keep = g.temp(types.Types[types.TUNSAFEPTR])
@@ -876,8 +995,26 @@ func sbWords(t *types.Type) []bool {
 
 // copy: *dst = *src for a value of type t. Bases, if any, must be in DI (dst) and SI (src). Uses R8, DX, R11.
 func (g *sbGen) copy(dst, src sbLoc, t *types.Type) {
-	if t.Size() > 2048 {
-		sbGiveUp("copy of %d bytes", t.Size())
+	if t.Size() > 256 {
+		// too big to spell out word by word
+		g.ins(x86.ALEAQ, src.addr(), sbR(x86.REG_SI))
+		g.ins(x86.ALEAQ, dst.addr(), sbR(x86.REG_DI))
+		if t.HasPointers() && !dst.inFrame() {
+			g.ins(x86.AMOVQ, sbR(x86.REG_DI), sbR(x86.REG_BX))
+			g.ins(x86.AMOVQ, sbR(x86.REG_SI), sbR(x86.REG_CX))
+			g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(t)}, sbR(x86.REG_AX))
+			g.call(ir.Syms.Typedmemmove) // typedmemmove(type, dst, src): does the write barriers itself
+			return
+		}
+		g.ins(x86.AMOVQ, sbImm(t.Size()/8), sbR(x86.REG_CX))
+		g.pp.Prog(x86.AREP)
+		g.pp.Prog(x86.AMOVSQ)
+		if r := t.Size() % 8; r != 0 {
+			g.ins(x86.AMOVQ, sbImm(r), sbR(x86.REG_CX))
+			g.pp.Prog(x86.AREP)
+			g.pp.Prog(x86.AMOVSB)
+		}
+		return
 	}
 	words := sbWords(t)
 	barrier := !dst.inFrame()
@@ -908,8 +1045,24 @@ func (g *sbGen) copy(dst, src sbLoc, t *types.Type) {
 
 // zero: *dst = the zero value of t. A base, if any, must be in DI. Uses R8, DX, R11.
 func (g *sbGen) zero(dst sbLoc, t *types.Type) {
-	if t.Size() > 2048 {
-		sbGiveUp("zeroing %d bytes", t.Size())
+	if t.Size() > 256 {
+		g.ins(x86.ALEAQ, dst.addr(), sbR(x86.REG_DI))
+		if t.HasPointers() && !dst.inFrame() {
+			g.ins(x86.AMOVQ, sbR(x86.REG_DI), sbR(x86.REG_BX))
+			g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(t)}, sbR(x86.REG_AX))
+			g.call(sbRuntime("typedmemclr")) // typedmemclr(type, ptr)
+			return
+		}
+		g.ins(x86.AXORL, sbR(x86.REG_AX), sbR(x86.REG_AX))
+		g.ins(x86.AMOVQ, sbImm(t.Size()/8), sbR(x86.REG_CX))
+		g.pp.Prog(x86.AREP)
+		g.pp.Prog(x86.ASTOSQ)
+		if r := t.Size() % 8; r != 0 {
+			g.ins(x86.AMOVQ, sbImm(r), sbR(x86.REG_CX))
+			g.pp.Prog(x86.AREP)
+			g.pp.Prog(x86.ASTOSB)
+		}
+		return
 	}
 	words := sbWords(t)
 	barrier := !dst.inFrame()
@@ -1015,10 +1168,167 @@ func (g *sbGen) valueLoc(n ir.Node) sbLoc {
 		word(1, n.Len)
 	case ir.OSLICE, ir.OSLICEARR, ir.OSLICESTR, ir.OSLICE3, ir.OSLICE3ARR:
 		g.slice(n.(*ir.SliceExpr), slot)
+	case ir.OAPPEND:
+		g.appendTo(n.(*ir.CallExpr), slot)
+	case ir.OBYTES2STRTMP:
+		// the same bytes seen as a string: pointer and length
+		l := g.valueLoc(n.(*ir.ConvExpr).X)
+		g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(x86.REG_CX))
+		g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.addr())
+		g.ins(x86.AMOVQ, sbR(x86.REG_CX), slot.plus(8).addr())
+	case ir.OSTR2BYTESTMP:
+		// the string's bytes seen as a slice; []byte("") must not be nil
+		l := g.valueLoc(n.(*ir.ConvExpr).X)
+		g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(x86.REG_CX))
+		g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
+		g.ins(x86.ATESTQ, sbR(x86.REG_AX), sbR(x86.REG_AX))
+		nn := g.jump(x86.AJNE)
+		g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: ir.Syms.Zerobase}, sbR(x86.REG_AX))
+		g.land(nn)
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.addr())
+		g.ins(x86.AMOVQ, sbR(x86.REG_CX), slot.plus(8).addr())
+		g.ins(x86.AMOVQ, sbR(x86.REG_CX), slot.plus(16).addr())
+	case ir.ODOTTYPE:
+		val, _ := g.dottype(n.(*ir.TypeAssertExpr), false)
+		return val
 	default:
 		sbGiveUp("value %v of type %v", n.Op(), t)
 	}
 	return slot
+}
+
+// dottype: the type assertion n.X.(T) for a concrete type T. The value ends up in a slot of the frame; with
+// commaok a second slot holds whether the assertion held (and the value is zero if it did not), without
+// it a failed assertion panics.
+func (g *sbGen) dottype(n *ir.TypeAssertExpr, commaok bool) (val, ok sbLoc) {
+	dst := n.Type()
+	srcT := n.X.Type()
+	if dst.IsInterface() {
+		sbGiveUp("type assertion to an interface type")
+	}
+	if n.UseNilPanic || dst.IsFloat() || dst.IsComplex() {
+		sbGiveUp("type assertion (special case)")
+	}
+	g.stmts(n.Init())
+	// the interface's two words, parked
+	l := g.valueLoc(n.X)
+	tab := g.temp(types.Types[types.TUNSAFEPTR])
+	data := g.temp(types.Types[types.TUNSAFEPTR])
+	g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(x86.REG_CX))
+	g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tab.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_CX), data.addr())
+	// what the first word must be: the type itself for an empty interface, else the table walk prepared
+	typeSym := obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(dst)}
+	if srcT.IsEmptyInterface() {
+		g.ins(x86.ALEAQ, typeSym, sbR(x86.REG_AX))
+	} else {
+		if n.ITab == nil {
+			sbGiveUp("type assertion without a prepared table")
+		}
+		g.scalar(n.ITab)
+	}
+	val = g.newSlot(dst)
+	if commaok {
+		ok = g.newSlot(types.Types[types.TBOOL])
+	}
+	g.ins(x86.ACMPQ, sbR(x86.REG_AX), tab.addr())
+	good := g.jump(x86.AJEQ)
+	var done *obj.Prog
+	if commaok {
+		g.zero(val, dst)
+		g.ins(x86.AMOVB, sbImm(0), ok.addr())
+		done = g.jump(obj.AJMP)
+	} else {
+		// panicdottypeE(have, want, iface *_type) or panicdottypeI(have *itab, want, iface *_type)
+		g.ins(x86.AMOVQ, tab.addr(), sbR(x86.REG_AX))
+		g.ins(x86.ALEAQ, typeSym, sbR(x86.REG_BX))
+		g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(srcT)}, sbR(x86.REG_CX))
+		if srcT.IsEmptyInterface() {
+			g.call(ir.Syms.PanicdottypeE)
+		} else {
+			g.call(ir.Syms.PanicdottypeI)
+		}
+		g.pp.Prog(x86.AUD2)
+	}
+	g.land(good)
+	if types.IsDirectIface(dst) {
+		g.ins(x86.AMOVQ, data.addr(), sbR(x86.REG_AX)) // a pointer-shaped value is the data word itself
+		g.ins(x86.AMOVQ, sbR(x86.REG_AX), val.addr())
+	} else if dst.Size() != 0 {
+		g.ins(x86.AMOVQ, data.addr(), sbR(x86.REG_SI))
+		g.copy(val, sbLoc{kind: sbInd, reg: x86.REG_SI}, dst)
+	}
+	if commaok {
+		g.ins(x86.AMOVB, sbImm(1), ok.addr())
+		g.land(done)
+	}
+	g.release(data, types.Types[types.TUNSAFEPTR])
+	g.release(tab, types.Types[types.TUNSAFEPTR])
+	return val, ok
+}
+
+// appendTo evaluates append(s, e1, ..., en) into slot: grow if there is no room, store the elements.
+func (g *sbGen) appendTo(n *ir.CallExpr, slot sbLoc) {
+	if n.IsDDD || len(n.Args) < 1 {
+		sbGiveUp("append of a slice not lowered")
+	}
+	st := n.Type()
+	et := st.Elem()
+	if et.IsFloat() || et.IsComplex() {
+		sbGiveUp("append of floating-point elements")
+	}
+	nargs := int64(len(n.Args) - 1)
+	tp := g.temp(types.Types[types.TUNSAFEPTR])
+	tn := g.temp(types.Types[types.TINT]) // new length
+	tc := g.temp(types.Types[types.TINT])
+	l := g.valueLoc(n.Args[0])
+	g.ins(x86.AMOVQ, l.plus(8).addr(), sbR(x86.REG_BX))
+	g.ins(x86.AMOVQ, l.plus(16).addr(), sbR(x86.REG_CX))
+	g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AADDQ, sbImm(nargs), sbR(x86.REG_BX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tp.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_BX), tn.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_CX), tc.addr())
+	g.ins(x86.ACMPQ, sbR(x86.REG_BX), sbR(x86.REG_CX))
+	fits := g.jump(x86.AJLS) // new length <= capacity, unsigned
+	// growslice(oldPtr, newLen, oldCap, num, elemType) -> the new slice; its length is newLen
+	g.ins(x86.ALEAQ, obj.Addr{Type: obj.TYPE_MEM, Name: obj.NAME_EXTERN, Sym: reflectdata.TypeLinksym(et)}, sbR(x86.REG_SI))
+	g.ins(x86.AMOVQ, sbImm(nargs), sbR(x86.REG_DI))
+	g.call(ir.Syms.Growslice)
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), tp.addr())
+	g.ins(x86.AMOVQ, sbR(x86.REG_CX), tc.addr())
+	g.land(fits)
+	for i, a := range n.Args[1:] {
+		if et.Size() == 0 {
+			g.value(a)
+			continue
+		}
+		src := g.valueLoc(a)
+		if src.kind == sbInd {
+			g.ins(x86.AMOVQ, sbR(x86.REG_AX), sbR(x86.REG_SI))
+			src.reg = x86.REG_SI
+		}
+		// the element's address: ptr + (newlen - nargs + i) * size
+		g.ins(x86.AMOVQ, tn.addr(), sbR(x86.REG_DI))
+		g.ins(x86.AADDQ, sbImm(int64(i)-nargs), sbR(x86.REG_DI))
+		if et.Size() != 1 {
+			p := g.ins(x86.AIMUL3Q, sbImm(et.Size()), sbR(x86.REG_DI))
+			p.AddRestSourceReg(x86.REG_DI)
+		}
+		g.ins(x86.AADDQ, tp.addr(), sbR(x86.REG_DI))
+		g.copy(sbLoc{kind: sbInd, reg: x86.REG_DI}, src, et)
+	}
+	g.ins(x86.AMOVQ, tp.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.addr())
+	g.ins(x86.AMOVQ, tn.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.plus(8).addr())
+	g.ins(x86.AMOVQ, tc.addr(), sbR(x86.REG_AX))
+	g.ins(x86.AMOVQ, sbR(x86.REG_AX), slot.plus(16).addr())
+	g.release(tc, types.Types[types.TINT])
+	g.release(tn, types.Types[types.TINT])
+	g.release(tp, types.Types[types.TUNSAFEPTR])
 }
 
 // storeAX stores the scalar in AX to the place x names. It may use every other register.
@@ -1059,7 +1369,7 @@ func (g *sbGen) storeScalar(l sbLoc, t *types.Type, reg int16) {
 
 func (g *sbGen) nameLoc(n *ir.Name) sbLoc {
 	switch n.Class {
-	case ir.PAUTO, ir.PPARAM, ir.PPARAMOUT:
+	case ir.PAUTO, ir.PPARAM, ir.PPARAMOUT, ir.PAUTOHEAP:
 		l, ok := g.homes[n]
 		if !ok {
 			sbGiveUp("variable %v has no home", n)
@@ -1380,6 +1690,37 @@ func (g *sbGen) scalar(n ir.Node) {
 		default:
 			sbGiveUp("len of %v", xt)
 		}
+	case ir.ODOTTYPE:
+		val, _ := g.dottype(n.(*ir.TypeAssertExpr), false)
+		g.ins(sbLoadOp(t), val.addr(), sbR(x86.REG_AX))
+	case ir.OMIN, ir.OMAX:
+		n := n.(*ir.CallExpr)
+		if !(t.IsInteger() || t.IsUintptr()) {
+			sbGiveUp("min or max of %v", t)
+		}
+		g.scalar(n.Args[0])
+		for _, a := range n.Args[1:] {
+			acc := g.temp(t)
+			g.ins(x86.AMOVQ, sbR(x86.REG_AX), acc.addr())
+			g.scalar(a)
+			g.ins(x86.AMOVQ, acc.addr(), sbR(x86.REG_CX))
+			g.release(acc, t)
+			g.ins(x86.ACMPQ, sbR(x86.REG_AX), sbR(x86.REG_CX)) // the new one against the best so far
+			var keep obj.As
+			switch {
+			case n.Op() == ir.OMIN && t.IsSigned():
+				keep = x86.AJLE
+			case n.Op() == ir.OMIN:
+				keep = x86.AJLS
+			case t.IsSigned():
+				keep = x86.AJGE
+			default:
+				keep = x86.AJCC
+			}
+			j := g.jump(keep)
+			g.ins(x86.AMOVQ, sbR(x86.REG_CX), sbR(x86.REG_AX))
+			g.land(j)
+		}
 	case ir.OSPTR, ir.OITAB:
 		l := g.valueLoc(n.(*ir.UnaryExpr).X)
 		g.ins(x86.AMOVQ, l.addr(), sbR(x86.REG_AX))
@@ -1596,11 +1937,16 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 	if len(n.KeepAlive) > 0 {
 		sbGiveUp("call with keepalive arguments")
 	}
-	if n.Op() == ir.OCALLFUNC && ir.IsIntrinsicCall != nil && ir.IsIntrinsicCall(n) {
+	if n.Op() == ir.OCALLFUNC && ir.IsIntrinsicCall != nil && ir.IsIntrinsicCall(n) && !sbRealFunction(n) {
 		sbGiveUp("intrinsic call")
 	}
 	ft := n.Fun.Type()
-	info := ssaConfig.ABI1.ABIAnalyze(ft, false)
+	cfg := ssaConfig.ABI1
+	abi0 := false
+	if c, ok := n.Fun.(*ir.Name); ok && n.Op() == ir.OCALLFUNC && c.Op() == ir.ONAME && c.Class == ir.PFUNC && c.Func != nil && c.Func.ABI == obj.ABI0 {
+		cfg, abi0 = ssaConfig.ABI0, true // written in assembly: everything on the stack
+	}
+	info := cfg.ABIAnalyze(ft, false)
 	var target *obj.LSym // a call by name
 	var code sbLoc       // otherwise: the slot holding the code pointer
 	var clo sbLoc        // and for a function value, the slot holding the closure pointer (for DX)
@@ -1626,10 +1972,11 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 		first = 1
 	case n.Fun.Op() == ir.ONAME && n.Fun.(*ir.Name).Class == ir.PFUNC:
 		callee := n.Fun.(*ir.Name)
-		if callee.Func != nil && callee.Func.ABI != obj.ABIInternal {
-			sbGiveUp("call of an ABI0 function")
+		if abi0 {
+			target = callee.LinksymABI(obj.ABI0)
+		} else {
+			target = callee.LinksymABI(obj.ABIInternal)
 		}
-		target = callee.LinksymABI(obj.ABIInternal)
 	default:
 		// a function value: a pointer to a closure object whose first word is the code
 		if n.Fun.Type().Kind() != types.TFUNC {
@@ -1697,9 +2044,22 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 	if w := info.ArgWidth(); w > g.maxarg {
 		g.maxarg = w
 	}
+	if n.Pos().IsKnown() {
+		g.pp.Pos = n.Pos() // what a traceback and runtime.Caller report for this call
+	}
 	switch {
 	case target != nil:
 		g.call(target)
+		if abi0 {
+			// assembly does not keep the two fixed registers of the internal ABI: the zero register and g
+			g.ins(x86.AXORPS, sbR(x86.REG_X15), sbR(x86.REG_X15))
+			if x86.CanUse1InsnTLS(base.Ctxt) {
+				g.ins(x86.AMOVQ, obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_TLS}, sbR(x86.REG_R14))
+			} else {
+				g.ins(x86.AMOVQ, sbR(x86.REG_TLS), sbR(x86.REG_R14))
+				g.ins(x86.AMOVQ, obj.Addr{Type: obj.TYPE_MEM, Reg: x86.REG_R14, Index: x86.REG_TLS, Scale: 1}, sbR(x86.REG_R14))
+			}
+		}
 	case hasClo:
 		g.ins(x86.AMOVQ, clo.addr(), sbR(x86.REG_DX))
 		g.release(clo, types.Types[types.TUNSAFEPTR])
@@ -1743,3 +2103,19 @@ func (g *sbGen) callFunc(n *ir.CallExpr) {
 
 // frame marks an SP-relative location as part of this frame (no write barrier for stores into it)
 func (l sbLoc) frame() sbLoc { l.kind = sbOut; return l }
+
+// sbRealFunction: the stock back end would replace this call by an instruction sequence of its own, but
+// the function also exists as an ordinary function with the same meaning, so calling it is correct.
+func sbRealFunction(n *ir.CallExpr) bool {
+	callee, ok := n.Fun.(*ir.Name)
+	if !ok || callee.Sym() == nil || callee.Sym().Pkg == nil {
+		return false
+	}
+	switch callee.Sym().Pkg.Path {
+	case "sync/atomic", "math/bits", "internal/runtime/atomic", "internal/runtime/math":
+		return true
+	case "runtime":
+		return callee.Sym().Name == "KeepAlive"
+	}
+	return false
+}
