@@ -9,10 +9,37 @@ produces a working binary that passes the project's own tests, in **2 seconds of
 clock**, by saturating every core and squeezing every instruction and every byte moved
 (network, disk, DRAM, L3, L2, L1).
 
-Strand (SIMD-first, data-parallel by construction) is the means. It is the default tool
-for every phase. Leaving it requires a measurement showing the phase is not
-data-parallel-shaped, plus an entry in `SCALAR_LEDGER.md`. Strand changes whenever that
-makes a phase of the real build more parallel.
+### The approach: fuse the build DAG
+
+A build is a DAG of actions (Bazel's, or `go build`'s action graph). Today every action
+is its own process: it gathers its inputs, runs, and materializes its outputs (export
+data, objects, archives) for the next action to read back. **Compile the DAG instead:**
+treat the whole build as one program, executed in one address space across all cores
+(later: a few machines, cut at edges where little data crosses). Intermediate outputs are
+not materialized: they're handed over in memory, streamed across edges before their
+producer finishes, and deduplicated across the graph. These are HPC techniques (fusion,
+streaming, work-stealing, locality) applied to a build.
+
+**The speed limit is reading the sources and writing the binary.** Everything between those
+is overhead to be fused away or work to be parallelized.
+
+The night of 2026-11-11 measured why this is the direction (JOURNAL iterations 9-14):
+parsing and type-checking all of MinIO in one process takes 1.4 s wall and 7.4
+core-seconds, against ~30 core-seconds across 1,312 compiler processes (the difference
+is export data written and read back, and IR conversions). On top of that come 1,312
+process starts, millions of page faults on fresh heaps, ~600 MB of objects written for the
+linker to read again, and 8% of code compiled twice by different packages. Early export
+(streaming one edge) took the chain from 38.5 s to ~12 s.
+
+### SIMD and Strand
+
+SIMD and data parallelism are means, not the goal. Strand is the tool for phases that are
+data-parallel-shaped (scans over source bytes, layout by prefix sums, relocation blends,
+histograms, joins over dense IDs). The trace decides where those are; don't force a phase
+into Strand that the trace says is elsewhere (lexing+parsing is ~1% of compile CPU). When a
+fused design creates a new data-parallel-shaped phase (e.g. one pass over all sources, a
+whole-program symbol table, a layout pass instead of a linker), Strand is the default for it,
+and leaving it needs an entry in `SCALAR_LEDGER.md`.
 
 ## The one number
 
@@ -31,6 +58,16 @@ clock per phase of the end-to-end build, the critical path, and core utilization
 
 A change matters only if it moves this table or unblocks a rung that will. Microbenchmarks
 are diagnostics and are never reported as results.
+
+Two more things the trace must show:
+
+- **A fair stock row.** Next to plain stock `go build`, a cold stock `go build` with the same
+  relaxations we use: `GOGC=off go build -trimpath -gcflags=all='-dwarf=false -l'
+  -ldflags='-s -w'`. Our gain is measured against *that* row, so "new technique" is kept
+  apart from "turned things off".
+- **The materialization tax.** Per build: bytes of intermediates written and read back (export
+  data, objects, archives), process starts, page faults, core-seconds outside the compiler's
+  own phases. This is what fusion removes; it should fall rung by rung.
 
 ## Physics, not baselines
 
@@ -56,6 +93,15 @@ critical-path bug.
 Optimization level, debug info, incremental builds, separate compilation, object-file
 formats, the linker as a separate step, diagnostic quality beyond "error + location", any
 internal format. Whole-program is fine. Changing Strand is fine.
+
+### This is a dev build (decided by the user, 2026-11-12)
+
+Accepted for the 2-second build: unoptimized code, a binary up to ~2x the stock size, no
+DWARF, no inlining, and the baseline code generator's longer object liveness (an object
+can stay alive until its function returns, so a test waiting for a finalizer may hang;
+skip those tests and list them). Huge pages via `sudo sysctl vm.nr_hugepages` are allowed
+as machine configuration (put the old value back after). Report every such difference in
+`MORNING.md`; never hide one.
 
 ## May not relax
 
@@ -96,7 +142,13 @@ internal format. Whole-program is fine. Changing Strand is fine.
 
 ### Rungs
 
-0. **Profile.** Build MinIO and `kube-apiserver` cold with the stock toolchain on 1, 2, 4 and 8
+Rungs 0-5 were climbed on 2026-11-11 (JOURNAL iterations 1-14): MinIO cold 54.2 s ->
+12.3-13.3 s, kube-apiserver 86.3 s -> 24.1-25.2 s, via our own driver and planner, early
+export, a baseline code generator inside `cmd/compile`, huge pages, and splitting `minio/cmd`
+across processes. The record of those rungs, kept for reference:
+
+0. **Profile.** (Done. Don't repeat the 1/2/4-CPU stock matrix: only 8 CPUs cold, plus the
+   fair stock row, are needed from now on.) Build MinIO and `kube-apiserver` cold with the stock toolchain on 1, 2, 4 and 8
    CPUs. Use `go build -debug-trace=trace.json` (a Chrome trace of the action graph) and
    `-debug-actiongraph` to get per-package compile time, the critical path through the
    package graph, idle cores over time, and the link's share. Add bytes read and the total
@@ -109,8 +161,37 @@ internal format. Whole-program is fine. Changing Strand is fine.
    at a time. A rung is done when the MinIO trace shrinks, the toolchain corpus and MinIO
    tests still pass, and the differential tests are green.
 
-Later rungs (record them in `IDEAS.md`, don't start them yet): a second language (Rust or
-C++ is the boss level); compiling the build graph itself; the network/disk end of the pipeline.
+### Fusion rungs (current)
+
+Each rung is consumed by the real MinIO build, passes its tests, and shows the
+materialization tax falling in TRACE.md.
+
+F0. **The fair stock row and the tax, measured.** Add both to TRACE.md (see "The one
+    number"). Attribute the current 80 core-seconds: compiling vs moving data between actions
+    vs process and memory setup.
+F1. **Persistent workers, intermediates in memory.** Compiler processes stay alive across
+    packages, and export data and objects pass through shared memory (memfd/tmpfs mappings)
+    instead of being written and re-read. `cmd/compile` keeps global state, so a worker may
+    need resetting between packages, or a fork-server (one warm process forked per package)
+    may be the cheaper way to get the same effect. Measure both; pick by the trace.
+F2. **One address space for the front end.** Whole-program parse and type check in one process
+    (measured at 1.4 s wall), handing typed packages to the back end in memory, with no export
+    data at all. The second compiler (`driver/sbc`) and the whole-program spike
+    (`explore/wholeprog`) are the start of this. Fall back to the stock path per package.
+F3. **The DAG as a schedule, not a set of processes.** Function bodies (not packages) are the
+    unit of work, on a work-stealing queue across all cores; package boundaries matter only
+    for initialization order. Deduplicate shared functions (wrappers, instantiations) across
+    the graph.
+F4. **No linker as a separate step.** Dense symbol IDs from the compiler; layout by one prefix
+    sum over sizes; code emitted straight into the final image; relocation as one data-parallel
+    pass. (Strand-shaped: see LINKING.md.)
+F5. **From Bazel.** Take the DAG from Bazel (`bazel aquery`, rules_go first) instead of from our
+    own planner, so the fused executor isn't Go-specific at the graph level. Then think about
+    cutting the DAG across a few machines at narrow edges (package interfaces are small next
+    to objects).
+
+Later (record in `IDEAS.md`, don't start yet): a second language through the same fused
+executor (Rust or C++ is the boss level); the network/disk end of the pipeline.
 
 ## How to work
 
@@ -123,6 +204,13 @@ C++ is the boss level); compiling the build graph itself; the network/disk end o
 - **Negative results are results.** Write them up and move on.
 - **Commit and push often** with real messages. The history is part of the deliverable.
 - Report **absolute times** (ms, ns, GB/s), never ratio tables.
+- **Usage is the binding limit, not the clock.** The 2026-11-11 run ended at 03:19 UTC on the
+  user's weekly model limit, hours before its deadline, and never wrote MORNING.md. So:
+  overwrite `MORNING.md` at the end of **every** iteration; run divergence subagents on a
+  cheaper model (`model: "sonnet"`); prefer Codex and sol for reviews (separate budgets);
+  don't fire duplicate subagents for the same lens.
+- **The host is noisy.** Compare configurations interleaved in the same window
+  (`tools/trace/ab.sh`), not against numbers from hours earlier.
 
 ## Anti-goals
 

@@ -10,6 +10,9 @@ Lenses:
   regex/automata engines, genomics aligners, network packet processing, video codecs.
 - Ridiculous on purpose: propose something an expert would call absurd, and the experiment that
   would show it isn't.
+- HPC and fusion: treat the build DAG as one program. Kernel fusion, streaming between
+  stages, work-stealing, NUMA/cache locality, partitioning a graph across machines with
+  minimal cut. What intermediate is still materialized, and how would it never exist?
 - Design the problem away: where the known algorithm is sequential (type inference, name
   resolution, generic instantiation, linking), change what is computed instead of parallelizing it.
 

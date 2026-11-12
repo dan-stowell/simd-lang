@@ -13,7 +13,7 @@ Read `CHARTER.md` first. This file is the procedure; the charter is the goal.
 | `IDEAS.md` | agent + subagents | weird ideas, each with a one-line kill test and status |
 | `reviews/inbox/` | background reviewers | raw reviews, one file each |
 | `REVIEWS.md` | agent | triage of every inbox item: accept / reject (why) / defer |
-| `MORNING.md` | agent, overwritten at end | the report for the user |
+| `MORNING.md` | agent, overwritten every iteration | the report for the user |
 
 ## Each iteration
 
@@ -21,8 +21,9 @@ Read `CHARTER.md` first. This file is the procedure; the charter is the goal.
 2. **Triage** `reviews/inbox/*`: one line each in `REVIEWS.md`, then move the file to
    `reviews/done/`. Accepted items go into `NEXT.md`. Never wait for a reviewer that hasn't finished.
 3. Every 5th iteration (count journal entries): **divergence step**. Run
-   `prompts/divergence.md` with 3-4 subagents that see only the charter and the trace, not
-   the design docs. Append their ideas to `IDEAS.md`.
+   `prompts/divergence.md` with 3-4 subagents (one per lens, `model: "sonnet"`) that see
+   only the charter and the trace, not the design docs. Append their ideas to `IDEAS.md`
+   and triage them in the same iteration; never leave a round unread.
 4. **Pick:** the next rung (default), an idea spike (about 1 in 5, in a git worktree, time-boxed
    to one iteration), or critical-path optimization (budgeted).
 5. **Scope check** into `JOURNAL.md`.
@@ -30,6 +31,8 @@ Read `CHARTER.md` first. This file is the procedure; the charter is the goal.
    `TRACE.md` if a phase changed, commit, push.
 7. **Fire background reviews** on the new commit (see below). Don't wait.
 8. Overwrite `NEXT.md`.
+9. Overwrite `MORNING.md` (see Stopping for its contents). A run can end at any moment on
+   the usage limit, so the morning report must always be current.
 
 ## Background reviewers (never block on them)
 
@@ -62,5 +65,9 @@ Correctness findings can block a merge; opinions never do.
 
 The Stop hook (`.claude/hooks/keep-going.sh`) refuses to let the session end until the
 deadline in `.claude/deadline` (epoch seconds) passes or a file `STOP` exists. When it
-lets you go: write `MORNING.md` (trace before and after, rungs climbed, ideas tried,
-review disagreements worth the user's attention), commit, push.
+lets you go: bring `MORNING.md` up to date, commit, push.
+
+`MORNING.md` contains: the trace before and after (with the fair stock row and the
+materialization tax), rungs climbed, ideas tried and killed, review disagreements worth the
+user's attention, every behaviour difference of the dev build, and decisions that are the
+user's.
