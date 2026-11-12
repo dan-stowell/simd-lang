@@ -1358,3 +1358,10 @@ compiler".
 
 **Scope check.** Most ambitious: make the spike emit a binary that runs. That is F4 itself, and it is
 where the next session should start; the measurements say it is worth it and roughly what it costs.
+
+## 2026-11-12 19:05 UTC — kube-apiserver soak, thirty more
+
+30 of 30 cold builds pass their smoke test; wall min 19.8 s, median 21.3 s, max 23.8 s. The run of
+twenty an hour earlier had a median of 19.8 s: the same binary-identical configuration, a host 1.5 s
+slower. Totals for the final configuration today: MinIO 80 of 80, kube-apiserver 56 of 56, no hang and
+no failed fork in either.

@@ -25,11 +25,11 @@ Against the stock toolchain:
 | stock `go build` (2026-11-11) | 54.2 s, 282 core-s | 86.3 s, 554 core-s |
 | stock, re-measured 2026-11-12 | 50.0 s, 257 core-s | 77.1 s, 511 core-s |
 | **fair stock** (`GOGC=off`, `-dwarf=false -l`, `-s -w`) | **32.5 s**, 169 core-s | **51.2 s**, 329 core-s |
-| now | **11.8 s** (above); median of 60 cold builds 11.2 s | **21.1 s** (above); median of 20 cold builds 19.8 s |
+| now | **11.8 s** (above); median of 60 cold builds 11.2 s | **21.1 s** (above); medians of 20 and 30 cold builds 19.8 and 21.3 s |
 
 Soaks of the final configuration, cold, each build smoke-tested (`tools/trace/soak.sh`): MinIO 80 of 80
-pass (the run of 60: wall min 10.5 s, **median 11.2 s**, max 12.6 s); kube-apiserver 26 of 26 pass (the
-run of 20: min 19.1 s, **median 19.8 s**, max 21.7 s).
+pass (the run of 60: wall min 10.5 s, **median 11.2 s**, max 12.6 s); kube-apiserver 56 of 56 pass (a
+run of 20: median 19.8 s; a run of 30 an hour later: min 19.8 s, **median 21.3 s**, max 23.8 s).
 
 Against the fair row the technique is worth 32.5 -> 11.8 s on MinIO and 51.2 -> 21.1 s on
 kube-apiserver; the rest of the distance from 54 s is things turned off. The host drifts (the same
@@ -182,7 +182,7 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
 - The compilers run with the garbage collector off (`GOGC=off`); the fair stock row does too.
 - New today: with `-zygote`, compiles are forked from one warm compiler process by a runtime function
   that is not part of Go. Output is byte-identical; the risk is a hang or crash in a child, not a wrong
-  binary. None seen in about 200 MinIO builds, 50 kube builds, 6,000 test forks and the reviewer's 648.
+  binary. None seen in about 220 MinIO builds, 80 kube builds, 6,000 test forks and the reviewer's 648.
 - New today: baseline code has no jump padding to 32-byte boundaries (the Intel JCC erratum mitigation:
   speed on some Intel cores, not correctness) and forward branches further than 12 instructions use the
   long encoding. No per-function DWARF when the driver's link has `-w` (the reviewer showed that a link
