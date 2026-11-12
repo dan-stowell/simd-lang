@@ -14,6 +14,7 @@ the hash addresses every target by name, so all packages agree."""
 import sys, os
 d = sys.argv[1]
 objd = sys.argv[2]
+ssagend = os.path.join(os.path.dirname(d), 'ssagen')
 p = os.path.join(d, 'main.go'); s = open(p).read()
 anchor = '\tbase.Timer.Start("be", "compilefuncs")\n'
 assert s.count(anchor) == 1
@@ -100,5 +101,70 @@ s += '''
 // sbHashByName (sb): hash relocation targets of content-addressed symbols by name, never by index,
 // so that packages that import by name and packages that import by index compute the same hash.
 var sbHashByName = os.Getenv("SB_EARLY_EXPORT") != ""
+'''
+open(p, 'w').write(s)
+
+# Fourth change, a diagnostic: with SB_OPSTATS=<dir>, every function's lowered tree (what the back end is
+# handed after walk) is summarised in <dir>/<pid>.txt: name, node count, back-end nanoseconds, flags, and
+# how many nodes of each operation it contains. tools/trace/opstats.py turns that into "how much of the
+# back end's work would a code generator supporting this set of operations cover".
+p = os.path.join(ssagend, 'pgen.go'); s = open(p).read()
+old = '''func Compile(fn *ir.Func, worker int, profile *pgoir.Profile) {
+'''
+assert s.count(old) == 1
+s = s.replace(old, old + '''\tif sbOpStatsDir != "" {
+\t\tdefer sbRecord(fn, time.Now())
+\t}
+\tif sbBaseline && baselineCompile(fn, worker) { // fifth change: driver/baseline/sbbaseline.go
+\t\treturn
+\t}
+''')
+s = s.replace('import (\n\t"fmt"', 'import (\n\t"fmt"\n\t"time"', 1)
+s += '''
+var sbOpStatsDir = os.Getenv("SB_OPSTATS")
+var sbOpMu sync.Mutex
+var sbOpFile *os.File
+
+func sbRecord(fn *ir.Func, start time.Time) {
+	ns := time.Since(start).Nanoseconds()
+	ops := map[ir.Op]int{}
+	n := 0
+	float := false
+	ir.VisitList(fn.Body, func(x ir.Node) {
+		ops[x.Op()]++
+		n++
+		if t := x.Type(); t != nil && (t.IsFloat() || t.IsComplex()) {
+			float = true
+		}
+	})
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s\\t%d\\t%d\\t", fn.LSym.Name, n, ns)
+	if fn.HasDefer() {
+		b.WriteString("defer,")
+	}
+	if len(fn.ClosureVars) > 0 {
+		b.WriteString("closurevars,")
+	}
+	if fn.OClosure != nil {
+		b.WriteString("isclosure,")
+	}
+	if float {
+		b.WriteString("float,")
+	}
+	if fn.Dupok() {
+		b.WriteString("dupok,")
+	}
+	b.WriteString("\\t")
+	for op, c := range ops {
+		fmt.Fprintf(&b, "%v:%d,", op, c)
+	}
+	b.WriteString("\\n")
+	sbOpMu.Lock()
+	if sbOpFile == nil {
+		sbOpFile, _ = os.OpenFile(fmt.Sprintf("%s/%d.txt", sbOpStatsDir, os.Getpid()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	}
+	sbOpFile.WriteString(b.String())
+	sbOpMu.Unlock()
+}
 '''
 open(p, 'w').write(s)
