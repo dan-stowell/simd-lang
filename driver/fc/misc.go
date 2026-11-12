@@ -97,7 +97,7 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 // findHeapVars marks the local variables that must live on the heap: their address is taken (explicitly,
 // by a method call with a pointer receiver, or by slicing an array), or a closure captures them.
 func (g *gen) findHeapVars(body ast.Node) {
-	info := g.c.info
+	info := g.info
 	var root func(e ast.Expr) *types.Var
 	root = func(e ast.Expr) *types.Var {
 		switch e := e.(type) {
@@ -113,7 +113,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 		case *ast.SelectorExpr:
 			if sel := info.Selections[e]; sel != nil && sel.Kind() == types.FieldVal {
 				// only while no pointer is followed on the way
-				t := info.Types[e.X].Type
+				t := g.typeOf(e.X)
 				for _, i := range sel.Index() {
 					if _, ok := t.Underlying().(*types.Pointer); ok {
 						return nil
@@ -123,7 +123,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 				return root(e.X)
 			}
 		case *ast.IndexExpr:
-			if _, ok := info.Types[e.X].Type.Underlying().(*types.Array); ok {
+			if _, ok := g.typeOf(e.X).Underlying().(*types.Array); ok {
 				return root(e.X)
 			}
 		}
@@ -142,7 +142,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 				mark(root(n.X))
 			}
 		case *ast.SliceExpr:
-			if _, ok := info.Types[n.X].Type.Underlying().(*types.Array); ok {
+			if _, ok := g.typeOf(n.X).Underlying().(*types.Array); ok {
 				mark(root(n.X))
 			}
 		case *ast.SelectorExpr:
@@ -150,7 +150,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 				fn := sel.Obj().(*types.Func)
 				if _, ptr := fn.Type().(*types.Signature).Recv().Type().(*types.Pointer); ptr {
 					// x.M() with a pointer receiver: &x, unless a pointer is followed first
-					t := info.Types[n.X].Type
+					t := g.typeOf(n.X)
 					path := sel.Index()
 					viaPtr := false
 					for _, i := range path[:len(path)-1] {

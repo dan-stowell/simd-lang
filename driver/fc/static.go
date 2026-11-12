@@ -103,7 +103,7 @@ func (c *compiler) compilePackage() (errs []string) {
 			if sym == nil {
 				sym = c.funcSym(fn)
 			}
-			g := c.newGen(sym.Name, sig)
+			g := c.newGen(sym.Name, sig, c.info, nil)
 			g.out.sym = sym
 			g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
 			for _, d := range []string{"//go:systemstack", "//go:nowritebarrier", "//go:nowritebarrierrec", "//go:yeswritebarrierrec", "//go:uintptrescapes", "//go:uintptrkeepalive", "//go:norace", "//go:nocheckptr", "//go:registerparams", "//go:notinheap", "//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
@@ -120,7 +120,7 @@ func (c *compiler) compilePackage() (errs []string) {
 	if len(dyns) > 0 {
 		try("package initializers", func() {
 			sym := c.lookup(pp+".init", obj.ABIInternal, pp)
-			g := c.newGen(sym.Name, types.NewSignatureType(nil, nil, nil, nil, nil, false))
+			g := c.newGen(sym.Name, types.NewSignatureType(nil, nil, nil, nil, nil, false), c.info, nil)
 			g.out.sym = sym
 			g.out.flags |= obj.PKGINIT
 			pos := c.pkg.files[0].Package
@@ -157,6 +157,12 @@ func (c *compiler) compilePackage() (errs []string) {
 		})
 	}
 	fns = append(fns, inits...)
+	// instances of generic functions the code above (and each other) asked for
+	for len(c.instQueue) > 0 {
+		in := c.instQueue[0]
+		c.instQueue = c.instQueue[1:]
+		try("instance "+in.sym.Name, func() { c.compileInstance(in) })
+	}
 	// the init task
 	var deps []*obj.LSym
 	for _, d := range c.pkg.deps {

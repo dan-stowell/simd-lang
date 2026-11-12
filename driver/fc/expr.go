@@ -103,7 +103,7 @@ func (g *gen) deref(l loc) loc {
 
 // pure: evaluating e emits no code that disturbs AX, CX or X0 (it may use R12 and R13).
 func (g *gen) pure(e ast.Expr) bool {
-	if tv, ok := g.c.info.Types[e]; ok && tv.Value != nil {
+	if tv, ok := g.info.Types[e]; ok && tv.Value != nil {
 		return true
 	}
 	switch e := e.(type) {
@@ -112,7 +112,7 @@ func (g *gen) pure(e ast.Expr) bool {
 	case *ast.ParenExpr:
 		return g.pure(e.X)
 	case *ast.SelectorExpr:
-		if sel := g.c.info.Selections[e]; sel != nil {
+		if sel := g.info.Selections[e]; sel != nil {
 			return sel.Kind() == types.FieldVal && g.pure(e.X)
 		}
 		return true // qualified identifier
@@ -124,7 +124,7 @@ func (g *gen) pure(e ast.Expr) bool {
 
 // expr evaluates e and says where its value is. A value in memory may be the variable itself, not a copy.
 func (g *gen) expr(e ast.Expr) loc {
-	tv := g.c.info.Types[e]
+	tv := g.info.Types[e]
 	if tv.Value != nil {
 		return g.constLoc(tv.Value, tv.Type)
 	}
@@ -135,7 +135,7 @@ func (g *gen) expr(e ast.Expr) loc {
 	case *ast.ParenExpr:
 		return g.expr(e.X)
 	case *ast.Ident:
-		switch o := g.c.info.Uses[e].(type) {
+		switch o := g.info.Uses[e].(type) {
 		case *types.Var:
 			return g.varLoc(o)
 		case *types.Func:
@@ -143,7 +143,7 @@ func (g *gen) expr(e ast.Expr) loc {
 		case *types.Nil:
 			return loc{kind: lZero}
 		}
-		if o, ok := g.c.info.Defs[e].(*types.Var); ok {
+		if o, ok := g.info.Defs[e].(*types.Var); ok {
 			return g.varLoc(o)
 		}
 		giveUp("identifier %s", e.Name)
@@ -218,9 +218,9 @@ func (g *gen) mentionsFrame(e ast.Expr, dst loc) bool {
 	found := false
 	ast.Inspect(e, func(n ast.Node) bool {
 		if id, ok := n.(*ast.Ident); ok {
-			if v, ok := g.c.info.Uses[id].(*types.Var); ok {
+			if v, ok := g.info.Uses[id].(*types.Var); ok {
 				if l, ok := g.vars[v]; ok && l.kind == lFrame {
-					size := align(g.c.sizeof(v.Type()), 8)
+					size := align(g.c.sizeof(g.vt(v)), 8)
 					if dst.kind == lFrame && dst.off >= l.off && dst.off < l.off+size {
 						found = true
 					}
@@ -244,9 +244,9 @@ func (g *gen) nilcheckLoc(l loc) {
 
 // selector: a field, a qualified identifier, or a method value.
 func (g *gen) selector(e *ast.SelectorExpr) loc {
-	sel := g.c.info.Selections[e]
+	sel := g.info.Selections[e]
 	if sel == nil {
-		switch o := g.c.info.Uses[e.Sel].(type) {
+		switch o := g.info.Uses[e.Sel].(type) {
 		case *types.Var:
 			return g.varLoc(o)
 		case *types.Func:
@@ -332,10 +332,10 @@ func (g *gen) scaleAdd(size int64) {
 }
 
 func (g *gen) index(e *ast.IndexExpr) loc {
-	if tv, ok := g.c.info.Types[e.Index]; ok && tv.IsType() {
+	if tv, ok := g.info.Types[e.Index]; ok && tv.IsType() {
 		giveUp("generic instantiation")
 	}
-	if _, ok := g.c.info.Instances[identOf(e.X)]; ok {
+	if _, ok := g.info.Instances[identOf(e.X)]; ok {
 		giveUp("generic instantiation")
 	}
 	xt := g.typeOf(e.X)
@@ -349,7 +349,7 @@ func (g *gen) index(e *ast.IndexExpr) loc {
 			giveUp("index of an array that is not in memory")
 		}
 		es := g.c.sizeof(u.Elem())
-		if tv := g.c.info.Types[e.Index]; tv.Value != nil {
+		if tv := g.info.Types[e.Index]; tv.Value != nil {
 			i, _ := constant.Int64Val(constant.ToInt(tv.Value))
 			return xl.plus(i * es)
 		}
@@ -862,7 +862,7 @@ func (g *gen) comparison(e *ast.BinaryExpr) loc {
 // condJump evaluates a boolean expression and jumps to f if it is false (falls through if true).
 func (g *gen) condJump(e ast.Expr, f *label) {
 	e = ast.Unparen(e)
-	if tv := g.c.info.Types[e]; tv.Value != nil {
+	if tv := g.info.Types[e]; tv.Value != nil {
 		if !constant.BoolVal(tv.Value) {
 			g.jmp(f)
 		}

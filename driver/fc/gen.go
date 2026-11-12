@@ -83,12 +83,15 @@ type scope struct {
 }
 
 type gen struct {
-	c    *compiler
-	a    asm
-	out  *funcOut
-	name string // symbol name, for naming closures
-	sig  *types.Signature
-	abi  *abiInfo
+	c          *compiler
+	info       *types.Info                     // of the package the body is in
+	env        map[*types.TypeParam]types.Type // type arguments of the instance being compiled
+	substCache map[types.Type]types.Type
+	a          asm
+	out        *funcOut
+	name       string // symbol name, for naming closures
+	sig        *types.Signature
+	abi        *abiInfo
 
 	vars     map[*types.Var]loc
 	heapVars map[*types.Var]bool
@@ -117,20 +120,23 @@ const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: th
 // ---- types
 
 func (g *gen) typeOf(e ast.Expr) types.Type {
-	tv, ok := g.c.info.Types[e]
+	tv, ok := g.info.Types[e]
 	if !ok {
 		if id, ok := e.(*ast.Ident); ok {
-			if o := g.c.info.Uses[id]; o != nil {
-				return o.Type()
+			if o := g.info.Uses[id]; o != nil {
+				return g.subst(o.Type())
 			}
-			if o := g.c.info.Defs[id]; o != nil {
-				return o.Type()
+			if o := g.info.Defs[id]; o != nil {
+				return g.subst(o.Type())
 			}
 		}
 		giveUp("no type for expression %T", e)
 	}
-	return tv.Type
+	return g.subst(tv.Type)
 }
+
+// vt: the type of a variable of the function being compiled (its type arguments applied).
+func (g *gen) vt(v *types.Var) types.Type { return g.subst(v.Type()) }
 
 func isFloat(t types.Type) bool {
 	b, ok := t.Underlying().(*types.Basic)
@@ -647,11 +653,26 @@ func (g *gen) callRT(name string) {
 
 // ---- the function
 
-func (c *compiler) newGen(name string, sig *types.Signature) *gen {
-	g := &gen{c: c, name: name, sig: sig, vars: map[*types.Var]loc{}, heapVars: map[*types.Var]bool{},
+// newGen starts a function. sig is its declared signature; info is the type information of the package its
+// body is in; env gives the type arguments when the function is an instance of a generic one.
+func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, env map[*types.TypeParam]types.Type) *gen {
+	g := &gen{c: c, name: name, sig: sig, info: info, env: env, vars: map[*types.Var]loc{}, heapVars: map[*types.Var]bool{},
 		free: map[string][]int{}, labels: map[*types.Label]*label{}, lblScope: map[*types.Label]*scope{}}
 	g.out = &funcOut{}
-	g.abi = c.abiOf(sig)
+	if env != nil {
+		g.substCache = map[types.Type]types.Type{}
+	}
+	var in, out []types.Type
+	if r := sig.Recv(); r != nil {
+		in = append(in, g.subst(r.Type()))
+	}
+	for i := 0; i < sig.Params().Len(); i++ {
+		in = append(in, g.subst(sig.Params().At(i).Type()))
+	}
+	for i := 0; i < sig.Results().Len(); i++ {
+		out = append(out, g.subst(sig.Results().At(i).Type()))
+	}
+	g.abi = c.abiOfTypes(in, out)
 	g.ret = g.newLabel()
 	return g
 }
@@ -668,7 +689,7 @@ func (g *gen) declare(v *types.Var) loc {
 		g.vars[v] = l
 		return l
 	}
-	i := g.newSlotBits(g.c.sizeof(v.Type()), g.c.ptrBits(v.Type(), nil))
+	i := g.newSlotBits(g.c.sizeof(g.vt(v)), g.c.ptrBits(g.vt(v), nil))
 	l := loc{kind: lFrame, off: -g.slots[i].off}
 	g.vars[v] = l
 	return l
@@ -677,7 +698,7 @@ func (g *gen) declare(v *types.Var) loc {
 // newHeapVar allocates the object of a heap variable (zeroed) and stores its pointer in the variable's slot.
 func (g *gen) newHeapVar(v *types.Var) {
 	l := g.vars[v]
-	g.a.lea(AX, msym(g.c.typeSym(v.Type()), 0))
+	g.a.lea(AX, msym(g.c.typeSym(g.vt(v)), 0))
 	g.callRT("newobject")
 	g.a.store(mb(BP, l.slot), AX, 8)
 }
@@ -707,7 +728,7 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 		if g.heapVars[v] {
 			g.declare(v)
 			g.newHeapVar(v)
-			g.move(g.vars[v], home, v.Type())
+			g.move(g.vars[v], home, g.vt(v))
 		} else {
 			g.vars[v] = home
 		}

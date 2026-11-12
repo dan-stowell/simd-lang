@@ -63,7 +63,7 @@ func (g *gen) concat(x, y ast.Expr, t types.Type) loc {
 	var parts []ast.Expr
 	var walk func(e ast.Expr)
 	walk = func(e ast.Expr) {
-		if b, ok := ast.Unparen(e).(*ast.BinaryExpr); ok && b.Op == token.ADD && g.c.info.Types[e].Value == nil {
+		if b, ok := ast.Unparen(e).(*ast.BinaryExpr); ok && b.Op == token.ADD && g.info.Types[e].Value == nil {
 			walk(b.X)
 			walk(b.Y)
 			return

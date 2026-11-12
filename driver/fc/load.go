@@ -39,6 +39,8 @@ type Pkg struct {
 
 	lnOnce   sync.Once
 	linkname map[string]string
+	declOnce sync.Once
+	decls    map[*types.Func]*ast.FuncDecl
 }
 
 type Program struct {
@@ -47,12 +49,14 @@ type Program struct {
 	sizes  types.Sizes
 	sem    chan struct{}
 
+	tctx    *types.Context // shared by every package: one object per instantiated type
+	byTpkg  sync.Map       // *types.Package -> *Pkg
 	rtOnce  sync.Once
 	rtDecls *types.Package // the runtime functions the stock compiler knows, for their signatures
 }
 
 func newProgram() *Program {
-	return &Program{fset: token.NewFileSet(), byPath: map[string]*Pkg{}, sizes: types.SizesFor("gc", "amd64"),
+	return &Program{fset: token.NewFileSet(), byPath: map[string]*Pkg{}, sizes: types.SizesFor("gc", "amd64"), tctx: types.NewContext(),
 		sem: make(chan struct{}, runtime.GOMAXPROCS(0))}
 }
 
@@ -162,7 +166,7 @@ func (pr *Program) check(p *Pkg) error {
 		if p.Module != nil && p.Module.GoVersion != "" {
 			gover = "go" + p.Module.GoVersion
 		}
-		conf := types.Config{Importer: pkgImporter{pr, p}, Sizes: pr.sizes, GoVersion: gover,
+		conf := types.Config{Importer: pkgImporter{pr, p}, Sizes: pr.sizes, GoVersion: gover, Context: pr.tctx,
 			Error: func(err error) {
 				if p.err == nil {
 					p.err = err
@@ -175,7 +179,17 @@ func (pr *Program) check(p *Pkg) error {
 		p.tpkg, _ = conf.Check(path, pr.fset, p.files, p.info)
 		if p.err != nil {
 			p.tpkg = nil
+		} else {
+			pr.byTpkg.Store(p.tpkg, p)
 		}
 	})
 	return p.err
+}
+
+// byTypes: the package a go/types package was checked from.
+func (pr *Program) byTypes(tp *types.Package) *Pkg {
+	if p, ok := pr.byTpkg.Load(tp); ok {
+		return p.(*Pkg)
+	}
+	return nil
 }

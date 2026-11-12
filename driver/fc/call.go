@@ -124,18 +124,26 @@ func (g *gen) rtCall(name string, args ...loc) []loc {
 
 func (g *gen) call(e *ast.CallExpr) []loc {
 	fun := ast.Unparen(e.Fun)
-	if tv := g.c.info.Types[fun]; tv.IsType() {
-		return []loc{g.convert(e.Args[0], tv.Type)}
+	if tv := g.info.Types[fun]; tv.IsType() {
+		return []loc{g.convert(e.Args[0], g.subst(tv.Type))}
+	}
+	// F[int](x): the callee is under the index expression
+	switch ix := fun.(type) {
+	case *ast.IndexExpr:
+		if id := identOf(ix.X); id != nil {
+			if _, ok := g.info.Instances[id]; ok {
+				fun = ast.Unparen(ix.X)
+			}
+		}
+	case *ast.IndexListExpr:
+		fun = ast.Unparen(ix.X)
 	}
 	if id := identOf(fun); id != nil {
-		if b, ok := g.c.info.Uses[id].(*types.Builtin); ok {
+		if b, ok := g.info.Uses[id].(*types.Builtin); ok {
 			return g.builtin(e, b.Name())
 		}
-		if _, ok := g.c.info.Instances[id]; ok {
-			giveUp("call of a generic function")
-		}
 	}
-	sig, ok := g.typeOf(fun).Underlying().(*types.Signature)
+	sig, ok := g.typeOf(e.Fun).Underlying().(*types.Signature)
 	if !ok {
 		giveUp("call of %T", fun)
 	}
@@ -147,18 +155,30 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 		if g.c.isIntrinsic(fn) {
 			giveUp("compiler intrinsic %s", fn.FullName())
 		}
-		c = callee{sym: g.c.funcSym(fn)}
-		ai = g.c.abiOf(fn.Type().(*types.Signature))
+		sym, fsig := g.funcRef(fn, identOf(fun))
+		c = callee{sym: sym}
+		in := []types.Type{}
+		if r := fsig.Recv(); r != nil {
+			in = append(in, r.Type())
+		}
+		for i := 0; i < sig.Params().Len(); i++ {
+			in = append(in, sig.Params().At(i).Type())
+		}
+		var out []types.Type
+		for i := 0; i < sig.Results().Len(); i++ {
+			out = append(out, sig.Results().At(i).Type())
+		}
+		ai = g.c.abiOfTypes(in, out)
 	}
 	switch f := fun.(type) {
 	case *ast.Ident:
-		if fn, ok := g.c.info.Uses[f].(*types.Func); ok {
+		if fn, ok := g.info.Uses[f].(*types.Func); ok {
 			direct(fn)
 		}
 	case *ast.SelectorExpr:
-		sel := g.c.info.Selections[f]
+		sel := g.info.Selections[f]
 		if sel == nil {
-			if fn, ok := g.c.info.Uses[f.Sel].(*types.Func); ok {
+			if fn, ok := g.info.Uses[f.Sel].(*types.Func); ok {
 				direct(fn)
 			}
 			break
@@ -167,8 +187,17 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 			break // a field of function type, or a method expression: a function value
 		}
 		fn := sel.Obj().(*types.Func)
-		msig := fn.Type().(*types.Signature)
 		path := sel.Index()
+		if g.env != nil {
+			// inside an instance: the method is the one the type argument has
+			obj, p2, _ := types.LookupFieldOrMethod(g.typeOf(f.X), true, fn.Pkg(), fn.Name())
+			m, ok := obj.(*types.Func)
+			if !ok {
+				giveUp("method %s of %v", fn.Name(), g.typeOf(f.X))
+			}
+			fn, path = m, p2
+		}
+		msig := fn.Type().(*types.Signature)
 		l := g.expr(f.X)
 		l, t := g.fieldPath(l, g.typeOf(f.X), path[:len(path)-1])
 		if isInterface(t) {
@@ -200,9 +229,6 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 			recvArg = true
 			g.usedIfaceMethod(t, fn)
 			break
-		}
-		if hasTypeParams(msig.Recv().Type()) {
-			giveUp("method of a generic type")
 		}
 		_, wantPtr := msig.Recv().Type().(*types.Pointer)
 		_, havePtr := t.Underlying().(*types.Pointer)
@@ -274,8 +300,8 @@ func (g *gen) addrOfLoc(l loc) loc {
 func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 	np := sig.Params().Len()
 	var out []loc
-	if len(e.Args) == 1 && np > 1 || (len(e.Args) == 1 && np == 1 && isTuple(g.c.info.Types[e.Args[0]].Type)) {
-		if tup, ok := g.c.info.Types[e.Args[0]].Type.(*types.Tuple); ok {
+	if len(e.Args) == 1 && isTuple(g.info.Types[e.Args[0]].Type) {
+		if tup, ok := g.typeOf(e.Args[0]).(*types.Tuple); ok {
 			// f(g()) with several results
 			rs := g.multi(e.Args[0])
 			if sig.Variadic() {
@@ -575,8 +601,8 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 			return one(loc{kind: lReg, reg: AX})
 		}
 	case "new":
-		t := g.c.info.Types[e.Args[0]].Type
-		if !g.c.info.Types[e.Args[0]].IsType() {
+		t := g.typeOf(e.Args[0])
+		if !g.info.Types[e.Args[0]].IsType() {
 			giveUp("new(expr)")
 		}
 		g.a.lea(AX, msym(g.c.typeSym(t), 0))

@@ -73,4 +73,12 @@ M6. The exit test; the corpus scoreboard filled in.
 
 Log (append one line per milestone reached, with the oracle number):
 
-Now: Start M0: pin the corpus (CHARTER.md, Targets) and write the scoreboard script; then M1.
+- M1, 2026-11-12 19:57 UTC: `unicode/utf8` compiled entirely by fc (driver/fc) passes its own tests in a binary
+  whose other packages are stock-compiled (`tools/fc/test.sh unicode/utf8`; one allocation-count test skipped,
+  tests/fc/skips.txt). Oracle: standard library 1 package; corpus 0. Core-seconds per MB: not measured yet (M2).
+
+Now: M2. `tools/fc/survey.sh std` lists what stops fc, most frequent first: implement down that list (driver/fc;
+stubs that give up are in misc.go), `tools/fc/test.sh <pkg>` per package, record passes in tests/fc/passing.txt.
+M0's scoreboard run may still be going (`cat /home/exedev/targets/scoreboard.log`; when it prints ALLDONE:
+`tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`, commit). Builders' branches (worktrees under .claude/worktrees):
+type descriptors (rtype.go) and tests/fc/lang; merge them when they report.

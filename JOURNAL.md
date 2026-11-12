@@ -1481,3 +1481,17 @@ How (the campaign leaves it to me; why each choice):
 
 First package: tests/fc/basic (arithmetic, loops, strings, slices, switches, bounds panics) passes its tests
 compiled by fc. unicode/utf8 next: it calls a generic function, so instantiation comes first.
+
+## 2026-11-12 19:57 UTC — M1: unicode/utf8 compiled by fc passes its tests
+
+Generic functions are compiled per instantiation (generics.go: the body is walked again with the type
+arguments substituted wherever type information is read; no shapes, no dictionaries). With that,
+`tools/fc/test.sh unicode/utf8` is green: every function of the package is fc's code, the rest of the test
+binary is stock. One test is skipped and listed (tests/fc/skips.txt): it asserts zero allocations for a
+conversion the stock compiler keeps on the stack by escape analysis, which fc does not have (a dev-build
+difference of the same family as the charter's finalizer tests; recorded for Dan in STATUS.md).
+Two builders work in their own worktrees: type descriptors and itabs checked byte for byte against stock
+objects, and a corpus of language-feature test packages (tests/fc/lang).
+**What did the oracle number do since the last milestone?** 0 -> 1 standard-library package. No blocker: the
+next packages need type descriptors (a builder is on it), closures, interfaces, maps, defer; the survey
+script orders them.

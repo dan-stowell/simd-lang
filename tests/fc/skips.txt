@@ -1,0 +1,6 @@
+# Tests the dev build (CHARTER.md, "This is a dev build") is excused from, one per line:
+#   <import path> <test name pattern for go test -skip> <reason>
+# Every line here is reported in MORNING.md. Only two reasons are allowed: the test asserts an optimization
+# (allocation counts that need escape analysis, inlining, code size), or it waits on object liveness
+# (finalizers). Anything else is a bug in fc.
+unicode/utf8 ^TestRuneCountNonASCIIAllocation$ asserts zero allocations for string(p[n:]) passed to a function: needs escape analysis

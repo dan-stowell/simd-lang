@@ -13,4 +13,7 @@ plan=$(mktemp /tmp/fcplan.XXXXXX); trap 'rm -f $plan' EXIT
 go list -deps -test -json "$pkg" > "$plan" || exit 2
 export FC_PLAN=$plan FC_ONLY=$pkg
 hash=$(sha1sum "$FC_BIN" | cut -c1-12)
+# tests the dev build is excused from (tests/fc/skips.txt: package, test name pattern, reason)
+skip=$(awk -v p="$pkg" '$1==p{printf "%s%s", sep, $2; sep="|"}' "$here/tests/fc/skips.txt" 2>/dev/null)
+[ -z "$skip" ] || set -- -skip "$skip" "$@"
 go test -vet=off -toolexec="$here/tools/fc/toolexec.sh" -ldflags=-w -gcflags=all=-l "-gcflags=$pkg=-l -d=fc=$hash" "$@" "$pkg"

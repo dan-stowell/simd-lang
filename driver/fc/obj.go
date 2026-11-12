@@ -46,6 +46,8 @@ type compiler struct {
 	forceInit bool              // emit an init task even with nothing to run (the stock object has one)
 	errs      []string
 	hasInit   bool
+	instances map[string]bool
+	instQueue []*instance
 }
 
 func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
@@ -56,7 +58,7 @@ func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
 	ctxt.Std = p.Standard
 	c := &compiler{pr: pr, pkg: p, info: p.info, tpkg: p.tpkg, ctxt: ctxt, path: path, trimpath: trimpath,
 		fileIdx: map[*token.File]int32{}, closures: map[string]int{}, strSyms: map[string]*obj.LSym{},
-		runtime: map[string]*obj.LSym{}, strHdrs: map[string]*obj.LSym{}}
+		runtime: map[string]*obj.LSym{}, strHdrs: map[string]*obj.LSym{}, instances: map[string]bool{}}
 	return c
 }
 
@@ -159,7 +161,18 @@ func (c *compiler) fileLine(p token.Pos) (int32, int32) {
 		return 0, 1
 	}
 	tf := c.pr.fset.File(p)
-	return c.fileIdx[tf], int32(tf.Line(p)) // TODO //line directives
+	c.mu.Lock()
+	idx, ok := c.fileIdx[tf]
+	if !ok {
+		// a file of another package (the body of a generic function instantiated here)
+		name := tf.Name()
+		base := src.NewFileBase(name, objabi.AbsFile("", name, c.trimpath))
+		xp := c.ctxt.PosTable.XPos(src.MakePos(base, 1, 1))
+		idx = int32(c.ctxt.InnermostPos(xp).FileIndex())
+		c.fileIdx[tf] = idx
+	}
+	c.mu.Unlock()
+	return idx, int32(tf.Line(p)) // TODO //line directives
 }
 
 // ---- functions
@@ -372,12 +385,7 @@ func (c *compiler) linknameOf(tp *types.Package, name string) string {
 	if tp == nil {
 		return ""
 	}
-	var p *Pkg
-	if tp == c.tpkg {
-		p = c.pkg
-	} else {
-		p = c.pr.byPath[tp.Path()]
-	}
+	p := c.pr.byTypes(tp)
 	if p == nil {
 		return ""
 	}

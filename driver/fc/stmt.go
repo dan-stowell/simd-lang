@@ -83,7 +83,7 @@ func (g *gen) stmt(s ast.Stmt) {
 	case *ast.SelectStmt:
 		g.selectStmt(s, "")
 	case *ast.LabeledStmt:
-		lb := g.labelFor(g.c.info.Defs[s.Label].(*types.Label))
+		lb := g.labelFor(g.info.Defs[s.Label].(*types.Label))
 		g.place(lb)
 		switch st := s.Stmt.(type) {
 		case *ast.ForStmt:
@@ -124,7 +124,7 @@ func (g *gen) labelFor(l *types.Label) *label {
 func (g *gen) branch(s *ast.BranchStmt) {
 	switch s.Tok {
 	case token.GOTO:
-		g.jmp(g.labelFor(g.c.info.Uses[s.Label].(*types.Label)))
+		g.jmp(g.labelFor(g.info.Uses[s.Label].(*types.Label)))
 	case token.FALLTHROUGH:
 		if g.fallthru == nil {
 			giveUp("fallthrough outside a switch")
@@ -161,7 +161,7 @@ func (g *gen) declareVar(v *types.Var) loc {
 func (g *gen) varSpec(sp *ast.ValueSpec) {
 	var vars []*types.Var
 	for _, n := range sp.Names {
-		v, _ := g.c.info.Defs[n].(*types.Var)
+		v, _ := g.info.Defs[n].(*types.Var)
 		vars = append(vars, v)
 	}
 	switch {
@@ -172,7 +172,7 @@ func (g *gen) varSpec(sp *ast.ValueSpec) {
 			}
 			l := g.declareVar(v)
 			if !g.heapVars[v] {
-				g.zero(l, v.Type())
+				g.zero(l, g.vt(v))
 			}
 		}
 	case len(sp.Values) == len(sp.Names):
@@ -181,7 +181,7 @@ func (g *gen) varSpec(sp *ast.ValueSpec) {
 		for i, e := range sp.Values {
 			var t types.Type
 			if vars[i] != nil {
-				t = vars[i].Type()
+				t = g.vt(vars[i])
 			} else {
 				t = g.typeOf(e)
 			}
@@ -196,7 +196,7 @@ func (g *gen) varSpec(sp *ast.ValueSpec) {
 			if v == nil || v.Name() == "_" {
 				continue
 			}
-			g.move(g.declareVar(v), vals[i], v.Type())
+			g.move(g.declareVar(v), vals[i], g.vt(v))
 		}
 	default:
 		rs := g.multi(sp.Values[0])
@@ -204,7 +204,7 @@ func (g *gen) varSpec(sp *ast.ValueSpec) {
 			if v == nil || v.Name() == "_" {
 				continue
 			}
-			g.move(g.declareVar(v), g.convertImplicit(rs[i].l, rs[i].t, v.Type()), v.Type())
+			g.move(g.declareVar(v), g.convertImplicit(rs[i].l, rs[i].t, g.vt(v)), g.vt(v))
 		}
 	}
 }
@@ -249,7 +249,7 @@ type typedLoc struct {
 // multi evaluates an expression with several results: a call, or one of the comma-ok forms.
 func (g *gen) multi(e ast.Expr) []typedLoc {
 	e = ast.Unparen(e)
-	tup, _ := g.c.info.Types[e].Type.(*types.Tuple)
+	tup, _ := g.typeOf(e).(*types.Tuple)
 	var ls []loc
 	switch e := e.(type) {
 	case *ast.CallExpr:
@@ -331,7 +331,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			return nil
 		}
 		if id, ok := e.(*ast.Ident); ok {
-			if v, ok := g.c.info.Defs[id].(*types.Var); ok {
+			if v, ok := g.info.Defs[id].(*types.Var); ok {
 				return v
 			}
 		}
@@ -342,8 +342,8 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			if id.Name == "_" {
 				return nil
 			}
-			if v, ok := g.c.info.Defs[id].(*types.Var); ok {
-				return v.Type()
+			if v, ok := g.info.Defs[id].(*types.Var); ok {
+				return g.vt(v)
 			}
 		}
 		return g.typeOf(e)
@@ -360,7 +360,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			return
 		}
 		if id, ok := ast.Unparen(lhs).(*ast.Ident); ok {
-			if v, ok := g.c.info.Uses[id].(*types.Var); ok {
+			if v, ok := g.info.Uses[id].(*types.Var); ok {
 				g.exprTo(rhs, g.varLoc(v), t)
 				return
 			}
@@ -561,7 +561,7 @@ func (g *gen) forStmt(s *ast.ForStmt, name string) {
 	if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE {
 		for _, lhs := range as.Lhs {
 			if id, ok := lhs.(*ast.Ident); ok {
-				if v, ok := g.c.info.Defs[id].(*types.Var); ok && g.heapVars[v] {
+				if v, ok := g.info.Defs[id].(*types.Var); ok && g.heapVars[v] {
 					perIter = append(perIter, v)
 				}
 			}
@@ -581,11 +581,11 @@ func (g *gen) forStmt(s *ast.ForStmt, name string) {
 	for _, v := range perIter {
 		// copy the variable into a new object: closures made in this iteration keep the old one
 		l := g.vars[v]
-		g.a.lea(AX, msym(g.c.typeSym(v.Type()), 0))
+		g.a.lea(AX, msym(g.c.typeSym(g.vt(v)), 0))
 		g.callRT("newobject")
 		np := g.ptrTemp()
 		g.a.store(mb(BP, np.off), AX, 8)
-		g.move(loc{kind: lInd, slot: np.off}, l, v.Type())
+		g.move(loc{kind: lInd, slot: np.off}, l, g.vt(v))
 		g.a.load(AX, mb(BP, np.off), 8, false)
 		g.a.store(mb(BP, l.slot), AX, 8)
 	}
@@ -677,10 +677,10 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 	}
 	if define {
 		if !blank(s.Key) {
-			keyVar = g.c.info.Defs[s.Key.(*ast.Ident)].(*types.Var)
+			keyVar = g.info.Defs[s.Key.(*ast.Ident)].(*types.Var)
 		}
 		if !blank(s.Value) {
-			valVar = g.c.info.Defs[s.Value.(*ast.Ident)].(*types.Var)
+			valVar = g.info.Defs[s.Value.(*ast.Ident)].(*types.Var)
 		}
 	}
 	// setKey / setVal store an iteration value
@@ -693,7 +693,7 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 				src = g.keep(src, st)
 			}
 			l := g.declareVar(v)
-			g.move(l, g.convertImplicit(src, st, v.Type()), v.Type())
+			g.move(l, g.convertImplicit(src, st, g.vt(v)), g.vt(v))
 			return
 		}
 		src = g.keep(src, st)
@@ -760,7 +760,7 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 			// for i := range n
 			var kt types.Type = xt
 			if keyVar != nil {
-				kt = keyVar.Type()
+				kt = g.vt(keyVar)
 			} else if !blank(s.Key) {
 				kt = g.typeOf(s.Key)
 			}
