@@ -485,7 +485,7 @@ work I avoided by moving inside the compiler. What is left tonight inside this d
 functions (floating point), an optimization-only pass that still runs, and correctness evidence
 (MinIO's own unit tests under the baseline).
 
-## 2026-11-12 02:20 UTC — iteration 13: floating point; two memory-safety bugs and a compiler race, found by stress
+## 2026-11-12 02:00 UTC — iteration 13: floating point; two memory-safety bugs and a compiler race, found by stress
 
 **Floating point** in the baseline: a float travels between tree nodes as its bit pattern in the
 integer accumulator, so loads, stores, temporaries and copies needed no new code; arithmetic,
