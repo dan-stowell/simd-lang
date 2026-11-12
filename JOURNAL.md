@@ -1429,3 +1429,13 @@ not misses at all), 2 linker-made markers, 3 others. It keeps 10,919 the stock l
 
 So from above the flood is complete to within one identifiable case (assembly tables). What F4's
 reachability still needs is the method rule, to remove the 10,919.
+
+## 2026-11-12 20:55 UTC — last soak; end of session
+
+Seventy more cold MinIO builds, each smoke-tested: 70 of 70; wall min 10.6 s, median 11.2 s, max
+13.1 s (the same median as the run of sixty). Totals for the final configuration: MinIO 150 of 150,
+kube-apiserver 56 of 56; no hang, no failed fork, no failed smoke test.
+
+State at the end: configuration `13-noweakptr`; MinIO 13.2 -> 11.8 s against last night's
+configuration (order-balanced), median 11.2 s over 130 soak builds; kube-apiserver 23.0 -> 21.1 s.
+MORNING.md is current; NEXT.md starts the next session at F4 with `explore/f4link`.
