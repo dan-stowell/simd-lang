@@ -613,7 +613,7 @@ What I do instead: (1) the remaining kernel and start-up time (1.7 M faults left
 starts at 9 ms); (2) the head of the build (plan, then the runtime alone: 2 s at 1-2 cores);
 (3) repeat the evidence with the final compiler.
 
-## 2026-11-12 13:20 UTC — iteration 15: F0 (the fair row, the tax, an exact CPU table) and F1 (a fork-server: works, and is worth 1.5 core-seconds)
+## 2026-11-12 12:40 UTC — iteration 15: F0 (the fair row, the tax, an exact CPU table) and F1 (a fork-server: works, and is worth 1.5 core-seconds)
 
 **Trace.** MinIO cold, four runs of `09-forkserver`: **15.6, 14.0, 12.5, 13.0 s**; kube-apiserver, two:
 **24.5, 22.5 s**. Both pass their smoke tests. The host was noisier than last night (the same warm build

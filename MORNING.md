@@ -87,7 +87,7 @@ the front end is 35% of the row, not 20%.
   Known tests that wait for a finalizer and so never finish: `net/http` `TestTransportGCRequest`; the
   sync/reflect promptness tests listed in JOURNAL iteration 12. Four standard-library tests that count
   allocations fail, as they do with the stock compiler at `-l`.
-- MinIO's own unit tests (last night's run, to be confirmed by the run started today at 13:15 UTC):
+- MinIO's own unit tests (last night's run, to be confirmed by the run started today at 12:30 UTC):
   45 packages pass; `cmd` has one failure, `TestTrackingResponseWriter`, identical with the baseline off.
 - No module build info in the binary (`go version -m` shows no dependency list).
 - Huge pages: the trace configuration reserves 3,072 2 MB pages (MinIO) or 5,120 (kube) with

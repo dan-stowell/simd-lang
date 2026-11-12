@@ -1,6 +1,6 @@
 # NEXT
 
-State at 2026-11-12 13:30 UTC (JOURNAL iteration 15): MinIO cold 12.5-15.6 s on a noisy host (no real
+State at 2026-11-12 12:40 UTC (JOURNAL iteration 15): MinIO cold 12.5-15.6 s on a noisy host (no real
 change from 12.3-13.3), kube-apiserver 22.5-24.5 s, configuration `09-forkserver`. Fair stock rows:
 MinIO 32.5 s, kube 51.2 s. F0 and F1 are done; F1 (fork-server) is worth 1.6 core-s.
 
@@ -20,5 +20,5 @@ writing 11.7.
       fork's page-table copy costs tens of ms per child) and a way to keep children from copying it.
    c. The same in threads instead of forks: needs cmd/compile's per-package globals (LocalPkg, Target,
       Ctxt) made per-compile. Larger, and the real F2.
-3. Repeat `tests/minio_unit.sh` result check (run started 13:15 UTC, output in
+3. Repeat `tests/minio_unit.sh` result check (run started 12:30 UTC, output in
    `/home/exedev/targets/minio-unit2/baseline.out`).
