@@ -270,13 +270,21 @@ func (c *compiler) isPtrElem(t types.Type) bool {
 	if !c.rtPtrSet {
 		c.rtPtrSet = true
 		c.rtPtrTo = map[string]bool{}
+		c.rtPtrToInst = map[*types.TypeName]bool{}
 		c.forEachType(func(x types.Type) {
 			if p, ok := x.(*types.Pointer); ok {
-				if _, ok := types.Unalias(p.Elem()).(*types.Pointer); ok && !mentionsTypeParamRT(p, nil) {
-					c.rtPtrTo[c.typeLinkName(p.Elem())] = true
+				if e, ok := types.Unalias(p.Elem()).(*types.Pointer); ok {
+					if !mentionsTypeParamRT(p, nil) {
+						c.rtPtrTo[c.typeLinkName(e)] = true
+					} else if n, ok := types.Unalias(e.Elem()).(*types.Named); ok {
+						c.rtPtrToInst[n.Obj()] = true // **G[T] in generic code: every instance of G
+					}
 				}
 			}
 		})
+	}
+	if n, ok := types.Unalias(t.Underlying().(*types.Pointer).Elem()).(*types.Named); ok && n.TypeArgs().Len() > 0 && c.rtPtrToInst[n.Obj()] {
+		return true
 	}
 	return c.rtPtrTo[c.typeLinkName(t)]
 }

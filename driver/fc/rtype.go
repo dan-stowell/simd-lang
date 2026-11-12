@@ -23,18 +23,19 @@ import (
 
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
-	rtMu     sync.Mutex
-	rtDone   map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
-	rtMeth   map[string][]methodSig       // method tables, by type symbol name
-	rtNoalg  map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
-	rtGroup  map[*types.Struct]*types.Map // the map a group struct belongs to
-	rtGroups map[string]*types.Struct     // group struct by the map's link name
-	rtVargen map[*types.Package]map[token.Pos]int
-	rtWrap   map[*obj.LSym]bool
-	rtAlg    map[string]bool
-	rtPtrTo  map[string]bool // link names X such that the package mentions *X (stock: Type.IsPtrElem)
-	rtPtrSet bool
-	rtNames  int // counter of package-qualified name data (stock: dnameCount)
+	rtMu        sync.Mutex
+	rtDone      map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
+	rtMeth      map[string][]methodSig       // method tables, by type symbol name
+	rtNoalg     map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
+	rtGroup     map[*types.Struct]*types.Map // the map a group struct belongs to
+	rtGroups    map[string]*types.Struct     // group struct by the map's link name
+	rtVargen    map[*types.Package]map[token.Pos]int
+	rtWrap      map[*obj.LSym]bool
+	rtAlg       map[string]bool
+	rtPtrTo     map[string]bool          // link names X such that the package mentions *X (stock: Type.IsPtrElem)
+	rtPtrToInst map[*types.TypeName]bool // generic types G such that generic code mentions **G[...]
+	rtPtrSet    bool
+	rtNames     int // counter of package-qualified name data (stock: dnameCount)
 
 	// What the code generator must write. The descriptors refer to these symbols; their bodies are code.
 	needEq      []algReq     // type:.eq.<sig>: func(p, q unsafe.Pointer) bool, ABIInternal, DUPOK
@@ -143,7 +144,6 @@ func (c *compiler) writeDeclaredTypes() {
 		c.typeSym(t)
 	}
 }
-
 
 // eqFuncSym is the closure (a func(p, q unsafe.Pointer) bool value) that compares two values of the
 // comparable type t: of a runtime function, or type:.eqfunc.<signature>. hashFuncSym likewise hashes.
