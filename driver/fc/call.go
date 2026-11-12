@@ -189,6 +189,14 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		}
 		ai = g.c.abiOfTypes(in, out)
 	}
+	if id := identOf(fun); id != nil {
+		if fn, ok := g.info.Uses[id].(*types.Func); ok && g.info.Selections[selOf(fun)] == nil && g.c.isIntrinsic(fn) {
+			if !now {
+				giveUp("deferred intrinsic %s", fn.Name())
+			}
+			return nil, nil, c, g.intrinsic(fn, e), true
+		}
+	}
 	switch f := fun.(type) {
 	case *ast.Ident:
 		if fn, ok := g.info.Uses[f].(*types.Func); ok {
@@ -475,7 +483,7 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 		if g.c.sizeof(from) == g.c.sizeof(to) {
 			return l
 		}
-		giveUp("complex conversion")
+		return g.complexConv(l, from, to)
 	}
 	if _, ok := fu.(*types.Slice); ok {
 		switch tt := tu.(type) {
@@ -601,8 +609,29 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		return nil
 	case "recover":
 		return one(g.recoverCall(e))
-	case "complex", "real", "imag":
-		giveUp("complex arithmetic")
+	case "complex":
+		return one(g.makeComplex(e))
+	case "real", "imag":
+		return one(g.complexPart(e, name == "imag"))
+	case "Sizeof":
+		return one(loc{kind: lImm, imm: g.c.sizeof(g.typeOf(e.Args[0]))})
+	case "Alignof":
+		return one(loc{kind: lImm, imm: g.c.alignof(g.typeOf(e.Args[0]))})
+	case "Offsetof":
+		se := ast.Unparen(e.Args[0]).(*ast.SelectorExpr)
+		sel := g.info.Selections[se]
+		t := g.typeOf(se.X)
+		off := int64(0)
+		for _, i := range sel.Index() {
+			if p, ok := t.Underlying().(*types.Pointer); ok {
+				t = p.Elem()
+				off = 0
+			}
+			st := t.Underlying().(*types.Struct)
+			off += g.c.fieldOffsets(st)[i]
+			t = st.Field(i).Type()
+		}
+		return one(loc{kind: lImm, imm: off})
 	case "Add": // unsafe.Add(p, n)
 		pt := g.typeOf(e.Args[0])
 		nt := g.typeOf(e.Args[1])
@@ -885,12 +914,27 @@ var _ = token.ADD
 // method prepares a call of the method selected by f (x.M): the callee, its ABI, and the receiver argument
 // (evaluated, safe from what is evaluated next). sig is the method's signature without the receiver.
 func (g *gen) method(f *ast.SelectorExpr, sel *types.Selection, sig *types.Signature) (c callee, ai *abiInfo, recv loc) {
-	fun := ast.Expr(f)
+	fn := sel.Obj().(*types.Func)
+	path := sel.Index()
+	if g.env != nil {
+		// inside an instance: the method is the one the type argument has
+		obj, p2, _ := types.LookupFieldOrMethod(g.typeOf(f.X), true, fn.Pkg(), fn.Name())
+		m, ok := obj.(*types.Func)
+		if !ok {
+			giveUp("method %s of %v", fn.Name(), g.typeOf(f.X))
+		}
+		fn, path = m, p2
+	}
+	return g.methodOn(g.expr(f.X), g.typeOf(f.X), fn, path, sig, f.Sel)
+}
+
+// methodOn is method for a receiver operand already evaluated: the value of type xt at l.
+func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *types.Signature, id *ast.Ident) (c callee, ai *abiInfo, recv loc) {
 	direct := func(fn *types.Func) {
 		if g.c.isIntrinsic(fn) {
 			giveUp("compiler intrinsic %s", fn.FullName())
 		}
-		sym, fsig := g.funcRef(fn, identOf(fun))
+		sym, fsig := g.funcRef(fn, id)
 		c = callee{sym: sym}
 		in := []types.Type{}
 		if r := fsig.Recv(); r != nil {
@@ -906,20 +950,8 @@ func (g *gen) method(f *ast.SelectorExpr, sel *types.Selection, sig *types.Signa
 		ai = g.c.abiOfTypes(in, out)
 	}
 	for once := true; once; once = false {
-		fn := sel.Obj().(*types.Func)
-		path := sel.Index()
-		if g.env != nil {
-			// inside an instance: the method is the one the type argument has
-			obj, p2, _ := types.LookupFieldOrMethod(g.typeOf(f.X), true, fn.Pkg(), fn.Name())
-			m, ok := obj.(*types.Func)
-			if !ok {
-				giveUp("method %s of %v", fn.Name(), g.typeOf(f.X))
-			}
-			fn, path = m, p2
-		}
 		msig := fn.Type().(*types.Signature)
-		l := g.expr(f.X)
-		l, t := g.fieldPath(l, g.typeOf(f.X), path[:len(path)-1])
+		l, t := g.fieldPath(l, xt, path[:len(path)-1])
 		if isInterface(t) {
 			if l.kind == lZero {
 				l = g.zeroTemp(t)
@@ -968,4 +1000,9 @@ func (g *gen) method(f *ast.SelectorExpr, sel *types.Selection, sig *types.Signa
 		direct(fn)
 	}
 	return
+}
+
+func selOf(e ast.Expr) *ast.SelectorExpr {
+	s, _ := e.(*ast.SelectorExpr)
+	return s
 }

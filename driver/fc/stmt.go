@@ -474,7 +474,7 @@ func (g *gen) opLoc(l loc, y ast.Expr, op token.Token, t types.Type) loc {
 			return loc{kind: lReg, reg: X0}
 		}
 		if isComplex(t) {
-			giveUp("complex arithmetic")
+			return g.complexArith(g.keep(l, t), g.constLoc(constant.MakeInt64(1), t), op, t)
 		}
 		g.loadTo(AX, l, t)
 		g.a.movImm(CX, 1)
@@ -484,7 +484,8 @@ func (g *gen) opLoc(l loc, y ast.Expr, op token.Token, t types.Type) loc {
 	case isString(t):
 		return g.concatLoc(l, y, t)
 	case isComplex(t):
-		giveUp("complex arithmetic")
+		xl := g.keep(l, t)
+		return g.complexArith(xl, g.keep(g.exprAs(y, t), t), op, t)
 	case op == token.SHL || op == token.SHR:
 		yt := g.typeOf(y)
 		if b, ok := yt.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {

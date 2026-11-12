@@ -224,7 +224,11 @@ func (c *compiler) alignWithStock(defs []stockDef) (missing []string) {
 		}
 		if s == nil {
 			missing = append(missing, d.name)
-			s = c.ctxt.LookupABIInit(d.name, obj.ABI(d.abi), func(s *obj.LSym) { s.Pkg = objabi.PathToPrefix(c.path) })
+			if d.abi == goobj.SymABIstatic {
+				s = c.ctxt.LookupStatic(d.name + "..fcplaceholder")
+			} else {
+				s = c.ctxt.LookupABIInit(d.name, obj.ABI(d.abi), func(s *obj.LSym) { s.Pkg = objabi.PathToPrefix(c.path) })
+			}
 			if s.OnList() {
 				log.Fatalf("fc: %s: defined, but not as an indexed symbol", d.name)
 			}
@@ -261,6 +265,10 @@ func (c *compiler) alignWithStock(defs []stockDef) (missing []string) {
 
 func main() {
 	log.SetFlags(0)
+	if len(os.Args) > 1 && os.Args[1] == "build" {
+		buildMode(os.Args[2:])
+		return
+	}
 	o := parseArgs(os.Args[1:])
 	if o.out == "" || o.path == "" || len(o.files) == 0 {
 		log.Fatal("usage: fc [compile flags] -o _pkg_.a -p path -importcfg cfg file.go...")

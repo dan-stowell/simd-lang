@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Pkg is one package of the build: the fields `go list -json` prints, and what the front end adds.
@@ -36,6 +37,9 @@ type Pkg struct {
 	deps  []*Pkg
 	once  sync.Once
 	err   error
+
+	srcBytes         int64
+	parseNS, checkNS int64
 
 	lnOnce       sync.Once
 	linkname     map[string]string
@@ -115,7 +119,16 @@ func (pr *Program) check(p *Pkg) error {
 			if !filepath.IsAbs(path) {
 				path = filepath.Join(p.Dir, name)
 			}
-			f, err := parser.ParseFile(pr.fset, path, nil, parser.ParseComments|parser.SkipObjectResolution)
+			src, err := os.ReadFile(path)
+			if err != nil {
+				p.err = err
+				<-pr.sem
+				return
+			}
+			p.srcBytes += int64(len(src))
+			t0 := time.Now()
+			f, err := parser.ParseFile(pr.fset, path, src, parser.ParseComments|parser.SkipObjectResolution)
+			p.parseNS += int64(time.Since(t0))
 			if err != nil {
 				p.err = err
 				<-pr.sem
@@ -178,7 +191,9 @@ func (pr *Program) check(p *Pkg) error {
 		if i := strings.Index(path, " ["); i >= 0 {
 			path = path[:i]
 		}
+		t0 := time.Now()
 		p.tpkg, _ = conf.Check(path, pr.fset, p.files, p.info)
+		p.checkNS = int64(time.Since(t0))
 		if p.err != nil {
 			p.tpkg = nil
 		} else {

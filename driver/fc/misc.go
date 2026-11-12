@@ -82,16 +82,60 @@ func (c *compiler) isIntrinsic(fn *types.Func) bool {
 	switch fn.Pkg().Path() {
 	case "runtime":
 		switch fn.Name() {
-		case "getcallerpc", "getcallersp", "getclosureptr", "KeepAlive":
-			return fn.Name() != "KeepAlive"
+		case "getcallerpc", "getcallersp", "getclosureptr", "getg":
+			return true
 		}
 	case "internal/runtime/sys":
 		switch fn.Name() {
 		case "GetCallerPC", "GetCallerSP", "GetClosurePtr":
 			return true
 		}
+	case "internal/abi":
+		switch fn.Name() {
+		case "FuncPCABI0", "FuncPCABIInternal":
+			return true
+		}
 	}
 	return false
+}
+
+// intrinsic expands a call of one of those functions.
+func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
+	ax := []loc{{kind: lReg, reg: AX}}
+	switch fn.Name() {
+	case "getcallerpc", "GetCallerPC":
+		g.a.load(AX, mb(BP, 8), 8, false)
+		return ax
+	case "getcallersp", "GetCallerSP":
+		g.a.lea(AX, mb(BP, 16))
+		return ax
+	case "getclosureptr", "GetClosurePtr":
+		if g.ctxSlot.kind == lNone {
+			giveUp("getclosureptr outside a closure")
+		}
+		g.a.load(AX, mb(BP, g.ctxSlot.off), 8, false)
+		return ax
+	case "getg":
+		g.a.movRR(AX, R14)
+		return ax
+	case "FuncPCABI0", "FuncPCABIInternal":
+		id := identOf(ast.Unparen(e.Args[0]))
+		if id == nil {
+			giveUp("%s of an expression", fn.Name())
+		}
+		f, ok := g.info.Uses[id].(*types.Func)
+		if !ok {
+			giveUp("%s of a non-function", fn.Name())
+		}
+		sym := g.c.funcSym(f)
+		if fn.Name() == "FuncPCABI0" {
+			sym = g.c.lookup(sym.Name, obj.ABI0, sym.Pkg)
+		}
+		g.a.lea(AX, msym(sym, 0))
+		return ax
+	}
+	giveUp("compiler intrinsic %s", fn.FullName())
+	return nil
 }
 
 // findHeapVars marks the local variables that must live on the heap: their address is taken (explicitly,
@@ -244,9 +288,3 @@ func (g *gen) funcValue(fn *types.Func) loc {
 	g.a.lea(AX, msym(s, 0))
 	return loc{kind: lReg, reg: AX}
 }
-
-func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
-	giveUp("method expression")
-	return loc{}
-}
-func (g *gen) printCall(e *ast.CallExpr, nl bool) { giveUp("print") }

@@ -268,3 +268,35 @@ func (g *gen) recoverCall(e *ast.CallExpr) loc {
 	g.a.store(mb(BP, res.off+8), BX, 8)
 	return res
 }
+
+// methodExpr: T.M or (*T).M as a function whose first parameter is the receiver.
+func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
+	sig := g.typeOf(e).(*types.Signature)
+	recvT := sig.Params().At(0).Type()
+	o, path, _ := types.LookupFieldOrMethod(recvT, false, sel.Obj().Pkg(), sel.Obj().Name())
+	fn, ok := o.(*types.Func)
+	if !ok {
+		giveUp("method expression %s of %v", sel.Obj().Name(), recvT)
+	}
+	// the method's own signature: sig without its first parameter
+	var ps []*types.Var
+	for i := 1; i < sig.Params().Len(); i++ {
+		ps = append(ps, sig.Params().At(i))
+	}
+	msig := types.NewSignatureType(nil, nil, nil, types.NewTuple(ps...), sig.Results(), sig.Variadic())
+	cg := g.child(g.childName("mexpr"), sig)
+	cg.out.flags |= obj.WRAPPER
+	cg.compileFunc(nil, e.Pos(), e.End(), nil, func() {
+		c, ai, recv := cg.methodOn(cg.paramLoc(cg.abi.in[0]), recvT, fn, path, msig, e.Sel)
+		args := []loc{recv}
+		for i := 1; i < len(cg.abi.in); i++ {
+			args = append(args, cg.paramLoc(cg.abi.in[i]))
+		}
+		rs := cg.emitCall(ai, args, c)
+		for i, r := range rs {
+			cg.move(cg.resHome[i], r, cg.abi.out[i].typ)
+		}
+	})
+	g.a.lea(AX, msym(g.c.staticClosure(cg.out.sym), 0))
+	return loc{kind: lReg, reg: AX}
+}
