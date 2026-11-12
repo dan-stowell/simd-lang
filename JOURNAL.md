@@ -1173,3 +1173,9 @@ What is left is in NEXT.md and it is not cheap.
 **Scope check.** Most ambitious: the same two rungs. For the remainder of this session I am running
 longer soaks of the final configuration (the fork-server's one stated risk is a rare hang, and 120
 builds is thin evidence for "rare") rather than starting a rung I cannot finish.
+
+## 2026-11-12 16:20 UTC — soak: 60 of 60
+
+Sixty cold MinIO builds of the final configuration in a row, each smoke-tested: 60 pass; wall min
+10.5 s, median 11.2 s, max 12.6 s; compile 59.0-75.1 core-s (median 63.7). With the earlier run of
+twenty: 80 of 80. No hang, no failed fork, no failed smoke test. A kube-apiserver soak of twenty follows.
