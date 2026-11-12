@@ -28,6 +28,7 @@ type Pkg struct {
 	Imports    []string
 	ImportMap  map[string]string
 	EmbedFiles []string
+	Export     string // the stock-compiled archive (go list -export)
 	Standard   bool
 	Module     *struct{ Path, Version, GoVersion string }
 

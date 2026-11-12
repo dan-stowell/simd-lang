@@ -334,6 +334,9 @@ func (c *compiler) writeObject(path string) {
 		log.Fatal(err)
 	}
 	out.WriteString(objabi.HeaderString())
+	if c.path == "main" {
+		fmt.Fprintf(out, "main\n") // the linker looks for this line
+	}
 	fmt.Fprintf(out, "!\n")
 	obj.WriteObjFile(c.ctxt, out)
 	if err := out.Close(); err != nil {

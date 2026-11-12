@@ -8,10 +8,12 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -20,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"cmd/internal/goobj"
 	"cmd/internal/objabi"
 )
 
@@ -35,6 +38,8 @@ func buildMode(args []string) {
 	out := fs.String("o", "", "output directory for the objects")
 	j := fs.Int("j", runtime.GOMAXPROCS(0), "packages compiled at once")
 	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result")
+	link := fs.String("link", "", "link the program whose main package is the (single) argument into this file; packages of the\n"+
+		"runtime's closure and packages with assembly (and what they import) come from the plan's stock archives")
 	fs.Parse(args)
 	if *plan == "" || *out == "" || fs.NArg() == 0 {
 		log.Fatal("usage: fc build -plan plan.json -o outdir [-j N] <import paths... | all>")
@@ -59,6 +64,63 @@ func buildMode(args []string) {
 				log.Fatalf("fc: %s is not in the plan", a)
 			}
 			targets = append(targets, p)
+		}
+	}
+	// link mode: the main package's whole closure, minus what stays with the stock compiler
+	var mainPkg *Pkg
+	stock := map[*Pkg]bool{}
+	var closure []*Pkg
+	if *link != "" {
+		if len(targets) != 1 {
+			log.Fatal("fc build -link: one main package")
+		}
+		mainPkg = targets[0]
+		seen := map[*Pkg]bool{}
+		var walk func(p *Pkg)
+		walk = func(p *Pkg) {
+			if seen[p] {
+				return
+			}
+			seen[p] = true
+			for _, ip := range p.Imports {
+				if m, ok := p.ImportMap[ip]; ok {
+					ip = m
+				}
+				if d := pr.byPath[ip]; d != nil {
+					walk(d)
+				}
+			}
+			closure = append(closure, p)
+		}
+		walk(mainPkg)
+		if rt := pr.byPath["runtime"]; rt != nil {
+			walk(rt)
+		}
+		var markStock func(p *Pkg)
+		markStock = func(p *Pkg) {
+			if stock[p] {
+				return
+			}
+			stock[p] = true
+			for _, ip := range p.Imports {
+				if m, ok := p.ImportMap[ip]; ok {
+					ip = m
+				}
+				if d := pr.byPath[ip]; d != nil {
+					markStock(d)
+				}
+			}
+		}
+		for _, p := range closure {
+			if p.ImportPath == "runtime" || len(p.SFiles) > 0 || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
+				markStock(p)
+			}
+		}
+		targets = nil
+		for _, p := range closure {
+			if !stock[p] {
+				targets = append(targets, p)
+			}
 		}
 	}
 	sort.Slice(targets, func(i, k int) bool { return targets[i].ImportPath < targets[k].ImportPath })
@@ -122,10 +184,30 @@ func buildMode(args []string) {
 			}
 			c := newCompiler(pr, p, path, "")
 			c.readSymABIs("")
-			c.depInit = hasInit
+			c.depInit = func(d *Pkg) bool {
+				if stock[d] {
+					stockInitMu.Lock()
+					defer stockInitMu.Unlock()
+					v, ok := stockInit[d]
+					if !ok {
+						v = d.Export != "" && definedSyms(d.Export)[objabi.PathToPrefix(d.ImportPath)+"..inittask"]
+						stockInit[d] = v
+					}
+					return v
+				}
+				return hasInit(d)
+			}
+			// the linker loads a package only if some loaded object says it imports it
+			for _, d := range p.deps {
+				ip := goobj.ImportedPkg{Pkg: d.ImportPath}
+				if stock[d] && d.Export != "" {
+					ip.Fingerprint = stockFingerprint(d.Export) // the linker compares it with the archive's
+				}
+				c.ctxt.Imports = append(c.ctxt.Imports, ip)
+			}
 			errs := c.compilePackage()
 			if len(errs) == 0 {
-				name := filepath.Join(*out, strings.ReplaceAll(objabi.PathToPrefix(p.ImportPath), "/", "__")+".o")
+				name := objPath(*out, p)
 				c.writeObject(name)
 				if st, err := os.Stat(name); err == nil {
 					results[i].objBytes = st.Size()
@@ -159,6 +241,42 @@ func buildMode(args []string) {
 			fmt.Fprintf(sf, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\n", r.p.ImportPath, r.p.srcBytes, float64(r.p.parseNS)/1e6, float64(r.p.checkNS)/1e6, float64(r.compileNS)/1e6, r.objBytes, res)
 		}
 	}
+	if *link != "" {
+		failed := 0
+		for _, r := range results {
+			if len(r.errs) > 0 {
+				failed++
+				fmt.Fprintf(os.Stderr, "fc: %s: %s\n", r.p.ImportPath, r.errs[0])
+			}
+		}
+		if failed > 0 {
+			log.Fatalf("fc build -link: %d packages not compiled", failed)
+		}
+		tl := time.Now()
+		var cfg strings.Builder
+		for _, p := range closure {
+			path := p.ImportPath
+			switch {
+			case path == "unsafe":
+			case stock[p]:
+				if p.Export == "" {
+					log.Fatalf("fc build -link: no stock archive for %s in the plan (go list -export)", path)
+				}
+				fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, p.Export)
+			case p == mainPkg:
+			default:
+				fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, objPath(*out, p))
+			}
+		}
+		cfgFile := filepath.Join(*out, "importcfg.link")
+		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
+		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("fc build -link: link: %v", err)
+		}
+		fmt.Printf("link: %d fc objects, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+	}
 	total := cpuSeconds() - c0
 	var all int64
 	n := 0
@@ -189,4 +307,37 @@ func (c *compiler) needsInit() bool {
 		}
 	}
 	return false
+}
+
+var (
+	stockInitMu sync.Mutex
+	stockInit   = map[*Pkg]bool{}
+	// keepStock: packages that stay with the stock compiler in link mode for a reason other than assembly
+	keepStock = map[string]bool{}
+)
+
+func objPath(dir string, p *Pkg) string {
+	return filepath.Join(dir, strings.ReplaceAll(objabi.PathToPrefix(p.ImportPath), "/", "__")+".o")
+}
+
+var fingerprints sync.Map
+
+// stockFingerprint: the fingerprint in the header of a stock archive's Go object.
+func stockFingerprint(path string) goobj.FingerprintType {
+	if v, ok := fingerprints.Load(path); ok {
+		return v.(goobj.FingerprintType)
+	}
+	var fp goobj.FingerprintType
+	for _, m := range readArchive(path) {
+		if m.name != "_go_.o" {
+			continue
+		}
+		if i := bytes.Index(m.data, []byte("\n!\n")); i >= 0 {
+			if r := goobj.NewReaderFromBytes(m.data[i+3:], false); r != nil {
+				fp = r.Fingerprint()
+			}
+		}
+	}
+	fingerprints.Store(path, fp)
+	return fp
 }
