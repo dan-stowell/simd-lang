@@ -1407,3 +1407,12 @@ is exactly what the Go method rule removes. Timing unchanged (reachability 40-45
 
 This is the test F4 has to drive to zero in both directions, and it took an afternoon to get within
 0.3% from above. That is the best evidence so far that F4 is a rung of weeks, not months.
+
+## 2026-11-12 20:05 UTC — the suite on the final tree
+
+`./test.sh` (bootstrap stages, fuzzers, pool, the Strand linker and Go lexer against their references):
+ALL PASS. Driver and compiler tests on the final compiler: `tests/sb_zygote.sh` (fork-server, head
+start, direct output, oversized request, no `-w`), `tests/sb_early.sh`, `tests/sb_ptrto.sh`,
+`tests/sb_same.sh`: pass. Standard-library oracle: 129 of 141 (accounted for in iteration 22's
+addendum). MinIO unit tests: 45 packages, the one known failure. Soaks: MinIO 80 of 80,
+kube-apiserver 56 of 56.
