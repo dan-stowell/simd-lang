@@ -1439,3 +1439,13 @@ kube-apiserver 56 of 56; no hang, no failed fork, no failed smoke test.
 State at the end: configuration `13-noweakptr`; MinIO 13.2 -> 11.8 s against last night's
 configuration (order-balanced), median 11.2 s over 130 soak builds; kube-apiserver 23.0 -> 21.1 s.
 MORNING.md is current; NEXT.md starts the next session at F4 with `explore/f4link`.
+
+## 2026-11-12 21:15 UTC — iteration 29 (short): one hypothesis about the 46, wrong
+
+Inbox empty. Scope check: the most ambitious thing in twenty minutes is one more step on the F4
+spike's diff against the stock linker. The largest group of the 46 missing functions is about 25
+assembly routines (`internal/runtime/gc/scan.expandAVX512_*`). Hypothesis: they are reached through
+function-value symbols (`f·f`) that no object defines and the linker makes. Tried: resolve an
+undefined `f·f` to `f`. Result: still 46 missing, the same ones. **Wrong; reverted.** They are reached
+some other way (a table built in assembly data, or a linkname); left as the first item for the next
+session's diff, with the ten local-type methods whose names the two lists probably spell differently.
