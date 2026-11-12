@@ -1,0 +1,207 @@
+// Package order: short-circuit evaluation, the order of evaluation of calls, operands, composite literals
+// and assignments (observed through a trace the functions build and return), multiple assignment, named
+// results and bare returns.  No imports.
+package order
+
+// ---- evaluation order (the trace records the order of calls)
+
+type Trace struct{ S string }
+
+func tb(t *Trace, name string, v bool) bool {
+	t.S += name
+	return v
+}
+func ti(t *Trace, name string, v int) int {
+	t.S += name
+	return v
+}
+func tp(t *Trace, name string, p *int) *int {
+	t.S += name
+	return p
+}
+func ts(t *Trace, name string, s []int) []int {
+	t.S += name
+	return s
+}
+
+func ShortCircuit(a, b, c bool) (string, bool) {
+	var t Trace
+	r := tb(&t, "a", a) && tb(&t, "b", b) || tb(&t, "c", c)
+	return t.S, r
+}
+func ShortCircuit2(a, b, c, d bool) (string, bool) {
+	var t Trace
+	r := (tb(&t, "a", a) || tb(&t, "b", b)) && (tb(&t, "c", c) || !tb(&t, "d", d))
+	return t.S, r
+}
+func ShortCircuitIf(a, b, c bool) string {
+	var t Trace
+	if tb(&t, "a", a) || tb(&t, "b", b) && tb(&t, "c", c) {
+		t.S += "!"
+	}
+	for i := 0; tb(&t, "x", i < 2) && tb(&t, "a", a); i++ {
+		t.S += "."
+	}
+	return t.S
+}
+func ShortCircuitGuard(xs []int, i int) bool { return i >= 0 && i < len(xs) && xs[i] > 0 }
+func NilGuard(p *int) bool                   { return p != nil && *p > 0 }
+func NilGuardOr(p *int) bool                 { return p == nil || *p == 0 }
+
+func OrderCall(a, b, c int) (string, int) {
+	var t Trace
+	r := three(ti(&t, "a", a), ti(&t, "b", b), ti(&t, "c", c))
+	return t.S, r
+}
+func three(a, b, c int) int { return a*100 + b*10 + c }
+func OrderBinary(a, b, c int) (string, int) {
+	var t Trace
+	r := ti(&t, "a", a) - ti(&t, "b", b)*ti(&t, "c", c) + three(ti(&t, "d", 1), ti(&t, "e", 2), ti(&t, "f", 3))
+	return t.S, r
+}
+func OrderAssign(xs []int, a, b int) (string, []int) {
+	var t Trace
+	ts(&t, "x", xs)[ti(&t, "i", a)], ts(&t, "y", xs)[ti(&t, "j", b)] = ti(&t, "v", 10), ti(&t, "w", 20)
+	return t.S, xs
+}
+func OrderIndex(xs []int, a int) (string, int) {
+	var t Trace
+	*tp(&t, "p", &xs[ti(&t, "i", a)]) = ti(&t, "v", 5) + ts(&t, "s", xs)[ti(&t, "k", 0)]
+	return t.S, xs[a]
+}
+func OrderReturn(a, b int) (string, int, int) {
+	var t Trace
+	x, y := pair(&t, a, b)
+	return t.S, x, y
+}
+func pair(t *Trace, a, b int) (int, int) { return ti(t, "a", a), ti(t, "b", b) }
+func OrderOpAssign(xs []int) (string, []int) {
+	var t Trace
+	ts(&t, "s", xs)[ti(&t, "i", 1)] += ti(&t, "v", 5)
+	ts(&t, "t", xs)[ti(&t, "j", 0)]++
+	return t.S, xs
+}
+func OrderLit(a, b, c int) (string, [3]int, []int) {
+	var t Trace
+	arr := [3]int{ti(&t, "a", a), ti(&t, "b", b), ti(&t, "c", c)}
+	sl := []int{2: ti(&t, "x", a), 0: ti(&t, "y", b)}
+	return t.S, arr, sl
+}
+func OrderStr(a, b int) string {
+	var t Trace
+	s := name(&t, "p", a) + name(&t, "q", b) + name(&t, "r", a+b)
+	return t.S + ":" + s
+}
+func name(t *Trace, n string, v int) string {
+	t.S += n
+	if v > 0 {
+		return "+"
+	}
+	return "-"
+}
+
+// ---- multiple assignment
+
+func SwapInts(a, b int) (int, int) {
+	a, b = b, a
+	return a, b
+}
+func Rotate3(a, b, c int) (int, int, int) {
+	a, b, c = b, c, a
+	return a, b, c
+}
+func SwapElems(xs []int, i, j int) {
+	xs[i], xs[j] = xs[j], xs[i]
+}
+func IndexThenAssign(xs []int) (int, []int) {
+	i := 0
+	i, xs[i] = 1, 2 // sets xs[0]: the index was evaluated before any assignment
+	return i, xs
+}
+func AssignIndexAfter(xs []int) (int, []int) {
+	i := 0
+	xs[i], i = 7, 2
+	xs[i], xs[i-1] = xs[i-1], xs[i]
+	return i, xs
+}
+func PtrThenAssign(a, b int) (int, int, int) {
+	p := &a
+	p, *p = &b, 99 // writes a: *p's operand was evaluated before p changed
+	return a, b, *p
+}
+func Fib(n int) int {
+	a, b := 0, 1
+	for i := 0; i < n; i++ {
+		a, b = b, a+b
+	}
+	return a
+}
+func AssignStructFields(x, y int) (int, int) {
+	var p struct{ a, b int }
+	p.a, p.b = x, y
+	p.a, p.b = p.b, p.a+p.b
+	return p.a, p.b
+}
+func AssignFromCall(a, b int) (int, int) {
+	b, a = SwapInts(a, b)
+	return a, b
+}
+func AssignMapSlice(m []int, k int) (int, int) {
+	var x, y int
+	x, m[k], y = m[k], x+1, m[k]+1
+	return x*1000 + y, m[k]
+}
+func BlankAssign(a, b int) int {
+	_, x := SwapInts(a, b)
+	_ = x
+	var _ = a
+	_, _ = a, b
+	return x
+}
+
+// ---- named results, bare return
+
+func Named(x int) (lo, hi int) {
+	lo, hi = x, x
+	if x < 0 {
+		lo = 2 * x
+		return
+	}
+	hi = 2 * x
+	return
+}
+func NamedShadow(x int) (r int) {
+	r = 1
+	{
+		r := 2
+		r += x
+		_ = r
+	}
+	if x > 0 {
+		return r + x
+	}
+	return
+}
+func NamedExplicit(x int) (a, b int) {
+	a, b = 1, 2
+	if x > 0 {
+		return b, a
+	}
+	return a + x, b + x
+}
+func NamedLoop(xs []int) (n, sum int, found bool) {
+	for n = 0; n < len(xs); n++ {
+		if xs[n] < 0 {
+			found = true
+			return
+		}
+		sum += xs[n]
+	}
+	return
+}
+func ResultParamAlias(x int) (y int) {
+	y = x
+	x = y + 1
+	y = x * 2
+	return y + x
+}
