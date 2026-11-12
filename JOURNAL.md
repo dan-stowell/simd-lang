@@ -1179,3 +1179,13 @@ builds is thin evidence for "rare") rather than starting a rung I cannot finish.
 Sixty cold MinIO builds of the final configuration in a row, each smoke-tested: 60 pass; wall min
 10.5 s, median 11.2 s, max 12.6 s; compile 59.0-75.1 core-s (median 63.7). With the earlier run of
 twenty: 80 of 80. No hang, no failed fork, no failed smoke test. A kube-apiserver soak of twenty follows.
+
+## 2026-11-12 16:45 UTC — kube-apiserver: soak 20 of 20, and the day order-balanced (23.0 -> 21.1 s)
+
+- Soak, twenty cold builds, each smoke-tested (/healthz, ConfigMap create/get/delete): 20 pass; wall
+  min 19.1 s, median 19.8 s, max 21.7 s.
+- `tools/trace/day.sh 2 kube` (last night's configuration against today's, cold, old new new old,
+  twice): old 22.79, 24.12, 22.72, 22.33 s (mean 22.99; compile 144.0 core-s; link + write 2,356 ms;
+  objects 1,323 MB); new 20.33, 23.19, 21.02, 19.85 s (mean 21.10; 133.7 core-s; 1,802 ms; 1,043 MB).
+  **-1.9 s (8%), -10 compile core-s, -0.55 s of link + write.** Same shape as MinIO's -1.4 s (11%):
+  the comparison point is not overfitted to.
