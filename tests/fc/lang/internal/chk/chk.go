@@ -354,7 +354,7 @@ func (d *differ) diff(a, b reflect.Value, path string) string {
 	if a.Kind() != b.Kind() {
 		return fmt.Sprintf("%s: kinds %v / %v", path, a.Kind(), b.Kind())
 	}
-	ne := func() string { return fmt.Sprintf("%s: %#v / %#v", path, show(a), show(b)) }
+	ne := func() string { return fmt.Sprintf("%s: %s / %s", path, show(a), show(b)) }
 	switch a.Kind() {
 	case reflect.Bool:
 		if a.Bool() != b.Bool() {

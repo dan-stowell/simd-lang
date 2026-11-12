@@ -36,11 +36,6 @@ type rtypeState struct {
 	rtPtrSet bool
 	rtNames  int // counter of package-qualified name data (stock: dnameCount)
 
-	// stockDefs, when set (mixed mode), names the symbols the stock compiler's object for this package
-	// defines. It settles the one thing about a descriptor that depends on the stock compiler's internal
-	// state: whether **T existed (ptrToThis of *T).
-	stockDefs map[string]bool
-
 	// What the code generator must write. The descriptors refer to these symbols; their bodies are code.
 	needEq      []algReq     // type:.eq.<sig>: func(p, q unsafe.Pointer) bool, ABIInternal, DUPOK
 	needHash    []algReq     // type:.hash.<sig>: func(p unsafe.Pointer, h uintptr) uintptr, ABIInternal, DUPOK
@@ -783,7 +778,7 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		fn := sel.Obj().(*types.Func)
 		sig := fn.Type().(*types.Signature)
 		if sig.TypeParams().Len() > 0 {
-			giveUp("generic method %v", fn)
+			continue // a generic method is no part of the method table: it cannot be called through an interface
 		}
 		var isel *types.Selection
 		if irecv == t {

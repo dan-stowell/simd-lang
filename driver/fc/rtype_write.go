@@ -262,12 +262,11 @@ func (c *compiler) abiKind(t types.Type) abi.Kind {
 }
 
 // isPtrElem: did the stock compiler ever form the type *t for the pointer type t? Only then does t's
-// descriptor point to *t's. That is a fact about the stock compiler's run, not about the program: in mixed
-// mode its object answers; otherwise the answer is whether the package's own types mention *t.
+// descriptor point to *t's. That is a fact about the stock compiler's run (which pointer types its front end
+// made before the descriptor was written), not about the program; whether the package's own types mention
+// *t predicts it best (over the standard library: 7 descriptors differ; taking "the stock object defines
+// type:**T" as the answer instead gives 90, never pointing gives 42).
 func (c *compiler) isPtrElem(t types.Type) bool {
-	if c.stockDefs != nil {
-		return c.stockDefs["type:*"+c.typeSymName(t)]
-	}
 	if !c.rtPtrSet {
 		c.rtPtrSet = true
 		c.rtPtrTo = map[string]bool{}

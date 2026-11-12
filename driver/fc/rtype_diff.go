@@ -323,10 +323,6 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		return
 	}
 	c := newCompiler(pr, p, path, trimpath)
-	c.stockDefs = map[string]bool{}
-	for name := range stock {
-		c.stockDefs[name] = true
-	}
 	var report strings.Builder
 	bails := map[string]string{}
 	try := func(what string, f func()) {
@@ -380,50 +376,15 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 	}
 	sort.Strings(names)
-	// a name the package does not mention may be a pointer to, a slice of or an array of one it does
-	var derive func(name string) types.Type
-	derive = func(name string) types.Type {
-		if t := byName[name]; t != nil {
-			return t
+	// a name the package does not mention is parsed: types of other packages, instances of generic types,
+	// and pointers, slices, arrays, maps, channels and functions of whatever can be found
+	np := &nameParser{c: c, byName: byName, pkgs: map[string]*types.Package{}}
+	for _, d := range pr.byPath {
+		if d.tpkg != nil {
+			np.pkgs[c.pkgPrefix(d.tpkg)] = d.tpkg
 		}
-		var t types.Type
-		switch {
-		case strings.HasPrefix(name, "noalg.*"):
-			if e := derive("noalg." + name[7:]); e != nil {
-				t = types.NewPointer(e)
-			}
-		case strings.HasPrefix(name, "noalg.["):
-			// the array behind a slice literal and the like: an array type marked as having no algorithms
-			if i := strings.Index(name, "]"); i > 0 {
-				if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
-					if e := derive(name[i+1:]); e != nil {
-						t = types.NewArray(e, n)
-						c.rtNoalg[t] = true
-					}
-				}
-			}
-		case strings.HasPrefix(name, "*"):
-			if e := derive(name[1:]); e != nil {
-				t = types.NewPointer(e)
-			}
-		case strings.HasPrefix(name, "[]"):
-			if e := derive(name[2:]); e != nil {
-				t = types.NewSlice(e)
-			}
-		case strings.HasPrefix(name, "["):
-			if i := strings.Index(name, "]"); i > 0 {
-				if n, err := strconv.ParseInt(name[1:i], 10, 64); err == nil {
-					if e := derive(name[i+1:]); e != nil {
-						t = types.NewArray(e, n)
-					}
-				}
-			}
-		}
-		if t != nil {
-			byName[name] = t
-		}
-		return t
 	}
+	derive := np.lookup
 	// force the descriptors the stock object has: maps first (they bring their groups), then the rest
 	force := func(maps bool) {
 		for _, name := range names {
@@ -527,4 +488,263 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 	}
 	os.Stderr.WriteString(report.String())
+}
+
+// nameParser turns the link name of a type back into the type.
+type nameParser struct {
+	c      *compiler
+	byName map[string]types.Type // the types the package mentions, and what was parsed before
+	pkgs   map[string]*types.Package
+	s      string
+	pos    int
+}
+
+// lookup returns the type with the descriptor name (after "type:"), or nil.
+func (p *nameParser) lookup(name string) (t types.Type) {
+	if t, ok := p.byName[name]; ok {
+		return t
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(bail); !ok {
+				panic(r)
+			}
+			t = nil
+		}
+		p.byName[name] = t
+	}()
+	switch {
+	case strings.HasPrefix(name, "noalg.*"):
+		if e := p.lookup("noalg." + name[7:]); e != nil {
+			t = types.NewPointer(e)
+		}
+		return t
+	case strings.HasPrefix(name, "noalg.["):
+		// the array behind a slice literal and the like: an array type marked as having no algorithms
+		if i := strings.Index(name, "]"); i > 0 {
+			if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
+				if e := p.lookup(name[i+1:]); e != nil {
+					t = types.NewArray(e, n)
+					p.c.rtNoalg[t] = true
+				}
+			}
+		}
+		return t
+	case strings.HasPrefix(name, "noalg."):
+		return nil
+	}
+	q := &nameParser{c: p.c, byName: p.byName, pkgs: p.pkgs, s: name}
+	t = q.typ()
+	if t == nil || q.pos != len(name) {
+		return nil
+	}
+	// the parse stands only if the type's name is the name asked for
+	p.c.rtMu.Lock()
+	got := p.c.typeSymName(t)
+	p.c.rtMu.Unlock()
+	if got != name {
+		return nil
+	}
+	return t
+}
+
+func (p *nameParser) eat(prefix string) bool {
+	if strings.HasPrefix(p.s[p.pos:], prefix) {
+		p.pos += len(prefix)
+		return true
+	}
+	return false
+}
+
+// balanced returns the text from pos through the brace that closes the first one opened.
+func (p *nameParser) balanced() string {
+	depth := 0
+	for i := p.pos; i < len(p.s); i++ {
+		switch p.s[i] {
+		case '"':
+			q, err := strconv.QuotedPrefix(p.s[i:])
+			if err != nil {
+				return ""
+			}
+			i += len(q) - 1
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return p.s[p.pos : i+1]
+			}
+		}
+	}
+	return ""
+}
+
+func (p *nameParser) typ() types.Type {
+	rest := p.s[p.pos:]
+	switch {
+	case p.eat("*"):
+		if e := p.typ(); e != nil {
+			return types.NewPointer(e)
+		}
+	case p.eat("[]"):
+		if e := p.typ(); e != nil {
+			return types.NewSlice(e)
+		}
+	case strings.HasPrefix(rest, "["):
+		i := strings.Index(rest, "]")
+		if i < 0 {
+			return nil
+		}
+		n, err := strconv.ParseInt(rest[1:i], 10, 64)
+		if err != nil {
+			return nil
+		}
+		p.pos += i + 1
+		if e := p.typ(); e != nil {
+			return types.NewArray(e, n)
+		}
+	case p.eat("map["):
+		k := p.typ()
+		if k == nil || !p.eat("]") {
+			return nil
+		}
+		if e := p.typ(); e != nil {
+			return types.NewMap(k, e)
+		}
+	case p.eat("<-chan "):
+		if e := p.typ(); e != nil {
+			return types.NewChan(types.RecvOnly, e)
+		}
+	case p.eat("chan<- "):
+		if e := p.typ(); e != nil {
+			return types.NewChan(types.SendOnly, e)
+		}
+	case p.eat("chan "):
+		paren := p.eat("(")
+		e := p.typ()
+		if e == nil || paren && !p.eat(")") {
+			return nil
+		}
+		return types.NewChan(types.SendRecv, e)
+	case p.eat("func("):
+		params, variadic, ok := p.params()
+		if !ok {
+			return nil
+		}
+		var results []*types.Var
+		if p.eat(" (") {
+			results, _, ok = p.params()
+			if !ok {
+				return nil
+			}
+		} else if r := p.s[p.pos:]; len(r) > 1 && r[0] == ' ' && r[1] != '}' && r[1] != '"' {
+			p.pos++
+			t := p.typ()
+			if t == nil {
+				return nil
+			}
+			results = []*types.Var{types.NewParam(0, nil, "", t)}
+		}
+		return types.NewSignatureType(nil, nil, nil, types.NewTuple(params...), types.NewTuple(results...), variadic)
+	case strings.HasPrefix(rest, "struct {"), strings.HasPrefix(rest, "interface {"):
+		// literal types are not parsed: found whole among the types the package mentions, or not at all
+		lit := p.balanced()
+		if t := p.byName[lit]; t != nil && lit != "" {
+			p.pos += len(lit)
+			return t
+		}
+	default:
+		return p.named()
+	}
+	return nil
+}
+
+func (p *nameParser) params() (vs []*types.Var, variadic, ok bool) {
+	if p.eat(")") {
+		return nil, false, true
+	}
+	for {
+		dots := p.eat("...")
+		t := p.typ()
+		if t == nil {
+			return nil, false, false
+		}
+		if dots {
+			t, variadic = types.NewSlice(t), true
+		}
+		vs = append(vs, types.NewParam(0, nil, "", t))
+		if p.eat(")") {
+			return vs, variadic, true
+		}
+		if dots || !p.eat(", ") {
+			return nil, false, false
+		}
+	}
+}
+
+// named parses a basic type or pkg.Name, pkg.Name[args].
+func (p *nameParser) named() types.Type {
+	start := p.pos
+	for p.pos < len(p.s) && !strings.ContainsRune(",] )[;", rune(p.s[p.pos])) {
+		p.pos++
+	}
+	name := p.s[start:p.pos]
+	if name == "" {
+		return nil
+	}
+	if !p.eat("[") {
+		if t := p.byName[name]; t != nil {
+			return t
+		}
+		if tn := p.typeName(name); tn != nil {
+			if n, ok := tn.Type().(*types.Named); ok && n.TypeParams().Len() == 0 {
+				return n
+			}
+		}
+		return nil
+	}
+	var args []types.Type
+	for {
+		t := p.typ()
+		if t == nil {
+			return nil
+		}
+		args = append(args, t)
+		if p.eat("]") {
+			break
+		}
+		if !p.eat(",") {
+			return nil
+		}
+	}
+	tn := p.typeName(name)
+	if tn == nil {
+		return nil
+	}
+	n, ok := tn.Type().(*types.Named)
+	if !ok || n.TypeParams().Len() != len(args) {
+		return nil
+	}
+	t, err := types.Instantiate(p.c.pr.tctx, n, args, false)
+	if err != nil {
+		return nil
+	}
+	return t
+}
+
+// typeName finds the package-level type prefix.Name.
+func (p *nameParser) typeName(name string) *types.TypeName {
+	i := strings.LastIndex(name, ".")
+	if i < 0 {
+		return nil
+	}
+	pkg := p.pkgs[name[:i]]
+	if pkg == nil {
+		return nil
+	}
+	tn, _ := pkg.Scope().Lookup(name[i+1:]).(*types.TypeName)
+	if tn == nil || tn.IsAlias() {
+		return nil
+	}
+	return tn
 }
