@@ -432,4 +432,3 @@ s += '''
 var sbNoWeakPtr = os.Getenv("SB_BASELINE") != "" && os.Getenv("SB_KEEP_WEAKPTR") == ""
 '''
 open(p, 'w').write(s)
-

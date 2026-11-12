@@ -1142,3 +1142,34 @@ work. On this 8-core machine it needs the work itself down to 16 core-s.
 **Scope check.** Most ambitious: unchanged. This iteration produced no build change; it replaces a
 wrong one-line answer in the report with a measured table, and it changes the order I would climb the
 rungs on a bigger machine (declarations-first export first; on this one it stays last).
+
+## 2026-11-12 15:55 UTC — iteration 24: two more small removals tried, both measured at zero; the plateau
+
+**Trace.** Unchanged (`13-noweakptr`; MinIO median 11.5 s of twenty cold builds).
+
+**Type-symbol cache (built, proven identical, measured, removed).** The profile attributes 4.3% of
+compile samples to `types.tconv`, most of it under `types.TypeSym` (a type's descriptor symbol is found
+by formatting the type's whole name and looking the string up, on every reference). I cached the symbol
+per `*Type`. `tests/sb_same.sh` (new: build a program twice, with and without a switch, and compare
+every file): cmd/go 664, MinIO 2,624 and kube-apiserver 4,158 export files and objects and all three
+binaries byte-identical. Then the measurement: one package, min of 15 in strict alternation, 504 vs
+503 ms; twelve whole builds, order-balanced, 64.4 core-s without and 65.6 with. **Nothing.** A cache
+that cannot be measured and can go stale silently is not worth having: removed.
+
+**Fewer scheduler threads in the compilers (kill test only).** 1,315 short processes each start an
+8-way Go scheduler; `GOMAXPROCS=2` for every compiler, eight builds, order-balanced: 66.6 vs 68.4
+core-s, pairs pointing both ways. **Nothing I can resolve.** (A side observation: holding every
+compiler to two threads does not lengthen the build, 10.7 vs 11.0 s. On 8 cores the compilers' own
+`-c` parallelism is irrelevant; the scheduler across processes does the work.)
+
+**The plateau, stated plainly.** Since iteration 16 I have tried nine changes. Two moved the trace by
+more than the host's noise (one assembler pass; the day in total, 13.2 -> 11.8 s). The profile is
+flat: no function above 4% that is not the allocator. Predictions from the sampled profile were off by
+a factor of four in both directions today (process start: predicted 12, measured 3.6; descriptors:
+predicted 1.5, first "measured" 7, really 1.6; this cache: predicted 1.5, measured 0). On this
+machine, with this compiler, the build is within about 10% of what scheduling and trimming can reach.
+What is left is in NEXT.md and it is not cheap.
+
+**Scope check.** Most ambitious: the same two rungs. For the remainder of this session I am running
+longer soaks of the final configuration (the fork-server's one stated risk is a rare hang, and 120
+builds is thin evidence for "rare") rather than starting a rung I cannot finish.

@@ -19,6 +19,7 @@ cp "$src/src/cmd/compile/internal/reflectdata/reflect.go" "$dst/src/cmd/compile/
 cp "$src/src/cmd/compile/internal/base/timings.go" "$dst/src/cmd/compile/internal/base/"
 cp "$src/src/cmd/internal/obj/x86/asm6.go" "$dst/src/cmd/internal/obj/x86/"
 cp "$src/src/cmd/internal/obj/dwarf.go" "$dst/src/cmd/internal/obj/"
+cp "$src/src/cmd/compile/internal/types/type.go" "$dst/src/cmd/compile/internal/types/"
 cp driver/x86/sbspan.go "$dst/src/cmd/internal/obj/x86/"
 cp driver/runtime/sbfork.go "$dst/src/runtime/"
 cp "$src/src/cmd/compile/main.go" "$dst/src/cmd/compile/main.go"
