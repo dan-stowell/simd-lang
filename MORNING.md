@@ -223,3 +223,13 @@ single-package alternation, the quiet serial rows, and wall clock over many buil
 4. **The floors in TRACE.md** (see the reviews section above). There is now a measured number for the
    link's core (0.20 s with reachability, the F4 spike) that could replace the 17 ms copy budget; I have not changed the
    table without your say.
+
+## Housekeeping
+
+- `vm.nr_hugepages` is back at 0. Nothing of today's is left in `/dev/shm`; it still holds 2.4 GB from
+  the 2026-11-11 run (`sbkeep-1080017`, `kube.bin`, `minio-bl`, profiles), which I did not create today
+  and did not delete.
+- Logs of today's long runs are under `/home/exedev/targets/` (`soak-*.log`, `stdtest-wide-final.log`,
+  `minio-unit3`, `minio-unit4`).
+- The commit message of `b040190` states a gain (7 core-s) that the journal later corrects to 1.6.
+
