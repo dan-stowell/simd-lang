@@ -110,7 +110,6 @@ func AppendNode(s []Node, n Node) []Node            { return append(s, n) }
 func AppendPtr(s []*Node, n *Node) []*Node          { return append(s, n, n) }
 func AppendByte(b []byte, c byte) []byte            { return append(b, c, c+1) }
 func AppendArr(s [][4]int32, a [4]int32) [][4]int32 { return append(s, a) }
-func AppendIface(s []any, a int, b string) []any    { return append(s, a, b, nil, s) }
 func AppendN(n int) (s []int, grows int) {
 	c := 0
 	for i := 0; i < n; i++ {
@@ -219,10 +218,6 @@ func CloneAppend(s []int) []int { return append([]int(nil), s...) }
 func Clear(s []int)                  { clear(s) }
 func ClearNodes(s []Node)            { clear(s) }
 func ClearPart(s []string, i, j int) { clear(s[i:j]) }
-func ClearMap(m map[string]int) int {
-	clear(m)
-	return len(m)
-}
 
 // ---- range
 

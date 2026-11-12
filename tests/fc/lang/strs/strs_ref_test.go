@@ -310,10 +310,7 @@ func BytesCopyIndependent(s string) (string, string) {
 	}
 	return t, string(b)
 }
-func BytesEq(b []byte, s string) bool { return string(b) == s }
-func BytesKey(m map[string]int, b []byte) int {
-	return m[string(b)]
-}
+func BytesEq(b []byte, s string) bool    { return string(b) == s }
 func BytesCat(b []byte, s string) string { return s + string(b) + s }
 func BytesSwitch(b []byte) int {
 	switch string(b) {

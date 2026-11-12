@@ -706,7 +706,11 @@ func (c *compiler) methodSymName(recv types.Type, m *types.Func) (name, pkg stri
 	}
 	var b strings.Builder
 	b.WriteString(prefix)
-	b.WriteByte('.')
+	if rpkg == nil {
+		b.WriteByte(':') // a reserved pseudo-package: "go:"
+	} else {
+		b.WriteByte('.')
+	}
 	if ptr {
 		b.WriteByte('(')
 		c.tconv(&b, recv, fmtID, true)

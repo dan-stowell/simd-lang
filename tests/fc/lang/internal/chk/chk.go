@@ -139,7 +139,7 @@ func (g *gen) fill(v reflect.Value, depth int) {
 			g.fill(setter(v.Field(i)), depth+1)
 		}
 	case reflect.Pointer:
-		if depth > 3 {
+		if depth > 6 {
 			return
 		}
 		p := reflect.New(t.Elem())

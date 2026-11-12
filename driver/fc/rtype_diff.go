@@ -367,6 +367,12 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		})
 	})
 	delete(bails, "name")
+	for _, b := range types.Typ {
+		if b.Info()&types.IsUntyped == 0 && b.Kind() != types.Invalid {
+			byName[basicName(b)] = b
+		}
+	}
+	c.rtInit()
 	var names []string
 	for name := range stock {
 		if diffWanted(name) {
@@ -382,6 +388,20 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 		}
 		var t types.Type
 		switch {
+		case strings.HasPrefix(name, "noalg.*"):
+			if e := derive("noalg." + name[7:]); e != nil {
+				t = types.NewPointer(e)
+			}
+		case strings.HasPrefix(name, "noalg.["):
+			// the array behind a slice literal and the like: an array type marked as having no algorithms
+			if i := strings.Index(name, "]"); i > 0 {
+				if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
+					if e := derive(name[i+1:]); e != nil {
+						t = types.NewArray(e, n)
+						c.rtNoalg[t] = true
+					}
+				}
+			}
 		case strings.HasPrefix(name, "*"):
 			if e := derive(name[1:]); e != nil {
 				t = types.NewPointer(e)
@@ -461,6 +481,8 @@ func typeDiff(pr *Program, p *Pkg, path, trimpath, archive string) {
 				why = "a shape type of the stock compiler's generics (fc instantiates fully)"
 			case strings.HasPrefix(name, "type:.eqfunc.") || strings.HasPrefix(name, "type:.hashfunc.") || strings.HasPrefix(name, "type:.gcmask."):
 				why = "belongs to a descriptor fc was not asked for"
+			case strings.Contains(name, "struct { Size_ uintptr; PtrBytes") || strings.Contains(name, "struct { Name int32; Typ int32 }") || strings.Contains(name, "struct { Bytes *uint8 }"):
+				why = "the stock compiler's own picture of the runtime's descriptors (rttype)"
 			case strings.Contains(name, "struct { Typ uintptr;") || strings.Contains(name, "struct { Mask uintptr; Entries") || strings.Contains(name, "struct { Itab uintptr"):
 				why = "a cache of the stock compiler's type switches and assertions"
 			case strings.HasPrefix(name, "type:noalg."):

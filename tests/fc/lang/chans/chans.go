@@ -233,14 +233,20 @@ func Pipeline(n int) (sum int) {
 	return
 }
 
-// Primes is the classic concurrent sieve: a chain of filter goroutines.
+// Primes is the classic concurrent sieve: a chain of filter goroutines, all stopped through done.
 func Primes(n int) []int {
+	done := make(chan struct{})
+	defer close(done)
 	ch := make(chan int)
-	go func() {
+	go func(out chan<- int) {
 		for i := 2; ; i++ {
-			ch <- i
+			select {
+			case out <- i:
+			case <-done:
+				return
+			}
 		}
-	}()
+	}(ch)
 	var ps []int
 	for len(ps) < n {
 		p := <-ch
@@ -248,8 +254,17 @@ func Primes(n int) []int {
 		next := make(chan int)
 		go func(in <-chan int, out chan<- int, p int) {
 			for {
-				if v := <-in; v%p != 0 {
-					out <- v
+				select {
+				case v := <-in:
+					if v%p != 0 {
+						select {
+						case out <- v:
+						case <-done:
+							return
+						}
+					}
+				case <-done:
+					return
 				}
 			}
 		}(ch, next, p)
@@ -657,8 +672,8 @@ func depth(n int) int {
 
 // ---- panics ----
 
-func SendClosed(ch chan int)      { ch <- 1 }
-func Close(ch chan int)           { close(ch) }
+func SendClosed(ch chan int) { ch <- 1 }
+func Close(ch chan int)      { close(ch) }
 func SelectSendClosed(ch chan int) bool {
 	select {
 	case ch <- 1:

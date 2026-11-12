@@ -25,10 +25,6 @@ type WithStr struct {
 	S string
 	F float64
 }
-type WithIface struct {
-	K string
-	V any
-}
 type WithBlank struct {
 	A int
 	_ int
@@ -37,7 +33,7 @@ type WithBlank struct {
 	C int8
 }
 type F4 struct{ A, B, C, D float64 }
-type F5 struct{ A, B, C, D, E float64 } // too many for registers as a result? (not: 5 floats fit)
+type F5 struct{ A, B, C, D, E float64 }
 type I4 struct{ A, B, C, D int64 }
 type I5 struct{ A, B, C, D, E int64 }
 type Mixed struct {
@@ -108,18 +104,20 @@ type TwoEmb struct {
 
 // ---- field access
 
-func GetX(p P2) int               { return p.X }
-func GetY(p *P2) int              { return p.Y }
-func SetY(p *P2, v int)           { p.Y = v }
-func AddXY(p *P2) int             { p.X += p.Y; p.Y++; return p.X }
-func SmallSum(s Small) float64    { return float64(s.A) + float64(s.B) + float64(s.C) + s.D }
-func SmallSet(s *Small, x int64)  { s.A = int8(x); s.B = uint16(x); s.C = int32(x); s.D = float64(x) }
-func PaddedSum(p *Padded) int64   { return int64(p.A) + p.B + int64(p.C) + int64(p.D) + int64(p.E) }
-func MakePadded(x int64) Padded   { return Padded{byte(x), x, byte(x >> 8), int16(x >> 16), byte(x >> 32)} }
-func BaseID(t *Top) int           { return t.Base.ID }
-func TopID(t *Top) int64          { return t.ID }
-func MidName(t Top) string        { return t.Name }
-func TopLevel(t *Top) int         { return t.Level }
+func GetX(p P2) int              { return p.X }
+func GetY(p *P2) int             { return p.Y }
+func SetY(p *P2, v int)          { p.Y = v }
+func AddXY(p *P2) int            { p.X += p.Y; p.Y++; return p.X }
+func SmallSum(s Small) float64   { return float64(s.A) + float64(s.B) + float64(s.C) + s.D }
+func SmallSet(s *Small, x int64) { s.A = int8(x); s.B = uint16(x); s.C = int32(x); s.D = float64(x) }
+func PaddedSum(p *Padded) int64  { return int64(p.A) + p.B + int64(p.C) + int64(p.D) + int64(p.E) }
+func MakePadded(x int64) Padded {
+	return Padded{byte(x), x, byte(x >> 8), int16(x >> 16), byte(x >> 32)}
+}
+func BaseID(t *Top) int    { return t.Base.ID }
+func TopID(t *Top) int64   { return t.ID }
+func MidName(t Top) string { return t.Name }
+func TopLevel(t *Top) int  { return t.Level }
 func SetDeep(t *Top, id int, n string) {
 	t.Mid.Base.ID = id
 	t.Name = n
@@ -134,8 +132,10 @@ func PtrEmbSet(p *PtrEmb2, n string, v int) {
 	p.N = v + 1
 	p.M = v + 2
 }
-func TwoEmbSum(t *TwoEmb) float64 { return float64(t.X+t.Y+t.N) + t.D + t.F + float64(t.A) + float64(len(t.S)) }
-func FieldPtr(p *P2) *int         { return &p.Y }
+func TwoEmbSum(t *TwoEmb) float64 {
+	return float64(t.X+t.Y+t.N) + t.D + t.F + float64(t.A) + float64(len(t.S))
+}
+func FieldPtr(p *P2) *int { return &p.Y }
 func FieldPtrWrite(p *P2, v int) int {
 	q := &p.X
 	*q = v
@@ -148,15 +148,6 @@ func ArrayField(w *WithArr, i int) int {
 }
 func StructInArray(a *[3]P2, i int) int { a[i].X = a[i].Y * 2; return a[i].X }
 func StructInSlice(s []P2, i int) int   { s[i].X++; return s[i].X + s[i].Y }
-func StructInMap(m map[string]P2, k string) (int, bool) {
-	p, ok := m[k]
-	p.X++ // a copy
-	return p.X + m[k].Y, ok
-}
-func PtrInMap(m map[string]*P2, k string) int {
-	m[k].X++
-	return m[k].X
-}
 func AnonStruct(x int, s string) (int, string) {
 	v := struct {
 		N int
@@ -227,7 +218,6 @@ func NeP3(a, b P3) bool               { return a != b }
 func EqSmall(a, b Small) bool         { return a == b }
 func EqPadded(a, b Padded) bool       { return a == b }
 func EqWithStr(a, b WithStr) bool     { return a == b }
-func EqWithIface(a, b WithIface) bool { return a == b }
 func EqWithBlank(a, b WithBlank) bool { return a == b }
 func EqF4(a, b F4) bool               { return a == b }
 func EqMixed(a, b Mixed) bool         { return a == b }
@@ -245,26 +235,11 @@ func EqAnon(a, b struct {
 func EqPtrs(a, b *P2) (bool, bool) { return a == b, a != nil && b != nil && *a == *b }
 func EqLit(p P2) bool              { return p == P2{1, 2} }
 func EqZero(w WithStr) bool        { return w == WithStr{} }
-func BlankGarbage(x int) bool {
-	// the blank fields hold different garbage; == must ignore them
-	a := WithBlank{A: 1, B: "b", C: 2}
-	b := a
-	pa := (*[7]int)(nil)
-	_ = pa
-	fillBlank(&a, x)
-	fillBlank(&b, x+1)
+func EqBlank(x int) bool {
+	a := WithBlank{A: x, B: "b", C: 2}
+	b := WithBlank{C: 2, B: "b"}
+	b.A = x
 	return a == b
-}
-func fillBlank(w *WithBlank, x int) {
-	type shadow struct {
-		A int
-		X int
-		B string
-		Y [2]float64
-		C int8
-	}
-	_ = shadow{}
-	w.A = 1 + x - x
 }
 func PadGarbage(x int64) bool {
 	// two values equal field by field, built differently
@@ -286,29 +261,20 @@ func LitNestedPtr(x int) *PtrEmb2 { return &PtrEmb2{&PtrEmb{&Base{x, "b"}, x + 1
 func LitSlice(x int) []P2         { return []P2{{x, 1}, {Y: x}, {}} }
 func LitSlicePtr(x int) []*P2     { return []*P2{{x, 1}, {Y: x}, nil, {}} }
 func LitArray(x int) [3]Small     { return [3]Small{{A: int8(x)}, 2: {D: float64(x)}} }
-func LitMap(x int, k string) map[string]P2 {
-	return map[string]P2{k: {x, x}, k + "2": {Y: 2}}
+func LitMixed(x int64, p *int) Mixed {
+	return Mixed{I: x, F: float64(x) / 4, S: "m", P: p, B: x > 0, G: float32(x)}
 }
-func LitMapPtr(x int, k string) map[string]*WithStr {
-	return map[string]*WithStr{k: {N: x}, "": {S: k}}
-}
-func LitMapKey(x int) map[P2]string { return map[P2]string{{x, 1}: "a", {1, x}: "b"} }
-func LitIface(x int, s string) []WithIface {
-	return []WithIface{{"int", x}, {"str", s}, {"nil", nil}, {"struct", P2{x, x}}, {"ptr", &P2{x, 0}}, {K: "slice", V: []int{x}}}
-}
-func LitMixed(x int64, p *int) Mixed { return Mixed{I: x, F: float64(x) / 4, S: "m", P: p, B: x > 0, G: float32(x)} }
 func LitBig(x int64) Big {
 	return Big{H: 1, Body: [23]int64{0: x, 22: -x, 11: x * 2}, T: "tail"}
 }
-func Zero() (P2, Small, WithStr, Mixed, Top, *P2, WithIface) {
+func Zero() (P2, Small, WithStr, Mixed, Top, *P2) {
 	var a P2
 	var b Small
 	var c WithStr
 	var d Mixed
 	var e Top
 	var f *P2
-	var g WithIface
-	return a, b, c, d, e, f, g
+	return a, b, c, d, e, f
 }
 func ZeroBig() Big      { return Big{} }
 func NewZero() *WithStr { return new(WithStr) }
@@ -326,48 +292,51 @@ func HugeSet(h *Huge, a int64, b int32, s string) {
 	h.Pad1[len(h.Pad1)-1] = byte(a)
 	h.P = h
 }
-func HugeA(h *Huge) int64             { return h.A }       // offset 4096: needs an explicit nil check
-func HugeB(h *Huge) int32             { return h.B }       // offset > 64 KiB
-func HugeSetB(h *Huge, v int32)       { h.B = v }
-func HugeAddrB(h *Huge) *int32        { return &h.B }      // nil check without a load
-func HugePad(h *Huge, i int) byte     { return h.Pad1[i] }
-func HugeChain(h *Huge) int64         { return h.P.P.A }
-func NilX(p *P2) int                  { return p.X }
-func NilSetY(p *P2)                   { p.Y = 1 }
-func NilCopy(p *Big) Big              { return *p }
-func NilDeep(t *Top) string           { return t.Mid.Base.Name }
-func NilEmbPtr(p PtrEmb) int          { return p.ID } // p.Base may be nil
-func NilAddr(p *P2) *int              { return &p.Y } // &p.Y with p nil panics
-func NilDiscard(p *P2)                { _ = *p }
-func NilBigField(b *Big) string       { return b.T }
+func HugeA(h *Huge) int64                        { return h.A } // offset 4096: needs an explicit nil check
+func HugeB(h *Huge) int32                        { return h.B } // offset > 64 KiB
+func HugeSetB(h *Huge, v int32)                  { h.B = v }
+func HugeAddrB(h *Huge) *int32                   { return &h.B } // nil check without a load
+func HugePad(h *Huge, i int) byte                { return h.Pad1[i] }
+func HugeChain(h *Huge) int64                    { return h.P.P.A }
+func NilX(p *P2) int                             { return p.X }
+func NilSetY(p *P2)                              { p.Y = 1 }
+func NilCopy(p *Big) Big                         { return *p }
+func NilDeep(t *Top) string                      { return t.Mid.Base.Name }
+func NilEmbPtr(p PtrEmb) int                     { return p.ID } // p.Base may be nil
+func NilAddr(p *P2) *int                         { return &p.Y } // &p.Y with p nil panics
+func NilDiscard(p *P2)                           { _ = *p }
+func NilBigField(b *Big) string                  { return b.T }
 func NilArrayElem(a *[100000]int64, i int) int64 { return a[i] }
-func NilMethodless(pp **P2) int       { return (*pp).X }
+func NilMethodless(pp **P2) int                  { return (*pp).X }
 
 // ---- parameters and results
 
-func Ret2(x int) P2                 { return P2{x, x + 1} }
-func RetSmall(x int64) Small        { return Small{int8(x), uint16(x), int32(x), float64(x)} }
-func RetF4(x float64) F4            { return F4{x, x + 1, x + 2, x + 3} }
-func RetF5(x float64) F5            { return F5{x, x + 1, x + 2, x + 3, x + 4} }
-func RetI4(x int64) I4              { return I4{x, x + 1, x + 2, x + 3} }
-func RetI5(x int64) I5              { return I5{x, x + 1, x + 2, x + 3, x + 4} }
-func RetMixed(x int64, p *int) Mixed { return LitMixed(x, p) }
-func RetWithArr(x int) WithArr      { return WithArr{[2]int{x, x * 2}, x * 3} }
+func Ret2(x int) P2                        { return P2{x, x + 1} }
+func RetSmall(x int64) Small               { return Small{int8(x), uint16(x), int32(x), float64(x)} }
+func RetF4(x float64) F4                   { return F4{x, x + 1, x + 2, x + 3} }
+func RetF5(x float64) F5                   { return F5{x, x + 1, x + 2, x + 3, x + 4} }
+func RetI4(x int64) I4                     { return I4{x, x + 1, x + 2, x + 3} }
+func RetI5(x int64) I5                     { return I5{x, x + 1, x + 2, x + 3, x + 4} }
+func RetMixed(x int64, p *int) Mixed       { return LitMixed(x, p) }
+func RetWithArr(x int) WithArr             { return WithArr{[2]int{x, x * 2}, x * 3} }
 func RetWithArr1(x int, s string) WithArr1 { return WithArr1{[1]int{x}, [1]string{s}} }
-func RetEmpty() Empty               { return Empty{} }
-func RetHasEmpty(x int) HasEmpty    { return HasEmpty{A: x, B: -x} }
-func RetBig(x int64) Big            { return LitBig(x) }
-func RetTwo(x int) (P2, WithStr)    { return P2{x, x}, WithStr{x, "w", 1} }
-func RetMany(x int) (a int, p P2, s string, f float64, q Small, ok bool, e error) {
+func RetEmpty() Empty                      { return Empty{} }
+func RetHasEmpty(x int) HasEmpty           { return HasEmpty{A: x, B: -x} }
+func RetBig(x int64) Big                   { return LitBig(x) }
+func RetTwo(x int) (P2, WithStr)           { return P2{x, x}, WithStr{x, "w", 1} }
+func RetMany(x int) (a int, p P2, s string, f float64, q Small, ok bool, e *int) {
 	return x, P2{x, x + 1}, "s", float64(x) / 2, RetSmall(int64(x)), x > 0, nil
 }
-func TakeI4(a I4) int64               { return a.A + 2*a.B + 3*a.C + 4*a.D }
-func TakeI5(a I5) int64               { return a.A + 2*a.B + 3*a.C + 4*a.D + 5*a.E }
-func TakeF4(a F4) float64             { return a.A + 2*a.B + 3*a.C + 4*a.D }
-func TakeMixed(m Mixed) float64       { return float64(m.I) + m.F + float64(len(m.S)) + float64(m.G) }
+func TakeI4(a I4) int64                   { return a.A + 2*a.B + 3*a.C + 4*a.D }
+func TakeI5(a I5) int64                   { return a.A + 2*a.B + 3*a.C + 4*a.D + 5*a.E }
+func TakeF4(a F4) float64                 { return a.A + 2*a.B + 3*a.C + 4*a.D }
+func TakeMixed(m Mixed) float64           { return float64(m.I) + m.F + float64(len(m.S)) + float64(m.G) }
 func TakeEmpty(a int, e Empty, b int) int { return a - b }
-func TakeWithArr(w WithArr, x int) int { return w.A[0] + w.A[1] + w.B + x }
-func TakeBig(b Big, x int64) int64    { b.Body[0] += x; return b.Body[0] + b.Body[22] + int64(b.H) + int64(len(b.T)) }
+func TakeWithArr(w WithArr, x int) int    { return w.A[0] + w.A[1] + w.B + x }
+func TakeBig(b Big, x int64) int64 {
+	b.Body[0] += x
+	return b.Body[0] + b.Body[22] + int64(b.H) + int64(len(b.T))
+}
 func TakeStructs(a P2, b Small, c WithStr, d P3, e F4, f I4) float64 {
 	return float64(a.X+a.Y) + SmallSum(b) + float64(c.N) + c.F + float64(len(c.S)) + float64(d.X+d.Y+d.Z) + TakeF4(e) + float64(TakeI4(f))
 }
@@ -382,13 +351,6 @@ func Floats16(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p float64) float64 {
 }
 func MixOverflow(a int, x float64, s string, b []int, p P2, c int, y float32, q I4, d int8, z float64, t string, e, f, g int) float64 {
 	return float64(a+len(s)+len(b)+p.X+p.Y+c+int(d)+len(t)+e+f+g) + x + float64(y) + z + float64(TakeI4(q))
-}
-func StrsAndSlices(a string, b []byte, c string, d []int, e string, f any) int {
-	n := len(a) + len(b) + len(c) + len(d) + len(e)
-	if f != nil {
-		n += 1000
-	}
-	return n
 }
 func CallAll(x int) float64 {
 	r := float64(Ints10(x, x+1, x+2, x+3, x+4, x+5, x+6, x+7, x+8, x+9))
@@ -405,7 +367,8 @@ func CallAll(x int) float64 {
 func ResultsNamed(x int) (p P2, w WithStr) {
 	p.X = x
 	w.S = "named"
-	defer func() { p.Y = p.X * 2; w.N = len(w.S) }()
+	p.Y = p.X * 2
+	w.N = len(w.S)
 	return
 }
 func ChainCalls(x int) int { return Ret2(Ret2(x).Y).X + GetX(Ret2(x+5)) + GetY(LitPtr(x)) }

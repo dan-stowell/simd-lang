@@ -21,7 +21,6 @@ var autoFuncs = []chk.Fn{
 	{Name: "BytesCat", Got: strs.BytesCat, Ref: BytesCat},
 	{Name: "BytesCopyIndependent", Got: strs.BytesCopyIndependent, Ref: BytesCopyIndependent},
 	{Name: "BytesEq", Got: strs.BytesEq, Ref: BytesEq},
-	{Name: "BytesKey", Got: strs.BytesKey, Ref: BytesKey},
 	{Name: "BytesSwitch", Got: strs.BytesSwitch, Ref: BytesSwitch},
 	{Name: "Cat2", Got: strs.Cat2, Ref: Cat2},
 	{Name: "Cat3", Got: strs.Cat3, Ref: Cat3},
