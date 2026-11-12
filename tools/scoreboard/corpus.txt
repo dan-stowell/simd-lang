@@ -1,0 +1,12 @@
+# name          tool   dir (under /home/exedev/targets)   target
+buildifier      go     corpus/buildtools    ./buildifier
+buildifier      bazel  corpus/buildtools    //buildifier:buildifier
+runsc           go     corpus/gvisor        ./runsc
+runsc           bazel  corpus/gvisor-bazel  //runsc:runsc
+caddy           go     corpus/caddy         ./cmd/caddy
+tailscaled      go     corpus/tailscale     ./cmd/tailscaled
+minio           go     minio                .
+kube-apiserver  go     kubernetes           ./cmd/kube-apiserver
+prometheus      go     corpus/prometheus    ./cmd/prometheus
+bb-executor     bazel  corpus/buildbuddy    //enterprise/server/cmd/executor:executor
+bb-cli          bazel  corpus/buildbuddy    //cli/cmd/bb:bb

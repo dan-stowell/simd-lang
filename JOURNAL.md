@@ -1455,3 +1455,29 @@ session's diff, with the ten local-type methods whose names the two lists probab
 Inbox empty. Scope check: nothing a rung needs fits in the last minutes; more evidence on the
 fork-server's one risk does. Thirty more cold MinIO builds, each smoke-tested: 30 builds, 30 pass; wall min 10566, median 11405, max 13848 ms.
 Total for the final configuration: MinIO 180 of 180, kube-apiserver 56 of 56.
+
+## 2026-11-12 19:52 UTC — campaign 1 begins: fc, a compiler of our own, compiles its first package
+
+M0: the scoreboard run (tools/scoreboard/run.sh, every corpus project cold at 8/4/2/1 cores, stock and fair
+stock, Bazel projects from their own DAG) is going in the background; SCOREBOARD.md is generated when it ends.
+
+How (the campaign leaves it to me; why each choice):
+- **Front end: go/types over source, whole dependency closure in one process** (driver/fc/load.go). No export
+  data read or written. Measured earlier at 1.4 s wall for all of MinIO.
+- **Lowering: one walk over the typed syntax tree straight to machine code** (gen.go, expr.go, stmt.go,
+  call.go): no IR, no SSA, no obj.Prog. The frame model is the baseline generator's, which MinIO proved:
+  every variable in memory, one always-live stack map, zeroed frame, write barriers for pointer stores
+  leaving the frame. New: locals are addressed from BP and outgoing arguments from SP, so nothing depends on
+  the final frame size and the prologue is assembled after the body. Address-taken and captured variables
+  go to the heap (no escape analysis yet).
+- **Own x86 encoder** (x86.go), bytes and relocations written directly; pc tables (pcsp, file, line, stack
+  map index, unsafe points) built by hand.
+- **Object file: cmd/internal/obj's writer, fed LSyms filled in directly.** A bridge until M5 puts code in the
+  image; it is why fc builds inside the patched GOROOT (driver/mkfc.sh).
+- **Mixed mode for the oracle** (tools/fc/test.sh, toolexec.sh): the stock compiler compiles the package
+  (its export data is what stock importers read), then fc replaces the object in the archive. Stock importers
+  refer to a package's symbols by index, so fc orders its symbols as the stock object does
+  (alignWithStock) and names by name what only it defines.
+
+First package: tests/fc/basic (arithmetic, loops, strings, slices, switches, bounds panics) passes its tests
+compiled by fc. unicode/utf8 next: it calls a generic function, so instantiation comes first.
