@@ -1,4 +1,4 @@
-# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 21)
+# MORNING: 2026-11-12 (overwritten at the end of every iteration; this is after iteration 23)
 
 ## The trace, before and after
 
@@ -169,8 +169,23 @@ was measured order-balanced for that reason, and the A/B script now alternates o
 
 ## Decisions that are yours
 
-1. **Is "2 s on N cores" acceptable, or must it be this VM?** Fused stock work ends near 50 core-s
-   (25 cores for 2 s). On 8 cores the compiler itself has to be replaced, which is months, not nights.
+1. **Is "2 s on N cores" acceptable, or must it be this VM?** I simulated today's measured build on more
+   cores (`tools/trace/simcores.py`; the 8-core row lands at 11.0 s against 11.9 s measured):
+
+   | cores | as it stands | if importers were released after 15% of a front end |
+   |---|---|---|
+   | 8 | 11.0 s | 10.7 s |
+   | 16 | 8.7 s | 7.0 s |
+   | 32 | 8.7 s | 5.5 s |
+   | unlimited | 8.7 s | 4.7 s |
+
+   As it stands, cores stop helping at about twelve: the floor is the plan, a chain of 44 package front
+   ends (5.8 s of serial work) and the link. So there is no N today. A bigger machine makes the
+   skeptic's declarations-first export the first thing to build (worth 3 s at 32 cores, 0.3 s here), and
+   even then 2 s needs the plan streamed, no front end a second long (bodies as the unit of work) and no
+   separate link: the ladder's F3 and F4. On this 8-core VM it needs the work itself down from 67 to 16
+   core-s, which is a different compiler: months, not nights. Which machine is the target decides the
+   order of the rungs.
 2. **Keep the fork-server on by default?** It is correct as far as I and the reviewer can test and buys
    almost nothing today. I left it on in the trace configuration and off by default in the driver.
    Same question for `-headstart`.

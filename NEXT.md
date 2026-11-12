@@ -6,7 +6,12 @@ against last night's 13.2 s: `tools/trace/day.sh`), kube-apiserver 20.5 s, confi
 (`tools/trace/cpuphases.sh`): walk + generate + assemble 28.7 core-s, export-IR round trip 17, type
 check 10, objects + export 6.7.
 
-Scheduling steps are exhausted (iteration 19); removing work is what moves the trace (iteration 16:
+Which rung is first depends on the target machine (JOURNAL iteration 23, `tools/trace/simcores.py`): on
+this 8-core VM the build is bound by work; on 16+ cores it is bound by a 44-package chain of front ends
+(floor 8.7 s) and declarations-first export comes first (5.5 s at 32 cores). Ask the user (MORNING.md,
+decision 1) or assume this VM.
+
+Scheduling steps are exhausted on 8 cores (iteration 19); removing work is what moves the trace (iteration 16:
 6 core-s; iteration 20: 1.6 core-s after correction). Measure with `tools/trace/abd.sh` (order-balanced)
 or min-of-N on single packages; never old-then-new in a fixed order. Two big rungs, and one cheap vein worth an hour before them:
 

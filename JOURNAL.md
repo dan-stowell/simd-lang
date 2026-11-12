@@ -1101,3 +1101,44 @@ final compiler, 160,403 functions through the baseline and 4,452 through SSA.
   compiler matter.
 
 No crash, no wrong result. The liveness class now has three named tests in MORNING.md.
+
+## 2026-11-12 15:35 UTC — iteration 23: what "2 s on N cores" means for the pipeline as it stands (a simulation)
+
+MORNING.md asks the user whether "2 s on N cores" is acceptable. I had answered with one division (50
+core-s / 2 s = 25 cores). That ignores the graph, so I measured it instead.
+
+**`tools/trace/simcores.py`**: replay one traced cold MinIO build (no head start, so every package has
+real times) on N cores. A front end is one thread for as long as it took to release its importers; a
+back end is the rest of the package's CPU spread over its `-c`; front ends first, longest chain first;
+plan before, link and sync after. The 8-core row is the check: 11.0 s simulated against 11.9 s
+measured (the model has no kernel and no memory bandwidth: an optimistic bound).
+
+| cores | whole build, as it stands | if importers were released after 15% of a front end |
+|---|---|---|
+| 8 | 11.0 s | 10.7 s |
+| 12 | 8.7 s | 8.1 s |
+| 16 | 8.7 s | 7.0 s |
+| 32 | 8.7 s | 5.5 s |
+| 64 | 8.7 s | 4.7 s |
+| unlimited | 8.7 s | 4.7 s |
+
+**Reading it.**
+- As it stands, cores stop helping at about twelve. The floor is 0.9 s of plan + a chain of 44 front
+  ends, 5.8 s of serial work (`minio/cmd` 1.0 s, envoy `core/v3` 0.6, `runtime` 0.5, `route/v3` 0.4,
+  cloud `storage` 0.4, protobuf `internal/impl` 0.4, ...) + the last back end + 1.1 s of link + sync.
+- This is the skeptic's standing objection (package front ends serialize the build), and both of us
+  were right about different machines: on 8 cores breaking the chain buys 0.3 s (last night's
+  simulation, and the 8-core row here), on 32 it buys 3.2 s.
+- Even with the chain broken and unlimited cores the build is 4.7 s: plan 0.9, the largest front end
+  and its back end about 2.6, link 1.1, sync 0.1. Each of those is one of the ladder's rungs: the plan
+  streamed (F3's schedule), bodies as the unit of work so that no single front end is a second long
+  (F3), no separate link (F4).
+
+**So, for the charter's "2 s on N cores, N derived from the floor":** there is no N today. The
+pipeline as it stands has a floor of about 8.7 s at any core count; with declarations-first export
+about 4.7 s; 2 s needs the three rungs above *and* enough cores for 67 core-s of work (34), or less
+work. On this 8-core machine it needs the work itself down to 16 core-s.
+
+**Scope check.** Most ambitious: unchanged. This iteration produced no build change; it replaces a
+wrong one-line answer in the report with a measured table, and it changes the order I would climb the
+rungs on a bigger machine (declarations-first export first; on this one it stays last).
