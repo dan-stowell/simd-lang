@@ -191,12 +191,27 @@ func (pr *Program) linknames(p *Pkg) map[string]string {
 		for _, f := range p.files {
 			for _, cg := range f.Comments {
 				for _, cm := range cg.List {
+					if strings.HasPrefix(cm.Text, "//go:linknamestd ") {
+						if fs := strings.Fields(cm.Text); len(fs) >= 2 {
+							if p.linknamedStd == nil {
+								p.linknamedStd = map[string]bool{}
+							}
+							p.linknamedStd[fs[1]] = true
+						}
+						continue
+					}
 					if !strings.HasPrefix(cm.Text, "//go:linkname ") {
 						continue
 					}
 					fs := strings.Fields(cm.Text)
 					if len(fs) == 3 {
 						p.linkname[fs[1]] = fs[2]
+					}
+					if len(fs) >= 2 {
+						if p.linknamed == nil {
+							p.linknamed = map[string]bool{}
+						}
+						p.linknamed[fs[1]] = true
 					}
 				}
 			}
@@ -230,41 +245,8 @@ func (g *gen) funcValue(fn *types.Func) loc {
 	return loc{kind: lReg, reg: AX}
 }
 
-func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
-	giveUp("method value")
-	return loc{}
-}
 func (g *gen) methodExpr(e *ast.SelectorExpr, sel *types.Selection) loc {
 	giveUp("method expression")
 	return loc{}
 }
-func (g *gen) mapIndex(e *ast.IndexExpr, commaOK bool) []loc { giveUp("map index"); return nil }
-func (g *gen) mapOperands(e *ast.IndexExpr) (loc, loc)       { giveUp("map index"); return loc{}, loc{} }
-func (g *gen) mapIndexLocs(e *ast.IndexExpr, m, k loc, commaOK bool) []loc {
-	giveUp("map index")
-	return nil
-}
-func (g *gen) mapAssign(e *ast.IndexExpr) loc                  { giveUp("map assignment"); return loc{} }
-func (g *gen) mapAssignLocs(e *ast.IndexExpr, m, k loc) loc    { giveUp("map assignment"); return loc{} }
-func (g *gen) mapDelete(e *ast.CallExpr)                       { giveUp("delete") }
-func (g *gen) clearCall(e *ast.CallExpr)                       { giveUp("clear") }
-func (g *gen) printCall(e *ast.CallExpr, nl bool)              { giveUp("print") }
-func (g *gen) recoverCall(e *ast.CallExpr) loc                 { giveUp("recover"); return loc{} }
-func (g *gen) funcLit(e *ast.FuncLit) loc                      { giveUp("function literal"); return loc{} }
-func (g *gen) typeAssert(e *ast.TypeAssertExpr, ok bool) []loc { giveUp("type assertion"); return nil }
-func (g *gen) recv(e *ast.UnaryExpr, ok bool) []loc            { giveUp("channel receive"); return nil }
-func (g *gen) ifaceToIface(l loc, from, to types.Type) loc {
-	giveUp("interface conversion")
-	return loc{}
-}
-func (g *gen) typeSwitch(s *ast.TypeSwitchStmt, name string) { giveUp("type switch") }
-func (g *gen) selectStmt(s *ast.SelectStmt, name string)     { giveUp("select") }
-func (g *gen) deferStmt(s *ast.DeferStmt)                    { giveUp("defer") }
-func (g *gen) goStmt(s *ast.GoStmt)                          { giveUp("go statement") }
-func (g *gen) send(s *ast.SendStmt)                          { giveUp("channel send") }
-func (g *gen) rangeMap(s *ast.RangeStmt, name string, set func(ast.Expr, *types.Var, loc, types.Type)) {
-	giveUp("range over a map")
-}
-func (g *gen) rangeChan(s *ast.RangeStmt, name string, set func(ast.Expr, *types.Var, loc, types.Type)) {
-	giveUp("range over a channel")
-}
+func (g *gen) printCall(e *ast.CallExpr, nl bool) { giveUp("print") }

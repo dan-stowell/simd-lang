@@ -113,6 +113,8 @@ type gen struct {
 	ctxSlot  loc // the closure object, in a closure
 	nosplit  bool
 	fallthru *label
+	entry    func()
+	abi0     bool // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -718,6 +720,9 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 		params = append(params, sig.Params().At(i))
 	}
 	g.pos(pos)
+	if g.entry != nil {
+		g.entry() // a closure saves its context register first
+	}
 	// parameters: at home in the caller's frame, unless they moved to the heap
 	for i, p := range g.abi.in {
 		v := params[i]
@@ -820,9 +825,16 @@ func (g *gen) finish(pos token.Pos) {
 			moreJumps = append(moreJumps, p.jcc(ccBE))
 		}
 	}
+	if g.abi0 {
+		// called by assembly: the fixed registers of ABIInternal are not set up
+		p.xorps(X15, X15)
+		p.loadG()
+	}
 	var sp []pcval
 	sp = append(sp, pcval{0, 0})
+	spAt := p.pc()
 	p.push(BP)
+	_ = spAt
 	sp = append(sp, pcval{p.pc(), 8})
 	p.movRR(BP, SP)
 	if n != 0 {
@@ -899,6 +911,7 @@ func (g *gen) finish(pos token.Pos) {
 	for i := range relocs {
 		relocs[i].Off += int32(plen)
 	}
+	relocs = append(append([]obj.Reloc(nil), p.relocs...), relocs...)
 	if !g.nosplit {
 		// the stack is too small: store the register arguments where the prologue would, grow, start over
 		var t asm

@@ -125,5 +125,3 @@ func (g *gen) arrayElems(e *ast.CompositeLit, dst loc, et types.Type) {
 		i++
 	}
 }
-
-func (g *gen) mapLit(e *ast.CompositeLit, dst loc, t types.Type) { giveUp("map literal") }

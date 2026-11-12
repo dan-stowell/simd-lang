@@ -46,6 +46,7 @@ type compiler struct {
 	forceInit bool              // emit an init task even with nothing to run (the stock object has one)
 	errs      []string
 	hasInit   bool
+	abis      *symABIs
 	instances map[string]bool
 	instQueue []*instance
 }

@@ -300,6 +300,7 @@ func main() {
 		}
 	}
 	c := newCompiler(pr, target, o.path, o.trimpath)
+	c.readSymABIs(o.symabis)
 	stock, stockDefs := definedSymsOrder(o.out)
 	pp := objabi.PathToPrefix(o.path)
 	c.forceInit = stock[pp+"..inittask"]
@@ -324,6 +325,7 @@ func main() {
 		}
 		os.Exit(3)
 	}
+	c.ctxt.Imports = stockImports(o.out)
 	missing := c.alignWithStock(stockDefs)
 	if os.Getenv("FC_SYMDIFF") != "" {
 		for _, m := range missing {
@@ -357,4 +359,21 @@ func main() {
 			}
 		}
 	}
+}
+
+// stockImports: the packages the stock object says it imports (the linker loads them from this list).
+func stockImports(path string) []goobj.ImportedPkg {
+	for _, m := range readArchive(path) {
+		if m.name != "_go_.o" {
+			continue
+		}
+		i := bytes.Index(m.data, []byte("\n!\n"))
+		if i < 0 {
+			continue
+		}
+		if r := goobj.NewReaderFromBytes(m.data[i+3:], false); r != nil {
+			return r.Autolib()
+		}
+	}
+	return nil
 }

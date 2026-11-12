@@ -511,3 +511,10 @@ func (a *asm) movdRX(reg, x int) { a.rr(0x66, 4, []byte{0x0F, 0x7E}, x, reg) }
 // 16 bytes at a time, unaligned
 func (a *asm) movupsLoad(x int, m mem)  { a.rm(0, 4, []byte{0x0F, 0x10}, x, m, 0) }
 func (a *asm) movupsStore(m mem, x int) { a.rm(0, 4, []byte{0x0F, 0x11}, x, m, 0) }
+
+// loadG: R14 = g, from thread-local storage (MOVQ FS:-8, R14 once the linker fills in the offset).
+func (a *asm) loadG() {
+	a.byte(0x64, 0x4C, 0x8B, 0x34, 0x25)
+	a.relocs = append(a.relocs, obj.Reloc{Off: int32(len(a.b)), Siz: 4, Type: objabi.R_TLS_LE})
+	a.u32(0)
+}

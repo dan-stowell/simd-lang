@@ -37,10 +37,12 @@ type Pkg struct {
 	once  sync.Once
 	err   error
 
-	lnOnce   sync.Once
-	linkname map[string]string
-	declOnce sync.Once
-	decls    map[*types.Func]*ast.FuncDecl
+	lnOnce       sync.Once
+	linkname     map[string]string
+	linknamed    map[string]bool // local names with any //go:linkname directive
+	linknamedStd map[string]bool
+	declOnce     sync.Once
+	decls        map[*types.Func]*ast.FuncDecl
 }
 
 type Program struct {

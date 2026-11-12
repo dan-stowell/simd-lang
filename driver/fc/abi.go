@@ -80,12 +80,13 @@ type abiState struct {
 	c            *compiler
 	ints, floats int
 	stack, spill int64
+	stackOnly    bool
 }
 
 func (s *abiState) assign(t types.Type, isResult bool) abiParam {
 	p := abiParam{typ: t, off: -1}
 	size := s.c.sizeof(t)
-	if size != 0 {
+	if size != 0 && !s.stackOnly {
 		if ps, ok := s.c.flatten(t, 0, nil); ok {
 			ni, nf := 0, 0
 			for _, q := range ps {
@@ -137,8 +138,13 @@ func (c *compiler) abiOf(sig *types.Signature) *abiInfo {
 	return c.abiOfTypes(in, out)
 }
 
-func (c *compiler) abiOfTypes(in, out []types.Type) *abiInfo {
-	s := abiState{c: c}
+func (c *compiler) abiOfTypes(in, out []types.Type) *abiInfo { return c.abiFor(in, out, false) }
+
+// abi0Of: the layout of the same parameters and results under ABI0: everything on the stack.
+func (c *compiler) abi0Of(in, out []types.Type) *abiInfo { return c.abiFor(in, out, true) }
+
+func (c *compiler) abiFor(in, out []types.Type, stackOnly bool) *abiInfo {
+	s := abiState{c: c, stackOnly: stackOnly}
 	info := &abiInfo{}
 	for _, t := range in {
 		info.in = append(info.in, s.assign(t, false))
