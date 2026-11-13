@@ -598,6 +598,22 @@ func (e *escWalk) conversion(k escHole, n *ast.CallExpr) {
 		return
 	}
 	if escIsTypeParam(to) || escIsTypeParam(from) {
+		// whatever the instantiation makes of it: the value itself, or a new string or slice
+		stringish := func(t types.Type) bool {
+			if escIsTypeParam(t) {
+				return true
+			}
+			switch u := t.Underlying().(type) {
+			case *types.Basic:
+				return u.Info()&types.IsString != 0
+			case *types.Slice:
+				return true
+			}
+			return false
+		}
+		if stringish(to) && stringish(from) {
+			e.spill(k, n, escSiteString, escPos(x))
+		}
 		e.expr(k, x)
 		return
 	}

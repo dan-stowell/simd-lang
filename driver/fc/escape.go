@@ -898,10 +898,40 @@ func (pk *escPkg) hasPointers(t types.Type) bool {
 					break
 				}
 			}
+		case *types.Pointer:
+			// a pointer to memory the collector does not manage is not a pointer to it or to the escape
+			// analysis (as in the stock compiler)
+			r = !escNotInHeap(u.Elem())
+		case *types.Slice:
+			r = !escNotInHeap(u.Elem())
 		}
 	}
 	pk.ptrCache[t] = r
 	return r
+}
+
+// escNotInHeap: a type that includes internal/runtime/sys.NotInHeap: its values are never in the heap or
+// on a stack.
+func escNotInHeap(t types.Type) bool {
+	switch u := types.Unalias(t).(type) {
+	case *types.TypeParam:
+		return false
+	case *types.Named:
+		if o := u.Obj(); o.Name() == "nih" && o.Pkg() != nil && o.Pkg().Path() == "internal/runtime/sys" {
+			return true
+		}
+	}
+	switch u := t.Underlying().(type) {
+	case *types.Array:
+		return escNotInHeap(u.Elem())
+	case *types.Struct:
+		for i := 0; i < u.NumFields(); i++ {
+			if escNotInHeap(u.Field(i).Type()) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // escDirectIface: is a value of type t stored in an interface as the pointer itself (no allocation)?
