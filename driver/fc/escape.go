@@ -8,13 +8,28 @@
 //
 // Where this differs from the stock analysis, on purpose:
 //   - closures capture by reference, always (fc's closure objects hold the addresses of the variables), so a
-//     variable captured by a closure that escapes is a heap variable even if it is never reassigned;
+//     variable captured by a closure that escapes is a heap variable even if it is never reassigned
+//     (escByValue turns the stock compiler's capture by value on, for a code generator that copies);
 //   - the results of a function literal are treated like those of any function: what flows into them
 //     outlives everything (stock tracks literals whose every call site it sees);
 //   - an append's new backing store and a make of non-constant size are heap sites when they outlive their
 //     loop iteration / always (stock guards its reuse with a flag / uses a small fixed stack buffer);
 //   - the variables of a `for` clause and of a range clause are per-iteration variables (as the language says
-//     from Go 1.22): they are declared one loop deeper than the statement.
+//     from Go 1.22): they are declared one loop deeper than the statement;
+//   - a generic function is analyzed once, on its body, where a value of a type parameter may hold pointers
+//     and a method called on it is unknown (stock analyzes each instantiation); a call of one prunes the
+//     summary by the types of its arguments (paramHole).
+//
+// Where it follows the stock analysis although one might not expect it to: a uintptr holds no pointer (so
+// runtime.noescape and abi.NoEscape hide a pointer from it, as they are meant to); a pointer to a type that
+// includes internal/runtime/sys.NotInHeap is not a pointer; an argument of a function without a body
+// escapes unless the declaration says //go:noescape; statements the stock front end drops as unreachable
+// (after a return or panic, under a constant false condition) are not analyzed, so what is declared or
+// allocated there has no verdict (it never runs).
+//
+// Interface conversions that have no expression of their own are heap sites whatever becomes of them: one
+// result among several of a call (key: the call expression), an element assigned to an interface variable
+// by a range clause (key: the variable's expression in the clause).
 //
 // The files: escape.go (the driver, the graph and its solution), escape_expr.go (expressions),
 // escape_call.go (calls), escape_stmt.go (statements), escape_dump.go (`fc esc`, the decisions as text for
@@ -382,12 +397,16 @@ func (b *escBatch) outlives(l, other *escLoc) bool {
 }
 
 func (l *escLoc) leakTo(sink *escLoc, derefs int) {
-	if !sink.escapes && sink.paramOut && sink.fn == l.fn {
+	if !sink.escapes && sink.paramOut && sink.fn == l.fn && sink.resultIdx < escMaxResults {
 		l.leaks.addResult(sink.resultIdx, len(l.fn.results), derefs)
 		return
 	}
 	l.leaks.addHeap(derefs)
 }
+
+// escMaxResults: a flow to a result after the first five is a flow to the heap. (The stock compiler's
+// summaries have room for five; nothing here needs the limit, but with it the two agree.)
+const escMaxResults = 5
 
 func (b *escBatch) walkAll() {
 	// a queue with pushes at both ends, as in the stock compiler: escaping locations first

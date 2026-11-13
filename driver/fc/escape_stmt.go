@@ -293,13 +293,22 @@ func (e *escWalk) stmt(s ast.Stmt) {
 		if s.Tag != nil {
 			tt = e.typeOf(s.Tag)
 		}
+		// comparing the tag with a case of the other kind converts one of them to an interface
+		tagConv := false
 		for _, c := range s.Body.List {
 			cc := c.(*ast.CaseClause)
 			for _, x := range cc.List {
 				e.exprTo(e.discardHole(), x, tt)
+				if tt != nil && e.needsIface(e.typeOf(x), tt) {
+					tagConv = true
+				}
 			}
 		}
-		e.discard(s.Tag)
+		if tagConv {
+			e.convIface(e.discardHole(), s.Tag, escPos(s.Tag))
+		} else {
+			e.discard(s.Tag)
+		}
 		for _, c := range s.Body.List {
 			e.block(c.(*ast.CaseClause).Body)
 		}
@@ -324,9 +333,9 @@ func (e *escWalk) stmt(s ast.Stmt) {
 			for _, c := range s.Body.List {
 				if v, ok := e.info.Implicits[c].(*types.Var); ok {
 					l := e.dcl(v)
-					// the stock compiler has one variable per clause, at the clause's first type
+					// the stock compiler has one variable per clause, at the clause's last type
 					if cc := c.(*ast.CaseClause); len(cc.List) > 0 {
-						e.out.varPos[v] = escPos(cc.List[0])
+						e.out.varPos[v] = escTypeEndPos(cc.List[len(cc.List)-1])
 					} else {
 						e.out.varPos[v] = cc.Pos()
 					}
@@ -511,6 +520,54 @@ func (e *escWalk) addr(n ast.Expr) escHole {
 	return e.heapHole()
 }
 
+// escTypeEndPos: where the stock compiler puts the variable of a type switch clause: at the last name in the
+// clause's last type (its noder's typeExprEndPos).
+func escTypeEndPos(x ast.Expr) token.Pos {
+	lastField := func(fl *ast.FieldList) ast.Expr {
+		if fl == nil || len(fl.List) == 0 {
+			return nil
+		}
+		return fl.List[len(fl.List)-1].Type
+	}
+	for {
+		switch t := x.(type) {
+		case *ast.SelectorExpr:
+			return t.X.Pos()
+		case *ast.ParenExpr:
+			x = t.X
+		case *ast.StarExpr:
+			x = t.X
+		case *ast.ArrayType:
+			x = t.Elt
+		case *ast.ChanType:
+			x = t.Value
+		case *ast.Ellipsis:
+			x = t.Elt
+		case *ast.MapType:
+			x = t.Value
+		case *ast.InterfaceType:
+			if x = lastField(t.Methods); x == nil {
+				return t.Pos()
+			}
+		case *ast.FuncType:
+			if x = lastField(t.Results); x == nil {
+				if x = lastField(t.Params); x == nil {
+					return t.Pos()
+				}
+			}
+		case *ast.IndexExpr:
+			x = t.Index
+		case *ast.IndexListExpr:
+			if len(t.Indices) == 0 {
+				return t.Pos()
+			}
+			x = t.Indices[len(t.Indices)-1]
+		default:
+			return x.Pos()
+		}
+	}
+}
+
 // reassign: the variable behind the hole (if it is one) is assigned here, after its declaration.
 func (e *escWalk) reassign(k escHole) {
 	if k.dst.v != nil {
@@ -643,6 +700,33 @@ func (e *escWalk) rangeStmt(s *ast.RangeStmt) {
 	// each iteration has its own: a closure holds a reference to them, not a copy.)
 	if s.Key != nil {
 		e.reassign(e.addr(s.Key))
+	}
+	if s.Tok == token.ASSIGN {
+		// an element assigned to an interface variable is converted: a site with no expression of its own
+		// (its key is the variable's expression in the range clause), which uses the heap
+		var kt, vt types.Type = types.Typ[types.Int], nil
+		switch u := u.(type) {
+		case *types.Slice:
+			vt = u.Elem()
+		case *types.Array:
+			vt = u.Elem()
+		case *types.Pointer:
+			if a, ok := escUnder(u.Elem()).(*types.Array); ok {
+				vt = a.Elem()
+			}
+		case *types.Map:
+			kt, vt = u.Key(), u.Elem()
+		case *types.Chan:
+			kt = u.Elem()
+		case *types.Basic:
+			vt = types.Typ[types.Rune]
+		}
+		for i, x := range []ast.Expr{s.Key, s.Value} {
+			t := []types.Type{kt, vt}[i]
+			if x != nil && t != nil && e.needsIface(e.lhsType(x), t) && !escDirectIface(t) {
+				e.forceSite(x, x.Pos())
+			}
+		}
 	}
 	if s.Value != nil {
 		vk := e.addr(s.Value)
