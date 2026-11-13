@@ -1586,3 +1586,28 @@ Is the oracle the right one? For the runtime, no longer: a smoke test and four s
 collector was unsound. The oracle for M3 is now test binaries built wholly by fc (`FC_ALL=rt`), corpus first,
 then std, and a reproduction that fails every time rather than one run in four.
 
+## 2026-11-13 12:10 UTC: the lost objects
+
+The collector losing objects on an fc-built runtime was not in the collector. Two causes, both things the
+stock compiler does that the runtime's source relies on without saying so:
+1. **No stack check in helpers.** The bulk write barrier takes its P's buffer and walks a pointer mask; it is
+   nosplit so that it cannot be rescheduled in between. The walk calls sys.TrailingZeros64, which the stock
+   compiler replaces by an instruction, and small helpers ((*mspan).base, markBits.setMarked) it inlines. fc
+   called them as functions with a stack check, the check is where a goroutine is preempted, and the barrier
+   resumed on another P still holding the first P's buffer: entries lost, or a nil buffer pointer mid-flush
+   (the crash that finally named the function). Fix: in the runtime's packages, functions the stock compiler
+   would inline or intrinsify are compiled without a stack check; everywhere, small leaf functions have none
+   (the stock assembler's own rule; syscall's code after fork needs it).
+2. **mcall resumes its caller with the wrong BP** by design: it saves the caller's saved BP ("storing BP as it
+   is can cause a frame pointer cycle"), harmless to code that never reads BP. fc addresses locals through BP:
+   gopark returned into its caller's caller. It only looked alive because the usual caller, goparkunlock, had
+   nothing left to do. Fix: BP is recomputed from SP after calls to the package's own assembly.
+What found it: a reproduction that failed every run (reflect calls under allocation pressure), then reading
+the faulting pc instead of the traceback's first user frame. I lost an hour to the latter: the runtime prints
+the caller of the runtime function that faulted, and "fault at a BP-relative store after a call" was the return
+address, not the fault.
+After the fixes: the reproduction 20 of 20, tools/fclink/progs/gcstress 20 of 20 against stock, the language
+corpus 23 of 23 with test binaries built wholly by fc (runtime included, linked by fclink), MinIO and
+kube-apiserver built that way pass their smoke tests.
+Is the oracle the right one? The wholly-fc test binary is, and it is new today; the std list is running in it.
+
