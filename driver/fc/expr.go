@@ -718,9 +718,22 @@ func (g *gen) arith(x, y ast.Expr, op token.Token, t types.Type) loc {
 		g.a.farith(o, size, X0, X1)
 		return loc{kind: lReg, reg: X0}
 	}
+	if v, ok := g.smallConst(y, t); ok {
+		if alu, ok := immOp[op]; ok {
+			g.loadTo(AX, g.expr(x), t)
+			g.a.aluImm(alu, 8, AX, v)
+			if op == token.ADD || op == token.SUB {
+				g.a.extend(AX, size, isSigned(t))
+			}
+			return loc{kind: lReg, reg: AX}
+		}
+	}
 	g.operands(x, y, t, t, AX, CX)
 	return g.arithRegs(op, t)
 }
+
+// immOp: the operators that take an immediate operand directly.
+var immOp = map[token.Token]int{token.ADD: aADD, token.SUB: aSUB, token.AND: aAND, token.OR: aOR, token.XOR: aXOR}
 
 // arithRegs: AX = AX op CX for integers of type t.
 func (g *gen) arithRegs(op token.Token, t types.Type) loc {
@@ -927,8 +940,13 @@ func (g *gen) condJump(e ast.Expr, f *label) {
 			}
 			if isWord(t) && !isInterface(xt) && !isInterface(yt) {
 				if b, ok := t.Underlying().(*types.Basic); !ok || b.Info()&types.IsUntyped == 0 {
-					g.operands(e.X, e.Y, t, t, AX, CX)
-					g.a.aluRR(aCMP, 8, AX, CX)
+					if v, ok := g.smallConst(e.Y, t); ok {
+						g.loadTo(AX, g.expr(e.X), t)
+						g.a.aluImm(aCMP, 8, AX, v)
+					} else {
+						g.operands(e.X, e.Y, t, t, AX, CX)
+						g.a.aluRR(aCMP, 8, AX, CX)
+					}
 					cc := cmpCC[e.Op][0]
 					if !isSigned(t) {
 						cc = cmpCC[e.Op][1]

@@ -567,6 +567,11 @@ func (g *gen) opLoc(l loc, y ast.Expr, op token.Token, t types.Type) loc {
 			return g.complexArith(g.keep(l, t), g.constLoc(constant.MakeInt64(1), t), op, t)
 		}
 		g.loadTo(AX, l, t)
+		if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsInteger != 0 {
+			g.a.aluImm(immOp[op], 8, AX, 1)
+			g.a.extend(AX, int(g.c.sizeof(t)), isSigned(t))
+			return loc{kind: lReg, reg: AX}
+		}
 		g.a.movImm(CX, 1)
 		return g.arithRegs(op, t)
 	}

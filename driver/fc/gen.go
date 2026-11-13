@@ -104,27 +104,28 @@ type gen struct {
 	locals   int64
 	maxarg   int64
 
-	resHome  []loc
-	resVars  []*types.Var
-	ret      *label
-	scopes   []scope
-	labels   map[*types.Label]*label
-	lblScope map[*types.Label]*scope
-	hasDefer bool
-	nclosure int
-	lastPos  token.Pos
-	ctxSlot  loc // the closure object, in a closure
-	nosplit  bool
-	fallthru *label
-	entry    func()
-	bpFix    []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	esc      escResult           // escape analysis of the package the body is in; nil: everything escapes
-	addrVars map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
-	convSite ast.Node            // the expression being converted to an interface (for the analysis's verdict)
-	rf       *rfCtx              // set in the body of a range-over-func loop
-	deferTok *types.Var          // the runtime's token for defers made in range-over-func loop bodies
-	root     *gen                // the function whose results a return there sets
-	abi0     bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	resHome   []loc
+	resVars   []*types.Var
+	ret       *label
+	scopes    []scope
+	labels    map[*types.Label]*label
+	lblScope  map[*types.Label]*scope
+	hasDefer  bool
+	nclosure  int
+	lastPos   token.Pos
+	ctxSlot   loc // the closure object, in a closure
+	nosplit   bool
+	fallthru  *label
+	entry     func()
+	bpFix     []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace int                 // the address of the label placed last (another label may already name the current address)
+	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
+	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	rf        *rfCtx              // set in the body of a range-over-func loop
+	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	root      *gen                // the function whose results a return there sets
+	abi0      bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -403,7 +404,22 @@ func (g *gen) release(mark int) {
 func (g *gen) newLabel() *label { return &label{pc: -1} }
 
 func (g *gen) place(l *label) {
+	// a jump to the very next instruction is not emitted: take it back, if nothing refers to the address
+	// after it yet
+	for n := len(l.jumps); n > 0; n = len(l.jumps) {
+		j := l.jumps[n-1]
+		at := j - 1
+		if j+4 != g.a.pc() || at < 0 || g.a.b[at] != 0xE9 || g.a.maxTarget > at || g.lastPlace > at || !g.nothingAfter(at) {
+			break
+		}
+		g.a.b = g.a.b[:at]
+		l.jumps = l.jumps[:n-1]
+		for i := len(g.out.lines) - 1; i >= 0 && g.out.lines[i].pc > at; i-- {
+			g.out.lines[i].pc = at // a line that began after the jump begins here now
+		}
+	}
 	l.pc = g.a.pc()
+	g.lastPlace = l.pc
 	for _, j := range l.jumps {
 		g.a.patch(j, l.pc)
 	}
@@ -1125,4 +1141,39 @@ func (g *gen) frameAddr(l loc) loc {
 	g.a.lea(R8, mb(BP, l.off))
 	g.a.store(mb(BP, p.off), R8, 8)
 	return p
+}
+
+// nothingAfter: no relocation and no table entry is at an address beyond pc.
+func (g *gen) nothingAfter(pc int) bool {
+	last := func(evs []pcval) bool { return len(evs) == 0 || evs[len(evs)-1].pc <= pc }
+	if n := len(g.a.relocs); n > 0 && int(g.a.relocs[n-1].Off) >= pc {
+		return false
+	}
+	for _, at := range g.bpFix {
+		if at >= pc {
+			return false
+		}
+	}
+	return last(g.out.sp) && last(g.out.unsafe) && last(g.out.stackmap)
+}
+
+// smallConst: e is an integer constant that fits a sign-extended 32-bit immediate, for an operation on
+// values of type t.
+func (g *gen) smallConst(e ast.Expr, t types.Type) (int64, bool) {
+	if e == nil {
+		return 0, false
+	}
+	tv := g.info.Types[e]
+	if tv.Value == nil || !isWord(t) {
+		return 0, false
+	}
+	b, ok := t.Underlying().(*types.Basic)
+	if !ok || b.Info()&types.IsInteger == 0 {
+		return 0, false
+	}
+	l := g.constLoc(tv.Value, t)
+	if l.kind != lImm || int64(int32(l.imm)) != l.imm {
+		return 0, false
+	}
+	return l.imm, true
 }
