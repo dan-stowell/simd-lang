@@ -108,20 +108,31 @@ Log (append one line per milestone reached, with the oracle number):
   (`FC_ALL=rt tools/fc/test.sh`): 221 of 226 packages pass their own tests**; the language corpus 23 of 23 in that
   mode; MinIO and kube-apiserver built that way pass their smoke tests. The lost-object bug had two causes (JOURNAL
   12:10): stack checks in helpers the stock compiler inlines, and BP after the runtime's context switches.
+- **M4, 2026-11-13 23:45 UTC: MinIO entirely our way passes its tests.** Every Go package by fc, the runtime included,
+  linked by fclink (`fc build`'s defaults now; no go command in the build; assembly by the stock assembler): MinIO's own
+  tests with wholly-fc test binaries: 45 of 46 packages pass and cmd fails one test that stock fails too
+  (fc-minio-rt2.log, fc-minio-cmd-flake.log); smoke test passes (25 of 25 starts). Cold, 8 cores, machine shared with a
+  builder (load 4-5): **3.6-4.1 s wall, 20-23 core-s** (this morning 6.8 s; frozen stock path 11.2 s; exit test 3.3 s).
+  What moved it: huge pages for fc's heap (-8 core-s), biggest-first slots, declarations checked once with bodies in
+  shards (go/types CheckDecls/Bodies), a function's type information in its own maps. The build is CPU-bound now
+  (6-7 of 8 cores busy from 0.2 s to the link).
+- M3 nearly, 2026-11-13 23:45 UTC: **std wholly by fc: 258 of the 262 packages with tests pass** (tests/fc/passing.txt;
+  skips with evidence in tests/fc/skips.txt). Left: runtime (9 tests) and runtime/pprof with a builder; runtime/cgo and
+  internal/runtime/cgobench need cgo (not buildable with stock either at CGO_ENABLED=0). Bugs found by the last 36:
+  one-case select through selectgo (tickers deadlocked), fclink's function table order with mixed alignment,
+  go:fipsinfo, two data races in fc.
 
-Now (2026-11-13 23:16 UTC): (1) M4's oracle is met: MinIO's own tests with wholly-fc binaries (runtime included, fclink):
-45 of 46 packages pass and cmd fails only TestTrackingResponseWriter, as stock does (fc-minio-rt2.log,
-fc-minio-cmd-flake.log; the earlier second failure was the disk being 99% full). (2) std wholly by fc: the 226 of
-passing.txt pass (index/suffixarray and hash/maphash need FC_TIMEOUT=900: fc's code is ~8x slower there). Of the 36
-std packages with tests outside passing.txt, 23 pass; fixed since: fclink function order (gc/scan), one-case select
-(time hung), skips for 6 allocation/liveness tests. Open: `FC_ALL=rt FC_TIMEOUT=1500 tools/fc/batch.sh -j 3 time os
-net/http crypto/tls` was running (crypto/tls needs `-skip TestBogoSuite`: fails with stock here); net/http's
-TestTransportGCRequest waits on liveness (skip it once confirmed); runtime (9 tests) and runtime/pprof
-(TestMemoryProfiler) are with a builder on branch worktree-agent-a937e32fdf2263d17 (merge its commits). Then add the
-passing ones to tests/fc/passing.txt and log M3. (3) Speed, on an IDLE machine (nothing was idle on 2026-11-13 evening;
-`uptime` first): `tools/fc/cold.sh minio 8` (now: runtime by fc, fclink, 10 GB huge page pool, biggest-first slots,
-declarations once + sharded bodies) against FC_FIFO=1 / FC_BODIES=0 / HUGEPAGES=0, order-balanced; under load it was
-6.6 s cold (10.5 without huge pages) and the cores-busy profile is flat (tools/fc/timeline.py), i.e. CPU-bound at
-~20 core-s. Then `tools/scoreboard/ours.sh`, STATUS, MORNING, TRACE. (4) Next speed candidates: objects handed to
-fclink in process (M5; design in driver/fclink/main.go), the remaining 2.5 s of kernel time, the back end's own
-CPU (profile `fc build -cpuprofile`).
+Now (2026-11-13 23:45 UTC): (1) Merge the builder's branch `worktree-agent-a937e32fdf2263d17` (7+ commits: runtime print
+of hex/quoted types, stack check of self-recursive runtime functions, FuncPCABIInternal of an interface, an ELF symbol
+table in fclink unless -s, skips): `git merge` it, `driver/mkfc.sh && driver/mkfclink.sh`, then
+`FC_ALL=rt FC_TIMEOUT=1200 tools/fc/batch.sh -j 2 runtime runtime/pprof` and `FC_ALL=rt tools/fc/lang.sh`; add the two to
+tests/fc/passing.txt and log M3. (2) On an IDLE machine (`uptime` first; the builder kept load at 4-9 all evening):
+`tools/scoreboard/ours.sh` (cold.sh now reserves a 10 GB huge page pool), `python3 tools/scoreboard/mkscoreboard.py`,
+regenerate TRACE.md, overwrite STATUS.md and MORNING.md (dev-build differences to list: huge pages, the skips file,
+builds not byte-reproducible, fc's code ~8x slower than stock -l in tight loops, stack guard doubled). (3) Speed: the
+build is CPU-bound at ~20 core-s (profile: back end 61% of which codegen 42, type descriptors 14, object writing 12;
+bodies check 16; parse 8; declarations 8; kernel 2.7 s). Largest single item left: objects handed to fclink in process
+(M5; design in driver/fclink/main.go): writeObject 2.2 core-s + 0.46 s of write() + fclink's load and resolve. Then
+memory volume (7.5 GB allocated: per-function scratch reuse), and parsing a big package's files in parallel.
+(4) Rerun MinIO's own tests wholly by fc with the current fc before quoting M4 again
+(`FC_ALL=rt FC_TIMEOUT=900 tools/fc/batch.sh -j 3 -C /home/exedev/targets/minio $(cat tests/fc/passing-minio.txt)`).
