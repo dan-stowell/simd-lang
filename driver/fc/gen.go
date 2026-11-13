@@ -1287,13 +1287,13 @@ var escWhere = os.Getenv("FC_ESC")
 // inRuntime: is p the runtime or one of the packages it imports?
 func (pr *Program) inRuntime(p *Pkg) bool {
 	pr.rtcOnce.Do(func() {
-		pr.rtClosure = map[*Pkg]bool{}
+		pr.rtClosure = map[string]bool{}
 		var walk func(p *Pkg)
 		walk = func(p *Pkg) {
-			if p == nil || pr.rtClosure[p] {
+			if p == nil || pr.rtClosure[plainPath(p.ImportPath)] {
 				return
 			}
-			pr.rtClosure[p] = true
+			pr.rtClosure[plainPath(p.ImportPath)] = true // (by path: a test binary has variants of these packages)
 			pr.parse(p)
 			for _, ip := range p.imps {
 				if m, ok := p.ImportMap[ip]; ok {
@@ -1304,7 +1304,7 @@ func (pr *Program) inRuntime(p *Pkg) bool {
 		}
 		walk(pr.byPath["runtime"])
 	})
-	return pr.rtClosure[p]
+	return pr.rtClosure[plainPath(p.ImportPath)]
 }
 
 type escAdapter struct{ e *escInfo }

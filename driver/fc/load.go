@@ -79,10 +79,10 @@ type Program struct {
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
 	rtWidth      sync.Map       // runtime function name -> the argument area of its real signature
 	rtcOnce      sync.Once
-	rtClosure    map[*Pkg]bool // the runtime and what it imports
-	fullFn       sync.Map      // a declarations-pass *types.Func -> the full pass's
-	declNS       int64         // time in declarations-only checks
-	byInfo       sync.Map      // *types.Info -> *Pkg
+	rtClosure    map[string]bool // the runtime and what it imports, by plain import path
+	fullFn       sync.Map        // a declarations-pass *types.Func -> the full pass's
+	declNS       int64           // time in declarations-only checks
+	byInfo       sync.Map        // *types.Info -> *Pkg
 	rtOnce       sync.Once
 	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
 	localMu      sync.Mutex
