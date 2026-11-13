@@ -82,6 +82,12 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 			// assembly may have used the registers ABIInternal fixes
 			g.a.xorps(X15, X15)
 			g.a.loadG()
+			// Nor is BP safe: Go code compiled by the stock compiler never addresses through it, so
+			// assembly that leaves it wrong goes unnoticed there (klauspost/compress/s2 does). Locals here
+			// are BP-relative: recompute it from SP (the frame size is patched in when it is known).
+			g.a.byte(0x48, 0x8D, 0xAC, 0x24)
+			g.bpFix = append(g.bpFix, g.a.pc())
+			g.a.u32(0)
 		}
 	case 1:
 		g.loadTo(DX, c.clo, types.Typ[types.UnsafePointer])

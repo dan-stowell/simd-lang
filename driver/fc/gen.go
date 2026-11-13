@@ -17,6 +17,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -114,6 +115,7 @@ type gen struct {
 	nosplit  bool
 	fallthru *label
 	entry    func()
+	bpFix    []int      // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
 	rf       *rfCtx     // set in the body of a range-over-func loop
 	deferTok *types.Var // the runtime's token for defers made in range-over-func loop bodies
 	root     *gen       // the function whose results a return there sets
@@ -932,6 +934,9 @@ func (g *gen) finish(pos token.Pos) {
 	}
 	plen := p.pc()
 	body := g.a
+	for _, at := range g.bpFix {
+		binary.LittleEndian.PutUint32(body.b[at:], uint32(n))
+	}
 	code := make([]byte, 0, len(p.b)+len(body.b)+96)
 	code = append(append(code, p.b...), body.b...)
 	out := g.out
