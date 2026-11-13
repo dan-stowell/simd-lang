@@ -109,7 +109,7 @@ Log (append one line per milestone reached, with the oracle number):
   mode; MinIO and kube-apiserver built that way pass their smoke tests. The lost-object bug had two causes (JOURNAL
   12:10): stack checks in helpers the stock compiler inlines, and BP after the runtime's context switches.
 
-Now (2026-11-13 23:20 UTC): (1) M4's oracle is met: MinIO's own tests with wholly-fc binaries (runtime included, fclink):
+Now (2026-11-13 23:16 UTC): (1) M4's oracle is met: MinIO's own tests with wholly-fc binaries (runtime included, fclink):
 45 of 46 packages pass and cmd fails only TestTrackingResponseWriter, as stock does (fc-minio-rt2.log,
 fc-minio-cmd-flake.log; the earlier second failure was the disk being 99% full). (2) std wholly by fc: the 226 of
 passing.txt pass (index/suffixarray and hash/maphash need FC_TIMEOUT=900: fc's code is ~8x slower there). Of the 36

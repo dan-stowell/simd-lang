@@ -89,9 +89,22 @@ func (c *compiler) typeLinkName(t types.Type) string {
 	if ok {
 		return name
 	}
-	var b strings.Builder
-	c.tconv(&b, t, fmtID, false)
-	name = b.String()
+	// One build, one set of type objects (load.go: bodiesLater): a name built by any package's compiler is
+	// the name for all of them. (Not in the tests' mixed mode, where a package and its test variant differ.)
+	shared := !c.mixed && bodiesLater
+	if shared {
+		if v, ok := c.pr.linkNames.Load(t); ok {
+			name = v.(string)
+		}
+	}
+	if name == "" {
+		var b strings.Builder
+		c.tconv(&b, t, fmtID, false)
+		name = b.String()
+		if shared {
+			c.pr.linkNames.Store(t, name)
+		}
+	}
 	l.mu.Lock()
 	if l.names == nil {
 		l.names = map[types.Type]string{}

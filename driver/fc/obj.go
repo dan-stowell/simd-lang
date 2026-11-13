@@ -90,7 +90,43 @@ type layoutCache struct {
 	hasPtr map[types.Type]bool
 }
 
+// wordLayout: size and alignment of the types whose layout does not depend on anything else (linux/amd64,
+// as types.SizesFor("gc", "amd64") has them), which is most of what is asked: no lock, no map.
+func wordLayout(t types.Type) (size, align int64, ok bool) {
+	switch u := t.Underlying().(type) {
+	case *types.Basic:
+		switch u.Kind() {
+		case types.Bool, types.Int8, types.Uint8:
+			return 1, 1, true
+		case types.Int16, types.Uint16:
+			return 2, 2, true
+		case types.Int32, types.Uint32, types.Float32:
+			return 4, 4, true
+		case types.Int, types.Uint, types.Int64, types.Uint64, types.Uintptr, types.Float64, types.UnsafePointer:
+			return 8, 8, true
+		case types.Complex64:
+			return 8, 4, true
+		case types.Complex128:
+			return 16, 8, true
+		case types.String:
+			return 16, 8, true
+		}
+	case *types.Pointer, *types.Map, *types.Chan, *types.Signature:
+		return 8, 8, true
+	case *types.Slice:
+		return 24, 8, true
+	case *types.Interface:
+		if _, tp := types.Unalias(t).(*types.TypeParam); !tp {
+			return 16, 8, true
+		}
+	}
+	return 0, 0, false
+}
+
 func (c *compiler) sizeof(t types.Type) int64 {
+	if s, _, ok := wordLayout(t); ok {
+		return s
+	}
 	l := &c.layout
 	l.mu.Lock()
 	v, ok := l.size[t]
@@ -108,6 +144,9 @@ func (c *compiler) sizeof(t types.Type) int64 {
 }
 
 func (c *compiler) alignof(t types.Type) int64 {
+	if _, a, ok := wordLayout(t); ok {
+		return a
+	}
 	l := &c.layout
 	l.mu.Lock()
 	v, ok := l.align[t]
