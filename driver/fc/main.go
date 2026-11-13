@@ -300,6 +300,17 @@ func main() {
 	if err := pr.readPlan(plan); err != nil {
 		log.Fatal(err)
 	}
+	// A test binary's plan has packages recompiled for the test ("iter [runtime.test]") and may have no plain
+	// "iter": the compile line names the plain path, so that is what the variant answers to.
+	var variants []*Pkg
+	for path, p := range pr.byPath {
+		if i := strings.Index(path, " ["); i >= 0 && pr.byPath[path[:i]] == nil {
+			variants = append(variants, p)
+		}
+	}
+	for _, p := range variants {
+		pr.byPath[plainPath(p.ImportPath)] = p
+	}
 	importMap, archives := map[string]string{}, map[string]string{}
 	if o.importcfg != "" {
 		importMap, archives = readImportcfg(o.importcfg)
