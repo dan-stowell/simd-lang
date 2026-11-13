@@ -22,6 +22,7 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -54,7 +55,16 @@ func buildMode(args []string) {
 	chdir := fs.String("C", "", "no plan file: find the packages from the main package in this directory (the argument is then a\n"+
 		"directory relative to it, like . or ./cmd/x); the go command is not asked")
 	prof := fs.String("cpuprofile", "", "write a CPU profile")
+	memprof := fs.String("memprofile", "", "write an allocation profile at the end")
 	fs.Parse(args)
+	if *memprof != "" {
+		defer func() {
+			if f, err := os.Create(*memprof); err == nil {
+				pprof.Lookup("allocs").WriteTo(f, 0)
+				f.Close()
+			}
+		}()
+	}
 	if *prof != "" {
 		f, err := os.Create(*prof)
 		if err != nil {
@@ -71,6 +81,9 @@ func buildMode(args []string) {
 		// measured against also runs with the collector off). The limit is a guard for the 31 GiB machine.
 		debug.SetGCPercent(-1)
 		debug.SetMemoryLimit(20 << 30)
+		if v, err := strconv.Atoi(os.Getenv("FC_GOGC")); err == nil {
+			debug.SetGCPercent(v) // (an experiment: the collector on)
+		}
 	}
 	t0 := time.Now()
 	c0 := cpuSeconds()
@@ -185,6 +198,9 @@ func buildMode(args []string) {
 						}
 					}
 				}
+				ru := cmd.ProcessState.SysUsage().(*syscall.Rusage)
+				fmt.Printf("stock packages: %d built by the go command, ready %d ms after the start, %.2f core-s\n", len(need), time.Since(t0).Milliseconds(),
+					float64(ru.Utime.Nano()+ru.Stime.Nano())/1e9)
 				stockDone <- err
 			}()
 		}
@@ -414,6 +430,20 @@ func buildMode(args []string) {
 			log.Fatalf("fc build -link: link: %v", err)
 		}
 		fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+	}
+	if os.Getenv("FC_INFOSTATS") != "" {
+		var nt, nd, nu, ns, nb int64
+		for _, p := range pr.byPath {
+			if p.info != nil {
+				nt += int64(len(p.info.Types))
+				nd += int64(len(p.info.Defs))
+				nu += int64(len(p.info.Uses))
+				ns += int64(len(p.info.Selections))
+				nb += p.srcBytes
+			}
+		}
+		fmt.Printf("info maps: %d source bytes; bytes per entry: Types %.1f, Defs %.1f, Uses %.1f, Selections %.1f\n", nb,
+			float64(nb)/float64(nt), float64(nb)/float64(nd), float64(nb)/float64(nu), float64(nb)/float64(ns))
 	}
 	total := cpuSeconds() - c0
 	var all int64

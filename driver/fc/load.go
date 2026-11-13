@@ -341,11 +341,12 @@ func (pr *Program) check(p *Pkg) error {
 		// sized from the source: growing these maps is a tenth of the type checker's time otherwise
 		n := int(p.srcBytes)
 		p.info = &types.Info{
-			Types:      make(map[ast.Expr]types.TypeAndValue, n/9),
-			Defs:       make(map[*ast.Ident]types.Object, n/40),
-			Uses:       make(map[*ast.Ident]types.Object, n/14),
+			// (measured over MinIO's closure: one entry per 14.1, 110, 24.3 and 158 source bytes)
+			Types:      make(map[ast.Expr]types.TypeAndValue, n/13),
+			Defs:       make(map[*ast.Ident]types.Object, n/95),
+			Uses:       make(map[*ast.Ident]types.Object, n/22),
 			Implicits:  map[ast.Node]types.Object{},
-			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/40),
+			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/130),
 			Instances:  map[*ast.Ident]types.Instance{},
 		}
 		pr.byInfo.Store(p.info, p)

@@ -23,6 +23,7 @@ import (
 
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
+	tsFast      sync.Map // types.Type -> *obj.LSym: descriptors already asked for by that type object
 	rtMu        sync.Mutex
 	rtDone      map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
 	rtMeth      map[string][]methodSig       // method tables, by type symbol name
@@ -118,15 +119,21 @@ func (c *compiler) typeSymName(t types.Type) string {
 // typeSym is the symbol of t's type descriptor. The descriptor is defined in this object when the stock
 // compiler would define it in the package's object.
 func (c *compiler) typeSym(t types.Type) *obj.LSym {
+	// asked for the same type object again (most requests): no name is built and no lock is taken
+	if s, ok := c.tsFast.Load(t); ok {
+		return s.(*obj.LSym)
+	}
 	c.rtMu.Lock()
 	defer c.rtMu.Unlock()
 	c.rtInit()
+	t0 := t
 	t = types.Unalias(t)
 	s := c.writeType(t)
 	if hasSym(t) {
 		// stock WriteRuntimeTypes: a type with a name brings the pointer to it
 		c.writeType(types.NewPointer(t))
 	}
+	c.tsFast.Store(t0, s)
 	return s
 }
 
