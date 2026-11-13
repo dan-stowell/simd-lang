@@ -133,6 +133,49 @@ func (g *gen) selectStmt(s *ast.SelectStmt, name string) {
 	recvOK := g.wordTemp()
 	if n == 0 {
 		g.a.storeImm(mb(BP, chosen.off), -1, 8)
+	} else if n == 1 {
+		// One communication: a plain send or receive, or with a default clause the runtime's non-blocking
+		// send or receive, as the stock compiler does (walk/select.go). Not only cheaper than selectgo: the
+		// runtime counts on it. time.sendTime's select runs inside the timer's own send (unlockAndRun), and
+		// selectgo there looks at the channel's timer again, which for a ticker is due again: the timer
+		// waited on the lock it held.
+		sc := cases[0]
+		elemTo := func(r int) {
+			if g.c.sizeof(sc.et) == 0 {
+				g.a.movImm(r, 0)
+			} else {
+				g.addrTo(r, sc.elem)
+			}
+		}
+		g.a.storeImm(mb(BP, recvOK.off), 0, 8)
+		switch {
+		case sc.send && deflt == nil:
+			elemTo(BX)
+			g.loadTo(AX, sc.ch, sc.ct)
+			g.callRT("chansend1")
+			g.a.movImm(AX, 1)
+		case sc.send:
+			elemTo(BX)
+			g.loadTo(AX, sc.ch, sc.ct)
+			g.callRT("selectnbsend")
+		case deflt == nil:
+			elemTo(BX)
+			g.loadTo(AX, sc.ch, sc.ct)
+			g.callRT("chanrecv2")
+			g.a.extend(AX, 1, false)
+			g.a.store(mb(BP, recvOK.off), AX, 8)
+			g.a.movImm(AX, 1)
+		default:
+			elemTo(AX)
+			g.loadTo(BX, sc.ch, sc.ct)
+			g.callRT("selectnbrecv")
+			g.a.extend(BX, 1, false)
+			g.a.store(mb(BP, recvOK.off), BX, 8)
+		}
+		// chosen: case 0 if selected, else -1 (the default clause)
+		g.a.extend(AX, 1, false)
+		g.a.aluImm(aSUB, 8, AX, 1)
+		g.a.store(mb(BP, chosen.off), AX, 8)
 	} else {
 		// the scase array (channel, element pointer) and the order array (2n uint16)
 		ptrs := make([]bool, 2*n)

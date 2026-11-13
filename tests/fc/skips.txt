@@ -44,3 +44,4 @@ bytes ^TestReplace$ asserts allocation counts that need escape analysis in the p
 net ^TestIPAppendTextNoAllocs$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
 testing ^TestBenchmarkBLoopAllocs$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 unicode/utf16 ^TestAllocationsDecode$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
+crypto/tls ^TestWeakCertCache$ waits on object liveness (a weak pointer to a certificate that the collector must clear)
