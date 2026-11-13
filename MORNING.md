@@ -1,65 +1,53 @@
-# MORNING: 2026-11-12 23:23 UTC (campaign 1, milestone M2)
+# MORNING: 2026-11-13 09:20 UTC (campaign 1, between M2 and M4)
 
 ## The oracle number
 
-| | now | at the campaign's start |
+| | now | at M2 (2026-11-12 23:23) |
 |---|---|---|
-| standard-library packages compiled entirely by fc whose own tests pass | **205** of 262 with tests (tests/fc/passing.txt) | 0 |
-| compile but fail a test | 53 (Codex is triaging: reviews/inbox/fc-triage-1.md when it lands) | |
-| not compiled | 4 | |
-| language corpus (tests/fc/lang: 21 packages, differential against stock) | **21 of 21** | did not exist |
-| MinIO | builds and links, 1,283 packages by fc; **the binary does not run yet** (dies in encoding/gob's init) | 0 |
-| other corpus projects | not tried | |
+| standard-library packages compiled by fc whose own tests pass | **228** (tests/fc/passing.txt) | 205 |
+| language corpus (tests/fc/lang, differential against stock) | **22 of 22** | 21 of 21 |
+| MinIO binary, every package above the runtime by fc | **passes its smoke test, cold** | did not run |
+| MinIO's own tests, every package above the runtime by fc (`FC_ALL=1`) | **45 of 46 packages pass; cmd fails one test that stock fails too** | not run |
+| corpus projects that build, link and pass their check through fc | **7 of 7** (minio, kube-apiserver, prometheus, caddy, tailscaled, runsc, buildifier) | 0 |
 
-Core-seconds per MB of source, the 205 packages (8.23 MB), `tools/fc/cost.sh`, three rounds, medians:
+## The scoreboard (SCOREBOARD.md, regenerated)
 
-| | core-s | per MB |
-|---|---|---|
-| stock baseline mode (build/compile-sb, SB_BASELINE=1, GOGC=off, -dwarf=false -l) | 6.18 (6.00-7.08) | 0.75 |
-| fc, attributable to these packages (parse + check + compile) | 2.80 (2.65-3.23) | 0.34 |
-| fc, whole process (also checks the closure, runs the assembler) | 3.48 (3.26-3.89) | 0.42 |
+Cold builds on an idle machine at 08:56-09:04 UTC, one run per cell, fc + fclink, binaries checked. 8 cores, seconds:
 
-**Kill test: 0.45, above the one-third line.** I did not stop: PLAN.md stops the campaign only with no
-measured path, and there is one (JOURNAL, M2 entry: the profile's named items, and 0.60 -> 0.45 in the first
-hour of looking). It is the number to watch at M3.
+| project | stock | fair stock | fc | fc core-s |
+|---|---|---|---|---|
+| minio | 51.3 | 29.5 | **6.8** | 31 |
+| kube-apiserver | 74.1 | 52.2 | **7.6** | 40 |
+| prometheus | | | **11.1** | 59 |
+| caddy | | | **4.6** | 22 |
+| tailscaled | | | **4.3** | 18 |
+| runsc | | | **2.8** | 10 |
+| buildifier | | | **2.4** | 7 |
 
-## The trace and the scoreboard
+(Stock columns for the last five are in SCOREBOARD.md.) The exit test is MinIO at 3.3 s. Committed after that
+run and not yet in the table: the two-pass front end, worth 0.6-0.9 s of MinIO's warm build (5.5 -> 4.8 s,
+three interleaved pairs). The column has no critical-path figure yet, and TRACE.md still describes the
+previous campaign's path.
 
-TRACE.md is unchanged: it describes the frozen stock path (MinIO cold 11.2 s median, fair stock 32.5 s).
-SCOREBOARD.md is new (M0): every corpus project cold at 1, 2, 4 and 8 cores, stock and fair stock, Bazel
-projects from their own DAG. One run per cell; fc builds overlapped on cores 4-7 during part of the 8-core
-pass, so rerun `tools/scoreboard/run.sh . 8` on a quiet machine before quoting an 8-core cell.
+## What is not true yet
 
-MinIO through fc, whole program, one process (`fc build -link`): 5.4-6.3 s wall, 26-27 core-s including
-the assembler and the stock link, peak memory 8 GB. **Not comparable to the trace yet**: the runtime's 30
-packages come prebuilt from the stock compiler, the page cache is warm, and the binary does not pass the
-smoke test. Materialization: one object per package is still written and read back by the stock linker
-(M5 removes both).
+- The runtime and what it imports (about 30 packages) are compiled by the stock compiler inside the timer.
+  fc compiles them (`FC_RUNTIME=1`), but 6 nosplit call chains exceed the stack bound, mostly through write
+  barriers on variables that escape analysis would keep in the frame. That is M3.
+- Escape analysis exists (driver/fc/escape*.go, 3,900 lines, oracle `tools/fc/escdiff.sh` against the stock
+  compiler's -m) and is wired in but off: with it on, 2 of 22 language-corpus packages fail and the oracle
+  shows 4 unsound decisions there. A builder is fixing them.
+- The linker is ours but a separate process; fc still writes object files for it to read back.
 
-## What fc is
+## Where the 6.8 s go (MinIO, 8 cores, cold)
 
-go/types over source for the whole dependency closure in one address space; one walk over the typed syntax
-tree straight to x86 bytes (no IR, no SSA, no assembler pass); its own type descriptors, itabs, stack maps
-and pc tables; objects through cmd/internal/obj's writer until M5. Generics are compiled per instantiation.
-About 12,000 lines in driver/fc.
+About 31 core-seconds on 8 cores is 3.9 s if nothing waited; the link is 0.3 s. The rest was the front end's
+dependency chain (now shortened by the two-pass change) and the back end not filling the cores early.
+CPU by part, from a profile: code generation about 10 core-s, type checking 9, type descriptors 3.4, object
+writing 2.7, parsing 2.
 
-## Behaviour differences of the dev build (every one)
+## Found on the way
 
-- No escape analysis: every address-taken or captured variable is on the heap, every closure and boxed
-  value is allocated. Tests asserting allocation counts are skipped and listed (tests/fc/skips.txt: 1 so
-  far; the triage will add the bytes/strings family).
-- Every local is live until its function returns (one stack map per function).
-- No inlining, no optimization: every variable lives in memory.
-- Panic order: where the spec leaves the order of two index panics open, fc matches the stock compiler in
-  the cases the corpus covers (right-hand sides last to first), not provably everywhere.
-- Method tables' `ptrToThis` for unnamed pointer types is never set in whole-program mode (reflect falls back).
-- No DWARF.
-
-## Reviews
-
-Codex skeptic fired on the M2 commit; nothing in the inbox yet.
-
-## Decisions that are Dan's
-
-See STATUS.md (three: the skip list, the escape-all export data in the test harness, continuing past the
-kill test's threshold on a measured path).
+- The default Go build cache gave a broken stock test binary (cleared). Stock comparisons use their own cache.
+- Codex's second run was cut short by its provider flagging a prompt; its report was still usable
+  (reviews/done/fc-grind-1.md, REVIEWS.md).

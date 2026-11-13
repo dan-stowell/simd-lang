@@ -1546,3 +1546,22 @@ Cold (tools/fc/cold.sh: fresh GOCACHE, page cache dropped, the driver's own plan
 with two other agents using the machine: MinIO 7.7-8.7 s wall, 34-36 core-s; kube-apiserver 8.7-9.1 s, 42-43
 core-s; both pass their smoke tests. Not yet measured on a quiet machine, and the scoreboard's "ours" column
 is still empty.
+
+## 2026-11-13 09:20 UTC: the scoreboard's fc column
+
+The machine was idle for the first time in a day at 08:50, so the column was run then, twice: with the stock
+linker (MinIO 8.6 s on 8 cores) and with fclink (6.8 s). The second run is the one in SCOREBOARD.md; every
+binary passed its check, prometheus included once the planner understood workspaces. What the day's noise
+had hidden: during the front end only 3-4 of 8 cores were busy (8.6 core-s in the first 2.5 s), because each
+package's full check waited on its imports' full checks. Measured first: declarations-only checking of the
+whole closure takes 0.9 s wall, 4.3 core-s, parse included. So a package is now checked twice, declarations
+for its importers and bodies for itself; the two passes make distinct type objects, which cost one fix per
+place that compared objects across packages (instances bind the full pass's type parameters; packages compare
+by path; found by tailscaled's go-tpm instance). MinIO warm went 5.3/5.6/5.6 -> 4.7/5.1/4.6 s, interleaved,
+equal core-s. MinIO's own tests pass with every package above the runtime by fc (cmd's one failure is
+stock's too). The runtime through fc compiles; what stops it is nosplit depth, and behind that escape
+analysis, which is written, has an oracle, and was wrong four times on our own 22-package corpus.
+Is the oracle still the right one? For speed, yes: cold wall on 8 cores with checked binaries. For
+correctness the escape oracle (stock's -m) missed what the language corpus caught at once, so analysis
+changes are now judged by both, corpus first.
+
