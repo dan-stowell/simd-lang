@@ -302,9 +302,11 @@ func main() {
 	}
 	// A test binary's plan has packages recompiled for the test ("iter [runtime.test]") and may have no plain
 	// "iter": the compile line names the plain path, so that is what the variant answers to.
+	// When both exist, the variant is the one a test binary's compile lines are about (the plain one would
+	// only be compiled for something outside the test's own dependencies).
 	var variants []*Pkg
 	for path, p := range pr.byPath {
-		if i := strings.Index(path, " ["); i >= 0 && pr.byPath[path[:i]] == nil {
+		if strings.Contains(path, " [") {
 			variants = append(variants, p)
 		}
 	}
@@ -348,8 +350,8 @@ func main() {
 	c.depInit = func(d *Pkg) bool {
 		v, ok := depInit[d]
 		if !ok {
-			if a := archives[d.ImportPath]; a != "" {
-				v = definedSyms(a)[objabi.PathToPrefix(d.ImportPath)+"..inittask"]
+			if a := archives[plainPath(d.ImportPath)]; a != "" {
+				v = definedSyms(a)[objabi.PathToPrefix(plainPath(d.ImportPath))+"..inittask"]
 			}
 			depInit[d] = v
 		}

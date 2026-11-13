@@ -191,7 +191,7 @@ func (c *compiler) compilePackage() (errs []string) {
 	var deps []*obj.LSym
 	for _, d := range c.pkg.deps {
 		if c.depInit != nil && c.depInit(d) {
-			dp := objabi.PathToPrefix(d.ImportPath)
+			dp := objabi.PathToPrefix(plainPath(d.ImportPath))
 			deps = append(deps, c.lookup(dp+"..inittask", obj.ABI0, dp))
 		}
 	}
