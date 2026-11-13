@@ -123,6 +123,21 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 				c.defData(ms, objabi.SRODATA, int64(len(data)))
 			}
 		}
+		if fd.Body == nil && (c.abis.defs[name] || c.abis.defsInternal[name]) {
+			// what a traceback prints for the arguments of an assembly frame (the assembler refers to it)
+			in, out := sigTypes(sig)
+			ai, abiN := c.abiOfTypes(in, out), 1
+			if c.abis.defs[name] {
+				ai, abiN = c.abi0Of(in, out), 0
+			}
+			as := c.lookup(name+".arginfo"+itoa(abiN), obj.ABI0, sym.Pkg)
+			if !as.OnList() {
+				as.P = c.argInfo(ai)
+				as.Align = 1
+				as.Set(obj.AttrLocal, true)
+				c.defData(as, objabi.SRODATA, int64(len(as.P)))
+			}
+		}
 		c.pr.linknames(c.pkg)
 		linknamed := c.pkg.linknamed[fn.Name()] || c.pkg.linknamedStd[fn.Name()]
 		switch {
@@ -180,4 +195,93 @@ func (c *compiler) wrapFromABI0(fd *ast.FuncDecl, sig *types.Signature, sym *obj
 			g.move(g.resHome[i], r, g.abi.out[i].typ)
 		}
 	})
+}
+
+// argInfo: the encoding of a function's arguments for tracebacks (the stock compiler's EmitArgInfo): for
+// each argument its offset in the argument area and its size, aggregates bracketed, at most ten components.
+func (c *compiler) argInfo(ai *abiInfo) []byte {
+	const (
+		limit, maxDepth                                        = 10, 5
+		endSeq, startAgg, endAgg, dotdotdot, tooLarge, special = 0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xf0
+	)
+	var b []byte
+	n := 0
+	uintptrT := types.Typ[types.Uintptr]
+	var visit func(off int64, t types.Type, depth int) bool
+	visit = func(off int64, t types.Type, depth int) bool {
+		if n >= limit {
+			b = append(b, dotdotdot)
+			return false
+		}
+		u := t.Underlying()
+		agg := false
+		switch u := u.(type) {
+		case *types.Struct, *types.Array, *types.Interface, *types.Slice:
+			agg = true
+		case *types.Basic:
+			agg = u.Info()&(types.IsComplex|types.IsString) != 0
+		}
+		if !agg {
+			if off >= special {
+				b = append(b, tooLarge)
+			} else {
+				b = append(b, byte(off), byte(c.sizeof(t)))
+			}
+			n++
+			return true
+		}
+		b = append(b, startAgg)
+		depth++
+		if depth >= maxDepth {
+			b = append(b, dotdotdot, endAgg)
+			n++
+			return true
+		}
+		switch u := u.(type) {
+		case *types.Interface:
+			_ = visit(off, uintptrT, depth) && visit(off+8, uintptrT, depth)
+		case *types.Slice:
+			_ = visit(off, uintptrT, depth) && visit(off+8, uintptrT, depth) && visit(off+16, uintptrT, depth)
+		case *types.Basic:
+			if u.Info()&types.IsString != 0 {
+				_ = visit(off, uintptrT, depth) && visit(off+8, uintptrT, depth)
+			} else {
+				ft := types.Typ[types.Float64]
+				if c.sizeof(t) == 8 {
+					ft = types.Typ[types.Float32]
+				}
+				_ = visit(off, ft, depth) && visit(off+c.sizeof(t)/2, ft, depth)
+			}
+		case *types.Array:
+			if u.Len() == 0 {
+				n++
+				break
+			}
+			es := c.sizeof(u.Elem())
+			for i := int64(0); i < u.Len(); i++ {
+				if !visit(off+i*es, u.Elem(), depth) {
+					break
+				}
+			}
+		case *types.Struct:
+			if u.NumFields() == 0 {
+				n++
+				break
+			}
+			offs := c.fieldOffsets(u)
+			for i := 0; i < u.NumFields(); i++ {
+				if !visit(off+offs[i], u.Field(i).Type(), depth) {
+					break
+				}
+			}
+		}
+		b = append(b, endAgg)
+		return true
+	}
+	for _, p := range ai.in {
+		if !visit(p.off, p.typ, 0) {
+			break
+		}
+	}
+	return append(b, endSeq)
 }
