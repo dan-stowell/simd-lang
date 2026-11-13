@@ -75,6 +75,7 @@ type Program struct {
 
 	tctx         *types.Context // shared by every package: one object per instantiated type
 	byTpkg       sync.Map       // *types.Package -> *Pkg
+	declPkgs     sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
 	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
 	rtWidth      sync.Map       // runtime function name -> the argument area of its real signature
@@ -185,6 +186,7 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 			d.dpkg = nil
 		} else {
 			pr.byTpkg.Store(d.dpkg, d)
+			pr.declPkgs.Store(d.dpkg, true)
 		}
 	})
 	return d.dpkg, d.derr
@@ -245,8 +247,12 @@ func (pr *Program) full(fn *types.Func) *types.Func {
 	if !twoPass || fn.Pkg() == nil {
 		return fn
 	}
+	// (not p.dpkg: another goroutine may be in the middle of p's declarations pass while fn is of its full pass)
+	if _, decl := pr.declPkgs.Load(fn.Pkg()); !decl {
+		return fn
+	}
 	p := pr.byTypes(fn.Pkg())
-	if p == nil || fn.Pkg() != p.dpkg {
+	if p == nil {
 		return fn
 	}
 	if v, ok := pr.fullFn.Load(fn); ok {

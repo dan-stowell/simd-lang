@@ -31,6 +31,7 @@ type rtypeState struct {
 	rtGroup     map[*types.Struct]*types.Map // the map a group struct belongs to
 	rtGroups    map[string]*types.Struct     // group struct by the map's link name
 	rtVargen    map[*types.Package]map[token.Pos]int
+	rtVargenMu  sync.Mutex // (functions are compiled in parallel)
 	rtWrap      map[*obj.LSym]bool
 	rtAlg       map[string]bool
 	rtPtrTo     map[string]bool          // link names X such that the package mentions *X (stock: Type.IsPtrElem)
@@ -443,6 +444,8 @@ func (c *compiler) namedSymName(u *types.Named, mode fmtMode) string {
 // vargen is the number the stock compiler gives a type declared inside a function: a count, over the
 // package's files in order, of the type declarations inside function bodies (noder: declCollector).
 func (c *compiler) vargen(o *types.TypeName) int {
+	c.rtVargenMu.Lock()
+	defer c.rtVargenMu.Unlock()
 	m := c.rtVargen[o.Pkg()]
 	if m == nil {
 		var p *Pkg
