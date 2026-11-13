@@ -33,12 +33,18 @@ func (e *escWalk) block(list []ast.Stmt) {
 	dead := false
 	for i, s := range list {
 		if dead && i > lastLabel {
+			e.skip(s)
 			continue
 		}
 		e.stmt(s)
 		dead = e.terminates(s)
 	}
 	e.loopDepth = old
+}
+
+// skip records code that is not walked because it cannot be reached.
+func (e *escWalk) skip(n ast.Node) {
+	e.out.dead = append(e.out.dead, escRange{n.Pos(), n.End()})
 }
 
 // staticBool: is the condition always true (+1), always false (-1), or neither (0)?
@@ -193,6 +199,7 @@ func (e *escWalk) cond(x ast.Expr) {
 		l := e.staticBool(b.X)
 		e.cond(b.X)
 		if b.Op == token.LAND && l < 0 || b.Op == token.LOR && l > 0 {
+			e.skip(b.Y)
 			return
 		}
 		e.cond(b.Y)
@@ -247,9 +254,13 @@ func (e *escWalk) stmt(s ast.Stmt) {
 		c := e.staticBool(s.Cond)
 		if c >= 0 {
 			e.block(s.Body.List)
+		} else {
+			e.skip(s.Body)
 		}
 		if s.Else != nil && c <= 0 {
 			e.block([]ast.Stmt{s.Else})
+		} else if s.Else != nil {
+			e.skip(s.Else)
 		}
 		e.loopDepth = old
 	case *ast.ForStmt:
@@ -282,6 +293,11 @@ func (e *escWalk) stmt(s ast.Stmt) {
 				l.reassigned = was[i]
 			}
 			e.block(s.Body.List)
+		} else {
+			e.skip(s.Body)
+			if s.Post != nil {
+				e.skip(s.Post)
+			}
 		}
 		e.loopDepth = old
 	case *ast.RangeStmt:
@@ -725,6 +741,10 @@ func (e *escWalk) rangeStmt(s *ast.RangeStmt) {
 			t := []types.Type{kt, vt}[i]
 			if x != nil && t != nil && e.needsIface(e.lhsType(x), t) && !escDirectIface(t) {
 				e.forceSite(x, x.Pos())
+				// the copy is in the heap: so is what the element points to
+				if i == 1 {
+					e.flow(e.heapHole().deref(), tmp)
+				}
 			}
 		}
 	}
@@ -762,7 +782,7 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 	if c.sig != nil && c.sig.Params().Len() == 1 {
 		k = e.paramHole(&c, nil, 0)
 	}
-	k = e.spill(k, s, escSiteRangeFunc, s.For)
+	k = e.spill(k, s.Body, escSiteRangeFunc, s.For)
 	nodes := []ast.Node{s.Body}
 	if s.Tok == token.ASSIGN {
 		if s.Key != nil {
@@ -833,6 +853,10 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 // selfAssign: assignments that store into an object only what it held already (as the stock compiler
 // recognizes them): b.buf = b.buf[n:m]; val.x = val.y; val.x[i] = val.y[j].
 func (e *escWalk) selfAssign(dst, src ast.Expr) bool {
+	// c.V = c.K where V is an interface and K is not stores a new thing in c: the interface's copy of K
+	if e.needsIface(e.typeOf(dst), e.typeOf(src)) {
+		return false
+	}
 	dst, src = ast.Unparen(dst), ast.Unparen(src)
 	// through a pointer: *p or p.f where p is a pointer, p a variable
 	base := func(x ast.Expr) types.Object {

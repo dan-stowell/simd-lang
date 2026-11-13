@@ -1147,8 +1147,8 @@ var escOn = os.Getenv("FC_ESC") != ""
 
 type escAdapter struct{ e *escInfo }
 
-func (a escAdapter) varOnHeap(v *types.Var) bool { return a.e.heapVar[v] }
-func (a escAdapter) siteOnHeap(n ast.Node) bool  { return a.e.heapSite[n] }
+func (a escAdapter) varOnHeap(v *types.Var) bool { return a.e.varOnHeap(v) }
+func (a escAdapter) siteOnHeap(n ast.Node) bool  { return a.e.siteOnHeap(n) }
 
 // siteHeap: must the allocation at n use the heap?
 func (g *gen) siteHeap(n ast.Node) bool {

@@ -602,7 +602,16 @@ func (e *escWalk) builtin(ks []escHole, n *ast.CallExpr, name string, extra *esc
 			e.arg(k0, args[0], nil, extra)
 		}
 	case "Sizeof", "Alignof", "Offsetof":
-	default: // len cap real imag complex close clear delete print println recover
+	case "delete":
+		if len(args) == 2 {
+			e.arg(e.discardHole(), args[0], nil, extra)
+			var kt types.Type
+			if m, ok := escUnder(e.typeOf(args[0])).(*types.Map); ok {
+				kt = m.Key() // a key of interface type: the looked-up value is converted, and does not escape
+			}
+			e.arg(e.discardHole(), args[1], kt, extra)
+		}
+	default: // len cap real imag complex close clear print println recover
 		for _, a := range args {
 			e.arg(e.discardHole(), a, nil, extra)
 		}
