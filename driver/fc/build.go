@@ -51,6 +51,8 @@ func buildMode(args []string) {
 	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result")
 	link := fs.String("link", "", "link the program whose main package is the (single) argument into this file; packages of the\n"+
 		"runtime's closure and packages with assembly (and what they import) come from the plan's stock archives")
+	chdir := fs.String("C", "", "no plan file: find the packages from the main package in this directory (the argument is then a\n"+
+		"directory relative to it, like . or ./cmd/x); the go command is not asked")
 	prof := fs.String("cpuprofile", "", "write a CPU profile")
 	fs.Parse(args)
 	if *prof != "" {
@@ -61,7 +63,7 @@ func buildMode(args []string) {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	if *plan == "" || *out == "" || fs.NArg() == 0 {
+	if (*plan == "") == (*chdir == "") || *out == "" || fs.NArg() == 0 {
 		log.Fatal("usage: fc build -plan plan.json -o outdir [-j N] <import paths... | all>")
 	}
 	if os.Getenv("GOGC") == "" {
@@ -73,11 +75,18 @@ func buildMode(args []string) {
 	t0 := time.Now()
 	c0 := cpuSeconds()
 	pr := newProgram()
-	if err := pr.readPlan(*plan); err != nil {
+	var targets []*Pkg
+	if *chdir != "" {
+		m, err := pr.selfMain(*chdir, fs.Arg(0))
+		if err != nil {
+			log.Fatalf("fc build: %v", err)
+		}
+		targets = []*Pkg{m}
+	} else if err := pr.readPlan(*plan); err != nil {
 		log.Fatal(err)
 	}
-	var targets []*Pkg
-	if fs.NArg() == 1 && fs.Arg(0) == "all" {
+	if *chdir != "" {
+	} else if fs.NArg() == 1 && fs.Arg(0) == "all" {
 		for _, p := range pr.byPath {
 			if !strings.Contains(p.ImportPath, " [") && len(p.GoFiles) > 0 {
 				targets = append(targets, p)

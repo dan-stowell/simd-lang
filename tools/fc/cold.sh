@@ -19,14 +19,19 @@ cat > "$out/run.sh" <<IN
 #!/usr/bin/env bash
 cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup)
 t0=\$(date +%s.%N)
-if [ "${PLANNER:-self}" = self ]; then
-  # the driver's own planner (driver/plan.go: no go list; Strand's declaration pass reads every source)
+case "${PLANNER:-fc}" in
+fc)  # fc finds the packages itself while it parses them (driver/fc/selfplan.go)
+  t1=\$t0
+  GOMAXPROCS=$P taskset -c 0-$((P-1)) "${FC_BIN:-$here/build/fc}" build -j $P -C "$T/$dir" -o "$out/objs" -link "$out/bin" "$target" > "$out/build.log" 2>&1; rc=\$? ;;
+self) # the driver's own planner as a separate step (driver/plan.go)
   taskset -c 0-$((P-1)) "$here/build/sb" -C "$T/$dir" -n -plan=self -decl "$here/build/godecl" -dumpplan "$out/plan.json" -o "$out/unused" "$target" > "$out/plan.log" 2>&1 || exit 1
-else
+  t1=\$(date +%s.%N)
+  GOMAXPROCS=$P taskset -c 0-$((P-1)) "${FC_BIN:-$here/build/fc}" build -j $P -plan "$out/plan.json" -o "$out/objs" -link "$out/bin" "$main" > "$out/build.log" 2>&1; rc=\$? ;;
+*)   # go list
   taskset -c 0-$((P-1)) go list -deps -json "$target" runtime > "$out/plan.json" || exit 1
-fi
-t1=\$(date +%s.%N)
-GOMAXPROCS=$P taskset -c 0-$((P-1)) "${FC_BIN:-$here/build/fc}" build -j $P -plan "$out/plan.json" -o "$out/objs" -link "$out/bin" "$main" > "$out/build.log" 2>&1; rc=\$?
+  t1=\$(date +%s.%N)
+  GOMAXPROCS=$P taskset -c 0-$((P-1)) "${FC_BIN:-$here/build/fc}" build -j $P -plan "$out/plan.json" -o "$out/objs" -link "$out/bin" "$main" > "$out/build.log" 2>&1; rc=\$? ;;
+esac
 t2=\$(date +%s.%N)
 echo "rc \$rc"; echo "plan_ms \$(echo "(\$t1 - \$t0) * 1000 / 1" | bc)"; echo "wall_ms \$(echo "(\$t2 - \$t0) * 1000 / 1" | bc)"
 awk '\$1=="usage_usec"{print "core_s", \$2/1e6}' \$cg/cpu.stat
