@@ -93,17 +93,16 @@ Log (append one line per milestone reached, with the oracle number):
   smoke passes (frozen path 19.8-21.3 s). buildifier, runsc, caddy and tailscaled build, link and run `--version`
   (`tools/fc/corpus.sh`); prometheus stops in one generic instance. Not M4 yet: MinIO's unit tests have not been
   run against fc-built packages, and the runtime is stock (M3).
+- M4 in part, 2026-11-13 05:00 UTC: **MinIO's own tests under fc: 45 of 46 packages pass; the 46th (cmd) fails one
+  test that fails with the stock compiler too** (package under test by fc; the all-packages-by-fc run,
+  `FC_ALL=1 tools/fc/test.sh`, is in /home/exedev/targets/fc-minio-all.log). std: 228 packages pass. Escape analysis
+  (driver/fc/escape*.go) and fclink (driver/fclink) are merged into main, not yet used by `fc build`.
 
-
-
-Now: three things are in flight. (1) A builder is writing escape analysis (branch fc-escape, worktree under
-.claude/worktrees; oracle: the stock compiler's -m output); when it reports, wire `escInfo` into `findHeapVars`
-(driver/fc/misc.go) and the allocation sites (closures.go newClosure/bindValues, toInterface, addressOf, new/make),
-keeping non-escaping address-taken variables in frame slots: that unblocks the runtime's packages (M3) and the
-allocation-count tests. (2) Codex is running the whole oracle and the skip list (prompts/fc-grind.md; report
-reviews/inbox/fc-grind-1.md; it edits tests/fc/passing.txt and skips.txt, uncommitted): fold in its reduced bugs.
-(3) Mine: cold numbers on a quiet machine (`tools/fc/cold.sh <project> <cores>` then the smoke test; write an
-`ours` column into SCOREBOARD.md: mkscoreboard.py reads $SB_OUT/<name>/ours-p<P>/meta.txt), prometheus's failing
-instance (gcsizes assertion in low.HashMap[string]: a type parameter reaching sizeof), MinIO's unit tests through
-tools/fc/test.sh -C /home/exedev/targets/minio, and M5: the link (1.2-1.6 s serial at the end, plus the object
-writer's 9% of fc's CPU). Cost items with counts: JOURNAL M2.
+Now: (1) wire the merged escape analysis into the code generator (gen.go escResult: `g.esc` is still nil, so
+everything escapes; adapter over `pr.escape(p)`: heapVar, heapSite), then retry the runtime through fc
+(`FC_RUNTIME=1`: it compiles; 6 nosplit chains over the bound, mostly through write barriers on variables that
+would then stay in the frame) and the allocation-count skips: that is M3. (2) Read fc-minio-all.log and
+fc-batch-refail.log (some entries there failed only because the harness scripts were edited mid-run; rerun them).
+(3) `fc build -link` through fclink instead of the stock linker (M5). (4) On an idle machine:
+`tools/scoreboard/ours.sh`, then regenerate SCOREBOARD.md; no timing taken on 2026-11-13 is trustworthy (load 17-27).
+The two builders (escape, fclink) may still be committing to their worktree branches: merge again before starting.
