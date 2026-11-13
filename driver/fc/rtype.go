@@ -242,6 +242,8 @@ func (c *compiler) writeBasicTypes() {
 	for _, t := range list {
 		c.writeType(types.NewPointer(t))
 		c.writeType(types.NewPointer(types.NewSlice(t)))
+		// (in a whole-program build another package may own *[]T, and only this one may write []T)
+		c.writeType(types.NewSlice(t))
 	}
 	fn := types.NewSignatureType(nil, nil, nil, types.NewTuple(types.NewParam(0, nil, "", errT)),
 		types.NewTuple(types.NewParam(0, nil, "", types.Typ[types.String])), false)

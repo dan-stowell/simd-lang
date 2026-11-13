@@ -17,12 +17,13 @@ import (
 )
 
 type symABIs struct {
-	defs map[string]bool // defined in assembly as ABI0
-	refs map[string]bool // referenced from assembly as ABI0
+	defs         map[string]bool // defined in assembly as ABI0
+	refs         map[string]bool // referenced from assembly as ABI0
+	defsInternal map[string]bool // defined in assembly with the register ABI
 }
 
 func (c *compiler) readSymABIs(file string) {
-	c.abis = &symABIs{defs: map[string]bool{}, refs: map[string]bool{}}
+	c.abis = &symABIs{defs: map[string]bool{}, refs: map[string]bool{}, defsInternal: map[string]bool{}}
 	if file == "" {
 		return
 	}
@@ -33,12 +34,18 @@ func (c *compiler) readSymABIs(file string) {
 	prefix := objabi.PathToPrefix(c.path)
 	for _, line := range strings.Split(string(data), "\n") {
 		parts := strings.Fields(line)
-		if len(parts) != 3 || parts[2] != "ABI0" {
+		if len(parts) != 3 {
 			continue
 		}
 		sym := parts[1]
 		if strings.HasPrefix(sym, `"".`) {
 			sym = prefix + sym[2:]
+		}
+		if parts[2] != "ABI0" {
+			if parts[0] == "def" && parts[2] == "ABIInternal" {
+				c.abis.defsInternal[sym] = true
+			}
+			continue
 		}
 		switch parts[0] {
 		case "def":
@@ -122,6 +129,9 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 		case fd.Body == nil && c.abis.defs[name]:
 			// assembly: Go callers come in through an ABIInternal wrapper
 			try("ABI wrapper for "+name, func() { c.wrapToABI0(fd, sig, sym) })
+		case fd.Body == nil && c.abis.defsInternal[name] && (c.abis.refs[name] || linknamed):
+			// assembly with the register ABI (memmove): assembly elsewhere may still call it with ABI0
+			try("ABI0 wrapper for "+name, func() { c.wrapFromABI0(fd, sig, sym) })
 		case fd.Body != nil && (c.abis.refs[name] || linknamed):
 			// Go: assembly callers (and whoever pulls the symbol by linkname) may come in with ABI0
 			try("ABI0 wrapper for "+name, func() { c.wrapFromABI0(fd, sig, sym) })

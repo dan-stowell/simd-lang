@@ -206,6 +206,13 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 			out = append(out, sig.Results().At(i).Type())
 		}
 		ai = g.c.abiOfTypes(in, out)
+		if now && g.env == nil && fsig.Recv() == nil && samePkg(fn.Pkg(), g.c.tpkg) && g.c.abis != nil && g.c.abis.defs[sym.Name] {
+			// an assembly function of this package with the stack ABI is called as it is, not through
+			// its wrapper (as the stock compiler does: the runtime counts on there being no frame between
+			// a function and systemstack)
+			c = callee{sym: g.c.lookup(sym.Name, obj.ABI0, sym.Pkg), abi0: true}
+			ai = g.c.abi0Of(in, out)
+		}
 	}
 	if id := identOf(fun); id != nil {
 		if fn, ok := g.info.Uses[id].(*types.Func); ok && g.info.Selections[selOf(fun)] == nil && g.c.isIntrinsic(fn) {
