@@ -57,10 +57,13 @@ type Program struct {
 	sizes  types.Sizes
 	sem    chan struct{}
 
-	tctx    *types.Context // shared by every package: one object per instantiated type
-	byTpkg  sync.Map       // *types.Package -> *Pkg
-	rtOnce  sync.Once
-	rtDecls *types.Package // the runtime functions the stock compiler knows, for their signatures
+	tctx         *types.Context // shared by every package: one object per instantiated type
+	byTpkg       sync.Map       // *types.Package -> *Pkg
+	rtOnce       sync.Once
+	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
+	localMu      sync.Mutex
+	localInst    map[localKey]*types.Named
+	rtDecls      *types.Package // the runtime functions the stock compiler knows, for their signatures
 }
 
 func newProgram() *Program {
