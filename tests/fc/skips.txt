@@ -40,5 +40,5 @@ reflect ^(TestDeepEqualAllocs|TestAllocsInterfaceBig|TestAllocsInterfaceSmall|Te
 strings ^(TestBuilderGrow|TestBuilderAllocs|TestBuilderGrowSizeclasses|TestIndexRune|TestReplace)$ asserts allocation counts that need escape analysis
 sync ^(TestOnceFunc|TestOnceValue|TestOnceValues)$ asserts allocation counts that need escape analysis
 encoding/binary ^TestSizeAllocs$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
-runtime ^(TestInlineUnwinder|TestStackWrapperStackInlinePanic|TestStartLine)$ asserts inlining (inlined frames in pclntab, "inlinablePanic not inlined", TestStartLine/inline panics and ends the binary): fails with the stock compiler too at -gcflags=all=-l
+runtime ^(TestInlineUnwinder|TestStackWrapperStackInlinePanic|TestStartLine|TestTracebackInlined)$ asserts inlining (inlined frames in pclntab and tracebacks, "inlinablePanic not inlined", TestStartLine/inline panics and ends the binary): fails with the stock compiler too at -gcflags=all=-l
 runtime ^TestAppendGrowthStack$ asserts append's first backing store is on the stack (cap 4): fails with the stock compiler too at -gcflags=all=-l
