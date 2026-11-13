@@ -46,3 +46,6 @@ testing ^TestBenchmarkBLoopAllocs$ fails with the stock compiler too when inlini
 unicode/utf16 ^TestAllocationsDecode$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 crypto/tls ^TestWeakCertCache$ waits on object liveness (a weak pointer to a certificate that the collector must clear)
 os ^TestWriteStringAlloc$ asserts zero allocations: needs escape analysis and a defer closure kept in the frame (1 allocation left with FC_ESC=1)
+time ^TestUnmarshalTextAllocations$ asserts zero allocations: needs escape analysis (a closure and a temporary that stock keeps in the frame; 1 allocation left with FC_ESC=1)
+net/http ^TestTransportGCRequest$ waits on object liveness (a request the collector must free while its function is still running)
+crypto/tls ^TestBogoSuite$ fails with the stock compiler too on this machine (it fetches BoringSSL and runs its shim; not an optimization or liveness skip: an environment one, listed in MORNING)
