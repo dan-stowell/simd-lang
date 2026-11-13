@@ -5,6 +5,7 @@ package main
 import (
 	"go/ast"
 	"go/types"
+	"sort"
 	"strings"
 
 	"cmd/internal/obj"
@@ -40,6 +41,9 @@ func substType(pr *Program, env map[*types.TypeParam]types.Type, t types.Type) t
 	case *types.Named:
 		targs := t.TypeArgs()
 		if targs.Len() == 0 {
+			if o := t.Obj(); o.Pkg() != nil && o.Parent() != o.Pkg().Scope() && o.Parent() != nil {
+				return pr.localInstance(env, t) // a type declared inside a (perhaps generic) function
+			}
 			return t
 		}
 		changed := false
@@ -234,12 +238,35 @@ func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList,
 		} else {
 			name = pp + "." + base + "." + origin.Name()
 		}
+	} else if r := origin.Type().(*types.Signature).Recv(); r != nil {
+		// a generic method of an ordinary type
+		rt := r.Type()
+		ptr := false
+		if p, ok := rt.(*types.Pointer); ok {
+			rt, ptr = p.Elem(), true
+		}
+		n, ok := types.Unalias(rt).(*types.Named)
+		if !ok || n.TypeArgs().Len() > 0 || n.TypeParams().Len() > 0 {
+			giveUp("generic method %s of a generic type", origin.Name())
+		}
+		if ptr {
+			name = pp + ".(*" + n.Obj().Name() + ")." + origin.Name() + args
+		} else {
+			name = pp + "." + n.Obj().Name() + "." + origin.Name() + args
+		}
 	} else {
 		name = pp + "." + origin.Name() + args
 	}
 	sym := c.lookup(name, obj.ABIInternal, "_")
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if !c.mixed && !c.instances[name] {
+		// in a whole-program build an instance is compiled by the first package that needs it
+		if owner, loaded := c.pr.instOwner.LoadOrStore(name, c); loaded && owner != c {
+			c.instances[name] = true
+			return sym
+		}
+	}
 	if !c.instances[name] {
 		c.instances[name] = true
 		env := map[*types.TypeParam]types.Type{}
@@ -337,4 +364,107 @@ func (c *compiler) compileInstance(in *instance) {
 func (g *gen) funcRefIsGeneric(fn *types.Func) (*types.Signature, bool) {
 	osig := fn.Origin().Type().(*types.Signature)
 	return osig, osig.TypeParams().Len() > 0 || osig.RecvTypeParams().Len() > 0
+}
+
+// localInstance: a type declared inside a generic function, for one set of type arguments. If its
+// definition mentions the function's type parameters, each instantiation of the function has its own type.
+func (pr *Program) localInstance(env map[*types.TypeParam]types.Type, t *types.Named) types.Type {
+	uses, ok := pr.localGeneric.Load(t)
+	if !ok {
+		uses = usesTypeParam(t.Underlying(), map[types.Type]bool{t: true})
+		pr.localGeneric.Store(t, uses)
+	}
+	if !uses.(bool) {
+		return t
+	}
+	// the key: the type and the arguments, in the order of the parameters
+	type kv struct {
+		tp *types.TypeParam
+		t  types.Type
+	}
+	var kvs []kv
+	for tp, a := range env {
+		kvs = append(kvs, kv{tp, a})
+	}
+	sort.Slice(kvs, func(i, j int) bool {
+		if kvs[i].tp.Index() != kvs[j].tp.Index() {
+			return kvs[i].tp.Index() < kvs[j].tp.Index()
+		}
+		return kvs[i].tp.Obj().Pos() < kvs[j].tp.Obj().Pos()
+	})
+	var args []string
+	for _, e := range kvs {
+		args = append(args, types.TypeString(e.t, nil))
+	}
+	name := t.Obj().Name() + "[" + strings.Join(args, ",") + "]"
+	key := localKey{t, name}
+	pr.localMu.Lock()
+	if n := pr.localInst[key]; n != nil {
+		pr.localMu.Unlock()
+		return n
+	}
+	n := types.NewNamed(types.NewTypeName(t.Obj().Pos(), t.Obj().Pkg(), name, nil), nil, nil)
+	if pr.localInst == nil {
+		pr.localInst = map[localKey]*types.Named{}
+	}
+	pr.localInst[key] = n // before the definition is substituted: it may mention itself
+	pr.localMu.Unlock()
+	n.SetUnderlying(substType(pr, env, t.Underlying()))
+	return n
+}
+
+type localKey struct {
+	t    *types.Named
+	args string
+}
+
+// usesTypeParam: does t mention a type parameter anywhere, looking into the definitions of local types?
+func usesTypeParam(t types.Type, seen map[types.Type]bool) bool {
+	switch t := t.(type) {
+	case *types.TypeParam:
+		return true
+	case *types.Alias:
+		return usesTypeParam(types.Unalias(t), seen)
+	case *types.Named:
+		for i := 0; i < t.TypeArgs().Len(); i++ {
+			if usesTypeParam(t.TypeArgs().At(i), seen) {
+				return true
+			}
+		}
+		if o := t.Obj(); o.Pkg() != nil && o.Parent() != nil && o.Parent() != o.Pkg().Scope() && !seen[t] {
+			seen[t] = true
+			return usesTypeParam(t.Underlying(), seen)
+		}
+	case *types.Pointer:
+		return usesTypeParam(t.Elem(), seen)
+	case *types.Slice:
+		return usesTypeParam(t.Elem(), seen)
+	case *types.Array:
+		return usesTypeParam(t.Elem(), seen)
+	case *types.Chan:
+		return usesTypeParam(t.Elem(), seen)
+	case *types.Map:
+		return usesTypeParam(t.Key(), seen) || usesTypeParam(t.Elem(), seen)
+	case *types.Struct:
+		for i := 0; i < t.NumFields(); i++ {
+			if usesTypeParam(t.Field(i).Type(), seen) {
+				return true
+			}
+		}
+	case *types.Tuple:
+		for i := 0; i < t.Len(); i++ {
+			if usesTypeParam(t.At(i).Type(), seen) {
+				return true
+			}
+		}
+	case *types.Signature:
+		return usesTypeParam(t.Params(), seen) || usesTypeParam(t.Results(), seen)
+	case *types.Interface:
+		for i := 0; i < t.NumMethods(); i++ {
+			if usesTypeParam(t.Method(i).Type(), seen) {
+				return true
+			}
+		}
+	}
+	return false
 }

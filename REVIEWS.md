@@ -283,3 +283,21 @@ One line per inbox item; raw files in `reviews/done/`.
   fixed (narrow call results, interface comparison operand, assembly argument stack maps, reflection reachability,
   return evaluation order), 16 skip lines taken; the ENV class (tests that fail with the stock compiler too at -l)
   and the re-run are with Codex (`prompts/fc-grind.md`).
+- `fc-grind-1.md` (Codex grind over std and MinIO's tests; the run ended when its provider flagged a prompt, the
+  second time, so the report stops mid-list and it left `passing.txt` truncated; the list was rebuilt from its
+  batch log): **accepted and acted on**.
+  - std: 209 packages pass in its sandbox (passing.txt now 228 with the earlier list). 19 skip lines taken, each
+    with evidence in the report (allocation counts that fail with the stock compiler too at -l, or that need
+    escape analysis).
+  - Four reductions, all **fixed**, all now in `tests/fc/lang/grind`: embed.FS backing symbol not indexed
+    (embedtest, jsontest, traceviewer); a generic method and a generic function of one name shared an instance
+    symbol (math/big through math/rand/v2.N: infinite recursion); `//go:linknamestd` target dropped (iter.Pull2,
+    runtime/pprof); internal/chacha8rand allocates before the heap exists (**defer**: needs escape analysis,
+    as do runtime, internal/runtime/*, internal/abi under the escape-all harness).
+  - MinIO: 39 of 46 packages with tests pass; the 7 "same as stock" failures were its sandbox refusing sockets.
+    Rerun outside it: 6 pass; `cmd` (217 s, -short) fails one test, `TestTrackingResponseWriter`, which fails
+    with the stock compiler too (status 123 does not allow a body in this Go). So **MinIO's own tests under fc:
+    45 of 46 packages pass and the 46th matches stock**.
+  - Its net/* failures are the same sandbox limit; rerun outside it (`/home/exedev/targets/fc-batch-refail.log`).
+  - Found on the way: the default GOCACHE held a broken stock object (a stock test binary panicked at init);
+    cleared. Stock comparisons use their own cache.

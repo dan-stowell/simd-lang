@@ -1531,3 +1531,18 @@ real.
 tests); language corpus 0 -> 21 of 21; MinIO 0 -> builds and links, does not run. No stall. Blockers ahead:
 the 53 failing packages (triage running), the gob init failure in the MinIO binary, and escape analysis for
 the runtime's packages.
+
+## 2026-11-13 03:43 UTC — MinIO and kube-apiserver built by fc pass their smoke tests, cold
+
+Whole-program mode (`fc build -link`): one process type-checks the closure and compiles every package above
+the runtime; packages with assembly go through fc too (the assembler's symabis, a go_asm.h written from
+go/types, one archive per package); the runtime's closure is built by the go command inside the build; the
+stock linker links. Bugs on the way, each found by running the real binary: itabs must merge by name when no
+object agrees on symbol indexes; assembly may leave BP wrong (stock code never addresses through it; fc's
+locals do, so BP is recomputed from SP after every call into assembly); a result returned on the stack was
+copied before the register results were saved; narrow results come back with undefined upper bits (Codex's
+triage reduced that one from four failing packages).
+Cold (tools/fc/cold.sh: fresh GOCACHE, page cache dropped, the driver's own planner instead of go list),
+with two other agents using the machine: MinIO 7.7-8.7 s wall, 34-36 core-s; kube-apiserver 8.7-9.1 s, 42-43
+core-s; both pass their smoke tests. Not yet measured on a quiet machine, and the scoreboard's "ours" column
+is still empty.

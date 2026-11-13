@@ -59,10 +59,10 @@ func (c *compiler) rtFunc(name string) *types.Func {
 
 func (c *compiler) staticSym(kind string) *obj.LSym {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.tmpN++
-	n := c.tmpN
-	c.mu.Unlock()
-	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(n))
+	// (obj's table of static symbols has no lock of its own)
+	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(c.tmpN))
 }
 
 func itoa(n int) string {
@@ -188,9 +188,16 @@ func (g *gen) findHeapVars(body ast.Node) {
 		}
 		return nil
 	}
+	if g.addrVars == nil {
+		g.addrVars = map[*types.Var]bool{}
+	}
 	mark := func(v *types.Var) {
 		if v != nil && v.Pkg() != nil && v.Parent() != v.Pkg().Scope() {
-			g.heapVars[v] = true
+			g.addrVars[v] = true
+			// in the frame only when the analysis says its address stays inside this activation
+			if g.esc == nil || g.esc.varOnHeap(v) {
+				g.heapVars[v] = true
+			}
 		}
 	}
 	var lits []*ast.FuncLit
@@ -224,6 +231,10 @@ func (g *gen) findHeapVars(body ast.Node) {
 						mark(root(n.X))
 					}
 				}
+			}
+		case *ast.CallExpr:
+			if id := identOf(ast.Unparen(n.Fun)); id != nil && (id.Name == "getclosureptr" || id.Name == "GetClosurePtr") && g.entry == nil {
+				g.entry = g.saveCtx // the function reads its context register: keep it from the start
 			}
 		case *ast.FuncLit:
 			lits = append(lits, n)
@@ -304,6 +315,9 @@ func (pr *Program) linknames(p *Pkg) map[string]string {
 								p.linknamedStd = map[string]bool{}
 							}
 							p.linknamedStd[fs[1]] = true
+							if len(fs) == 3 {
+								p.linkname[fs[1]] = fs[2]
+							}
 						}
 						continue
 					}

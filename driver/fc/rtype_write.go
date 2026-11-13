@@ -74,7 +74,7 @@ func (c *compiler) needEmit(t types.Type) bool {
 	if n.Obj().Pkg() == c.tpkg {
 		return true
 	}
-	return n.TypeArgs().Len() > 0 // an instance of a generic type, perhaps never made before
+	return n.TypeArgs().Len() > 0 || isLocalInstance(n) // an instance of a generic type, perhaps never made before
 }
 
 // typeBase is the type whose package decides where t's descriptor lives: T for *T.
@@ -398,6 +398,15 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if !c.needEmit(tbase) {
 		return s
 	}
+	if !c.mixed {
+		// One address space, one build: a descriptor that any object may carry (an unnamed type, an
+		// instance) is written by the first package that asks, and only referenced by the others.
+		if n, ok := tbase.(*types.Named); !ok || n.Obj().Pkg() != c.tpkg || n.TypeArgs().Len() > 0 || isLocalInstance(n) {
+			if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
+				return s
+			}
+		}
+	}
 	ms := c.methods(t)
 	extra := hasSym(t) || len(ms) != 0
 
@@ -539,7 +548,7 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 
 	dupok := true
 	if n, ok := tbase.(*types.Named); ok {
-		dupok = n.TypeArgs().Len() > 0
+		dupok = n.TypeArgs().Len() > 0 || isLocalInstance(n)
 	} else if _, ok := tbase.(*types.Basic); ok {
 		dupok = false
 	}
@@ -693,4 +702,10 @@ func (c *compiler) writeITab(t, iface types.Type) *obj.LSym {
 	s.Align = 8
 	c.defData(s, objabi.SRODATA, 24+int64(len(entries))*8)
 	return s
+}
+
+// isLocalInstance: a type made by Program.localInstance (a type declared inside a generic function, for one
+// instantiation of that function): like an instance of a generic type, whoever uses it writes it.
+func isLocalInstance(n *types.Named) bool {
+	return n.TypeArgs().Len() == 0 && strings.Contains(n.Obj().Name(), "[")
 }

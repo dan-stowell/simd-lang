@@ -195,7 +195,10 @@ func (g *gen) expr(e ast.Expr) loc {
 func (g *gen) exprAs(e ast.Expr, t types.Type) loc {
 	et := g.typeOf(e)
 	l := g.expr(e)
-	return g.convertImplicit(l, et, t)
+	g.convSite = e
+	l = g.convertImplicit(l, et, t)
+	g.convSite = nil
+	return l
 }
 
 func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
@@ -213,7 +216,7 @@ func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
 
 // exprTo evaluates e into dst (memory), a variable of type t.
 func (g *gen) exprTo(e ast.Expr, dst loc, t types.Type) {
-	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) {
+	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) && !g.addrFrame(dst) {
 		g.compositeTo(cl, dst, t)
 		return
 	}
@@ -715,9 +718,22 @@ func (g *gen) arith(x, y ast.Expr, op token.Token, t types.Type) loc {
 		g.a.farith(o, size, X0, X1)
 		return loc{kind: lReg, reg: X0}
 	}
+	if v, ok := g.smallConst(y, t); ok {
+		if alu, ok := immOp[op]; ok {
+			g.loadTo(AX, g.expr(x), t)
+			g.a.aluImm(alu, 8, AX, v)
+			if op == token.ADD || op == token.SUB {
+				g.a.extend(AX, size, isSigned(t))
+			}
+			return loc{kind: lReg, reg: AX}
+		}
+	}
 	g.operands(x, y, t, t, AX, CX)
 	return g.arithRegs(op, t)
 }
+
+// immOp: the operators that take an immediate operand directly.
+var immOp = map[token.Token]int{token.ADD: aADD, token.SUB: aSUB, token.AND: aAND, token.OR: aOR, token.XOR: aXOR}
 
 // arithRegs: AX = AX op CX for integers of type t.
 func (g *gen) arithRegs(op token.Token, t types.Type) loc {
@@ -924,8 +940,13 @@ func (g *gen) condJump(e ast.Expr, f *label) {
 			}
 			if isWord(t) && !isInterface(xt) && !isInterface(yt) {
 				if b, ok := t.Underlying().(*types.Basic); !ok || b.Info()&types.IsUntyped == 0 {
-					g.operands(e.X, e.Y, t, t, AX, CX)
-					g.a.aluRR(aCMP, 8, AX, CX)
+					if v, ok := g.smallConst(e.Y, t); ok {
+						g.loadTo(AX, g.expr(e.X), t)
+						g.a.aluImm(aCMP, 8, AX, v)
+					} else {
+						g.operands(e.X, e.Y, t, t, AX, CX)
+						g.a.aluRR(aCMP, 8, AX, CX)
+					}
 					cc := cmpCC[e.Op][0]
 					if !isSigned(t) {
 						cc = cmpCC[e.Op][1]
@@ -948,6 +969,11 @@ func (g *gen) addressOf(x ast.Expr) loc {
 	x = ast.Unparen(x)
 	if cl, ok := x.(*ast.CompositeLit); ok {
 		t := g.typeOf(cl)
+		if !g.siteHeap(cl) {
+			obj := g.frameObject(t)
+			g.compositeTo(cl, obj, t)
+			return g.frameAddr(obj)
+		}
 		g.a.lea(AX, msym(g.c.typeSym(t), 0))
 		g.callRT("newobject")
 		p := g.ptrTemp()
@@ -976,28 +1002,29 @@ func (g *gen) addressOf(x ast.Expr) loc {
 	case lSym:
 		g.a.lea(AX, msym(l.sym, l.off))
 		return loc{kind: lReg, reg: AX}
+	case lFrame:
+		// a variable the escape analysis left in the frame
+		g.a.lea(AX, mb(BP, l.off))
+		return loc{kind: lReg, reg: AX}
 	}
-	giveUp("address of a value in the frame")
+	giveUp("address of a value that is not in memory")
 	return loc{}
 }
 
 // ---- static data helpers
 
 func (c *compiler) stringHeader(s string) *obj.LSym {
-	data := c.stringSym(s)
-	c.mu.Lock()
-	h := c.strHdrs[s]
-	c.mu.Unlock()
-	if h != nil {
+	c.hdrMu.Lock()
+	defer c.hdrMu.Unlock()
+	if h := c.strHdrs[s]; h != nil {
 		return h
 	}
-	h = c.staticSym("strhdr")
+	data := c.stringSym(s)
+	h := c.staticSym("strhdr")
 	h.WriteAddr(c.ctxt, 0, 8, data, 0)
 	h.WriteInt(c.ctxt, 8, 8, int64(len(s)))
 	c.defData(h, objabi.SRODATA, 16)
-	c.mu.Lock()
 	c.strHdrs[s] = h
-	c.mu.Unlock()
 	return h
 }
 
@@ -1013,4 +1040,20 @@ func (c *compiler) complexSym(re, im float64, c64 bool) *obj.LSym {
 		c.defData(s, objabi.SRODATA, 16)
 	}
 	return s
+}
+
+// addrFrame: is dst (part of) a frame variable whose address is taken? Such a variable can be read through
+// a pointer while it is being assigned, so a literal is not built in place there.
+func (g *gen) addrFrame(dst loc) bool {
+	if dst.kind != lFrame {
+		return false
+	}
+	for v := range g.addrVars {
+		if l, ok := g.vars[v]; ok && l.kind == lFrame {
+			if dst.off >= l.off && dst.off < l.off+align(g.c.sizeof(g.vt(v)), 8) {
+				return true
+			}
+		}
+	}
+	return false
 }

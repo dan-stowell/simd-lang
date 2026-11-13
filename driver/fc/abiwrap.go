@@ -76,7 +76,7 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 		}
 		sym := c.funcSym(fn)
 		name := sym.Name
-		if fd.Body == nil {
+		if fd.Body == nil && c.abis.defs[name] {
 			// the argument stack map assembly functions refer to (the assembler adds the reference): the
 			// collector and stack growth read the arguments of an assembly frame through it
 			in, out := sigTypes(sig)

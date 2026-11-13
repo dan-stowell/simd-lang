@@ -87,6 +87,13 @@ func (g *gen) elemTo(val ast.Expr, dst loc, t types.Type) {
 		if _, isPtr := lt.Underlying().(*types.Pointer); isPtr || cl.Type == nil && isPtrTo(t) {
 			// elided &T{...}
 			et := t.Underlying().(*types.Pointer).Elem()
+			if !g.siteHeap(cl) {
+				obj := g.frameObject(et)
+				g.compositeTo(cl, obj, et)
+				g.move(dst, g.frameAddr(obj), t)
+				g.release(m)
+				return
+			}
 			g.a.lea(AX, msym(g.c.typeSym(et), 0))
 			g.callRT("newobject")
 			p := g.ptrTemp()

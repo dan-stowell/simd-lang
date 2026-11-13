@@ -9,6 +9,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/constant"
@@ -50,6 +51,8 @@ func buildMode(args []string) {
 	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result")
 	link := fs.String("link", "", "link the program whose main package is the (single) argument into this file; packages of the\n"+
 		"runtime's closure and packages with assembly (and what they import) come from the plan's stock archives")
+	chdir := fs.String("C", "", "no plan file: find the packages from the main package in this directory (the argument is then a\n"+
+		"directory relative to it, like . or ./cmd/x); the go command is not asked")
 	prof := fs.String("cpuprofile", "", "write a CPU profile")
 	fs.Parse(args)
 	if *prof != "" {
@@ -60,7 +63,7 @@ func buildMode(args []string) {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	if *plan == "" || *out == "" || fs.NArg() == 0 {
+	if (*plan == "") == (*chdir == "") || *out == "" || fs.NArg() == 0 {
 		log.Fatal("usage: fc build -plan plan.json -o outdir [-j N] <import paths... | all>")
 	}
 	if os.Getenv("GOGC") == "" {
@@ -72,11 +75,18 @@ func buildMode(args []string) {
 	t0 := time.Now()
 	c0 := cpuSeconds()
 	pr := newProgram()
-	if err := pr.readPlan(*plan); err != nil {
+	var targets []*Pkg
+	if *chdir != "" {
+		m, err := pr.selfMain(*chdir, fs.Arg(0))
+		if err != nil {
+			log.Fatalf("fc build: %v", err)
+		}
+		targets = []*Pkg{m}
+	} else if err := pr.readPlan(*plan); err != nil {
 		log.Fatal(err)
 	}
-	var targets []*Pkg
-	if fs.NArg() == 1 && fs.Arg(0) == "all" {
+	if *chdir != "" {
+	} else if fs.NArg() == 1 && fs.Arg(0) == "all" {
 		for _, p := range pr.byPath {
 			if !strings.Contains(p.ImportPath, " [") && len(p.GoFiles) > 0 {
 				targets = append(targets, p)
@@ -96,6 +106,7 @@ func buildMode(args []string) {
 		keepStock[k] = true // (bisecting: these packages, and what they import, come from the stock archives)
 	}
 	var mainPkg *Pkg
+	var stockDone chan error
 	stock := map[*Pkg]bool{}
 	var closure []*Pkg
 	if *link != "" {
@@ -140,30 +151,65 @@ func buildMode(args []string) {
 			}
 		}
 		for _, p := range closure {
-			if p.ImportPath == "runtime" || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
+			if (p.ImportPath == "runtime" && os.Getenv("FC_RUNTIME") == "") || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
 				markStock(p)
 			}
 		}
 		targets = nil
+		var need []string
 		for _, p := range closure {
 			if !stock[p] {
 				targets = append(targets, p)
+			} else if p.Export == "" && p.ImportPath != "unsafe" {
+				need = append(need, p.ImportPath)
 			}
+		}
+		if len(need) > 0 {
+			// The plan has no archives for the packages that stay with the stock compiler (a cold build):
+			// have the go command build them now, beside our own work.
+			stockDone = make(chan error, 1)
+			go func() {
+				cmd := exec.Command("go", append([]string{"list", "-export", "-json", "-gcflags=all=-l"}, need...)...)
+				cmd.Dir = mainPkg.Dir
+				cmd.Stderr = os.Stderr
+				outb, err := cmd.Output()
+				if err == nil {
+					dec := json.NewDecoder(bytes.NewReader(outb))
+					for {
+						var e struct{ ImportPath, Export string }
+						if dec.Decode(&e) != nil {
+							break
+						}
+						if p := pr.byPath[e.ImportPath]; p != nil {
+							p.Export = e.Export
+						}
+					}
+				}
+				stockDone <- err
+			}()
 		}
 	}
 	sort.Slice(targets, func(i, k int) bool { return targets[i].ImportPath < targets[k].ImportPath })
 	// front end: everything the targets depend on
-	var wg sync.WaitGroup
+	var wg, wgF sync.WaitGroup
 	for _, need := range append([]*Pkg{pr.byPath["runtime"], pr.byPath["internal/runtime/maps"]}, targets...) {
 		if need == nil {
 			continue
 		}
-		wg.Add(1)
-		go func() { defer wg.Done(); pr.check(need) }()
+		wgF.Add(1)
+		go func() { defer wgF.Done(); pr.check(need) }()
 	}
-	wg.Wait()
-	tCheck := time.Since(t0)
-	cCheck := cpuSeconds() - c0
+	// The back end does not wait for the whole front end: a package is compiled as soon as it (and so
+	// everything it imports) is checked.
+	var tCheck time.Duration
+	var cCheck float64
+	frontDone := make(chan struct{})
+	go func() {
+		wgF.Wait()
+		tCheck = time.Since(t0)
+		cCheck = cpuSeconds() - c0
+		close(frontDone)
+	}()
 	os.MkdirAll(*out, 0o777)
 	// back end
 	type result struct {
@@ -194,10 +240,21 @@ func buildMode(args []string) {
 		initMemo.Store(p, v)
 		return v
 	}
+	var stockOnce sync.Once
+	waitStock := func() {
+		stockOnce.Do(func() {
+			if stockDone != nil {
+				if err := <-stockDone; err != nil {
+					log.Fatalf("fc build: stock packages: %v", err)
+				}
+			}
+		})
+	}
 	for i, p := range targets {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			pr.check(p)
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			results[i].p = p
@@ -211,6 +268,7 @@ func buildMode(args []string) {
 				path = "main"
 			}
 			c := newCompiler(pr, p, path, "")
+			c.fnSem = sem
 			var asmDir string
 			if len(p.SFiles) > 0 {
 				// assembly: the assembler says which symbols it defines and uses, before the compile
@@ -227,6 +285,7 @@ func buildMode(args []string) {
 			}
 			c.depInit = func(d *Pkg) bool {
 				if stock[d] {
+					waitStock()
 					stockInitMu.Lock()
 					defer stockInitMu.Unlock()
 					v, ok := stockInit[d]
@@ -241,6 +300,9 @@ func buildMode(args []string) {
 			// the linker loads a package only if some loaded object says it imports it
 			for _, d := range p.deps {
 				ip := goobj.ImportedPkg{Pkg: d.ImportPath}
+				if stock[d] {
+					waitStock()
+				}
 				if stock[d] && d.Export != "" {
 					ip.Fingerprint = stockFingerprint(d.Export) // the linker compares it with the archive's
 				}
@@ -278,6 +340,7 @@ func buildMode(args []string) {
 		}()
 	}
 	wg.Wait()
+	<-frontDone
 	var sf *os.File
 	if *stats != "" {
 		sf, _ = os.Create(*stats)
@@ -312,6 +375,7 @@ func buildMode(args []string) {
 		if failed > 0 {
 			log.Fatalf("fc build -link: %d packages not compiled", failed)
 		}
+		waitStock()
 		tl := time.Now()
 		var cfg strings.Builder
 		for _, p := range closure {
@@ -331,11 +395,17 @@ func buildMode(args []string) {
 		cfgFile := filepath.Join(*out, "importcfg.link")
 		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
 		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+		linker := "stock linker"
+		if fl := os.Getenv("FC_LINKER"); fl != "" {
+			// FC_LINKER=<path of fclink>: the campaign's linker (driver/fclink) instead of the stock one
+			cmd = exec.Command(fl, "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
+			linker = "fclink"
+		}
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
 			log.Fatalf("fc build -link: link: %v", err)
 		}
-		fmt.Printf("link: %d fc objects, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+		fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
 	}
 	total := cpuSeconds() - c0
 	var all int64
@@ -346,8 +416,8 @@ func buildMode(args []string) {
 			n++
 		}
 	}
-	fmt.Printf("front end: %d packages, %.1f MB of source, %.0f ms wall, %.2f core-s\n", n, float64(all)/1e6, float64(tCheck.Milliseconds()), cCheck)
-	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), %.0f ms wall, %.2f core-s\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64((time.Since(t0) - tCheck).Milliseconds()), total-cCheck)
+	fmt.Printf("front end: %d packages, %.1f MB of source, all checked %.0f ms after the start (%.2f core-s spent by then, back end included)\n", n, float64(all)/1e6, float64(tCheck.Milliseconds()), cCheck)
+	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), overlapping the front end; everything done at %.0f ms\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64(time.Since(t0).Milliseconds()))
 	fmt.Printf("compiled packages only: parse %.2f s + check %.2f s + compile %.2f s = %.2f core-s for %.2f MB: %.2f core-s per MB\n",
 		float64(parse)/1e9, float64(check)/1e9, float64(compile)/1e9, float64(parse+check+compile)/1e9, float64(okSrc)/1e6, float64(parse+check+compile)/1e9/(float64(okSrc)/1e6+1e-9))
 	var ru syscall.Rusage

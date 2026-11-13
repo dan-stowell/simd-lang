@@ -86,16 +86,23 @@ Log (append one line per milestone reached, with the oracle number):
   stock baseline mode 6.18 core-s (0.75 per MB); fc 2.80 core-s attributable (0.34 per MB), ratio **0.45**: above one
   third. Not stopped, because the path is measured (JOURNAL): the profile is flat with named items, and on MinIO the
   whole fc build is 26-27 core-s against the frozen path's 74.
+- M4 in part, 2026-11-13 03:43 UTC: **MinIO built by fc passes its smoke test, cold**: 1,283 packages by fc in one process,
+  the runtime's 29-30 packages by the stock compiler inside the timer, planning by the driver's own planner,
+  stock link: 7.7-8.7 s wall, 34-36 core-s on a machine two other agents were using (`tools/fc/cold.sh minio`;
+  frozen stock path 11.2 s, fair stock 29.5 s / 150 core-s). kube-apiserver the same way: 8.7-9.1 s, 42-43 core-s,
+  smoke passes (frozen path 19.8-21.3 s). buildifier, runsc, caddy and tailscaled build, link and run `--version`
+  (`tools/fc/corpus.sh`); prometheus stops in one generic instance. Not M4 yet: MinIO's unit tests have not been
+  run against fc-built packages, and the runtime is stock (M3).
+- M4 in part, 2026-11-13 05:00 UTC: **MinIO's own tests under fc: 45 of 46 packages pass; the 46th (cmd) fails one
+  test that fails with the stock compiler too** (package under test by fc; the all-packages-by-fc run,
+  `FC_ALL=1 tools/fc/test.sh`, is in /home/exedev/targets/fc-minio-all.log). std: 228 packages pass. Escape analysis
+  (driver/fc/escape*.go) and fclink (driver/fclink) are merged into main, not yet used by `fc build`.
 
-
-Now: the fc-built MinIO binary starts (`minio.bin --version` works; itabs merge by name in whole-program mode) but
-the server dies in its self-test: a fault at address 0x684f inside fc's ABIInternal wrapper for the assembly function
-github.com/klauspost/compress/s2.s2Decode (decode_asm.go:17 +0x63; wrapToABI0 in driver/fc/abiwrap.go: check the
-ABI0 argument layout and frame for a `func s2Decode(dst, src []byte) int` shape, and that the wrapper's outgoing area
-covers the callee's argument size). Rebuild: in /home/exedev/targets/minio
-`GOFLAGS=-buildvcs=false go list -deps -export -json -gcflags=all=-l . runtime > plan`, then
-`build/fc build -plan plan -o objs -link minio.bin github.com/minio/minio`, then `tests/minio_smoke.sh minio.bin`.
-In parallel: Codex's triage of the 53 failing std packages (reviews/inbox/fc-triage-1.md if it finished; list in
-/home/exedev/targets/fc-failing.txt; rerun it with the command in JOURNAL's M2 entry spirit: `codex exec -s
-workspace-write` with /home/exedev/targets and /tmp writable); triage reviews/inbox. Then M3's hard part: escape
-analysis, which the runtime's own packages need. Cost items with counts: JOURNAL M2.
+Now: (1) wire the merged escape analysis into the code generator (gen.go escResult: `g.esc` is still nil, so
+everything escapes; adapter over `pr.escape(p)`: heapVar, heapSite), then retry the runtime through fc
+(`FC_RUNTIME=1`: it compiles; 6 nosplit chains over the bound, mostly through write barriers on variables that
+would then stay in the frame) and the allocation-count skips: that is M3. (2) Read fc-minio-all.log and
+fc-batch-refail.log (some entries there failed only because the harness scripts were edited mid-run; rerun them).
+(3) `fc build -link` through fclink instead of the stock linker (M5). (4) On an idle machine:
+`tools/scoreboard/ours.sh`, then regenerate SCOREBOARD.md; no timing taken on 2026-11-13 is trustworthy (load 17-27).
+The two builders (escape, fclink) may still be committing to their worktree branches: merge again before starting.

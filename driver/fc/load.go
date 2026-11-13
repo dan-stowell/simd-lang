@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -39,6 +40,12 @@ type Pkg struct {
 	once  sync.Once
 	err   error
 
+	parseOnce sync.Once
+	discOnce  sync.Once
+	imps      []string          // import paths as written in the files
+	src       map[string][]byte // file bytes read by the self plan, until parsed
+	listed    bool              // GoFiles came from a plan file
+
 	srcBytes         int64
 	parseNS, checkNS int64
 
@@ -55,11 +62,19 @@ type Program struct {
 	byPath map[string]*Pkg
 	sizes  types.Sizes
 	sem    chan struct{}
+	plan   *selfPlan  // nil when the packages come from a plan file
+	mu     sync.Mutex // guards byPath while packages are being discovered
 
-	tctx    *types.Context // shared by every package: one object per instantiated type
-	byTpkg  sync.Map       // *types.Package -> *Pkg
-	rtOnce  sync.Once
-	rtDecls *types.Package // the runtime functions the stock compiler knows, for their signatures
+	tctx         *types.Context // shared by every package: one object per instantiated type
+	byTpkg       sync.Map       // *types.Package -> *Pkg
+	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
+	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
+	byInfo       sync.Map       // *types.Info -> *Pkg
+	rtOnce       sync.Once
+	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
+	localMu      sync.Mutex
+	localInst    map[localKey]*types.Named
+	rtDecls      *types.Package // the runtime functions the stock compiler knows, for their signatures
 }
 
 func newProgram() *Program {
@@ -75,6 +90,20 @@ func (pr *Program) readPlan(path string) error {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
+	// either a stream of objects (go list -json) or one array (the driver's own planner: sb -dumpplan)
+	br := bufio.NewReader(f)
+	if b, _ := br.Peek(1); len(b) == 1 && b[0] == '[' {
+		var ps []*Pkg
+		if err := json.NewDecoder(br).Decode(&ps); err != nil {
+			return err
+		}
+		for _, p := range ps {
+			p.listed = true
+			pr.byPath[p.ImportPath] = p
+		}
+		return nil
+	}
+	dec = json.NewDecoder(br)
 	for {
 		p := new(Pkg)
 		if err := dec.Decode(p); err == io.EOF {
@@ -82,6 +111,7 @@ func (pr *Program) readPlan(path string) error {
 		} else if err != nil {
 			return err
 		}
+		p.listed = true
 		pr.byPath[p.ImportPath] = p
 	}
 }
@@ -108,23 +138,31 @@ func (i pkgImporter) Import(path string) (*types.Package, error) {
 	return d.tpkg, nil
 }
 
-// check parses and type-checks p after its dependencies. Safe to call from many goroutines.
-func (pr *Program) check(p *Pkg) error {
-	p.once.Do(func() {
-		// parse first: the imports that matter are the ones in the files
+// parse reads and parses p's files (once). With a self plan (selfplan.go) it first finds which files of the
+// directory belong to the build, from the bytes it then parses.
+func (pr *Program) parse(p *Pkg) {
+	p.parseOnce.Do(func() {
 		pr.sem <- struct{}{}
+		defer func() { <-pr.sem }()
+		if pr.plan != nil && !p.listed {
+			if err := pr.plan.loadDir(p); err != nil {
+				p.err = err
+				return
+			}
+		}
 		seen := map[string]bool{}
-		var imps []string
 		for _, name := range p.GoFiles {
 			path := name
 			if !filepath.IsAbs(path) {
 				path = filepath.Join(p.Dir, name)
 			}
-			src, err := os.ReadFile(path)
-			if err != nil {
-				p.err = err
-				<-pr.sem
-				return
+			src := p.src[name]
+			if src == nil {
+				var err error
+				if src, err = os.ReadFile(path); err != nil {
+					p.err = err
+					return
+				}
 			}
 			p.srcBytes += int64(len(src))
 			t0 := time.Now()
@@ -132,19 +170,32 @@ func (pr *Program) check(p *Pkg) error {
 			p.parseNS += int64(time.Since(t0))
 			if err != nil {
 				p.err = err
-				<-pr.sem
 				return
 			}
 			p.files = append(p.files, f)
+			if p.Name == "" {
+				p.Name = f.Name.Name
+			}
 			for _, im := range f.Imports {
 				ip := strings.Trim(im.Path.Value, "\"`")
 				if ip != "unsafe" && ip != "C" && !seen[ip] {
 					seen[ip] = true
-					imps = append(imps, ip)
+					p.imps = append(p.imps, ip)
 				}
 			}
 		}
-		<-pr.sem
+		p.src = nil
+	})
+}
+
+// check parses and type-checks p after its dependencies. Safe to call from many goroutines.
+func (pr *Program) check(p *Pkg) error {
+	p.once.Do(func() {
+		pr.parse(p)
+		if p.err != nil {
+			return
+		}
+		imps := p.imps
 		var wg sync.WaitGroup
 		for _, ip := range imps {
 			if m, ok := p.ImportMap[ip]; ok {
@@ -171,15 +222,14 @@ func (pr *Program) check(p *Pkg) error {
 		// sized from the source: growing these maps is a tenth of the type checker's time otherwise
 		n := int(p.srcBytes)
 		p.info = &types.Info{
-			Types:        make(map[ast.Expr]types.TypeAndValue, n/9),
-			Defs:         make(map[*ast.Ident]types.Object, n/40),
-			Uses:         make(map[*ast.Ident]types.Object, n/14),
-			Implicits:    map[ast.Node]types.Object{},
-			Selections:   make(map[*ast.SelectorExpr]*types.Selection, n/40),
-			Instances:    map[*ast.Ident]types.Instance{},
-			Scopes:       make(map[ast.Node]*types.Scope, n/60),
-			FileVersions: map[*ast.File]string{},
+			Types:      make(map[ast.Expr]types.TypeAndValue, n/9),
+			Defs:       make(map[*ast.Ident]types.Object, n/40),
+			Uses:       make(map[*ast.Ident]types.Object, n/14),
+			Implicits:  map[ast.Node]types.Object{},
+			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/40),
+			Instances:  map[*ast.Ident]types.Instance{},
 		}
+		pr.byInfo.Store(p.info, p)
 		gover := ""
 		if p.Module != nil && p.Module.GoVersion != "" {
 			gover = "go" + p.Module.GoVersion

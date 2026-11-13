@@ -78,6 +78,7 @@ func (g *gen) childName(kind string) string {
 // child starts the generator of a function nested in this one.
 func (g *gen) child(name string, sig *types.Signature) *gen {
 	cg := g.c.newGen(name, sig, g.info, g.env)
+	cg.esc = g.esc
 	cg.out.sym = g.c.lookup(name, obj.ABIInternal, "_")
 	cg.out.flags |= g.out.flags & obj.DUPOK
 	return cg
@@ -102,7 +103,11 @@ func (g *gen) closure(sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt
 		}
 	}
 	for _, v := range free {
-		if l := g.vars[v]; l.kind != lInd || l.off != 0 {
+		l := g.vars[v]
+		if l.kind == lFrame && g.addrVars[v] {
+			continue // captured in the frame: the closure does not outlive this activation
+		}
+		if l.kind != lInd || l.off != 0 {
 			giveUp("captured variable %s is not on the heap", v.Name())
 		}
 	}
@@ -125,9 +130,33 @@ func (g *gen) closure(sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt
 		g.a.lea(AX, msym(g.c.staticClosure(cg.out.sym), 0))
 		return loc{kind: lReg, reg: AX}
 	}
+	if !g.siteHeap(lit) {
+		// the closure object in the frame: an array of pointers
+		ptrs := make([]bool, len(free)+1)
+		for i := range ptrs {
+			ptrs[i] = true
+		}
+		j := g.newSlotBits(int64(8*(len(free)+1)), ptrs)
+		obj := loc{kind: lFrame, off: -g.slots[j].off}
+		g.a.lea(R8, msym(cg.out.sym, 0))
+		g.a.store(mb(BP, obj.off), R8, 8)
+		for i, v := range free {
+			if l := g.vars[v]; l.kind == lFrame {
+				g.a.lea(R8, mb(BP, l.off))
+			} else {
+				g.a.load(R8, mb(BP, l.slot), 8, false)
+			}
+			g.a.store(mb(BP, obj.off+int64(8*(i+1))), R8, 8)
+		}
+		return g.frameAddr(obj)
+	}
 	p := g.newClosure(cg.out.sym, len(free))
 	for i, v := range free {
-		g.move(loc{kind: lInd, slot: p.off, off: int64(8 * (i + 1))}, loc{kind: lFrame, off: g.vars[v].slot}, unsafePtr)
+		src := loc{kind: lFrame, off: g.vars[v].slot}
+		if l := g.vars[v]; l.kind == lFrame {
+			src = g.frameAddr(l) // (the analysis kept the variable in the frame but not the closure)
+		}
+		g.move(loc{kind: lInd, slot: p.off, off: int64(8 * (i + 1))}, src, unsafePtr)
 	}
 	return p
 }
