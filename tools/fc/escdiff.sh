@@ -214,6 +214,10 @@ for pkg, slines in stock.items():
     for pos, sp in S.param.items():
         fp = F.param.get(pos)
         if fp is None:
+            if sp['name'][:1] == '#':
+                # a parameter of the body of a range over a function that assigns to outer variables
+                c['EXCEPTION range-over-func variable of the stock compiler'] += 1
+                continue
             unsound('parameter unknown to fc', pos, 'leaking param %s' % sp['name'])
             continue
         fh = fp['heap']

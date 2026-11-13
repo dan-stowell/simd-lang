@@ -32,7 +32,11 @@ func escMode(args []string) {
 	plan := fs.String("plan", "", "`go list -json` stream of the packages")
 	quiet := fs.Bool("q", false, "analyze only, print nothing")
 	byval := fs.Bool("byvalue", false, "closures capture by value where the stock compiler's do (see escByValue)")
+	allframe := fs.Bool("allframe", false, "as if the code generator could put every kind of site in the frame (see escHeapOnly)")
 	fs.Parse(args)
+	if *allframe {
+		escAllFrame = true
+	}
 	if *byval {
 		escByValue = true
 	}

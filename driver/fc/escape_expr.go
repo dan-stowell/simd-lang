@@ -75,6 +75,12 @@ func (e *escWalk) spill(k escHole, n ast.Node, kind escSiteKind, pos token.Pos) 
 	l := e.newLoc(e.fn, e.loopDepth)
 	e.sites = append(e.sites, escSite{node: n, kind: kind, pos: pos, gen: e.fn.generic})
 	l.site = len(e.sites)
+	if escHeapOnly[kind] && !escAllFrame {
+		// the code generator allocates it with the runtime whatever the verdict: what is stored in it
+		// is stored in the heap
+		l.escapes = true
+		e.sites[l.site-1].why = "the code generator has no frame form of it"
+	}
 	e.flow(k.addr(), l)
 	return l.hole()
 }
@@ -236,6 +242,9 @@ func (e *escWalk) expr(k escHole, n ast.Expr) {
 				e.discard(n.X)
 				e.discard(n.Y)
 				return
+			}
+			if escIsTypeParam(tv.Type) {
+				e.spill(k, n, escSiteString, n.OpPos) // a concatenation, when the type argument is a string
 			}
 		}
 		switch n.Op {

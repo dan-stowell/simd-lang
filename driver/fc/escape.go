@@ -37,6 +37,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -61,7 +62,7 @@ type escInfo struct {
 	// More keys: the *ast.CallExpr of a call of a variadic function is the slice made of its variadic
 	// arguments; the *ast.GoStmt and *ast.DeferStmt are the closure object that binds the callee and the
 	// arguments of `go f(x)` and `defer f(x)` (for `defer func() { ... }()` it is the *ast.FuncLit); the
-	// *ast.RangeStmt of a range over a function is the closure object of its body; the *ast.CallExpr of a
+	// body (*ast.BlockStmt) of a range over a function is the closure object of that body; the *ast.CallExpr of a
 	// conversion between strings and byte or rune slices and the *ast.BinaryExpr of a string concatenation
 	// are their results' storage. When two sites share a node (any([]int{1}): the literal's array and the
 	// interface's copy of the slice) the entry is true if either must use the heap.
@@ -79,6 +80,63 @@ type escInfo struct {
 
 	// With escByValue: the captured variables that closures hold copies of.
 	byValue map[*types.Var]bool
+
+	// What the analysis saw: every variable that has a location, every site (heap or not). A variable or
+	// a site it did not see has no verdict: varOnHeap and siteOnHeap answer "heap" for it. dead is the
+	// code it skipped as unreachable (nothing there runs, so nothing there needs a verdict).
+	seenVar  map[*types.Var]bool
+	seenSite map[ast.Node]bool
+	dead     []escRange
+	fset     *token.FileSet
+	asked    sync.Map // what FC_ESC_CHECK has reported already
+}
+
+type escRange struct{ lo, hi token.Pos }
+
+// escCheck (FC_ESC_CHECK=1): report every question the code generator asks about a variable or a site that
+// the analysis did not see in reachable code. Each is a disagreement about what is a site, or about its key.
+var escCheck = os.Getenv("FC_ESC_CHECK") != ""
+
+func (e *escInfo) inDead(pos token.Pos) bool {
+	for _, r := range e.dead {
+		if r.lo <= pos && pos < r.hi {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *escInfo) unseen(what string, key any, pos token.Pos) {
+	if !escCheck || e.inDead(pos) {
+		return
+	}
+	if _, dup := e.asked.LoadOrStore(key, true); !dup {
+		fmt.Fprintf(os.Stderr, "fc: escape check: %s: %s not seen by the analysis\n", e.fset.Position(pos), what)
+	}
+}
+
+// varOnHeap: must the variable live on the heap?
+func (e *escInfo) varOnHeap(v *types.Var) bool {
+	if e.heapVar[v] {
+		return true
+	}
+	if !e.seenVar[v] {
+		e.unseen("variable "+v.Name(), v, v.Pos())
+		return true
+	}
+	return false
+}
+
+// siteOnHeap: must the allocation site use the heap?
+func (e *escInfo) siteOnHeap(n ast.Node) bool {
+	if e.heapSite[n] {
+		return true
+	}
+	if !e.seenSite[n] {
+		e.unseen(fmt.Sprintf("site %T", n), n, n.Pos())
+		return true
+	}
+	return false
 }
 
 // escSummary says what a function does with its parameters.
@@ -174,6 +232,21 @@ const (
 
 var escSiteNames = [...]string{"new", "&literal", "slice literal", "map literal", "make slice", "make map", "append",
 	"func literal", "method value", "interface", "... argument", "go/defer", "range func", "string"}
+
+// escHeapOnly: the kinds of site that fc's code generator always allocates with the runtime, although
+// values that hold addresses of frame variables can be stored in them when they are made: a slice literal,
+// the slice of variadic arguments, the closure object of a method value and of a go or defer statement's
+// bound call. An object in the heap must not point into a stack (a stack that moves does not update it), so
+// the analysis must know: such a site escapes from the start, and what is stored in it with it. Take a kind
+// out of this list when the code generator learns to put it in the frame (and asks siteOnHeap about it).
+// The other kinds it always allocates with the runtime (make, append, map literals, strings) are not here:
+// nothing is stored in them except through assignments, which flow to the heap anyway.
+//
+// FC_ESC_ALLFRAME=1 (`fc esc -allframe`) ignores the list: the analysis as it would be if every kind had a
+// frame form, which is what compares with the stock compiler's decisions kind by kind.
+var escHeapOnly = [...]bool{escSiteSliceLit: true, escSiteDDD: true, escSiteMethodValue: true, escSiteGoDefer: true, escSiteString: false}
+
+var escAllFrame = os.Getenv("FC_ESC_ALLFRAME") != ""
 
 // escSite is one allocation site and its verdict.
 type escSite struct {
@@ -515,7 +588,7 @@ type escUnit struct {
 func (pr *Program) escapePkg(p *Pkg) *escInfo {
 	out := &escInfo{heapVar: map[*types.Var]bool{}, heapSite: map[ast.Node]bool{}, summary: map[*types.Func]*escSummary{},
 		varWhy: map[*types.Var]string{}, varPos: map[*types.Var]token.Pos{},
-		byValue: map[*types.Var]bool{}}
+		byValue: map[*types.Var]bool{}, seenVar: map[*types.Var]bool{}, seenSite: map[ast.Node]bool{}, fset: pr.fset}
 	if p.tpkg == nil || p.info == nil {
 		return out
 	}
@@ -904,6 +977,9 @@ func (b *escBatch) sizeCheck(l *escLoc, t types.Type, local bool) {
 func (b *escBatch) finish(units []*escUnit) {
 	out := b.out
 	for _, l := range b.locs {
+		if l.v != nil {
+			out.seenVar[l.v] = true
+		}
 		if l.v != nil && l.escapes && !out.heapVar[l.v] {
 			out.heapVar[l.v] = true
 			out.vars = append(out.vars, l.v)
@@ -920,6 +996,9 @@ func (b *escBatch) finish(units []*escUnit) {
 	}
 	for _, n := range b.force {
 		out.heapSite[n] = true
+	}
+	for _, s := range b.sites {
+		out.seenSite[s.node] = true
 	}
 	for _, s := range b.sites {
 		if s.heap {
