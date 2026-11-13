@@ -232,8 +232,10 @@ func writeUnit(u *unit) (nrel uint64) {
 		// ---- the function's entry in the pc -> function table, and its _func
 		fi, npc, nfd, ninl := funcShape(o, j)
 		ft := out[lay.functab-imageBase:]
-		le.PutUint32(ft[fidx*8:], a-lay.text)
-		le.PutUint32(ft[fidx*8+4:], foff)
+		fi0 := fidx[b-bText]
+		fidx[b-bText]++
+		le.PutUint32(ft[fi0*8:], a-lay.text)
+		le.PutUint32(ft[fi0*8+4:], foff)
 		f := ft[foff:]
 		le.PutUint32(f[0:], a-lay.text)
 		le.PutUint32(f[4:], aux[gid])
@@ -292,7 +294,6 @@ func writeUnit(u *unit) (nrel uint64) {
 				inl += 16 * ninl
 			}
 		}
-		fidx++
 		foff += rnd(funcSize+4*npc+4*nfd, 8)
 	}
 	return nrel

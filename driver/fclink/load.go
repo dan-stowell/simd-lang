@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"cmd/internal/goobj"
+	"cmd/internal/objabi"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -40,8 +41,8 @@ type unit struct {
 	// layout: bytes this unit's live symbols need per (bucket, alignment class), then where they go
 	csize    [nBuckets][nClasses]uint32
 	cbase    [nBuckets][nClasses]uint32
-	nfunc    uint32 // live functions, and the index of the first
-	funcBase uint32
+	nfunc    [2]uint32 // live functions (ordinary, FIPS), and the index of the first of each
+	funcBase [2]uint32
 	ftabSize uint32 // bytes of _func structs with their pcdata and funcdata offsets
 	ftabBase uint32
 	nameSize uint32 // bytes of function names
@@ -229,8 +230,8 @@ func load(cfgFile, mainFile string) {
 			o.base = next
 			next += o.total
 			objs = append(objs, o)
-			if _, ok := primary[o.pkg]; !ok {
-				primary[o.pkg] = o
+			if pp := objabi.PathToPrefix(o.pkg); primary[pp] == nil {
+				primary[pp] = o // (objects name packages by their escaped paths)
 			}
 			if o.pkg == "main" && mainObj == nil {
 				mainObj = o

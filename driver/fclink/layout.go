@@ -260,7 +260,7 @@ func layout() {
 			}
 			if isTextBucket(b) {
 				_, npc, nfd, ninl := funcShape(o, j)
-				u.nfunc++
+				u.nfunc[b-bText]++
 				u.ftabSize += rnd(funcSize+4*npc+4*nfd, 8)
 				u.inlSize += 16 * ninl
 				u.nameSize += uint32(s.NameLen(r)) + 1
@@ -313,7 +313,7 @@ func layout() {
 
 	// ---- pclntab tables that are per object: the file table
 	for _, u := range units {
-		u.o.nfunc += u.nfunc
+		u.o.nfunc += u.nfunc[0] + u.nfunc[1]
 	}
 	fileOff := map[string]uint32{}
 	var fileSize uint32
@@ -395,14 +395,18 @@ func layout() {
 
 	lay.nameSize = 1 // name offset 0 means "no name"
 	for _, u := range units {
-		u.funcBase = lay.nfunc
-		lay.nfunc += u.nfunc
+		u.funcBase[0] = lay.nfunc // (the function table is in address order: the FIPS functions come last)
+		lay.nfunc += u.nfunc[0]
 		u.nameBase = lay.nameSize
 		lay.nameSize += u.nameSize
 		u.pcBase = 1 + lay.pctabSize // offset 0 means "no table"
 		lay.pctabSize += u.pcSize
 		u.ftabBase = lay.functabSize
 		lay.functabSize += u.ftabSize
+	}
+	for _, u := range units {
+		u.funcBase[1] = lay.nfunc
+		lay.nfunc += u.nfunc[1]
 	}
 	lay.pctabSize++
 	va = rnd(va, 32)
