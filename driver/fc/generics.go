@@ -244,6 +244,13 @@ func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList,
 	sym := c.lookup(name, obj.ABIInternal, "_")
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if !c.mixed && !c.instances[name] {
+		// in a whole-program build an instance is compiled by the first package that needs it
+		if owner, loaded := c.pr.instOwner.LoadOrStore(name, c); loaded && owner != c {
+			c.instances[name] = true
+			return sym
+		}
+	}
 	if !c.instances[name] {
 		c.instances[name] = true
 		env := map[*types.TypeParam]types.Type{}

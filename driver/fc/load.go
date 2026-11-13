@@ -67,6 +67,8 @@ type Program struct {
 
 	tctx         *types.Context // shared by every package: one object per instantiated type
 	byTpkg       sync.Map       // *types.Package -> *Pkg
+	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
+	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
 	rtOnce       sync.Once
 	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
 	localMu      sync.Mutex
