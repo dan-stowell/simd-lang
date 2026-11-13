@@ -1,14 +1,22 @@
 // resolve.go: symbol resolution. Every slot of every object is resolved to the id of its canonical
-// definition, by the stock loader's rules: package-indexed references by table read; references by name
-// through a table keyed by name and ABI; content-addressed symbols through tables keyed by their hash.
-// The tables are open-addressing arrays filled by all cores at once without locks: a claim installs its key
-// with a compare-and-swap and then raises the slot's value to the best definition seen, where "best" is a
-// total order (so the result does not depend on which thread got there first):
+// definition, by the stock loader's rules: package-indexed references are a table read; references by
+// name join definitions by name and ABI; content-addressed symbols join by their hash.
 //
-//	a definition that may not be duplicated beats one that may (DUPOK);
+// The joins are partitioned hash joins. One parallel pass over the units writes a record per symbol that
+// takes part (key, id, rank) into one of 256 partitions chosen by the key's top bits; then each partition,
+// small enough to stay in a core's cache, is grouped by key on its own thread and every record's slot
+// learns its group's winner. The winner is the maximum of a total order, so the result does not depend on
+// which thread saw what first:
+//
+//	a definition beats a reference; one that may not be duplicated beats one that may (DUPOK);
 //	then one with content (or code) beats one without (BSS);
 //	then the larger one wins (the stock loader's rule for DUPOK and BSS symbols and for hashed ones);
 //	then the one in the earlier object, at the lower index.
+//
+// A name nothing defines resolves to its first reference: that slot stands for the undefined symbol.
+// Definitions referenced by package index take part in the join by name only if some object refers to
+// their name (or the linker itself looks it up): a bit filter of the referenced names decides, so most of
+// them cost a hash and one bit test.
 package main
 
 import (
@@ -16,6 +24,7 @@ import (
 	"cmd/internal/objabi"
 	"hash/maphash"
 	"sync/atomic"
+	"unsafe"
 )
 
 var (
@@ -24,18 +33,11 @@ var (
 	addr  []uint32 // per id: the address (pc-value tables: the offset in pctab); 0: not in the output
 	aux   []uint32 // per id: for a function, the offset of its name in funcnametab
 
-	nameTab, hash64Tab, hashTab table
-	hash64Zero                  atomic.Uint64 // the slot of the 64-bit hash whose mixed key is 0
-	builtins                    []uint32
-
-	synthByName = map[synthKey]uint32{} // symbols no object defines: referenced by name, or made by the linker
-	synthNames  []synthKey              // id nslots+1+i
+	builtins   []uint32
+	synthNames []string // symbols the linker makes that nothing refers to by name: id nslots+1+i
+	nameParts  [][nParts]plist[nameRec]
+	nameFilter []uint64
 )
-
-type synthKey struct {
-	name string
-	abi  uint16
-}
 
 const (
 	stLive        uint32 = 1 << iota // reachable
@@ -45,41 +47,44 @@ const (
 	stFuncdata                       // funcdata of a live function: goes in the go:func.* area
 	stNameNeeded                     // a function inlined into a live one: its name goes in funcnametab
 	stOverride                       // the linker writes this symbol's content itself
+	stUndef                          // a reference that stands for a symbol no object defines
 	stBucketShift = 8                // bits 8..12: the bucket; bits 13..16: the alignment class
+
+	nParts     = 256
+	filterBits = 1 << 23
+
+	rankNoDup   = 1 << 31
+	rankContent = 1 << 30
+	rankDef     = 1 << 29
+	rankIface   = 1 << 28 // (not part of the order: the UsedInIface flag rides along)
 )
 
-// table: key and value words interleaved. Key 0 is an empty slot. A value is rank<<32 | ^id, maximised.
-type table struct {
-	s    []uint64
-	mask uint64
+type nameRec struct {
+	key  uint64
+	name *byte
+	nlen uint32
+	gid  uint32
+	rank uint32
+	abi  uint16
 }
 
-func (t *table) init(n int) {
-	size := 1024
-	for size < 2*n {
-		size <<= 1
-	}
-	t.s = make([]uint64, 2*size)
-	t.mask = uint64(size - 1)
+type hashRec struct {
+	k1, k2    uint64
+	gid, size uint32
 }
 
-const (
-	kindName = iota
-	kindHash64
-	kindHash
-)
+type hash64Rec struct {
+	key       uint64
+	gid, size uint32
+}
 
 var seed = maphash.MakeSeed()
 
 func nameKey(name string, abi uint16) uint64 {
-	k := maphash.String(seed, name) ^ uint64(abi)*0x9E3779B97F4A7C15
-	if k == 0 {
-		k = 1
-	}
-	return k
+	return maphash.String(seed, name) ^ uint64(abi)*0x9E3779B97F4A7C15
 }
 
-func mix64(h uint64) uint64 { // a bijection: equal keys mean equal hashes
+func mix64(h uint64) uint64 {
 	h ^= h >> 30
 	h *= 0xBF58476D1CE4E5B9
 	h ^= h >> 27
@@ -87,84 +92,43 @@ func mix64(h uint64) uint64 { // a bijection: equal keys mean equal hashes
 	return h ^ h>>31
 }
 
-func sameIdentity(kind int, gid uint32, o *object, j uint32) bool {
-	o2, j2 := objOf(gid)
-	if kind == kindHash {
-		return *o.r.Hash(j - o.ndef - o.nh64) == *o2.r.Hash(j2 - o2.ndef - o2.nh64)
-	}
-	s, s2 := o.r.Sym(j), o2.r.Sym(j2)
-	return s.ABI() == s2.ABI() && s.Name(o.r) == s2.Name(o2.r)
+func (r *nameRec) str() string { return unsafe.String(r.name, r.nlen) }
+
+func mkNameRec(name string, abi uint16, gid, rank uint32) nameRec {
+	return nameRec{nameKey(name, abi), unsafe.StringData(name), uint32(len(name)), gid, rank, abi}
 }
 
-// claim enters definition j of o under key and returns the table slot that will hold the winner.
-func (t *table) claim(kind int, key, val uint64, o *object, j uint32) uint32 {
-	for i := key & t.mask; ; i = (i + 1) & t.mask {
-		kp, vp := &t.s[2*i], &t.s[2*i+1]
-		k := atomic.LoadUint64(kp)
-		created := false
-		if k == 0 {
-			if atomic.CompareAndSwapUint64(kp, 0, key) {
-				k, created = key, true
-			} else {
-				k = atomic.LoadUint64(kp)
-			}
-		}
-		if k != key {
-			continue
-		}
-		if !created && kind != kindHash64 {
-			// the same 64 bits: the same name (or hash)? compare with whoever holds the slot
-			v := atomic.LoadUint64(vp)
-			for v == 0 {
-				v = atomic.LoadUint64(vp) // its first claimant is between its two stores
-			}
-			if !sameIdentity(kind, ^uint32(v), o, j) {
-				continue
-			}
-		}
-		for {
-			old := atomic.LoadUint64(vp)
-			if old >= val || atomic.CompareAndSwapUint64(vp, old, val) {
-				return uint32(i)
-			}
-		}
-	}
-}
+// isDef: is canonical id c a definition in some object?
+func isDef(c uint32) bool { return c != 0 && c <= nslots && state[c]&stUndef == 0 }
 
+// lookupName finds the canonical symbol of a name: a definition, or the reference that stands for an
+// undefined symbol; 0 if no object mentions the name. Names that only package-indexed definitions carry
+// are found only if they were announced with wantName before resolution.
 func lookupName(name string, abi uint16) uint32 {
 	key := nameKey(name, abi)
-	t := &nameTab
-	for i := key & t.mask; ; i = (i + 1) & t.mask {
-		switch t.s[2*i] {
-		case 0:
-			return 0
-		case key:
-			gid := ^uint32(t.s[2*i+1])
-			o, j := objOf(gid)
-			if s := o.r.Sym(j); s.ABI() == abi && s.Name(o.r) == name {
-				return gid
+	for w := range nameParts {
+		for _, recs := range nameParts[w][key>>56].chunks {
+			for i := range recs {
+				if r := &recs[i]; r.key == key && r.abi == abi && r.str() == name {
+					return canon[r.gid]
+				}
 			}
 		}
 	}
+	return 0
 }
 
-// lookup finds a symbol by name: an object's definition, or a symbol the linker makes; 0 if neither exists.
-func lookup(name string, abi uint16) uint32 {
-	if g := lookupName(name, abi); g != 0 {
-		return g
-	}
-	return synthByName[synthKey{name, abi}]
+func lookup(name string, abi uint16) uint32 { return lookupName(name, abi) }
+
+func wantName(name string, abi uint16) {
+	k := nameKey(name, abi) % filterBits
+	nameFilter[k>>6] |= 1 << (k & 63)
 }
 
-// synth returns the id of the linker-made symbol of this name, creating it if nothing referred to it.
+// synth makes a symbol of the linker's own (nothing refers to it by name) and returns its id.
 func synth(name string) uint32 {
-	k := synthKey{name, 0}
-	if g, ok := synthByName[k]; ok {
-		return g
-	}
 	g := nslots + 1 + uint32(len(synthNames))
-	synthByName[k] = g
-	synthNames = append(synthNames, k)
+	synthNames = append(synthNames, name)
 	canon = append(canon, g)
 	state = append(state, 0)
 	addr = append(addr, 0)
@@ -177,174 +141,281 @@ func symName(gid uint32) string {
 		return "<nil>"
 	}
 	if gid > nslots {
-		return synthNames[gid-nslots-1].name
+		return synthNames[gid-nslots-1]
 	}
 	o, j := objOf(gid)
 	return o.r.Sym(j).Name(o.r)
 }
 
-// rank orders the definitions of one name; see the top of the file.
-func rank(o *object, j uint32, s *goobj.Sym) uint64 {
-	siz := uint64(s.Siz())
-	if siz >= 1<<30 {
-		siz = 1<<30 - 1
+func rank(o *object, j uint32, s *goobj.Sym) uint32 {
+	r := min(s.Siz(), 1<<28-1) | rankDef
+	if s.UsedInIface() {
+		r |= rankIface
 	}
 	if s.Dupok() {
-		return siz
+		return r
 	}
-	r := siz | 1<<31
+	r |= rankNoDup
 	if k := objabi.SymKind(s.Type()); k.IsText() || o.r.DataSize(j) != 0 {
-		r |= 1 << 30
+		r |= rankContent
 	}
 	return r
 }
 
-func isClaimed(o *object, j uint32, s *goobj.Sym) (tab int, ok bool) {
-	switch {
-	case j < o.ndef, j >= o.ndef+o.nh64+o.nh:
-		if s.ABI() == goobj.SymABIstatic || s.NameLen(o.r) == 0 {
-			return 0, false // file-local, or an unnamed auxiliary symbol
-		}
-		return kindName, true
-	case j < o.ndef+o.nh64:
-		return kindHash64, true
-	}
-	return kindHash, true
+// The names the linker itself looks up; definitions by package index of these names must join by name.
+var linkerNames = []string{"runtime.firstmoduledata", "runtime.lastmoduledatap", "runtime.runtime_inittasks", "main..inittask",
+	"runtime..inittask", "runtime.unreachableMethod", "runtime.mapinitnoop", "runtime.deferreturn", "runtime.memProfileInternal",
+	"runtime.disableMemoryProfiling", "main.main"}
+
+type resolveWorker struct {
+	names  [nParts]plist[nameRec]
+	nslab  []nameRec
+	hslab  []hashRec
+	h6slab []hash64Rec
+	hashes [nParts]plist[hashRec]
+	h64s   [nParts]plist[hash64Rec]
+	table  []uint32
+	grp    []uint32
+	best   []uint64
+	ndup   []uint8
+	_      [64]byte
 }
 
 func resolve() {
 	n := int(nslots) + 1
-	canon = make([]uint32, n, n+4096)
-	state = make([]uint32, n, n+4096)
-	addr = make([]uint32, n, n+4096)
-	aux = make([]uint32, n, n+4096)
-	var nnamed, nh64, nh int
-	for _, o := range objs {
-		nnamed += int(o.ndef + o.nnonpkg)
-		nh64 += int(o.nh64)
-		nh += int(o.nh)
-	}
-	nameTab.init(nnamed)
-	hash64Tab.init(nh64)
-	hashTab.init(nh)
+	canon = make([]uint32, n, n+64)
+	state = make([]uint32, n, n+64)
+	addr = make([]uint32, n, n+64)
+	aux = make([]uint32, n, n+64)
+	nameFilter = make([]uint64, filterBits/64)
+	ws := make([]resolveWorker, nthreads)
 
-	// 1. every definition claims its key; canon holds the table slot for now
-	par(len(units), func(_, ui int) {
-		u := units[ui]
+	// 1. records for the definitions and references by name and for the content-addressed definitions
+	par(len(units), func(w, ui int) {
+		u, rw := units[ui], &ws[w]
 		o, r := u.o, u.o.r
-		for j := u.lo; j < min(u.hi, o.nalldef); j++ {
+		h64End, hEnd := o.ndef+o.nh64, o.ndef+o.nh64+o.nh
+		for j := max(u.lo, o.ndef); j < u.hi; j++ {
 			s := r.Sym(j)
 			gid := o.base + j
-			tab, ok := isClaimed(o, j, s)
-			if !ok {
-				canon[gid] = gid
-				continue
-			}
-			switch tab {
-			case kindName:
-				canon[gid] = nameTab.claim(kindName, nameKey(s.Name(r), s.ABI()), rank(o, j, s)<<32|uint64(^gid), o, j)
-			case kindHash64:
-				val := uint64(s.Siz())<<32 | uint64(^gid)
-				key := mix64(r.Hash64(j - o.ndef))
-				if key == 0 {
-					for {
-						old := hash64Zero.Load()
-						if old >= val || hash64Zero.CompareAndSwap(old, val) {
-							break
-						}
+			switch {
+			case j < h64End:
+				h := r.Hash64(j - o.ndef)
+				k := mix64(h)
+				rw.h64s[k>>56].add(&rw.h6slab, hash64Rec{h, gid, s.Siz()})
+			case j < hEnd:
+				h := r.Hash(j - h64End)
+				k1, k2 := le.Uint64(h[:8]), le.Uint64(h[8:])
+				rw.hashes[k1>>56].add(&rw.hslab, hashRec{k1, k2, gid, s.Siz()})
+			default:
+				rk := uint32(0)
+				if j < o.nalldef {
+					if s.ABI() == goobj.SymABIstatic || s.NameLen(r) == 0 {
+						canon[gid] = gid // file-local, or an unnamed auxiliary symbol
+						continue
 					}
-					canon[gid] = ^uint32(0)
-				} else {
-					canon[gid] = hash64Tab.claim(kindHash64, key, val, o, j)
+					rk = rank(o, j, s)
+				} else if s.UsedInIface() {
+					rk = rankIface
 				}
-			case kindHash:
-				h := r.Hash(j - o.ndef - o.nh64)
-				key := uint64(h[0]) | uint64(h[1])<<8 | uint64(h[2])<<16 | uint64(h[3])<<24 | uint64(h[4])<<32 | uint64(h[5])<<40 | uint64(h[6])<<48 | uint64(h[7])<<56
-				if key == 0 {
-					key = 1
+				rec := mkNameRec(s.Name(r), s.ABI(), gid, rk)
+				rw.names[rec.key>>56].add(&rw.nslab, rec)
+				k := rec.key % filterBits
+				atomic.OrUint64(&nameFilter[k>>6], 1<<(k&63))
+			}
+		}
+	})
+	for i := 0; i < goobj.NBuiltin(); i++ {
+		name, abi := goobj.BuiltinName(i)
+		wantName(name, uint16(abi))
+	}
+	for _, name := range linkerNames {
+		wantName(name, 0)
+		wantName(name, 1)
+	}
+	for name := range strdata {
+		wantName(name, 0)
+	}
+	wantName(*flagEntry, 0)
+	wantName(*flagEntry, 1)
+	// 2. definitions by package index: themselves, unless something may refer to their name
+	par(len(units), func(w, ui int) {
+		u, rw := units[ui], &ws[w]
+		o, r := u.o, u.o.r
+		for j := u.lo; j < min(u.hi, o.ndef); j++ {
+			s := r.Sym(j)
+			gid := o.base + j
+			if s.ABI() != goobj.SymABIstatic && s.NameLen(r) != 0 {
+				name := s.Name(r)
+				key := nameKey(name, s.ABI())
+				if k := key % filterBits; nameFilter[k>>6]>>(k&63)&1 != 0 {
+					rw.names[key>>56].add(&rw.nslab, nameRec{key, unsafe.StringData(name), uint32(len(name)), gid, rank(o, j, s), s.ABI()})
+					continue
 				}
-				canon[gid] = hashTab.claim(kindHash, key, uint64(s.Siz())<<32|uint64(^gid), o, j)
+			}
+			canon[gid] = gid
+			if s.UsedInIface() {
+				atomic.OrUint32(&state[gid], stUsedInIface)
+			}
+		}
+	})
+	// 3. the joins, one partition at a time
+	nameParts = make([][nParts]plist[nameRec], len(ws))
+	for w := range ws {
+		nameParts[w] = ws[w].names
+	}
+	var nrec [3]atomic.Int64
+	par(3*nParts, func(w, task int) {
+		rw := &ws[w]
+		p, kind := task%nParts, task/nParts
+		n := 0
+		for i := range ws {
+			switch kind {
+			case 0:
+				n += ws[i].names[p].n
+			case 1:
+				n += ws[i].hashes[p].n
+			case 2:
+				n += ws[i].h64s[p].n
+			}
+		}
+		if n == 0 {
+			return
+		}
+		nrec[kind].Add(int64(n))
+		size := 64
+		for size < 2*n {
+			size <<= 1
+		}
+		if cap(rw.table) < size {
+			rw.table = make([]uint32, size)
+		}
+		if cap(rw.grp) < n {
+			rw.grp, rw.best, rw.ndup = make([]uint32, n+n/2), make([]uint64, n+n/2), make([]uint8, n+n/2)
+		}
+		table, grp, best, ndup := rw.table[:size], rw.grp[:n], rw.best[:n], rw.ndup[:n]
+		clear(table)
+		mask := uint64(size - 1)
+		// group: grp[i] is the index (over the partition's records, in worker order) of the first record
+		// with record i's key; best[that] is the group's maximum of rank<<32 | ^id
+		i := uint32(0)
+		switch kind {
+		case 0:
+			flat := make([]*nameRec, 0, n)
+			for wi := range ws {
+				for _, recs := range ws[wi].names[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.rank&^rankIface)<<32 | uint64(^r.gid)
+						h := r.key & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i], ndup[i] = i, val, uint8(r.rank>>28&1)
+								break
+							}
+							if f := flat[t-1]; f.key == r.key && f.abi == r.abi && f.str() == r.str() {
+								grp[i] = t - 1
+								if r.rank&(rankNoDup|rankContent) == rankNoDup|rankContent && best[t-1]>>62 == 3 {
+									o1, _ := objOf(r.gid)
+									o2, _ := objOf(^uint32(best[t-1]))
+									errorf("duplicated definition of symbol %s, from %s and %s", r.str(), o2.pkg, o1.pkg)
+								}
+								best[t-1] = max(best[t-1], val)
+								ndup[t-1] |= uint8(r.rank >> 28 & 1)
+								break
+							}
+							h = (h + 1) & mask
+						}
+						i++
+					}
+				}
+			}
+			for k, r := range flat {
+				g := grp[k]
+				c := ^uint32(best[g])
+				canon[r.gid] = c
+				if uint32(k) == g {
+					if best[g]>>32&rankDef == 0 {
+						atomic.OrUint32(&state[c], stUndef)
+					}
+					if ndup[g] != 0 {
+						atomic.OrUint32(&state[c], stUsedInIface)
+					}
+				}
+			}
+		case 1:
+			flat := make([]*hashRec, 0, n)
+			for wi := range ws {
+				for _, recs := range ws[wi].hashes[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.size)<<32 | uint64(^r.gid)
+						h := r.k1 & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i] = i, val
+								break
+							}
+							if f := flat[t-1]; f.k1 == r.k1 && f.k2 == r.k2 {
+								grp[i] = t - 1
+								best[t-1] = max(best[t-1], val)
+								break
+							}
+							h = (h + 1) & mask
+						}
+						i++
+					}
+				}
+			}
+			for k, r := range flat {
+				canon[r.gid] = ^uint32(best[grp[k]])
+			}
+		case 2:
+			flat := make([]*hash64Rec, 0, n)
+			for wi := range ws {
+				for _, recs := range ws[wi].h64s[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.size)<<32 | uint64(^r.gid)
+						h := mix64(r.key) & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i] = i, val
+								break
+							}
+							if flat[t-1].key == r.key {
+								grp[i] = t - 1
+								best[t-1] = max(best[t-1], val)
+								break
+							}
+							h = (h + 1) & mask
+						}
+						i++
+					}
+				}
+			}
+			for k, r := range flat {
+				canon[r.gid] = ^uint32(best[grp[k]])
 			}
 		}
 	})
 	builtins = make([]uint32, goobj.NBuiltin())
 	for i := range builtins {
 		name, abi := goobj.BuiltinName(i)
-		builtins[i] = lookupName(name, uint16(abi))
-	}
-
-	// 2. every slot learns its canonical definition
-	par(len(units), func(_, ui int) {
-		u := units[ui]
-		o, r := u.o, u.o.r
-		for j := u.lo; j < u.hi; j++ {
-			s := r.Sym(j)
-			gid := o.base + j
-			var c uint32
-			if j >= o.nalldef {
-				c = lookupName(s.Name(r), s.ABI())
-				if c == 0 {
-					u.unres = append(u.unres, unresRef{gid, s.Name(r), s.ABI()})
-					continue
-				}
-				canon[gid] = c
-			} else {
-				tab, ok := isClaimed(o, j, s)
-				if !ok {
-					continue
-				}
-				var val uint64
-				switch slot := canon[gid]; {
-				case tab == kindName:
-					val = nameTab.s[2*uint64(slot)+1]
-				case tab == kindHash:
-					val = hashTab.s[2*uint64(slot)+1]
-				case slot == ^uint32(0):
-					val = hash64Zero.Load()
-				default:
-					val = hash64Tab.s[2*uint64(slot)+1]
-				}
-				c = ^uint32(val)
-				canon[gid] = c
-				if c != gid && tab == kindName && val>>62 == 3 && rank(o, j, s)>>30 == 3 {
-					o2, _ := objOf(c)
-					errorf("duplicated definition of symbol %s, from %s and %s", s.Name(r), o2.pkg, o.pkg)
-				}
-			}
-			if s.UsedInIface() {
-				atomic.OrUint32(&state[c], stUsedInIface)
-			}
-		}
-	})
-	// references by name that no object defines: symbols the linker makes (runtime.text, ...), weak
-	// references, references from code that will turn out dead
-	for _, u := range units {
-		for _, x := range u.unres {
-			k := synthKey{x.name, x.abi}
-			g, ok := synthByName[k]
-			if !ok {
-				g = nslots + 1 + uint32(len(synthNames))
-				synthByName[k] = g
-				synthNames = append(synthNames, k)
-			}
-			canon[x.gid] = g
+		if g := lookupName(name, uint16(abi)); isDef(g) {
+			builtins[i] = g
 		}
 	}
-	nunres := len(synthNames)
-	for i := 0; i < nunres; i++ {
-		g := nslots + 1 + uint32(i)
-		canon, state, addr, aux = append(canon, g), append(state, 0), append(addr, 0), append(aux, 0)
-	}
-	for i, b := range builtins {
-		if b == 0 {
-			name, abi := goobj.BuiltinName(i)
-			k := synthKey{name, uint16(abi)}
-			if g, ok := synthByName[k]; ok {
-				builtins[i] = g
-			}
-		}
-	}
-	// 3. "this type is converted to an interface" flags on references by package index
+	// 4. "this type is converted to an interface" flags on references by package index
 	par(len(objs), func(_, i int) {
 		o := objs[i]
 		for k, n := 0, o.r.NRefFlags(); k < n; k++ {
@@ -356,5 +427,5 @@ func resolve() {
 			}
 		}
 	})
-	lap("resolve", "%d slots, %d named and %d+%d hashed definitions claimed, %d names no object defines", nslots, nnamed, nh64, nh, nunres)
+	lap("resolve", "%d slots; joined: %d by name, %d + %d by content hash", nslots, nrec[0].Load(), nrec[1].Load(), nrec[2].Load())
 }

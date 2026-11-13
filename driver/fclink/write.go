@@ -28,7 +28,7 @@ var le = binary.LittleEndian
 func write() {
 	fileEnd := int64(lay.edata - imageBase)
 	outSize = fileEnd + shdrRoom
-	os.Remove(*flagOut)
+	<-removed // the old output, unlinked in the background since the start
 	f, err := os.OpenFile(*flagOut, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		fatalf("%v", err)
@@ -204,7 +204,7 @@ func writeUnit(u *unit) (nrel uint64) {
 			case objabi.R_CONST:
 				v = rl.Add()
 			case objabi.R_SIZE:
-				if c := canon[tg]; c != 0 && c <= nslots {
+				if c := canon[tg]; isDef(c) {
 					o2, j2 := objOf(c)
 					v = int64(o2.r.Sym(j2).Siz())
 				}
@@ -300,7 +300,7 @@ func writeUnit(u *unit) (nrel uint64) {
 }
 
 func funcInfoOf(c uint32) []byte {
-	if c == 0 || c > nslots {
+	if !isDef(c) {
 		return nil
 	}
 	o, j := objOf(c)
@@ -316,7 +316,7 @@ func funcInfoOf(c uint32) []byte {
 func undefined(o *object, s *goobj.Sym, tg uint32) {
 	c := canon[tg]
 	what := "undefined"
-	if c <= nslots {
+	if isDef(c) {
 		what = "not reachable (fclink's dead-code pass and the code disagree)"
 	}
 	errorf("%s: relocation target %s %s", s.Name(o.r), symName(c), what)
@@ -328,7 +328,7 @@ func gcSym(bm []byte, o *object, j uint32, off uint32) {
 	auxs := o.r.Auxs(j)
 	for i := range auxs {
 		if auxs[i].Type() == goobj.AuxGotype {
-			if t := canon[o.ref(auxs[i].Sym())]; t != 0 && t <= nslots {
+			if t := canon[o.ref(auxs[i].Sym())]; isDef(t) {
 				typePtrs(t, func(w int64) {
 					w += int64(off / 8)
 					bm[w>>3] |= 1 << (w & 7)
@@ -353,7 +353,7 @@ func typePtrs(t uint32, emit func(w int64)) {
 	relocs := o.r.Relocs(j)
 	target := func(off int32) uint32 {
 		if rl := relocAt(relocs, off); rl != nil {
-			if c := canon[o.ref(rl.Sym())]; c <= nslots {
+			if c := canon[o.ref(rl.Sym())]; isDef(c) {
 				return c
 			}
 		}

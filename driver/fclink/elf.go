@@ -47,7 +47,7 @@ func writeELF() {
 		addr, size uint32
 		align      uint64
 	}
-	bi := synthByName[synthKey{"go:buildinfo", 0}]
+	bi := buildinfoSym
 	sects := []sect{
 		{},
 		{".text", elf.SHT_PROGBITS, elf.SHF_ALLOC | elf.SHF_EXECINSTR, lay.text, lay.etext - lay.text, 32},
