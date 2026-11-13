@@ -111,13 +111,6 @@ func (l escLeaks) leaks() bool {
 	return false
 }
 
-func (l escLeaks) result(i int) int {
-	if i < len(l.Results) {
-		return l.Results[i]
-	}
-	return -1
-}
-
 func (l *escLeaks) addHeap(derefs int) {
 	if l.Heap < 0 || derefs < l.Heap {
 		l.Heap = derefs
@@ -745,8 +738,22 @@ func escPragmas(d *ast.FuncDecl) (noescape, uintptrEscapes bool) {
 	return
 }
 
-// summaryOf: the summary of a function declared in any package, nil if it has none (then its arguments
-// escape).
+// escSummaryOf: the summary of a function or method declared in any package of the program (for a generic
+// one or a method of a generic type: of the declaration), nil if it has none: an interface's method, a
+// function of a package that was not loaded. The arguments of a call of such a function escape.
+func (pr *Program) escSummaryOf(fn *types.Func) *escSummary {
+	fn = fn.Origin()
+	if fn.Pkg() == nil {
+		return nil
+	}
+	if p := pr.byTypes(fn.Pkg()); p != nil {
+		return pr.escape(p).summary[fn]
+	}
+	return nil
+}
+
+// summaryOf: the same, during the analysis of pk's package (whose own summaries are not all made yet: a
+// function of a later batch has none).
 func (pk *escPkg) summaryOf(fn *types.Func) *escSummary {
 	fn = fn.Origin()
 	if fn.Pkg() == nil {
