@@ -185,12 +185,12 @@ func (pr *Program) check(p *Pkg) error {
 		// sized from the source: growing these maps is a tenth of the type checker's time otherwise
 		n := int(p.srcBytes)
 		p.info = &types.Info{
-			Types:        make(map[ast.Expr]types.TypeAndValue, n/9),
-			Defs:         make(map[*ast.Ident]types.Object, n/40),
-			Uses:         make(map[*ast.Ident]types.Object, n/14),
-			Implicits:    map[ast.Node]types.Object{},
-			Selections:   make(map[*ast.SelectorExpr]*types.Selection, n/40),
-			Instances:    map[*ast.Ident]types.Instance{},
+			Types:      make(map[ast.Expr]types.TypeAndValue, n/9),
+			Defs:       make(map[*ast.Ident]types.Object, n/40),
+			Uses:       make(map[*ast.Ident]types.Object, n/14),
+			Implicits:  map[ast.Node]types.Object{},
+			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/40),
+			Instances:  map[*ast.Ident]types.Instance{},
 		}
 		gover := ""
 		if p.Module != nil && p.Module.GoVersion != "" {
