@@ -459,10 +459,40 @@ func (g *gen) toInterface(l loc, from, to types.Type) loc {
 		g.move(box, l, from)
 		g.a.lea(AX, mb(BP, box.off))
 	default:
+		// The runtime's conversions by shape, as the stock compiler picks them (walk: dataWordFuncName):
+		// they take the value, not its address, and do not allocate for small integers (errors compared
+		// with syscall.EINTR on every write), the empty string or a nil slice.
 		l = g.inMem(l, from)
-		g.addrTo(BX, l)
-		g.a.lea(AX, msym(tsym, 0))
-		g.callRT("convT")
+		sz, al := g.c.sizeof(from), g.c.alignof(from)
+		u := from.Underlying()
+		_, isSlice := u.(*types.Slice)
+		b, _ := u.(*types.Basic)
+		switch {
+		case b != nil && b.Info()&types.IsString != 0:
+			m := g.m(l, R13)
+			g.a.load(AX, m, 8, false)
+			g.a.load(BX, m.plus(8), 8, false)
+			g.callRT("convTstring")
+		case isSlice:
+			m := g.m(l, R13)
+			g.a.load(AX, m, 8, false)
+			g.a.load(BX, m.plus(8), 8, false)
+			g.a.load(CX, m.plus(16), 8, false)
+			g.callRT("convTslice")
+		case sz == 8 && al == 8 && !g.c.hasPointers(from):
+			g.a.load(AX, g.m(l, R13), 8, false)
+			g.callRT("convT64")
+		case sz == 4 && al == 4 && !g.c.hasPointers(from):
+			g.a.load(AX, g.m(l, R13), 4, false)
+			g.callRT("convT32")
+		case sz == 2 && al == 2:
+			g.a.load(AX, g.m(l, R13), 2, false)
+			g.callRT("convT16")
+		default:
+			g.addrTo(BX, l)
+			g.a.lea(AX, msym(tsym, 0))
+			g.callRT("convT")
+		}
 	}
 	g.a.store(mb(BP, res.off+8), AX, 8)
 	g.a.lea(AX, msym(word, 0))

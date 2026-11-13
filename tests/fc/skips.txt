@@ -45,3 +45,4 @@ net ^TestIPAppendTextNoAllocs$ asserts allocation counts that need escape analys
 testing ^TestBenchmarkBLoopAllocs$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 unicode/utf16 ^TestAllocationsDecode$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 crypto/tls ^TestWeakCertCache$ waits on object liveness (a weak pointer to a certificate that the collector must clear)
+os ^TestWriteStringAlloc$ asserts zero allocations: needs escape analysis and a defer closure kept in the frame (1 allocation left with FC_ESC=1)
