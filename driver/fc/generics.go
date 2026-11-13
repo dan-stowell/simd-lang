@@ -238,6 +238,22 @@ func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList,
 		} else {
 			name = pp + "." + base + "." + origin.Name()
 		}
+	} else if r := origin.Type().(*types.Signature).Recv(); r != nil {
+		// a generic method of an ordinary type
+		rt := r.Type()
+		ptr := false
+		if p, ok := rt.(*types.Pointer); ok {
+			rt, ptr = p.Elem(), true
+		}
+		n, ok := types.Unalias(rt).(*types.Named)
+		if !ok || n.TypeArgs().Len() > 0 || n.TypeParams().Len() > 0 {
+			giveUp("generic method %s of a generic type", origin.Name())
+		}
+		if ptr {
+			name = pp + ".(*" + n.Obj().Name() + ")." + origin.Name() + args
+		} else {
+			name = pp + "." + n.Obj().Name() + "." + origin.Name() + args
+		}
 	} else {
 		name = pp + "." + origin.Name() + args
 	}
