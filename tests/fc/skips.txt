@@ -40,3 +40,7 @@ reflect ^(TestDeepEqualAllocs|TestAllocsInterfaceBig|TestAllocsInterfaceSmall|Te
 strings ^(TestBuilderGrow|TestBuilderAllocs|TestBuilderGrowSizeclasses|TestIndexRune|TestReplace)$ asserts allocation counts that need escape analysis
 sync ^(TestOnceFunc|TestOnceValue|TestOnceValues)$ asserts allocation counts that need escape analysis
 encoding/binary ^TestSizeAllocs$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
+bytes ^TestReplace$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
+net ^TestIPAppendTextNoAllocs$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
+testing ^TestBenchmarkBLoopAllocs$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
+unicode/utf16 ^TestAllocationsDecode$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)

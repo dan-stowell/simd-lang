@@ -290,6 +290,30 @@ func layout() {
 			state[gid] = st | uint32(b)<<stBucketShift | cl<<stClassShft
 			u.csize[b][cl] += occupied(s.Siz(), b, cl)
 		}
+		// The function table is written in symbol order and must be in address order: a unit's functions
+		// are one run. When some want more than the usual alignment (assembly with a 64-byte alignment
+		// beside functions without), all of the unit's functions take the largest.
+		for b := bText; b <= bTextFIPS; b++ {
+			top, n := uint32(0), 0
+			for cl := uint32(0); cl < nClasses; cl++ {
+				if u.csize[b][cl] != 0 {
+					top, n = cl, n+1
+				}
+			}
+			if n < 2 {
+				continue
+			}
+			u.csize[b] = [nClasses]uint32{}
+			for j := u.lo; j < min(u.hi, o.nalldef); j++ {
+				gid := o.base + j
+				st := state[gid]
+				if int(st>>stBucketShift&31) != b || st&stLive == 0 || canon[gid] != gid {
+					continue
+				}
+				state[gid] = st&^(15<<stClassShft) | top<<stClassShft
+				u.csize[b][top] += occupied(r.Sym(j).Siz(), b, top)
+			}
+		}
 	})
 
 	// ---- the typelink types, sorted by type string (reflect binary-searches them)
