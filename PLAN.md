@@ -109,8 +109,9 @@ Log (append one line per milestone reached, with the oracle number):
   mode; MinIO and kube-apiserver built that way pass their smoke tests. The lost-object bug had two causes (JOURNAL
   12:10): stack checks in helpers the stock compiler inlines, and BP after the runtime's context switches.
 
-Now: (1) read /home/exedev/targets/fc-minio-rt.log (MinIO's own tests, wholly-fc binaries; it was started with an
-earlier fc, so rerun what failed with the current one): that is M4's oracle. (2) The 5 std packages left in
+Now: (1) read /home/exedev/targets/fc-minio-rt2.log (MinIO's own tests, wholly-fc binaries, started 13:35 UTC with
+fc at 0a38767; the first run, fc-minio-rt.log, had 37 failures that were all one bug of an intermediate fc build,
+since fixed): that is M4's oracle. (2) The 5 std packages left in
 FC_ALL=rt mode: crypto/cipher, crypto/fips140, crypto/internal/fips140only (FIPS tests, not looked at),
 encoding/binary (allocation counts: needs FC_ESC=1 for all packages), debug/buildinfo (its test's git call fails
 here). Then rerun the whole list once in that mode with one fc binary. (3) Make FC_RUNTIME the default in
