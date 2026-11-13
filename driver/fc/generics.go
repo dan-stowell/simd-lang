@@ -215,6 +215,16 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 
 // instantiate returns the symbol of an instance, queueing its compilation the first time.
 func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList, targs []types.Type, recv *types.Named) *obj.LSym {
+	if f := c.pr.full(origin); f != origin {
+		// the body is compiled with the full pass's objects: its type parameters are the ones to bind
+		fsig := f.Type().(*types.Signature)
+		if recv != nil {
+			tparams = fsig.RecvTypeParams()
+		} else {
+			tparams = fsig.TypeParams()
+		}
+		origin = f
+	}
 	if tparams.Len() != len(targs) {
 		giveUp("instantiation of %s with %d type arguments", origin.Name(), len(targs))
 	}
@@ -327,8 +337,13 @@ func (pr *Program) declOf(fn *types.Func) (*Pkg, *ast.FuncDecl) {
 	if fn.Pkg() == nil {
 		return nil, nil
 	}
+	fn = pr.full(fn)
 	p := pr.byTypes(fn.Pkg())
 	if p == nil {
+		return nil, nil
+	}
+	pr.check(p)
+	if p.info == nil {
 		return nil, nil
 	}
 	p.declOnce.Do(func() {

@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -39,6 +40,13 @@ type Pkg struct {
 	deps  []*Pkg
 	once  sync.Once
 	err   error
+
+	// two-pass front end: the package as its importers see it (declarations only)
+	dpkg    *types.Package
+	dOnce   sync.Once
+	derr    error
+	depOnce sync.Once
+	depErr  error
 
 	parseOnce sync.Once
 	discOnce  sync.Once
@@ -69,6 +77,8 @@ type Program struct {
 	byTpkg       sync.Map       // *types.Package -> *Pkg
 	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
+	fullFn       sync.Map       // a declarations-pass *types.Func -> the full pass's
+	declNS       int64          // time in declarations-only checks
 	byInfo       sync.Map       // *types.Info -> *Pkg
 	rtOnce       sync.Once
 	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
@@ -132,10 +142,139 @@ func (i pkgImporter) Import(path string) (*types.Package, error) {
 	if d == nil {
 		return nil, fmt.Errorf("%s: import %q is not in the plan", i.p.ImportPath, path)
 	}
-	if d.tpkg == nil {
-		return nil, fmt.Errorf("%s: import %q was not checked (%v)", i.p.ImportPath, path, d.err)
+	tp, err := i.pr.view(d)
+	if tp == nil {
+		return nil, fmt.Errorf("%s: import %q was not checked (%v)", i.p.ImportPath, path, err)
 	}
-	return d.tpkg, nil
+	return tp, nil
+}
+
+// twoPass (off with FC_TWOPASS=0): a package is checked twice. First its declarations only, which is all its
+// importers need, so the chain of checks through the import graph is a chain of short ones; then in full,
+// for its own code generation, importing the declaration-only packages. The two passes make different
+// type objects for the same package: nothing may compare objects across them (symbols are linked by name;
+// full() maps a function to the full pass's object).
+var twoPass = os.Getenv("FC_TWOPASS") != "0"
+
+// view checks d as far as its importers need and returns the package they import.
+func (pr *Program) view(d *Pkg) (*types.Package, error) {
+	if !twoPass {
+		pr.check(d)
+		return d.tpkg, d.err
+	}
+	d.dOnce.Do(func() {
+		if d.derr = pr.resolveDeps(d); d.derr != nil {
+			return
+		}
+		pr.sem <- struct{}{}
+		defer func() { <-pr.sem }()
+		conf := types.Config{Importer: pkgImporter{pr, d}, Sizes: pr.sizes, GoVersion: goVersionOf(d), Context: pr.tctx,
+			IgnoreFuncBodies: true,
+			Error: func(err error) {
+				if d.derr == nil {
+					d.derr = err
+				}
+			}}
+		t0 := time.Now()
+		d.dpkg, _ = conf.Check(plainPath(d.ImportPath), pr.fset, d.files, nil)
+		atomic.AddInt64(&pr.declNS, int64(time.Since(t0)))
+		if d.derr != nil {
+			d.dpkg = nil
+		} else {
+			pr.byTpkg.Store(d.dpkg, d)
+		}
+	})
+	return d.dpkg, d.derr
+}
+
+// resolveDeps parses p, finds the packages it imports and has each checked as far as an importer needs.
+func (pr *Program) resolveDeps(p *Pkg) error {
+	p.depOnce.Do(func() {
+		pr.parse(p)
+		if p.err != nil {
+			p.depErr = p.err
+			return
+		}
+		var wg sync.WaitGroup
+		for _, ip := range p.imps {
+			if m, ok := p.ImportMap[ip]; ok {
+				ip = m
+			}
+			d := pr.byPath[ip]
+			if d == nil {
+				p.depErr = fmt.Errorf("%s: import %q is not in the plan", p.ImportPath, ip)
+				return
+			}
+			p.deps = append(p.deps, d)
+			wg.Add(1)
+			go func() { defer wg.Done(); pr.view(d) }()
+		}
+		wg.Wait()
+		for _, d := range p.deps {
+			if _, err := pr.view(d); err != nil {
+				p.depErr = err
+				return
+			}
+		}
+	})
+	return p.depErr
+}
+
+func goVersionOf(p *Pkg) string {
+	if p.Module != nil && p.Module.GoVersion != "" {
+		return "go" + p.Module.GoVersion
+	}
+	return ""
+}
+
+func plainPath(path string) string {
+	if i := strings.Index(path, " ["); i >= 0 {
+		return path[:i]
+	}
+	return path
+}
+
+// full: fn as the full pass of its package declares it (fn may come from the declarations-only pass).
+func (pr *Program) full(fn *types.Func) *types.Func {
+	if !twoPass || fn.Pkg() == nil {
+		return fn
+	}
+	p := pr.byTypes(fn.Pkg())
+	if p == nil || fn.Pkg() != p.dpkg {
+		return fn
+	}
+	if v, ok := pr.fullFn.Load(fn); ok {
+		return v.(*types.Func)
+	}
+	pr.check(p)
+	if p.tpkg == nil {
+		return fn
+	}
+	var out *types.Func
+	if recv := fn.Type().(*types.Signature).Recv(); recv == nil {
+		out, _ = p.tpkg.Scope().Lookup(fn.Name()).(*types.Func)
+	} else {
+		rt := types.Unalias(recv.Type())
+		if pt, ok := rt.(*types.Pointer); ok {
+			rt = types.Unalias(pt.Elem())
+		}
+		if n, ok := rt.(*types.Named); ok {
+			if tn, ok := p.tpkg.Scope().Lookup(n.Obj().Name()).(*types.TypeName); ok {
+				if fnamed, ok := types.Unalias(tn.Type()).(*types.Named); ok {
+					for i := 0; i < fnamed.NumMethods(); i++ {
+						if m := fnamed.Method(i); m.Name() == fn.Name() {
+							out = m
+						}
+					}
+				}
+			}
+		}
+	}
+	if out == nil {
+		out = fn
+	}
+	pr.fullFn.Store(fn, out)
+	return out
 }
 
 // parse reads and parses p's files (once). With a self plan (selfplan.go) it first finds which files of the
@@ -191,31 +330,11 @@ func (pr *Program) parse(p *Pkg) {
 // check parses and type-checks p after its dependencies. Safe to call from many goroutines.
 func (pr *Program) check(p *Pkg) error {
 	p.once.Do(func() {
-		pr.parse(p)
-		if p.err != nil {
+		if err := pr.resolveDeps(p); err != nil {
+			if p.err == nil {
+				p.err = err
+			}
 			return
-		}
-		imps := p.imps
-		var wg sync.WaitGroup
-		for _, ip := range imps {
-			if m, ok := p.ImportMap[ip]; ok {
-				ip = m
-			}
-			d := pr.byPath[ip]
-			if d == nil {
-				p.err = fmt.Errorf("%s: import %q is not in the plan", p.ImportPath, ip)
-				return
-			}
-			p.deps = append(p.deps, d)
-			wg.Add(1)
-			go func() { defer wg.Done(); pr.check(d) }()
-		}
-		wg.Wait()
-		for _, d := range p.deps {
-			if d.err != nil {
-				p.err = d.err
-				return
-			}
 		}
 		pr.sem <- struct{}{}
 		defer func() { <-pr.sem }()
@@ -240,6 +359,7 @@ func (pr *Program) check(p *Pkg) error {
 					p.err = err
 				}
 			}}
+		conf.IgnoreFuncBodies = declOnly
 		path := p.ImportPath
 		if i := strings.Index(path, " ["); i >= 0 {
 			path = path[:i]
@@ -262,4 +382,13 @@ func (pr *Program) byTypes(tp *types.Package) *Pkg {
 		return p.(*Pkg)
 	}
 	return nil
+}
+
+// declOnly (FC_DECLONLY=1): an experiment: check declarations only and stop after the front end, to time
+// the chain of declaration checks through the import graph.
+var declOnly = os.Getenv("FC_DECLONLY") != ""
+
+// samePkg: the same package, whichever pass of the front end made the object.
+func samePkg(a, b *types.Package) bool {
+	return a == b || a != nil && b != nil && a.Path() == b.Path()
 }

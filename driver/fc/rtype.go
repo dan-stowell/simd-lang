@@ -437,7 +437,7 @@ func (c *compiler) vargen(o *types.TypeName) int {
 	m := c.rtVargen[o.Pkg()]
 	if m == nil {
 		var p *Pkg
-		if o.Pkg() == c.tpkg {
+		if samePkg(o.Pkg(), c.tpkg) {
 			p = c.pkg
 		} else {
 			p = c.pr.byPath[o.Pkg().Path()]
@@ -629,7 +629,7 @@ func (c *compiler) fldconv(b *strings.Builder, f *types.Var, tag string, mode fm
 			switch tt := typ.(type) {
 			case *types.Named:
 				tname := c.namedSymName(tt, fmtID)
-				if tname == name && (token.IsExported(tname) || tt.Obj().Pkg() == f.Pkg()) {
+				if tname == name && (token.IsExported(tname) || samePkg(tt.Obj().Pkg(), f.Pkg())) {
 					show = false
 				}
 			}
@@ -729,7 +729,7 @@ func (c *compiler) methodSymName(recv types.Type, m *types.Func) (name, pkg stri
 	} else {
 		c.tconv(&b, recv, fmtID, true)
 	}
-	if !m.Exported() && m.Pkg() != rpkg {
+	if !m.Exported() && !samePkg(m.Pkg(), rpkg) {
 		b.WriteByte('.')
 		b.WriteString(c.pkgPrefix(m.Pkg()))
 	}

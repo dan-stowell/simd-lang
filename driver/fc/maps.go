@@ -161,13 +161,16 @@ func (g *gen) rangeMap(s *ast.RangeStmt, name string, set func(ast.Expr, *types.
 	// the iterator lives on the heap (its type is internal/runtime/maps.Iter; key and elem pointers are its
 	// first two words, and a nil key means the iteration is over)
 	iterPkg := g.c.pr.byPath["internal/runtime/maps"]
-	if iterPkg != nil && iterPkg != g.c.pkg {
-		g.c.pr.check(iterPkg)
+	var itp *types.Package
+	if iterPkg == g.c.pkg {
+		itp = g.c.tpkg
+	} else if iterPkg != nil {
+		itp, _ = g.c.pr.view(iterPkg)
 	}
-	if iterPkg == nil || iterPkg.tpkg == nil {
+	if itp == nil {
 		giveUp("internal/runtime/maps is not loaded")
 	}
-	iterT := iterPkg.tpkg.Scope().Lookup("Iter").Type()
+	iterT := itp.Scope().Lookup("Iter").Type()
 	g.a.lea(AX, msym(g.c.typeSym(iterT), 0))
 	g.callRT("newobject")
 	it := g.ptrTemp()

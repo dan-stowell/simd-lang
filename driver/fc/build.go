@@ -208,6 +208,10 @@ func buildMode(args []string) {
 		wgF.Wait()
 		tCheck = time.Since(t0)
 		cCheck = cpuSeconds() - c0
+		if declOnly {
+			fmt.Printf("declarations only: all checked %d ms after the start, %.2f core-s\n", tCheck.Milliseconds(), cCheck)
+			os.Exit(0)
+		}
 		close(frontDone)
 	}()
 	os.MkdirAll(*out, 0o777)
@@ -227,6 +231,7 @@ func buildMode(args []string) {
 			return v.(bool)
 		}
 		v := false
+		pr.check(p)
 		if p.tpkg != nil {
 			c := newCompiler(pr, p, p.ImportPath, "")
 			v = c.needsInit()
@@ -255,6 +260,9 @@ func buildMode(args []string) {
 		go func() {
 			defer wg.Done()
 			pr.check(p)
+			if declOnly {
+				select {} // (the experiment ends when the front end does)
+			}
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			results[i].p = p

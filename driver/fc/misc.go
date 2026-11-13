@@ -44,13 +44,16 @@ func (c *compiler) rtFunc(name string) *types.Func {
 		return fn
 	}
 	rp := pr.byPath["runtime"]
-	if rp != nil && rp != c.pkg {
-		pr.check(rp)
+	var rtp *types.Package
+	if rp == c.pkg {
+		rtp = c.tpkg
+	} else if rp != nil {
+		rtp, _ = pr.view(rp)
 	}
-	if rp == nil || rp.tpkg == nil {
+	if rtp == nil {
 		giveUp("package runtime is not loaded")
 	}
-	fn, ok := rp.tpkg.Scope().Lookup(name).(*types.Func)
+	fn, ok := rtp.Scope().Lookup(name).(*types.Func)
 	if !ok {
 		giveUp("runtime.%s is not a function", name)
 	}

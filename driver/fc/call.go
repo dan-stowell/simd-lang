@@ -1052,7 +1052,7 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 			it := t.Underlying().(*types.Interface)
 			idx := -1
 			for i, m := range ifaceMethods(it) {
-				if m.Name() == fn.Name() && (m.Exported() || m.Pkg() == fn.Pkg()) {
+				if m.Name() == fn.Name() && (m.Exported() || samePkg(m.Pkg(), fn.Pkg())) {
 					idx = i
 				}
 			}

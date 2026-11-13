@@ -71,7 +71,7 @@ func (c *compiler) needEmit(t types.Type) bool {
 	if !ok {
 		return true // an unnamed type: every object that mentions it carries it
 	}
-	if n.Obj().Pkg() == c.tpkg {
+	if samePkg(n.Obj().Pkg(), c.tpkg) {
 		return true
 	}
 	return n.TypeArgs().Len() > 0 || isLocalInstance(n) // an instance of a generic type, perhaps never made before
@@ -401,7 +401,7 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if !c.mixed {
 		// One address space, one build: a descriptor that any object may carry (an unnamed type, an
 		// instance) is written by the first package that asks, and only referenced by the others.
-		if n, ok := tbase.(*types.Named); !ok || n.Obj().Pkg() != c.tpkg || n.TypeArgs().Len() > 0 || isLocalInstance(n) {
+		if n, ok := tbase.(*types.Named); !ok || !samePkg(n.Obj().Pkg(), c.tpkg) || n.TypeArgs().Len() > 0 || isLocalInstance(n) {
 			if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
 				return s
 			}
@@ -501,7 +501,7 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 		s.WriteInt(c.ctxt, 64, 8, n)
 		s.WriteInt(c.ctxt, 72, 8, n)
 		for i, m := range ims {
-			hasPkg := !m.Exported() && m.Pkg() != tpkg
+			hasPkg := !m.Exported() && !samePkg(m.Pkg(), tpkg)
 			off := C + int64(i)*rtIMethodSize
 			s.WriteOff(c.ctxt, off, c.nameSym(m.Name(), "", m.Pkg(), hasPkg, m.Exported(), false), 0)
 			s.WriteOff(c.ctxt, off+4, c.writeType(mts[i]), 0)
@@ -601,7 +601,7 @@ func (c *compiler) writeUncommon(s *obj.LSym, off int64, t types.Type, ms []meth
 	s.WriteInt(c.ctxt, off+8, 4, dataAdd)
 	for i, m := range ms {
 		e := off + dataAdd + int64(i)*rtMethodSize
-		mpkg := !m.fn.Exported() && (!hasPkg || m.fn.Pkg() != tpkg)
+		mpkg := !m.fn.Exported() && (!hasPkg || !samePkg(m.fn.Pkg(), tpkg))
 		s.WriteOff(c.ctxt, e, c.nameSym(m.fn.Name(), "", m.fn.Pkg(), mpkg, m.fn.Exported(), false), 0)
 		c.writeMethodOff(s, e+4, c.writeType(m.mtype))
 		c.writeMethodOff(s, e+8, m.isym)
@@ -680,7 +680,7 @@ func (c *compiler) writeITab(t, iface types.Type) *obj.LSym {
 		if len(sigs) == 0 {
 			break
 		}
-		if m.fn.Name() == sigs[0].Name() && (m.fn.Exported() || m.fn.Pkg() == sigs[0].Pkg()) {
+		if m.fn.Name() == sigs[0].Name() && (m.fn.Exported() || samePkg(m.fn.Pkg(), sigs[0].Pkg())) {
 			entries = append(entries, m.isym)
 			sigs = sigs[1:]
 		}

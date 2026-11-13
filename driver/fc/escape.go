@@ -523,6 +523,7 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 	out := &escInfo{heapVar: map[*types.Var]bool{}, heapSite: map[ast.Node]bool{}, summary: map[*types.Func]*escSummary{},
 		varWhy: map[*types.Var]string{}, varPos: map[*types.Var]token.Pos{},
 		byValue: map[*types.Var]bool{}}
+	pr.check(p)
 	if p.tpkg == nil || p.info == nil {
 		return out
 	}
@@ -760,7 +761,7 @@ func (pk *escPkg) summaryOf(fn *types.Func) *escSummary {
 	}
 	var s *escSummary
 	if dep := pk.pr.byTypes(fn.Pkg()); dep != nil && dep != pk.p {
-		s = pk.pr.escape(dep).summary[fn]
+		s = pk.pr.escape(dep).summary[pk.pr.full(fn)] // (keyed by the full pass's object)
 	}
 	pk.sumCache[fn] = s
 	return s
