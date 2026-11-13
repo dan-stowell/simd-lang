@@ -250,7 +250,7 @@ func writeUnit(u *unit) (nrel uint64) {
 				le.PutUint32(fdd[4*k:], ^uint32(0))
 			}
 			auxs := r.Auxs(j)
-			kp, kf := 0, 0
+			kp, kf, pcinline := 0, 0, uint32(0)
 			for i := range auxs {
 				x := &auxs[i]
 				switch x.Type() {
@@ -261,9 +261,7 @@ func writeUnit(u *unit) (nrel uint64) {
 				case goobj.AuxPcline:
 					le.PutUint32(f[24:], addr[o.ref(x.Sym())])
 				case goobj.AuxPcinline:
-					if ninl > 0 {
-						le.PutUint32(pcd[4*abi.PCDATA_InlTreeIndex:], addr[o.ref(x.Sym())])
-					}
+					pcinline = addr[o.ref(x.Sym())]
 				case goobj.AuxPcdata:
 					le.PutUint32(pcd[4*kp:], addr[o.ref(x.Sym())])
 					kp++
@@ -276,6 +274,7 @@ func writeUnit(u *unit) (nrel uint64) {
 				}
 			}
 			if ninl > 0 {
+				le.PutUint32(pcd[4*abi.PCDATA_InlTreeIndex:], pcinline)
 				l := (*goobj.FuncInfo)(nil).ReadFuncInfoLengths(fi)
 				t := out[inl-imageBase:]
 				for k := uint32(0); k < ninl; k++ {

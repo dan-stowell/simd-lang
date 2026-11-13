@@ -352,11 +352,10 @@ func layout() {
 					break
 				}
 			}
-			if top < 0 {
-				continue
+			if top >= 0 {
+				va = rnd(va, max(minAlign, 1<<top))
 			}
-			va = rnd(va, max(minAlign, 1<<top))
-			for cl := top; cl >= 0; cl-- {
+			for cl := nClasses - 1; cl >= 0; cl-- { // (empty classes too: zero-sized symbols need an address)
 				u.cbase[b][cl] = va
 				va += cs[cl]
 			}
@@ -394,6 +393,7 @@ func layout() {
 	va += lay.gcbssMax
 	lay.erodata = va
 
+	lay.nameSize = 1 // name offset 0 means "no name"
 	for _, u := range units {
 		u.funcBase = lay.nfunc
 		lay.nfunc += u.nfunc
