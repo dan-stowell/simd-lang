@@ -232,7 +232,7 @@ func (e *escWalk) call(ks []escHole, n *ast.CallExpr, extra *escHole) {
 				}
 				if e.needsIface(pt, tup.At(j).Type()) && !escDirectIface(tup.At(j).Type()) {
 					// the interface's copy has no syntax of its own: it uses the heap
-					e.force = append(e.force, n.Args[0])
+					e.forceSite(n.Args[0], n.Lparen)
 					k = e.heapHole()
 				}
 				gks[j] = k
@@ -346,7 +346,16 @@ func (e *escWalk) intrinsicCall(fn *types.Func, n *ast.CallExpr) bool {
 	case "internal/abi":
 		switch fn.Name() {
 		case "FuncPCABI0", "FuncPCABIInternal":
-			return true
+			// of a function's name: a constant. (Of a function value the stock compiler makes an ordinary
+			// call of a function without a body: the value escapes. So it does here.)
+			if len(n.Args) == 1 {
+				if id := escFuncName(n.Args[0]); id != nil {
+					if _, ok := e.info.Uses[id].(*types.Func); ok {
+						return true
+					}
+				}
+			}
+			return false
 		case "EscapeNonString":
 			// its argument escapes if it has a pointer that is not a string's
 			for _, a := range n.Args {
@@ -360,6 +369,16 @@ func (e *escWalk) intrinsicCall(fn *types.Func, n *ast.CallExpr) bool {
 		}
 	}
 	return false
+}
+
+func escFuncName(x ast.Expr) *ast.Ident {
+	switch x := ast.Unparen(x).(type) {
+	case *ast.Ident:
+		return x
+	case *ast.SelectorExpr:
+		return x.Sel
+	}
+	return nil
 }
 
 func escNonStringPointers(pk *escPkg, t types.Type) bool {

@@ -88,7 +88,11 @@ func escLines(pr *Program, info *escInfo) []string {
 		if w := strings.TrimSpace(info.varWhy[v]); w != "" {
 			tag += " " + w
 		}
-		add(v.Pos(), "moved to heap: "+v.Name()+tag+"]")
+		pos := v.Pos()
+		if p, ok := info.varPos[v]; ok {
+			pos = p
+		}
+		add(pos, "moved to heap: "+v.Name()+tag+"]")
 	}
 	for _, s := range info.sites {
 		text := escSiteNames[s.kind]
@@ -126,7 +130,7 @@ func escLines(pr *Program, info *escInfo) []string {
 			add(p.v.Pos(), "leaking param content: "+name+tag)
 		}
 		for i, d := range p.leaks.Results {
-			if d < 0 {
+			if d < 0 || p.results == nil || i >= p.results.Len() {
 				continue
 			}
 			rn := p.results.At(i).Name()

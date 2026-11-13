@@ -59,6 +59,7 @@ type escInfo struct {
 	params []escParam
 	vars   []*types.Var // every heap variable, in the order found
 	varWhy map[*types.Var]string
+	varPos map[*types.Var]token.Pos // where the stock compiler reports a variable, if not at its declaration
 }
 
 // escSummary says what a function does with its parameters.
@@ -285,6 +286,7 @@ type escBatch struct {
 	fns      map[*types.Func]*escFn // the declarations of this batch
 	litFn    map[*ast.FuncLit]*escFn
 	force    []ast.Node // sites that use the heap whatever the graph says
+	lits     []*escFn   // the function literals (and bodies of ranges over functions) walked
 }
 
 func (b *escBatch) heapHole() escHole    { return b.heapLoc.hole() }
@@ -448,7 +450,7 @@ type escUnit struct {
 
 func (pr *Program) escapePkg(p *Pkg) *escInfo {
 	out := &escInfo{heapVar: map[*types.Var]bool{}, heapSite: map[ast.Node]bool{}, summary: map[*types.Func]*escSummary{},
-		varWhy: map[*types.Var]string{}}
+		varWhy: map[*types.Var]string{}, varPos: map[*types.Var]token.Pos{}}
 	if p.tpkg == nil || p.info == nil {
 		return out
 	}
@@ -815,6 +817,22 @@ func (b *escBatch) finish(units []*escUnit) {
 			}
 		}
 		out.summary[u.obj] = s
+	}
+	// function literals have no summary, but `fc esc` prints what becomes of their parameters, as the
+	// stock compiler does
+	for _, fn := range b.lits {
+		for _, l := range fn.params {
+			if l.v.Name() == "" || l.v.Name() == "_" || !b.pk.hasPointers(l.v.Type()) {
+				continue
+			}
+			lk := l.leaks
+			lk.optimize()
+			var res *types.Tuple
+			if fn.sig != nil {
+				res = fn.sig.Results()
+			}
+			out.params = append(out.params, escParam{v: l.v, leaks: lk, results: res, gen: fn.generic, moved: l.escapes})
+		}
 	}
 }
 

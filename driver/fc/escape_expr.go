@@ -14,6 +14,7 @@ type escWalk struct {
 	fn        *escFn
 	loopDepth int
 	declBump  int // added to the loop depth of declarations: the init statement of a for loop
+	stmtPos   token.Pos
 }
 
 func (e *escWalk) typeOf(n ast.Expr) types.Type {
@@ -515,6 +516,7 @@ func (e *escWalk) funcLit(k escHole, n *ast.FuncLit) {
 	fn.looping = escLoopingLabels(e.info, n.Body)
 	e.initFn(fn)
 	e.litFn[n] = fn
+	e.lits = append(e.lits, fn)
 	w := &escWalk{escBatch: e.escBatch, fn: fn, loopDepth: 1}
 	w.block(n.Body.List)
 }

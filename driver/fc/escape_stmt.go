@@ -48,7 +48,7 @@ func (e *escWalk) stmt(s ast.Stmt) {
 	case *ast.AssignStmt:
 		e.assign(s)
 	case *ast.IncDecStmt:
-		e.discard(s.X)
+		e.addr(s.X) // m[k]++ stores the key
 	case *ast.SendStmt:
 		e.discard(s.Chan)
 		var et types.Type
@@ -130,6 +130,12 @@ func (e *escWalk) stmt(s ast.Stmt) {
 			for _, c := range s.Body.List {
 				if v, ok := e.info.Implicits[c].(*types.Var); ok {
 					l := e.dcl(v)
+					// the stock compiler has one variable per clause, at the clause's first type
+					if cc := c.(*ast.CaseClause); len(cc.List) > 0 {
+						e.out.varPos[v] = escPos(cc.List[0])
+					} else {
+						e.out.varPos[v] = cc.Pos()
+					}
 					if e.pk.hasPointers(v.Type()) {
 						ks = append(ks, l.hole().dotType(v.Type()))
 					}
@@ -165,7 +171,9 @@ func (e *escWalk) valueSpec(s *ast.ValueSpec) {
 		ks = append(ks, e.dcl(v).hole())
 		ts = append(ts, v.Type())
 	}
+	e.stmtPos = s.Pos()
 	e.assignTo(ks, ts, s.Values)
+	e.stmtPos = token.NoPos
 }
 
 // initSpec: a package-level variable declaration: the values flow to the heap.
@@ -203,6 +211,16 @@ func (e *escWalk) assignTo(ks []escHole, ts []types.Type, values []ast.Expr) {
 	}
 }
 
+// forceSite: a value converted to an interface where there is no expression to name the conversion (one
+// result of a call with several): it uses the heap, and the site's key is the whole expression.
+func (e *escWalk) forceSite(n ast.Expr, pos token.Pos) {
+	if !pos.IsValid() {
+		pos = escPos(n)
+	}
+	e.force = append(e.force, n)
+	e.sites = append(e.sites, escSite{node: n, kind: escSiteIface, pos: pos, heap: true, why: "one of a call's results", gen: e.fn.generic})
+}
+
 // multi: one expression for several destinations: a call, or the comma-ok forms.
 func (e *escWalk) multi(ks []escHole, ts []types.Type, v ast.Expr) {
 	x := ast.Unparen(v)
@@ -217,7 +235,7 @@ func (e *escWalk) multi(ks []escHole, ts []types.Type, v ast.Expr) {
 	for i := range ks {
 		if i < tup.Len() && ts[i] != nil && e.needsIface(ts[i], tup.At(i).Type()) && !escDirectIface(tup.At(i).Type()) {
 			// the interface's copy has no syntax of its own: it uses the heap
-			e.force = append(e.force, v)
+			e.forceSite(v, e.stmtPos)
 			ks[i] = e.heapHole()
 		}
 	}
@@ -228,7 +246,7 @@ func (e *escWalk) multi(ks []escHole, ts []types.Type, v ast.Expr) {
 func (e *escWalk) exprToComma(k escHole, v ast.Expr, t types.Type) {
 	if tup, ok := e.typeOf(v).(*types.Tuple); ok && tup.Len() > 0 && t != nil && e.needsIface(t, tup.At(0).Type()) &&
 		!escDirectIface(tup.At(0).Type()) {
-		e.force = append(e.force, v)
+		e.forceSite(v, e.stmtPos)
 		k = e.heapHole()
 	}
 	// the type recorded for the expression is the pair: do not prune on it
@@ -339,7 +357,9 @@ func (e *escWalk) assign(s *ast.AssignStmt) {
 			}
 		}
 	}
+	e.stmtPos = s.TokPos
 	e.assignTo(ks, ts, s.Rhs)
+	e.stmtPos = token.NoPos
 }
 
 func (e *escWalk) headerData(l ast.Expr) bool {
@@ -368,7 +388,9 @@ func (e *escWalk) ret(s *ast.ReturnStmt) {
 		e.exprTo(ks[0], s.Results[0], ts[0])
 		return
 	}
+	e.stmtPos = s.Pos()
 	e.assignTo(ks, ts, s.Results)
+	e.stmtPos = token.NoPos
 }
 
 // goDefer: the call runs later, in another goroutine or when the function returns: its callee and its
@@ -483,12 +505,15 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 	fn := e.pk.newFn(e.fn)
 	fn.rng = s
 	fn.results = e.fn.results
+	e.lits = append(e.lits, fn)
 	w := &escWalk{escBatch: e.escBatch, fn: fn, loopDepth: 1}
 	if s.Tok == token.DEFINE {
 		for _, x := range []ast.Expr{s.Key, s.Value} {
 			if id, ok := x.(*ast.Ident); ok && id.Name != "_" {
 				if v, ok := e.info.Defs[id].(*types.Var); ok {
-					w.dcl(v)
+					l := w.dcl(v)
+					l.param = true
+					fn.params = append(fn.params, l)
 				}
 			}
 		}

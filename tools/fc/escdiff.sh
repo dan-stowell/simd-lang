@@ -43,6 +43,37 @@ def parse(path):
     return pkgs
 
 stock, fc = parse(out + '/stock.txt'), parse(out + '/fc.txt')
+
+# A package's output includes the instantiations it makes of other packages' generic functions, at their
+# positions: those lines belong with the package that declares the function.
+import json
+dirpkg = {}
+dec = json.JSONDecoder()
+text = open(out + '/plan.json').read()
+i = 0
+while i < len(text):
+    while i < len(text) and text[i].isspace():
+        i += 1
+    if i >= len(text):
+        break
+    o, i = dec.raw_decode(text, i)
+    if o.get('Dir'):
+        dirpkg[o['Dir']] = o['ImportPath']
+routed = collections.OrderedDict((p, []) for p in stock)
+foreign = set()
+for pkg, lines in stock.items():
+    for pos, t in lines:
+        owner = dirpkg.get(os.path.dirname(pos[0]), pkg)
+        if owner == pkg:
+            routed[pkg].append((pos, t))
+            continue
+        m = re.match(r'^moved to heap: [^ ]*\.([^. ]+)$', t)
+        if m:
+            t = 'moved to heap: ' + m.group(1)
+        if (pos, t) not in foreign:
+            foreign.add((pos, t))
+            routed.setdefault(owner, []).append((pos, t))
+stock = routed
 res_re = re.compile(r'^leaking param: (\S+) to result (\S+) level=(\d+)$')
 
 class Side:
