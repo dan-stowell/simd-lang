@@ -24,13 +24,18 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func escMode(args []string) {
 	fs := flag.NewFlagSet("esc", flag.ExitOnError)
 	plan := fs.String("plan", "", "`go list -json` stream of the packages")
 	quiet := fs.Bool("q", false, "analyze only, print nothing")
+	byval := fs.Bool("byvalue", false, "closures capture by value where the stock compiler's do (see escByValue)")
 	fs.Parse(args)
+	if *byval {
+		escByValue = true
+	}
 	if *plan == "" || fs.NArg() == 0 {
 		log.Fatal("usage: fc esc -plan plan.json <import paths... | all>")
 	}
@@ -57,6 +62,20 @@ func escMode(args []string) {
 	}
 	w := bufio.NewWriter(os.Stdout)
 	defer w.Flush()
+	// the packages are analyzed concurrently, as the compiler will ask for them
+	var wg sync.WaitGroup
+	for _, p := range targets {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if pr.check(p) == nil {
+				pr.sem <- struct{}{}
+				pr.escape(p)
+				<-pr.sem
+			}
+		}()
+	}
+	wg.Wait()
 	for _, p := range targets {
 		if err := pr.check(p); err != nil {
 			fmt.Fprintf(w, "# %s\n", p.ImportPath)

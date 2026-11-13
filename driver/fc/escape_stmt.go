@@ -221,7 +221,7 @@ func (e *escWalk) stmt(s ast.Stmt) {
 	case *ast.AssignStmt:
 		e.assign(s)
 	case *ast.IncDecStmt:
-		e.addr(s.X) // m[k]++ stores the key
+		e.reassign(e.addr(s.X)) // m[k]++ stores the key
 	case *ast.SendStmt:
 		e.discard(s.Chan)
 		var et types.Type
@@ -264,7 +264,23 @@ func (e *escWalk) stmt(s ast.Stmt) {
 		e.loopDepth++
 		e.cond(s.Cond)
 		if s.Cond == nil || e.staticBool(s.Cond) >= 0 {
+			// the post statement assigns to the next iteration's variables, not to this one's
+			var vars []*escLoc
+			var was []bool
+			if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE && e.fn.perIter {
+				for _, l := range as.Lhs {
+					if id, ok := l.(*ast.Ident); ok {
+						if v, ok := e.info.Defs[id].(*types.Var); ok && e.varLoc[v] != nil {
+							vars = append(vars, e.varLoc[v])
+							was = append(was, e.varLoc[v].reassigned)
+						}
+					}
+				}
+			}
 			e.stmt(s.Post)
+			for i, l := range vars {
+				l.reassigned = was[i]
+			}
 			e.block(s.Body.List)
 		}
 		e.loopDepth = old
@@ -495,6 +511,13 @@ func (e *escWalk) addr(n ast.Expr) escHole {
 	return e.heapHole()
 }
 
+// reassign: the variable behind the hole (if it is one) is assigned here, after its declaration.
+func (e *escWalk) reassign(k escHole) {
+	if k.dst.v != nil {
+		k.dst.reassigned = true
+	}
+}
+
 func (e *escWalk) lhsType(n ast.Expr) types.Type {
 	if id, ok := ast.Unparen(n).(*ast.Ident); ok && id.Name == "_" {
 		return nil
@@ -517,6 +540,11 @@ func (e *escWalk) assign(s *ast.AssignStmt) {
 	for i, l := range s.Lhs {
 		ks[i] = e.addr(l)
 		ts[i] = e.lhsType(l)
+		if id, ok := l.(*ast.Ident); !ok || s.Tok != token.DEFINE || e.info.Defs[id] == nil {
+			// (marked after the right side is walked: a function literal there that captures the
+			// variable is assigned to it before the capture, not after)
+			defer e.reassign(ks[i])
+		}
 	}
 	if s.Tok != token.ASSIGN && s.Tok != token.DEFINE {
 		// x op= y
@@ -611,11 +639,14 @@ func (e *escWalk) rangeStmt(s *ast.RangeStmt) {
 			}
 		}
 	}
+	// (A range clause's variables count as assigned on every iteration, as in the stock compiler, though
+	// each iteration has its own: a closure holds a reference to them, not a copy.)
 	if s.Key != nil {
-		e.addr(s.Key)
+		e.reassign(e.addr(s.Key))
 	}
 	if s.Value != nil {
 		vk := e.addr(s.Value)
+		e.reassign(vk)
 		switch u.(type) {
 		case *types.Array:
 			e.flow(vk, tmp)
@@ -698,10 +729,10 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 		}
 	} else {
 		if s.Key != nil {
-			w.addr(s.Key)
+			w.reassign(w.addr(s.Key))
 		}
 		if s.Value != nil {
-			w.addr(s.Value)
+			w.reassign(w.addr(s.Value))
 		}
 	}
 	w.block(s.Body.List)

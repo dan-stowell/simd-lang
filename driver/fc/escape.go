@@ -26,6 +26,7 @@ import (
 	"go/token"
 	"go/types"
 	"go/version"
+	"os"
 	"strings"
 	"sync"
 )
@@ -60,6 +61,9 @@ type escInfo struct {
 	vars   []*types.Var // every heap variable, in the order found
 	varWhy map[*types.Var]string
 	varPos map[*types.Var]token.Pos // where the stock compiler reports a variable, if not at its declaration
+
+	// With escByValue: the captured variables that closures hold copies of.
+	byValue map[*types.Var]bool
 }
 
 // escSummary says what a function does with its parameters.
@@ -240,6 +244,11 @@ type escLoc struct {
 	resultIdx int
 	leaks     escLeaks
 
+	// for the choice between capturing a variable by reference and by value
+	addrTaken  bool
+	reassigned bool
+	captured   bool
+
 	// for the walk
 	walkgen uint32
 	derefs  int
@@ -256,6 +265,7 @@ type escEdge struct {
 type escHole struct {
 	dst    *escLoc
 	derefs int
+	addrOf bool // the last step to here was an address-of: what flows in has its address taken
 }
 
 func (l *escLoc) hole() escHole { return escHole{dst: l} }
@@ -264,6 +274,9 @@ func (k escHole) shift(delta int) escHole {
 	k.derefs += delta
 	if k.derefs < -1 {
 		panic("fc: escape: derefs underflow")
+	}
+	if delta != 0 {
+		k.addrOf = delta < 0
 	}
 	return k
 }
@@ -287,6 +300,38 @@ type escBatch struct {
 	litFn    map[*ast.FuncLit]*escFn
 	force    []ast.Node // sites that use the heap whatever the graph says
 	lits     []*escFn   // the function literals (and bodies of ranges over functions) walked
+	closures []escClosure
+}
+
+// escClosure is a function literal's closure object and the variables it captures.
+type escClosure struct {
+	k    escHole
+	vars []*types.Var
+}
+
+// escByValue: closures hold copies of the captured variables that are never assigned after the first
+// capture, whose address is never taken, and that are at most 128 bytes (the stock compiler's rule); they
+// are listed in escInfo.byValue. Off, every capture is by reference, which is what fc's code generator
+// does. (`fc esc -byvalue`, or FC_ESC_BYVALUE=1, turns it on.)
+var escByValue = os.Getenv("FC_ESC_BYVALUE") != ""
+
+// flowClosures: now that the batch's functions have been walked, every assignment to the captured
+// variables has been seen.
+func (b *escBatch) flowClosures() {
+	for _, c := range b.closures {
+		for _, v := range c.vars {
+			l := b.varLoc[v]
+			byval := escByValue && !l.addrTaken && !l.reassigned && !l.paramOut && !mentionsTypeParam(v.Type()) &&
+				b.pr.sizes.Sizeof(v.Type()) <= 128
+			if byval {
+				b.out.byValue[v] = true
+				b.flow(c.k, l)
+			} else {
+				b.flow(c.k.addr(), l)
+			}
+		}
+	}
+	b.closures = nil
 }
 
 func (b *escBatch) heapHole() escHole    { return b.heapLoc.hole() }
@@ -300,6 +345,9 @@ func (b *escBatch) newLoc(fn *escFn, depth int) *escLoc {
 
 func (b *escBatch) flow(k escHole, src *escLoc) {
 	dst := k.dst
+	if k.addrOf {
+		src.addrTaken = true
+	}
 	if dst == &b.blankLoc {
 		return
 	}
@@ -454,7 +502,8 @@ type escUnit struct {
 
 func (pr *Program) escapePkg(p *Pkg) *escInfo {
 	out := &escInfo{heapVar: map[*types.Var]bool{}, heapSite: map[ast.Node]bool{}, summary: map[*types.Func]*escSummary{},
-		varWhy: map[*types.Var]string{}, varPos: map[*types.Var]token.Pos{}}
+		varWhy: map[*types.Var]string{}, varPos: map[*types.Var]token.Pos{},
+		byValue: map[*types.Var]bool{}}
 	if p.tpkg == nil || p.info == nil {
 		return out
 	}
@@ -746,6 +795,7 @@ func (pk *escPkg) batch(units []*escUnit) {
 			e.initSpec(s)
 		}
 	}
+	b.flowClosures()
 	b.walkAll()
 	b.finish(units)
 }
@@ -770,6 +820,7 @@ func (pk *escPkg) loneLit(n *ast.FuncLit, parent *escFn) {
 	b.lits = append(b.lits, fn)
 	e := &escWalk{escBatch: b, fn: fn, loopDepth: 1}
 	e.block(n.Body.List)
+	b.flowClosures()
 	b.walkAll()
 	b.finish(nil)
 	s := &escSummary{}

@@ -508,11 +508,19 @@ func (e *escWalk) funcLit(k escHole, n *ast.FuncLit) {
 		return
 	}
 	for _, v := range free {
-		e.flow(k.addr(), e.varLoc[v])
+		l := e.varLoc[v]
+		if !l.captured {
+			l.captured = true
+			// assignments in the straight-line code before the first capture do not count
+			if l.loopDepth == e.loopDepth {
+				l.reassigned = false
+			}
+		}
 		if e.out.varWhy[v] == "" {
 			e.out.varWhy[v] = "captured"
 		}
 	}
+	e.closures = append(e.closures, escClosure{k, free})
 	fn := e.pk.newFn(e.fn)
 	fn.lit = n
 	fn.sig, _ = e.typeOf(n).(*types.Signature)
