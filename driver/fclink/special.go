@@ -52,7 +52,7 @@ func makeSpecials() {
 	sort.Strings(names)
 	for _, name := range names {
 		v := lookupName(name, 0)
-		if !isLive(v) {
+		if !isLive(v) || !isDef(v) {
 			continue
 		}
 		val := strdata[name]
@@ -76,10 +76,11 @@ func makeSpecials() {
 		bi = append(bi, 0)
 	}
 	// (first in the data segment: the specials are placed in order)
-	dataSpecials = append([]*special{{synth("go:buildinfo"), uint32(len(bi)), 16, func(p []byte) { copy(p, bi) }}}, dataSpecials...)
+	buildinfoSym = synth("go:buildinfo")
+	dataSpecials = append([]*special{{buildinfoSym, uint32(len(bi)), 16, func(p []byte) { copy(p, bi) }}}, dataSpecials...)
 
 	md := lookupName("runtime.firstmoduledata", 0)
-	if md == 0 {
+	if !isDef(md) {
 		fatalf("runtime.firstmoduledata is not defined: is the runtime in the importcfg?")
 	}
 	o, j := objOf(md)
@@ -118,7 +119,7 @@ func makeSpecials() {
 		}
 	}
 	// go:fipsinfo (crypto/internal/fips140/check.Linkinfo): magic, the hash of the FIPS sections, their bounds
-	if g := synthByName[synthKey{"go:fipsinfo", 0}]; isLive(g) {
+	if g := lookupName("go:fipsinfo", 0); isLive(g) && !isDef(g) {
 		fipsinfo = g
 		addSpecial(&dataSpecials, g, 16+32+8+8*8, 8, func(p []byte) {
 			copy(p, "\xff Go fipsinfo \xff\x00")
@@ -130,7 +131,7 @@ func makeSpecials() {
 	}
 }
 
-var modInittasks, textsect, fipsinfo uint32
+var modInittasks, textsect, fipsinfo, buildinfoSym uint32
 
 func fipsBounds() [8]uint32 {
 	return [8]uint32{lay.textFIPS, lay.etextFIPS, lay.rodataFIPS, lay.erodataFIPS, lay.noptrdataFIPS, lay.enoptrdataFIP, lay.dataFIPS, lay.edataFIPS}
@@ -157,9 +158,9 @@ func defineSyms() {
 		"go:textfipsstart": fb[0], "go:textfipsend": fb[1], "go:rodatafipsstart": fb[2], "go:rodatafipsend": fb[3],
 		"go:noptrdatafipsstart": fb[4], "go:noptrdatafipsend": fb[5], "go:datafipsstart": fb[6], "go:datafipsend": fb[7],
 	}
-	for i, k := range synthNames {
-		if a, ok := def[k.name]; ok && k.abi == 0 {
-			addr[nslots+1+uint32(i)] = a
+	for name, a := range def {
+		if g := lookupName(name, 0); g != 0 && !isDef(g) {
+			addr[g] = a
 		}
 	}
 }

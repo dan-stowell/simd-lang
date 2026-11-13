@@ -48,7 +48,7 @@ func (h *nameHeap) Pop() any {
 // are left out. This is ld.(*Link).inittaskSym.
 func inittaskOrder(root string) []uint32 {
 	r0 := lookupName(root, 0)
-	if r0 == 0 {
+	if !isDef(r0) {
 		return nil
 	}
 	type edge struct{ from, to uint32 }
@@ -66,7 +66,7 @@ func inittaskOrder(root string) []uint32 {
 		x := q[len(q)-1]
 		q = q[:len(q)-1]
 		ndeps := 0
-		if x <= nslots {
+		if isDef(x) {
 			o, j := objOf(x)
 			for _, rl := range o.r.Relocs(j) {
 				if objabi.RelocType(rl.Type()) != objabi.R_INITORDER {
@@ -93,7 +93,7 @@ func inittaskOrder(root string) []uint32 {
 			name string
 			gid  uint32
 		}).gid
-		if s <= nslots {
+		if isDef(s) {
 			if o, j := objOf(s); o.r.Sym(j).Siz() > 8 {
 				sched = append(sched, s)
 			}
@@ -145,7 +145,7 @@ type floodWorker struct {
 }
 
 func (w *floodWorker) mark(c uint32) {
-	if c != 0 && atomic.OrUint32(&state[c], stLive)&stLive == 0 && c <= nslots {
+	if c != 0 && atomic.OrUint32(&state[c], stLive)&(stLive|stUndef) == 0 && c <= nslots {
 		w.next = append(w.next, c)
 	}
 }
@@ -169,7 +169,7 @@ func relocAt(relocs []goobj.Reloc, off int32) *goobj.Reloc {
 
 // dataOf returns the content of the canonical definition c.
 func dataOf(c uint32) []byte {
-	if c == 0 || c > nslots {
+	if !isDef(c) {
 		return nil
 	}
 	o, j := objOf(c)
@@ -236,7 +236,7 @@ func (w *floodWorker) process(c uint32) {
 			continue
 		case objabi.R_USEIFACE:
 			rs := canon[o.ref(rl.Sym())]
-			if rs == 0 || rs > nslots {
+			if !isDef(rs) {
 				continue
 			}
 			if o2, j2 := objOf(rs); o2.r.Sym(j2).IsItab() { // "the type of that itab"
@@ -244,14 +244,14 @@ func (w *floodWorker) process(c uint32) {
 				if rl2 == nil {
 					continue
 				}
-				if rs = canon[o2.ref(rl2.Sym())]; rs == 0 || rs > nslots {
+				if rs = canon[o2.ref(rl2.Sym())]; !isDef(rs) {
 					continue
 				}
 			}
 			w.setIface(rs)
 			continue
 		case objabi.R_USEIFACEMETHOD:
-			if rs := canon[o.ref(rl.Sym())]; rs != 0 && rs <= nslots {
+			if rs := canon[o.ref(rl.Sym())]; isDef(rs) {
 				o2, j2 := objOf(rs)
 				rr := o2.r.Relocs(j2)
 				off := int32(rl.Add())
@@ -271,7 +271,7 @@ func (w *floodWorker) process(c uint32) {
 			continue
 		}
 		rs = canon[rs]
-		if uii && rs <= nslots && atomic.LoadUint32(&state[rs])&stUsedInIface == 0 {
+		if uii && isDef(rs) && atomic.LoadUint32(&state[rs])&stUsedInIface == 0 {
 			// a type reachable by reflection from one converted to an interface ([]T from T, ...)
 			if o2, j2 := objOf(rs); o2.r.Sym(j2).IsGoType() {
 				if old := atomic.OrUint32(&state[rs], stUsedInIface|stLive); old&stUsedInIface == 0 || old&stLive == 0 {
