@@ -9,16 +9,16 @@ One run per cell on a noisy shared host: read differences under ~10% as noise.
 
 - **stock**: `go build -trimpath`, or `bazel build` with the project's own configuration.
 - **fair**: stock with the relaxations ours uses: `GOGC=off go build -trimpath -gcflags=all='-dwarf=false -l' -ldflags='-s -w'` (go rows only).
-- **ours**: fc (driver/fc), whole program in one process, cold (`tools/scoreboard/ours.sh`): every package above the runtime by fc, the runtime's own packages by the stock compiler inside the timer, stock link. "stock fallback" where fc does not build the project yet. No critical-path figure yet.
+- **ours**: fc (driver/fc), whole program in one process, cold (`tools/scoreboard/ours.sh`): every package above the runtime by fc, the runtime's own packages by the stock compiler inside the timer, linked by fclink (driver/fclink). "stock fallback" where fc does not build the project yet. No critical-path figure yet.
 
 ## buildifier (go: `./buildifier`)
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 21.8 | 11.6 | 21 | 13.0 | 6.6 | 13 | 6.2 |  | 6 |
+| 1 | 21.8 | 11.6 | 21 | 13.0 | 6.6 | 13 | 6.0 |  | 6 |
 | 2 | 11.9 | 9.0 | 20 | 7.6 | 5.9 | 13 | 3.8 |  | 6 |
-| 4 | 8.7 | 7.9 | 23 | 5.7 | 5.0 | 14 | 2.7 |  | 6 |
-| 8 | 6.7 | 6.3 | 24 | 4.9 | 4.5 | 17 | 2.9 |  | 8 |
+| 4 | 8.7 | 7.9 | 23 | 5.7 | 5.0 | 14 | 2.9 |  | 7 |
+| 8 | 6.7 | 6.3 | 24 | 4.9 | 4.5 | 17 | 2.4 |  | 7 |
 
 ## buildifier (bazel: `//buildifier:buildifier`)
 
@@ -33,10 +33,10 @@ One run per cell on a noisy shared host: read differences under ~10% as noise.
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 48.7 | 14.3 | 48 | 28.3 | 7.9 | 28 | 8.8 |  | 8 |
-| 2 | 24.0 | 12.0 | 44 | 16.1 | 7.7 | 29 | 5.3 |  | 9 |
-| 4 | 15.1 | 11.1 | 48 | 10.6 | 7.5 | 33 | 3.9 |  | 10 |
-| 8 | 10.9 | 10.1 | 52 | 7.3 | 6.5 | 34 | 3.3 |  | 11 |
+| 1 | 48.7 | 14.3 | 48 | 28.3 | 7.9 | 28 | 8.6 |  | 8 |
+| 2 | 24.0 | 12.0 | 44 | 16.1 | 7.7 | 29 | 5.1 |  | 8 |
+| 4 | 15.1 | 11.1 | 48 | 10.6 | 7.5 | 33 | 3.6 |  | 9 |
+| 8 | 10.9 | 10.1 | 52 | 7.3 | 6.5 | 34 | 2.8 |  | 10 |
 
 ## runsc (bazel: `//runsc:runsc`)
 
@@ -51,46 +51,46 @@ One run per cell on a noisy shared host: read differences under ~10% as noise.
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 164.6 | 32.6 | 161 | 97.2 | 17.7 | 95 | 18.9 |  | 18 |
-| 2 | 87.2 | 31.0 | 160 | 53.1 | 17.6 | 97 | 10.6 |  | 18 |
-| 4 | 48.2 | 27.7 | 164 | 30.3 | 16.7 | 100 | 6.7 |  | 19 |
-| 8 | 33.3 | 27.0 | 188 | 20.6 | 16.1 | 112 | 5.6 |  | 24 |
+| 1 | 164.6 | 32.6 | 161 | 97.2 | 17.7 | 95 | 19.1 |  | 18 |
+| 2 | 87.2 | 31.0 | 160 | 53.1 | 17.6 | 97 | 10.1 |  | 18 |
+| 4 | 48.2 | 27.7 | 164 | 30.3 | 16.7 | 100 | 6.3 |  | 19 |
+| 8 | 33.3 | 27.0 | 188 | 20.6 | 16.1 | 112 | 4.6 |  | 22 |
 
 ## tailscaled (go: `./cmd/tailscaled`)
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 258.5 | 57.5 | 256 | 130.1 | 27.3 | 128 | 15.2 |  | 15 |
-| 2 | 136.6 | 55.2 | 260 | 71.2 | 26.2 | 133 | 9.0 |  | 15 |
-| 4 | 77.2 | 52.3 | 279 | 40.4 | 25.9 | 139 | 6.0 |  | 16 |
-| 8 | 48.4 | 42.1 | 291 | 26.9 | 23.4 | 151 | 5.2 |  | 20 |
+| 1 | 258.5 | 57.5 | 256 | 130.1 | 27.3 | 128 | 15.5 |  | 15 |
+| 2 | 136.6 | 55.2 | 260 | 71.2 | 26.2 | 133 | 8.8 |  | 15 |
+| 4 | 77.2 | 52.3 | 279 | 40.4 | 25.9 | 139 | 5.4 |  | 15 |
+| 8 | 48.4 | 42.1 | 291 | 26.9 | 23.4 | 151 | 4.3 |  | 18 |
 
 ## minio (go: `.`)
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 238.1 | 57.5 | 233 | 133.4 | 26.2 | 130 | 27.2 |  | 26 |
-| 2 | 121.5 | 45.1 | 220 | 75.8 | 22.3 | 133 | 16.2 |  | 27 |
-| 4 | 73.6 | 45.5 | 239 | 44.1 | 19.9 | 138 | 10.5 |  | 29 |
-| 8 | 51.3 | 36.2 | 262 | 29.5 | 19.2 | 150 | 8.6 |  | 37 |
+| 1 | 238.1 | 57.5 | 233 | 133.4 | 26.2 | 130 | 27.6 |  | 27 |
+| 2 | 121.5 | 45.1 | 220 | 75.8 | 22.3 | 133 | 15.1 |  | 26 |
+| 4 | 73.6 | 45.5 | 239 | 44.1 | 19.9 | 138 | 9.2 |  | 28 |
+| 8 | 51.3 | 36.2 | 262 | 29.5 | 19.2 | 150 | 6.8 |  | 31 |
 
 ## kube-apiserver (go: `./cmd/kube-apiserver`)
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 455.8 | 58.9 | 453 | 272.9 | 33.7 | 270 | 32.5 |  | 31 |
-| 2 | 231.6 | 55.7 | 438 | 147.9 | 33.4 | 274 | 18.6 |  | 33 |
-| 4 | 131.1 | 55.0 | 469 | 90.8 | 36.2 | 310 | 11.4 |  | 34 |
-| 8 | 74.1 | 55.7 | 486 | 52.2 | 36.5 | 336 | 9.3 |  | 43 |
+| 1 | 455.8 | 58.9 | 453 | 272.9 | 33.7 | 270 | 31.9 |  | 31 |
+| 2 | 231.6 | 55.7 | 438 | 147.9 | 33.4 | 274 | 17.4 |  | 32 |
+| 4 | 131.1 | 55.0 | 469 | 90.8 | 36.2 | 310 | 10.0 |  | 33 |
+| 8 | 74.1 | 55.7 | 486 | 52.2 | 36.5 | 336 | 7.6 |  | 40 |
 
 ## prometheus (go: `./cmd/prometheus`)
 
 | cores | stock wall | crit | core-s | fair wall | crit | core-s | ours wall | crit | core-s |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 479.0 | 78.3 | 469 | 268.6 | 34.9 | 259 | failed | | |
-| 2 | 256.6 | 74.0 | 471 | 153.0 | 32.7 | 269 | failed | | |
-| 4 | 148.5 | 70.0 | 494 | 90.0 | 33.1 | 278 | failed | | |
-| 8 | 94.2 | 71.1 | 552 | 56.5 | 32.8 | 301 | failed | | |
+| 1 | 479.0 | 78.3 | 469 | 268.6 | 34.9 | 259 | 48.3 |  | 47 |
+| 2 | 256.6 | 74.0 | 471 | 153.0 | 32.7 | 269 | 28.1 |  | 50 |
+| 4 | 148.5 | 70.0 | 494 | 90.0 | 33.1 | 278 | 15.8 |  | 52 |
+| 8 | 94.2 | 71.1 | 552 | 56.5 | 32.8 | 301 | 11.1 |  | 59 |
 
 ## bb-executor (bazel: `//enterprise/server/cmd/executor:executor`)
 
