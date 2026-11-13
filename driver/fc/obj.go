@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"go/ast"
@@ -441,6 +442,8 @@ func (c *compiler) writeObject(path string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// (bio's 4 kB buffer made 98,000 write calls of MinIO's 420 MB of objects)
+	out.Writer = bufio.NewWriterSize(out.File(), 128<<10)
 	out.WriteString(objabi.HeaderString())
 	if c.path == "main" {
 		fmt.Fprintf(out, "main\n") // the linker looks for this line
