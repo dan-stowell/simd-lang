@@ -42,7 +42,9 @@ func (e *escWalk) block(list []ast.Stmt) {
 }
 
 // staticBool: is the condition always true (+1), always false (-1), or neither (0)?
-func (e *escWalk) staticBool(x ast.Expr) int {
+func (e *escWalk) staticBool(x ast.Expr) int { return e.pk.staticBool(x) }
+
+func (e *escPkg) staticBool(x ast.Expr) int {
 	if x == nil {
 		return 0
 	}
@@ -76,7 +78,9 @@ func (e *escWalk) staticBool(x ast.Expr) int {
 }
 
 // terminates: control does not reach the statement after s.
-func (e *escWalk) terminates(s ast.Stmt) bool {
+func (e *escWalk) terminates(s ast.Stmt) bool { return e.pk.terminates(s) }
+
+func (e *escPkg) terminates(s ast.Stmt) bool {
 	switch s := s.(type) {
 	case *ast.BranchStmt:
 		return s.Tok == token.GOTO
@@ -84,7 +88,10 @@ func (e *escWalk) terminates(s ast.Stmt) bool {
 		return true
 	case *ast.ExprStmt:
 		if call, ok := ast.Unparen(s.X).(*ast.CallExpr); ok {
-			return e.builtinName(ast.Unparen(call.Fun)) == "panic"
+			if id, ok := ast.Unparen(call.Fun).(*ast.Ident); ok && id.Name == "panic" {
+				_, ok := e.info.Uses[id].(*types.Builtin)
+				return ok
+			}
 		}
 	case *ast.IfStmt:
 		c := e.staticBool(s.Cond)
@@ -97,6 +104,84 @@ func (e *escWalk) terminates(s ast.Stmt) bool {
 		}
 	}
 	return false
+}
+
+// inspectLive is ast.Inspect without the statements that cannot be reached (as block and stmt skip them).
+func (pk *escPkg) inspectLive(n ast.Node, f func(ast.Node) bool) {
+	if n == nil {
+		return
+	}
+	list := func(stmts []ast.Stmt) {
+		lastLabel := -1
+		for i, s := range stmts {
+			if _, ok := s.(*ast.LabeledStmt); ok {
+				lastLabel = i
+			}
+		}
+		dead := false
+		for i, s := range stmts {
+			if dead && i > lastLabel {
+				continue
+			}
+			pk.inspectLive(s, f)
+			dead = pk.terminates(s)
+		}
+	}
+	ast.Inspect(n, func(m ast.Node) bool {
+		switch m := m.(type) {
+		case *ast.BlockStmt:
+			if f(m) {
+				list(m.List)
+			}
+			return false
+		case *ast.CaseClause:
+			if f(m) {
+				for _, x := range m.List {
+					pk.inspectLive(x, f)
+				}
+				list(m.Body)
+			}
+			return false
+		case *ast.CommClause:
+			if f(m) {
+				if m.Comm != nil {
+					pk.inspectLive(m.Comm, f)
+				}
+				list(m.Body)
+			}
+			return false
+		case *ast.IfStmt:
+			if !f(m) {
+				return false
+			}
+			if m.Init != nil {
+				pk.inspectLive(m.Init, f)
+			}
+			pk.inspectLive(m.Cond, f)
+			c := pk.staticBool(m.Cond)
+			if c >= 0 {
+				pk.inspectLive(m.Body, f)
+			}
+			if c <= 0 && m.Else != nil {
+				pk.inspectLive(m.Else, f)
+			}
+			return false
+		case *ast.ForStmt:
+			if m.Cond != nil && pk.staticBool(m.Cond) < 0 {
+				if f(m) {
+					if m.Init != nil {
+						pk.inspectLive(m.Init, f)
+					}
+					pk.inspectLive(m.Cond, f)
+				}
+				return false
+			}
+		}
+		if m == nil {
+			return false
+		}
+		return f(m)
+	})
 }
 
 // cond evaluates a condition, without the operand that a constant operand before it excludes.

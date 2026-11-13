@@ -136,7 +136,34 @@ func (e *escWalk) paramHole(c *escCallee, ks []escHole, i int) escHole {
 		}
 		return e.discardHole()
 	}
-	return e.tagHole(e.pk.summaryOf(c.fn), ks, j)
+	s := e.pk.summaryOf(c.fn)
+	// The summary of a generic function is made on its body, where a value of a type parameter may hold
+	// pointers. This call knows the type arguments: what is some dereferences away from an argument
+	// whose type has no pointers that far away does not flow anywhere.
+	if s != nil && i >= 0 && i < c.sig.Params().Len() && j < len(s.Params) {
+		if fsig := c.fn.Type().(*types.Signature); fsig.TypeParams().Len() > 0 || fsig.RecvTypeParams().Len() > 0 {
+			lk := s.Params[j]
+			pt := c.sig.Params().At(i).Type()
+			pruned := false
+			if lk.Heap > 0 && !e.pk.ptrsAfter(pt, lk.Heap) {
+				lk.Heap = -1
+				pruned = true
+			}
+			for r, d := range lk.Results {
+				if d > 0 && !e.pk.ptrsAfter(pt, d) {
+					if !pruned {
+						lk.Results = append([]int(nil), lk.Results...)
+						pruned = true
+					}
+					lk.Results[r] = -1
+				}
+			}
+			if pruned {
+				return e.leaksHole(lk, ks)
+			}
+		}
+	}
+	return e.tagHole(s, ks, j)
 }
 
 // tagHole: where a summary says its parameter j flows.
@@ -144,7 +171,10 @@ func (e *escWalk) tagHole(s *escSummary, ks []escHole, j int) escHole {
 	if s == nil || j < 0 || j >= len(s.Params) {
 		return e.heapHole()
 	}
-	lk := s.Params[j]
+	return e.leaksHole(s.Params[j], ks)
+}
+
+func (e *escWalk) leaksHole(lk escLeaks, ks []escHole) escHole {
 	var tags []escHole
 	if lk.Heap >= 0 {
 		tags = append(tags, e.heapHole().shift(lk.Heap))
@@ -155,6 +185,34 @@ func (e *escWalk) tagHole(s *escSummary, ks []escHole, j int) escHole {
 		}
 	}
 	return e.tee(tags...)
+}
+
+// ptrsAfter: can a value of type t lead to a pointer after d dereferences?
+func (pk *escPkg) ptrsAfter(t types.Type, d int) bool {
+	if d <= 0 {
+		return pk.hasPointers(t)
+	}
+	if t == nil || escIsTypeParam(t) {
+		return true
+	}
+	switch u := t.Underlying().(type) {
+	case *types.Basic:
+		return u.Info()&types.IsString == 0 && pk.hasPointers(t) // a string's bytes hold none
+	case *types.Pointer:
+		return pk.hasPointers(t) && pk.ptrsAfter(u.Elem(), d-1)
+	case *types.Slice:
+		return pk.hasPointers(t) && pk.ptrsAfter(u.Elem(), d-1)
+	case *types.Array:
+		return u.Len() != 0 && pk.ptrsAfter(u.Elem(), d)
+	case *types.Struct:
+		for i := 0; i < u.NumFields(); i++ {
+			if pk.ptrsAfter(u.Field(i).Type(), d) {
+				return true
+			}
+		}
+		return false
+	}
+	return true // an interface, a map, a channel, a function: anything
 }
 
 // arg flows an argument to k, and to extra if there is one (the closure object of a go or defer statement,

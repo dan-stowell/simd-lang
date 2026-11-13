@@ -511,12 +511,12 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 			return true
 		}
 		if u.decl != nil {
-			ast.Inspect(u.decl.Body, visit)
+			pk.inspectLive(u.decl.Body, visit)
 			pk.scanAssigned(u.decl.Body)
 		}
 		for _, s := range u.specs {
 			for _, v := range s.Values {
-				ast.Inspect(v, visit)
+				pk.inspectLive(v, visit)
 				pk.scanAssigned(v)
 			}
 		}
