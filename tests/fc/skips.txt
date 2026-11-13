@@ -19,3 +19,4 @@ net/http/internal ^TestChunkReaderAllocs$ asserts allocation counts that need es
 net/netip ^(TestNoAllocs|TestAddrStringAllocs)$ asserts allocation counts that need escape analysis
 net/textproto ^TestCommonHeaders$ asserts allocation counts that need escape analysis
 unique ^(TestCanonMap|TestCanonMapBadHash|TestCanonMapTruncHash|TestHandle|TestMakeClonesStrings|TestNestedHandle|TestMakeAllocs)$ waits for weak references to be cleared while fc keeps locals alive; one allocation count
+crypto/sha1 ^TestAllocations$ asserts allocation counts that need escape analysis
