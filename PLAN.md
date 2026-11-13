@@ -109,13 +109,19 @@ Log (append one line per milestone reached, with the oracle number):
   mode; MinIO and kube-apiserver built that way pass their smoke tests. The lost-object bug had two causes (JOURNAL
   12:10): stack checks in helpers the stock compiler inlines, and BP after the runtime's context switches.
 
-Now: (1) read /home/exedev/targets/fc-minio-rt2.log (MinIO's own tests, wholly-fc binaries, started 13:35 UTC with
-fc at 0a38767; the first run, fc-minio-rt.log, had 37 failures that were all one bug of an intermediate fc build,
-since fixed): that is M4's oracle. (2) The 5 std packages left in
-FC_ALL=rt mode: crypto/cipher, crypto/fips140, crypto/internal/fips140only (FIPS tests, not looked at),
-encoding/binary (allocation counts: needs FC_ESC=1 for all packages), debug/buildinfo (its test's git call fails
-here). Then rerun the whole list once in that mode with one fc binary. (3) Make FC_RUNTIME the default in
-`fc build` (the cold build then needs no `go` subprocess: 4.9 core-s of MinIO's 34), rerun
-`tools/scoreboard/ours.sh` on an idle machine, update STATUS and MORNING (they predate today's M3 work). (4) Speed,
-measured candidates in order: memory (8.1 GB peak costs 6 s of system time and 0.7 s of exit teardown), object
-files handed to fclink in process (2.6 core-s), type checking (9 + 2.4 core-s).
+Now (2026-11-13 23:20 UTC): (1) M4's oracle is met: MinIO's own tests with wholly-fc binaries (runtime included, fclink):
+45 of 46 packages pass and cmd fails only TestTrackingResponseWriter, as stock does (fc-minio-rt2.log,
+fc-minio-cmd-flake.log; the earlier second failure was the disk being 99% full). (2) std wholly by fc: the 226 of
+passing.txt pass (index/suffixarray and hash/maphash need FC_TIMEOUT=900: fc's code is ~8x slower there). Of the 36
+std packages with tests outside passing.txt, 23 pass; fixed since: fclink function order (gc/scan), one-case select
+(time hung), skips for 6 allocation/liveness tests. Open: `FC_ALL=rt FC_TIMEOUT=1500 tools/fc/batch.sh -j 3 time os
+net/http crypto/tls` was running (crypto/tls needs `-skip TestBogoSuite`: fails with stock here); net/http's
+TestTransportGCRequest waits on liveness (skip it once confirmed); runtime (9 tests) and runtime/pprof
+(TestMemoryProfiler) are with a builder on branch worktree-agent-a937e32fdf2263d17 (merge its commits). Then add the
+passing ones to tests/fc/passing.txt and log M3. (3) Speed, on an IDLE machine (nothing was idle on 2026-11-13 evening;
+`uptime` first): `tools/fc/cold.sh minio 8` (now: runtime by fc, fclink, 10 GB huge page pool, biggest-first slots,
+declarations once + sharded bodies) against FC_FIFO=1 / FC_BODIES=0 / HUGEPAGES=0, order-balanced; under load it was
+6.6 s cold (10.5 without huge pages) and the cores-busy profile is flat (tools/fc/timeline.py), i.e. CPU-bound at
+~20 core-s. Then `tools/scoreboard/ours.sh`, STATUS, MORNING, TRACE. (4) Next speed candidates: objects handed to
+fclink in process (M5; design in driver/fclink/main.go), the remaining 2.5 s of kernel time, the back end's own
+CPU (profile `fc build -cpuprofile`).
