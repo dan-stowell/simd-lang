@@ -35,7 +35,7 @@ var (
 
 	builtins   []uint32
 	synthNames []string // symbols the linker makes that nothing refers to by name: id nslots+1+i
-	nameParts  [][nParts][]nameRec
+	nameParts  [][nParts]plist[nameRec]
 	nameFilter []uint64
 )
 
@@ -107,10 +107,11 @@ func isDef(c uint32) bool { return c != 0 && c <= nslots && state[c]&stUndef == 
 func lookupName(name string, abi uint16) uint32 {
 	key := nameKey(name, abi)
 	for w := range nameParts {
-		recs := nameParts[w][key>>56]
-		for i := range recs {
-			if r := &recs[i]; r.key == key && r.abi == abi && r.str() == name {
-				return canon[r.gid]
+		for _, recs := range nameParts[w][key>>56].chunks {
+			for i := range recs {
+				if r := &recs[i]; r.key == key && r.abi == abi && r.str() == name {
+					return canon[r.gid]
+				}
 			}
 		}
 	}
@@ -167,9 +168,12 @@ var linkerNames = []string{"runtime.firstmoduledata", "runtime.lastmoduledatap",
 	"runtime.disableMemoryProfiling", "main.main"}
 
 type resolveWorker struct {
-	names  [nParts][]nameRec
-	hashes [nParts][]hashRec
-	h64s   [nParts][]hash64Rec
+	names  [nParts]plist[nameRec]
+	nslab  []nameRec
+	hslab  []hashRec
+	h6slab []hash64Rec
+	hashes [nParts]plist[hashRec]
+	h64s   [nParts]plist[hash64Rec]
 	table  []uint32
 	grp    []uint32
 	best   []uint64
@@ -198,11 +202,11 @@ func resolve() {
 			case j < h64End:
 				h := r.Hash64(j - o.ndef)
 				k := mix64(h)
-				rw.h64s[k>>56] = append(rw.h64s[k>>56], hash64Rec{h, gid, s.Siz()})
+				rw.h64s[k>>56].add(&rw.h6slab, hash64Rec{h, gid, s.Siz()})
 			case j < hEnd:
 				h := r.Hash(j - h64End)
 				k1, k2 := le.Uint64(h[:8]), le.Uint64(h[8:])
-				rw.hashes[k1>>56] = append(rw.hashes[k1>>56], hashRec{k1, k2, gid, s.Siz()})
+				rw.hashes[k1>>56].add(&rw.hslab, hashRec{k1, k2, gid, s.Siz()})
 			default:
 				rk := uint32(0)
 				if j < o.nalldef {
@@ -215,7 +219,7 @@ func resolve() {
 					rk = rankIface
 				}
 				rec := mkNameRec(s.Name(r), s.ABI(), gid, rk)
-				rw.names[rec.key>>56] = append(rw.names[rec.key>>56], rec)
+				rw.names[rec.key>>56].add(&rw.nslab, rec)
 				k := rec.key % filterBits
 				atomic.OrUint64(&nameFilter[k>>6], 1<<(k&63))
 			}
@@ -245,7 +249,7 @@ func resolve() {
 				name := s.Name(r)
 				key := nameKey(name, s.ABI())
 				if k := key % filterBits; nameFilter[k>>6]>>(k&63)&1 != 0 {
-					rw.names[key>>56] = append(rw.names[key>>56], nameRec{key, unsafe.StringData(name), uint32(len(name)), gid, rank(o, j, s), s.ABI()})
+					rw.names[key>>56].add(&rw.nslab, nameRec{key, unsafe.StringData(name), uint32(len(name)), gid, rank(o, j, s), s.ABI()})
 					continue
 				}
 			}
@@ -256,7 +260,7 @@ func resolve() {
 		}
 	})
 	// 3. the joins, one partition at a time
-	nameParts = make([][nParts][]nameRec, len(ws))
+	nameParts = make([][nParts]plist[nameRec], len(ws))
 	for w := range ws {
 		nameParts[w] = ws[w].names
 	}
@@ -268,11 +272,11 @@ func resolve() {
 		for i := range ws {
 			switch kind {
 			case 0:
-				n += len(ws[i].names[p])
+				n += ws[i].names[p].n
 			case 1:
-				n += len(ws[i].hashes[p])
+				n += ws[i].hashes[p].n
 			case 2:
-				n += len(ws[i].h64s[p])
+				n += ws[i].h64s[p].n
 			}
 		}
 		if n == 0 {
@@ -299,33 +303,34 @@ func resolve() {
 		case 0:
 			flat := make([]*nameRec, 0, n)
 			for wi := range ws {
-				recs := ws[wi].names[p]
-				for k := range recs {
-					r := &recs[k]
-					flat = append(flat, r)
-					val := uint64(r.rank&^rankIface)<<32 | uint64(^r.gid)
-					h := r.key & mask
-					for {
-						t := table[h]
-						if t == 0 {
-							table[h] = i + 1
-							grp[i], best[i], ndup[i] = i, val, uint8(r.rank>>28&1)
-							break
-						}
-						if f := flat[t-1]; f.key == r.key && f.abi == r.abi && f.str() == r.str() {
-							grp[i] = t - 1
-							if r.rank&(rankNoDup|rankContent) == rankNoDup|rankContent && best[t-1]>>62 == 3 {
-								o1, _ := objOf(r.gid)
-								o2, _ := objOf(^uint32(best[t-1]))
-								errorf("duplicated definition of symbol %s, from %s and %s", r.str(), o2.pkg, o1.pkg)
+				for _, recs := range ws[wi].names[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.rank&^rankIface)<<32 | uint64(^r.gid)
+						h := r.key & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i], ndup[i] = i, val, uint8(r.rank>>28&1)
+								break
 							}
-							best[t-1] = max(best[t-1], val)
-							ndup[t-1] |= uint8(r.rank >> 28 & 1)
-							break
+							if f := flat[t-1]; f.key == r.key && f.abi == r.abi && f.str() == r.str() {
+								grp[i] = t - 1
+								if r.rank&(rankNoDup|rankContent) == rankNoDup|rankContent && best[t-1]>>62 == 3 {
+									o1, _ := objOf(r.gid)
+									o2, _ := objOf(^uint32(best[t-1]))
+									errorf("duplicated definition of symbol %s, from %s and %s", r.str(), o2.pkg, o1.pkg)
+								}
+								best[t-1] = max(best[t-1], val)
+								ndup[t-1] |= uint8(r.rank >> 28 & 1)
+								break
+							}
+							h = (h + 1) & mask
 						}
-						h = (h + 1) & mask
+						i++
 					}
-					i++
 				}
 			}
 			for k, r := range flat {
@@ -344,27 +349,28 @@ func resolve() {
 		case 1:
 			flat := make([]*hashRec, 0, n)
 			for wi := range ws {
-				recs := ws[wi].hashes[p]
-				for k := range recs {
-					r := &recs[k]
-					flat = append(flat, r)
-					val := uint64(r.size)<<32 | uint64(^r.gid)
-					h := r.k1 & mask
-					for {
-						t := table[h]
-						if t == 0 {
-							table[h] = i + 1
-							grp[i], best[i] = i, val
-							break
+				for _, recs := range ws[wi].hashes[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.size)<<32 | uint64(^r.gid)
+						h := r.k1 & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i] = i, val
+								break
+							}
+							if f := flat[t-1]; f.k1 == r.k1 && f.k2 == r.k2 {
+								grp[i] = t - 1
+								best[t-1] = max(best[t-1], val)
+								break
+							}
+							h = (h + 1) & mask
 						}
-						if f := flat[t-1]; f.k1 == r.k1 && f.k2 == r.k2 {
-							grp[i] = t - 1
-							best[t-1] = max(best[t-1], val)
-							break
-						}
-						h = (h + 1) & mask
+						i++
 					}
-					i++
 				}
 			}
 			for k, r := range flat {
@@ -373,27 +379,28 @@ func resolve() {
 		case 2:
 			flat := make([]*hash64Rec, 0, n)
 			for wi := range ws {
-				recs := ws[wi].h64s[p]
-				for k := range recs {
-					r := &recs[k]
-					flat = append(flat, r)
-					val := uint64(r.size)<<32 | uint64(^r.gid)
-					h := mix64(r.key) & mask
-					for {
-						t := table[h]
-						if t == 0 {
-							table[h] = i + 1
-							grp[i], best[i] = i, val
-							break
+				for _, recs := range ws[wi].h64s[p].chunks {
+					for k := range recs {
+						r := &recs[k]
+						flat = append(flat, r)
+						val := uint64(r.size)<<32 | uint64(^r.gid)
+						h := mix64(r.key) & mask
+						for {
+							t := table[h]
+							if t == 0 {
+								table[h] = i + 1
+								grp[i], best[i] = i, val
+								break
+							}
+							if flat[t-1].key == r.key {
+								grp[i] = t - 1
+								best[t-1] = max(best[t-1], val)
+								break
+							}
+							h = (h + 1) & mask
 						}
-						if flat[t-1].key == r.key {
-							grp[i] = t - 1
-							best[t-1] = max(best[t-1], val)
-							break
-						}
-						h = (h + 1) & mask
+						i++
 					}
-					i++
 				}
 			}
 			for k, r := range flat {
