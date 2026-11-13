@@ -182,17 +182,25 @@ func buildMode(args []string) {
 	}
 	sort.Slice(targets, func(i, k int) bool { return targets[i].ImportPath < targets[k].ImportPath })
 	// front end: everything the targets depend on
-	var wg sync.WaitGroup
+	var wg, wgF sync.WaitGroup
 	for _, need := range append([]*Pkg{pr.byPath["runtime"], pr.byPath["internal/runtime/maps"]}, targets...) {
 		if need == nil {
 			continue
 		}
-		wg.Add(1)
-		go func() { defer wg.Done(); pr.check(need) }()
+		wgF.Add(1)
+		go func() { defer wgF.Done(); pr.check(need) }()
 	}
-	wg.Wait()
-	tCheck := time.Since(t0)
-	cCheck := cpuSeconds() - c0
+	// The back end does not wait for the whole front end: a package is compiled as soon as it (and so
+	// everything it imports) is checked.
+	var tCheck time.Duration
+	var cCheck float64
+	frontDone := make(chan struct{})
+	go func() {
+		wgF.Wait()
+		tCheck = time.Since(t0)
+		cCheck = cpuSeconds() - c0
+		close(frontDone)
+	}()
 	os.MkdirAll(*out, 0o777)
 	// back end
 	type result struct {
@@ -237,6 +245,7 @@ func buildMode(args []string) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			pr.check(p)
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			results[i].p = p
@@ -321,6 +330,7 @@ func buildMode(args []string) {
 		}()
 	}
 	wg.Wait()
+	<-frontDone
 	var sf *os.File
 	if *stats != "" {
 		sf, _ = os.Create(*stats)
@@ -390,8 +400,8 @@ func buildMode(args []string) {
 			n++
 		}
 	}
-	fmt.Printf("front end: %d packages, %.1f MB of source, %.0f ms wall, %.2f core-s\n", n, float64(all)/1e6, float64(tCheck.Milliseconds()), cCheck)
-	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), %.0f ms wall, %.2f core-s\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64((time.Since(t0) - tCheck).Milliseconds()), total-cCheck)
+	fmt.Printf("front end: %d packages, %.1f MB of source, all checked %.0f ms after the start (%.2f core-s spent by then, back end included)\n", n, float64(all)/1e6, float64(tCheck.Milliseconds()), cCheck)
+	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), overlapping the front end; everything done at %.0f ms\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64(time.Since(t0).Milliseconds()))
 	fmt.Printf("compiled packages only: parse %.2f s + check %.2f s + compile %.2f s = %.2f core-s for %.2f MB: %.2f core-s per MB\n",
 		float64(parse)/1e9, float64(check)/1e9, float64(compile)/1e9, float64(parse+check+compile)/1e9, float64(okSrc)/1e6, float64(parse+check+compile)/1e9/(float64(okSrc)/1e6+1e-9))
 	var ru syscall.Rusage

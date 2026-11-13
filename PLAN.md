@@ -86,16 +86,24 @@ Log (append one line per milestone reached, with the oracle number):
   stock baseline mode 6.18 core-s (0.75 per MB); fc 2.80 core-s attributable (0.34 per MB), ratio **0.45**: above one
   third. Not stopped, because the path is measured (JOURNAL): the profile is flat with named items, and on MinIO the
   whole fc build is 26-27 core-s against the frozen path's 74.
+- M4 in part, 2026-11-13 03:43 UTC: **MinIO built by fc passes its smoke test, cold**: 1,283 packages by fc in one process,
+  the runtime's 29-30 packages by the stock compiler inside the timer, planning by the driver's own planner,
+  stock link: 7.7-8.7 s wall, 34-36 core-s on a machine two other agents were using (`tools/fc/cold.sh minio`;
+  frozen stock path 11.2 s, fair stock 29.5 s / 150 core-s). kube-apiserver the same way: 8.7-9.1 s, 42-43 core-s,
+  smoke passes (frozen path 19.8-21.3 s). buildifier, runsc, caddy and tailscaled build, link and run `--version`
+  (`tools/fc/corpus.sh`); prometheus stops in one generic instance. Not M4 yet: MinIO's unit tests have not been
+  run against fc-built packages, and the runtime is stock (M3).
 
 
-Now: the fc-built MinIO binary starts (`minio.bin --version` works; itabs merge by name in whole-program mode) but
-the server dies in its self-test: a fault at address 0x684f inside fc's ABIInternal wrapper for the assembly function
-github.com/klauspost/compress/s2.s2Decode (decode_asm.go:17 +0x63; wrapToABI0 in driver/fc/abiwrap.go: check the
-ABI0 argument layout and frame for a `func s2Decode(dst, src []byte) int` shape, and that the wrapper's outgoing area
-covers the callee's argument size). Rebuild: in /home/exedev/targets/minio
-`GOFLAGS=-buildvcs=false go list -deps -export -json -gcflags=all=-l . runtime > plan`, then
-`build/fc build -plan plan -o objs -link minio.bin github.com/minio/minio`, then `tests/minio_smoke.sh minio.bin`.
-In parallel: Codex's triage of the 53 failing std packages (reviews/inbox/fc-triage-1.md if it finished; list in
-/home/exedev/targets/fc-failing.txt; rerun it with the command in JOURNAL's M2 entry spirit: `codex exec -s
-workspace-write` with /home/exedev/targets and /tmp writable); triage reviews/inbox. Then M3's hard part: escape
-analysis, which the runtime's own packages need. Cost items with counts: JOURNAL M2.
+
+Now: three things are in flight. (1) A builder is writing escape analysis (branch fc-escape, worktree under
+.claude/worktrees; oracle: the stock compiler's -m output); when it reports, wire `escInfo` into `findHeapVars`
+(driver/fc/misc.go) and the allocation sites (closures.go newClosure/bindValues, toInterface, addressOf, new/make),
+keeping non-escaping address-taken variables in frame slots: that unblocks the runtime's packages (M3) and the
+allocation-count tests. (2) Codex is running the whole oracle and the skip list (prompts/fc-grind.md; report
+reviews/inbox/fc-grind-1.md; it edits tests/fc/passing.txt and skips.txt, uncommitted): fold in its reduced bugs.
+(3) Mine: cold numbers on a quiet machine (`tools/fc/cold.sh <project> <cores>` then the smoke test; write an
+`ours` column into SCOREBOARD.md: mkscoreboard.py reads $SB_OUT/<name>/ours-p<P>/meta.txt), prometheus's failing
+instance (gcsizes assertion in low.HashMap[string]: a type parameter reaching sizeof), MinIO's unit tests through
+tools/fc/test.sh -C /home/exedev/targets/minio, and M5: the link (1.2-1.6 s serial at the end, plus the object
+writer's 9% of fc's CPU). Cost items with counts: JOURNAL M2.

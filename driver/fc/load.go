@@ -191,8 +191,6 @@ func (pr *Program) check(p *Pkg) error {
 			Implicits:    map[ast.Node]types.Object{},
 			Selections:   make(map[*ast.SelectorExpr]*types.Selection, n/40),
 			Instances:    map[*ast.Ident]types.Instance{},
-			Scopes:       make(map[ast.Node]*types.Scope, n/60),
-			FileVersions: map[*ast.File]string{},
 		}
 		gover := ""
 		if p.Module != nil && p.Module.GoVersion != "" {
