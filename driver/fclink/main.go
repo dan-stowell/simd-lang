@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"internal/buildcfg"
 	"os"
+	"os/exec"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
@@ -48,6 +49,7 @@ var (
 	flagCPUProf   = flag.String("cpuprofile", "", "write a CPU profile")
 	flagDumpLive  = flag.String("dumplive", "", "write the names of the live symbols to `file` (debugging)")
 	flagEntry     = flag.String("E", "_rt0_amd64_linux", "entry `symbol`")
+	flagDetach    = flag.Bool("detach", false, "return when the output is complete, without waiting for the process that wrote it to exit")
 	// accepted for compatibility with the go command's link line
 	_         = flag.String("buildmode", "exe", "only exe")
 	_         = flag.Bool("s", true, "no symbol table (always)")
@@ -169,6 +171,9 @@ func main() {
 	if flag.NArg() != 1 || *flagImportcfg == "" {
 		fatalf("usage: fclink -o out -importcfg importcfg.link [-buildid id] [-stats] main.o")
 	}
+	if *flagDetach && os.Getenv("FCLINK_CHILD") == "" {
+		detach()
+	}
 	nthreads = *flagJ
 	if nthreads <= 0 {
 		nthreads = runtime.GOMAXPROCS(0)
@@ -196,6 +201,12 @@ func main() {
 		strdata[name] = val
 	}
 
+	if os.Getenv("FCLINK_SYNCRM") != "" {
+		os.Remove(*flagOut)
+		close(removed)
+	} else {
+		go func() { os.Remove(*flagOut); close(removed) }()
+	}
 	load(*flagImportcfg, flag.Arg(0))
 	exitIfErrors()
 	resolve()
@@ -218,6 +229,43 @@ func main() {
 		}
 		fmt.Printf("%-10s %8.1f %8.1f  %d threads, output %.1f MB\n", "total", total, totalCPU, nthreads, float64(outSize)/1e6)
 	}
+	if os.Getenv("FCLINK_CHILD") != "" {
+		os.Stdout.Sync()
+		os.NewFile(3, "done").Write([]byte{'k'}) // the output is complete: the parent may return
+	}
+}
+
+var removed = make(chan struct{})
+
+// detach (-detach): run the link in a child and return as soon as the child says the output is complete,
+// leaving the child to exit on its own. What that skips is the kernel unmapping the inputs and the output
+// and freeing the heap, 50-60 ms for MinIO, which the caller would otherwise wait for. The price: the
+// child's CPU time is not charged to the caller's children (it is never waited for), so do not use it when
+// measuring core-seconds.
+func detach() {
+	r, w, err := os.Pipe()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command("/proc/self/exe", os.Args[1:]...)
+	cmd.Env = append(os.Environ(), "FCLINK_CHILD=1")
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	cmd.ExtraFiles = []*os.File{w}
+	if err := cmd.Start(); err != nil {
+		return // link in this process
+	}
+	w.Close()
+	var b [1]byte
+	if n, _ := r.Read(b[:]); n == 1 {
+		os.Exit(0)
+	}
+	if err := cmd.Wait(); err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			os.Exit(ee.ExitCode())
+		}
+		os.Exit(2)
+	}
+	os.Exit(0)
 }
 
 func buildVersion() string {

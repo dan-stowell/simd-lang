@@ -10,9 +10,11 @@ import (
 	"encoding/binary"
 	"internal/abi"
 	"internal/buildcfg"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 )
 
 // A special is a symbol whose content the linker writes: one it makes, or one an object defines and the
@@ -325,4 +327,12 @@ func finish() {
 	}
 	writeELF()
 	lap("finish", "")
+	if os.Getenv("FCLINK_UNMAP") != "" { // measuring: what the kernel does at exit, split up
+		syscall.Munmap(out)
+		lap("unmap out", "")
+		for _, m := range inputMaps {
+			syscall.Munmap(m)
+		}
+		lap("unmap in", "%d inputs", len(inputMaps))
+	}
 }

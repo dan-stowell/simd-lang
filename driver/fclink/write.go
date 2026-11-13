@@ -28,7 +28,7 @@ var le = binary.LittleEndian
 func write() {
 	fileEnd := int64(lay.edata - imageBase)
 	outSize = fileEnd + shdrRoom
-	os.Remove(*flagOut)
+	<-removed // the old output, unlinked in the background since the start
 	f, err := os.OpenFile(*flagOut, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		fatalf("%v", err)

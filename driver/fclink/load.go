@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -32,6 +33,11 @@ type object struct {
 }
 
 const badBase = ^uint32(0)
+
+var (
+	mapMu     sync.Mutex
+	inputMaps [][]byte
+)
 
 // A unit is a run of slots of one object, the grain of every parallel pass.
 type unit struct {
@@ -105,6 +111,9 @@ func mapFile(name string) []byte {
 	if err != nil {
 		fatalf("mmap %s: %v", name, err)
 	}
+	mapMu.Lock()
+	inputMaps = append(inputMaps, b)
+	mapMu.Unlock()
 	return b
 }
 
@@ -224,6 +233,7 @@ func load(cfgFile, mainFile string) {
 	}
 	next := uint32(1)
 	var nsym [5]int
+	bareSlots := 0
 	for i := range perLib {
 		for _, o := range perLib[i] {
 			o.idx = len(objs)
@@ -241,6 +251,9 @@ func load(cfgFile, mainFile string) {
 			nsym[2] += int(o.nh)
 			nsym[3] += int(o.nnonpkg)
 			nsym[4] += int(o.nref)
+			if len(perLib[i]) == 1 && !strings.HasSuffix(o.file, "-d") && strings.HasSuffix(o.file, ".o") {
+				bareSlots += int(o.total)
+			}
 			for lo := uint32(0); lo < o.total || lo == 0; lo += unitSlots {
 				units = append(units, &unit{o: o, lo: lo, hi: min(lo+unitSlots, o.total)})
 			}
@@ -268,8 +281,8 @@ func load(cfgFile, mainFile string) {
 			}
 		}
 	})
-	lap("load", "%d files, %d objects, %d units; slots: %d by index, %d+%d by content hash, %d defined by name, %d references by name",
-		len(libs), len(objs), len(units), nsym[0], nsym[1], nsym[2], nsym[3], nsym[4])
+	lap("load", "%d files, %d objects, %d units; slots: %d by index, %d+%d by content hash, %d defined by name, %d references by name; %d of the slots in bare .o files",
+		len(libs), len(objs), len(units), nsym[0], nsym[1], nsym[2], nsym[3], nsym[4], bareSlots)
 }
 
 // ref returns the id of the slot a symbol reference in object o names (not yet its canonical definition).
