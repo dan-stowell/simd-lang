@@ -280,6 +280,10 @@ func main() {
 		checkObjs(os.Args[2:])
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "esc" {
+		escMode(os.Args[2:]) // escape_dump.go
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "build" {
 		buildMode(os.Args[2:])
 		return
