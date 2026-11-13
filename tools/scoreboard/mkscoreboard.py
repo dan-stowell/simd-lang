@@ -58,7 +58,7 @@ def main():
            'One run per cell on a noisy shared host: read differences under ~10% as noise.',
            '', '- **stock**: `go build -trimpath`, or `bazel build` with the project\'s own configuration.',
            '- **fair**: stock with the relaxations ours uses: `GOGC=off go build -trimpath -gcflags=all=\'-dwarf=false -l\' -ldflags=\'-s -w\'` (go rows only).',
-           '- **ours**: "stock fallback" until the campaign\'s compiler builds the project.', '']
+           '- **ours**: fc (driver/fc), whole program in one process, cold (`tools/scoreboard/ours.sh`): every package above the runtime by fc, the runtime\'s own packages by the stock compiler inside the timer, linked by fclink (driver/fclink). "stock fallback" where fc does not build the project yet. No critical-path figure yet.', '']
     pins = []
     for name, tool, d, target in corpus():
         out += [f'## {name} ({tool}: `{target}`)', '',

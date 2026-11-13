@@ -196,7 +196,7 @@ func (c *compiler) embedVar(v *types.Var, patterns []string) {
 		return
 	}
 	// embed.FS{files: &[]file{...}}; file is {name string; data string; hash [16]byte}
-	sd := c.lookup(sym.Name+".files", obj.ABI0, "_")
+	sd := c.lookup(sym.Name+".files", obj.ABI0, sym.Pkg)
 	off := int64(0)
 	sd.WriteAddr(c.ctxt, off, 8, sd, 24)
 	sd.WriteInt(c.ctxt, off+8, 8, int64(len(list)))

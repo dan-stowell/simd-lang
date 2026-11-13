@@ -54,8 +54,9 @@ func msym(s *obj.LSym, off int64) mem {
 func (m mem) plus(off int64) mem { m.disp += off; return m }
 
 type asm struct {
-	b      []byte
-	relocs []obj.Reloc
+	b         []byte
+	relocs    []obj.Reloc
+	maxTarget int // the highest address any jump has been patched to
 }
 
 func (a *asm) pc() int         { return len(a.b) }
@@ -439,6 +440,9 @@ func (a *asm) jmp() int {
 	return len(a.b) - 4
 }
 func (a *asm) patch(at int, target int) {
+	if target > a.maxTarget {
+		a.maxTarget = target
+	}
 	binary.LittleEndian.PutUint32(a.b[at:], uint32(int32(target-(at+4))))
 }
 func (a *asm) jmpTo(target int)         { a.patch(a.jmp(), target) }

@@ -447,6 +447,11 @@ func (g *gen) toInterface(l loc, from, to types.Type) loc {
 		g.a.load(AX, g.m(l, R13), 8, false)
 	case g.c.sizeof(from) == 0:
 		g.a.lea(AX, msym(g.c.rtVar("zerobase"), 0))
+	case !g.siteHeap(g.convSite):
+		// the interface value does not outlive this activation: its data is a copy in the frame
+		box := g.frameObject(from)
+		g.move(box, l, from)
+		g.a.lea(AX, mb(BP, box.off))
 	default:
 		l = g.inMem(l, from)
 		g.addrTo(BX, l)

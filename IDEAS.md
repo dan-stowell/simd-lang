@@ -91,3 +91,21 @@ Nine ideas, seven distinct. Status after triage (JOURNAL iteration 16 has the me
 
 Picked for the next step: none of these. The head of the build (plan, then `runtime`, on two cores) is cheaper.
 
+
+## 2026-11-13 (campaign 1, fc)
+
+- **Compile only reachable functions** (dead code decided before code generation instead of by the linker).
+  Measured on MinIO: the stock compiler emits 196,968 functions / 46.9 MB of code and the linker keeps
+  110,684 / 38.4 MB: 44% of the functions but only 18% of the bytes are discarded. Kill test: worth it only
+  if a syntactic (name-based) reachability pass over the parsed sources finds most of that 18% for well under
+  0.1 s; type checking cannot skip the dead bodies' declarations. Status: measured, not started.
+- **Two-pass front end** (declarations of every package first, bodies after, in parallel): the type-check
+  chain through MinIO's import graph is 1.85 s even with unlimited cores (cmd 0.68 s, mc/cmd 0.26 s, ...).
+  go/types cannot resume a package, so the second pass re-checks declarations; types from the two passes are
+  different objects (linking is by name, so that can work, but every identity comparison in the code
+  generator has to be audited). Kill test: the chain of declaration-only checks must be under a third of
+  1.85 s. Status: idea; CPU, not the chain, bounds the build today (32 core-s cold on 8 cores).
+- **Smaller code**: fc emits 79.5 MB of machine code for MinIO where the stock compiler at -l emits 46.9 MB
+  (binary 128 MB against 100 MB). Every emitted byte is written to an object, hashed, read and relocated.
+  Operations with immediates and memory operands, and not reloading a value just stored, are the cheap part.
+  Status: not started.

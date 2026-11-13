@@ -12,7 +12,7 @@ grep -v '^#' "$here/tools/scoreboard/corpus.txt" | while read name tool dir targ
   main=$(cd "$T/$dir" && go list "$target")
   "${FC_BIN:-$here/build/fc}" build -plan "$d/plan.json" -o "$d/objs" -link "$d/bin" "$main" > "$d/build.log" 2>&1
   if [ -x "$d/bin" ] && grep -q '^total:' "$d/build.log"; then
-    echo "$name: $(grep '^link:' "$d/build.log" | cut -d, -f1 | sed 's/link: //'); $(grep '^total:' "$d/build.log" | sed 's/total: //')"
+    echo "$name: $(grep '^link' "$d/build.log" | cut -d, -f1 | sed 's/link[^:]*: //'); $(grep '^total:' "$d/build.log" | sed 's/total: //')"
   else
     echo "$name: NOT BUILT: $(grep -c '^fc: ' "$d/build.log") packages; $(grep -m3 '^fc: \|^panic\|link:' "$d/build.log" | cut -c1-160 | tr '\n' '|')"
   fi

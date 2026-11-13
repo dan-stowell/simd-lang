@@ -6,14 +6,25 @@ import (
 	"go/constant"
 	"go/token"
 	"go/types"
+	"os"
 
 	"cmd/internal/objabi"
 )
 
 func (g *gen) block(list []ast.Stmt) {
+	n := len(g.declSlots)
 	for _, s := range list {
 		g.stmt(s)
 	}
+	// the variables declared in the block are out of scope: their slots are free for what follows
+	if os.Getenv("FC_NOSCOPE") == "" {
+		for _, i := range g.declSlots[n:] {
+			s := g.slots[i]
+			key := shapeKey(s.size, s.ptrs)
+			g.free[key] = append(g.free[key], i)
+		}
+	}
+	g.declSlots = g.declSlots[:n]
 }
 
 func (g *gen) stmt(s ast.Stmt) {
@@ -58,6 +69,20 @@ func (g *gen) stmt(s ast.Stmt) {
 	case *ast.IfStmt:
 		if s.Init != nil {
 			g.stmt(s.Init)
+		}
+		// A branch a constant condition rules out is not compiled (the runtime's nosplit functions
+		// count on that: their debug checks call functions that would not fit the stack bound).
+		if v, known := g.staticCond(s.Cond); known {
+			if v && (s.Else == nil || !hasLabel(s.Else)) {
+				g.block(s.Body.List)
+				break
+			}
+			if !v && !hasLabel(s.Body) {
+				if s.Else != nil {
+					g.stmt(s.Else)
+				}
+				break
+			}
 		}
 		els, done := g.newLabel(), g.newLabel()
 		m := g.mark()
@@ -567,6 +592,11 @@ func (g *gen) opLoc(l loc, y ast.Expr, op token.Token, t types.Type) loc {
 			return g.complexArith(g.keep(l, t), g.constLoc(constant.MakeInt64(1), t), op, t)
 		}
 		g.loadTo(AX, l, t)
+		if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsInteger != 0 {
+			g.a.aluImm(immOp[op], 8, AX, 1)
+			g.a.extend(AX, int(g.c.sizeof(t)), isSigned(t))
+			return loc{kind: lReg, reg: AX}
+		}
 		g.a.movImm(CX, 1)
 		return g.arithRegs(op, t)
 	}
@@ -976,4 +1006,65 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 		return
 	}
 	giveUp("range over %v", xt)
+}
+
+// staticCond: the value of a condition that constants decide.
+func (g *gen) staticCond(e ast.Expr) (val, known bool) {
+	e = ast.Unparen(e)
+	if tv := g.info.Types[e]; tv.Value != nil {
+		return constant.BoolVal(tv.Value), true
+	}
+	switch e := e.(type) {
+	case *ast.UnaryExpr:
+		if e.Op == token.NOT {
+			v, k := g.staticCond(e.X)
+			return !v, k
+		}
+	case *ast.BinaryExpr:
+		if e.Op == token.LAND || e.Op == token.LOR {
+			// decided by the left operand, or by the right one when the left has nothing to run
+			stop := e.Op == token.LOR
+			if v, k := g.staticCond(e.X); k && v == stop {
+				return stop, true
+			}
+			if v, k := g.staticCond(e.Y); k && v == stop && !hasCall(e.X) && !mayPanic(e.X) {
+				return stop, true
+			}
+		}
+	}
+	return false, false
+}
+
+// mayPanic: could evaluating e panic (conservatively: anything but names, selections of names and
+// constants combined by comparisons and logic)?
+func mayPanic(e ast.Expr) bool {
+	bad := false
+	ast.Inspect(e, func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.Ident, *ast.BasicLit, *ast.ParenExpr, nil:
+		case *ast.BinaryExpr:
+			if n.Op == token.QUO || n.Op == token.REM || n.Op == token.SHL || n.Op == token.SHR {
+				bad = true
+			}
+		case *ast.UnaryExpr:
+			if n.Op != token.NOT && n.Op != token.SUB && n.Op != token.XOR {
+				bad = true
+			}
+		default:
+			bad = true
+		}
+		return !bad
+	})
+	return bad
+}
+
+func hasLabel(n ast.Node) bool {
+	found := false
+	ast.Inspect(n, func(n ast.Node) bool {
+		if _, ok := n.(*ast.LabeledStmt); ok {
+			found = true
+		}
+		return !found
+	})
+	return found
 }

@@ -10,5 +10,5 @@ d="$dst/src/cmd/fc${FC_TAG:-}"
 mkdir -p "$d" build
 find "$d" -maxdepth 1 -name '*.go' -delete
 cp driver/fc/*.go "$d/"
-(cd "$dst/src" && GOROOT="$dst" GOTOOLCHAIN=local GOFLAGS= "$dst/bin/go" build -o "$OLDPWD/build/fc${FC_TAG:-}" "cmd/fc${FC_TAG:-}")
+(cd "$dst/src" && GOROOT="$dst" GOTOOLCHAIN=local GOFLAGS= "$dst/bin/go" build ${FC_RACE:+-race} -o "$OLDPWD/build/fc${FC_TAG:-}" "cmd/fc${FC_TAG:-}")
 echo "built build/fc${FC_TAG:-}"

@@ -398,6 +398,15 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if !c.needEmit(tbase) {
 		return s
 	}
+	if !c.mixed {
+		// One address space, one build: a descriptor that any object may carry (an unnamed type, an
+		// instance) is written by the first package that asks, and only referenced by the others.
+		if n, ok := tbase.(*types.Named); !ok || n.Obj().Pkg() != c.tpkg || n.TypeArgs().Len() > 0 || isLocalInstance(n) {
+			if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
+				return s
+			}
+		}
+	}
 	ms := c.methods(t)
 	extra := hasSym(t) || len(ms) != 0
 
