@@ -11,6 +11,8 @@ read _ tool dir target < <(grep -E "^$name +go " "$here/tools/scoreboard/corpus.
 out=${FC_COLD:-$T/fc-cold}/$name/p$P${WARM:+-warm}; rm -rf "$out"; mkdir -p "$out"
 export CGO_ENABLED=0 GOTOOLCHAIN=local GOFLAGS=-buildvcs=false
 export GOCACHE; GOCACHE=$(mktemp -d $T/gocache.XXXXXX)
+# the campaign's linker when it is built (FC_LINKER= for the stock linker)
+[ -n "${FC_LINKER+x}" ] || { [ -x "$here/build/fclink" ] && export FC_LINKER=$here/build/fclink; }
 cd "$T/$dir" || exit 2
 main=$(go list "$target")
 go clean -cache >/dev/null 2>&1

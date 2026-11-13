@@ -69,6 +69,7 @@ type Program struct {
 	byTpkg       sync.Map       // *types.Package -> *Pkg
 	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
+	byInfo       sync.Map       // *types.Info -> *Pkg
 	rtOnce       sync.Once
 	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
 	localMu      sync.Mutex
@@ -228,6 +229,7 @@ func (pr *Program) check(p *Pkg) error {
 			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/40),
 			Instances:  map[*ast.Ident]types.Instance{},
 		}
+		pr.byInfo.Store(p.info, p)
 		gover := ""
 		if p.Module != nil && p.Module.GoVersion != "" {
 			gover = "go" + p.Module.GoVersion

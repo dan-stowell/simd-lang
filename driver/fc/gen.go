@@ -770,6 +770,11 @@ func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, e
 	if env != nil {
 		g.substCache = map[types.Type]types.Type{}
 	}
+	if escOn {
+		if p, ok := c.pr.byInfo.Load(info); ok {
+			g.esc = escAdapter{c.pr.escape(p.(*Pkg))}
+		}
+	}
 	var in, out []types.Type
 	if r := sig.Recv(); r != nil {
 		in = append(in, g.subst(r.Type()))
@@ -800,7 +805,9 @@ func (g *gen) declare(v *types.Var) loc {
 		return l
 	}
 	i := g.newSlotBits(g.c.sizeof(g.vt(v)), g.c.ptrBits(g.vt(v), nil))
-	g.declSlots = append(g.declSlots, i)
+	if !g.addrVars[v] { // (a pointer to a variable may outlive its block)
+		g.declSlots = append(g.declSlots, i)
+	}
 	g.nDecl++
 	l := loc{kind: lFrame, off: -g.slots[i].off}
 	g.vars[v] = l
@@ -1134,6 +1141,14 @@ type escResult interface {
 	varOnHeap(v *types.Var) bool // must this address-taken or captured variable live on the heap?
 	siteOnHeap(n ast.Node) bool  // must this allocation (literal, new, make, closure, boxed value) use the heap?
 }
+
+// escOn: FC_ESC=1 uses the escape analysis (escape.go); without it everything escapes.
+var escOn = os.Getenv("FC_ESC") != ""
+
+type escAdapter struct{ e *escInfo }
+
+func (a escAdapter) varOnHeap(v *types.Var) bool { return a.e.heapVar[v] }
+func (a escAdapter) siteOnHeap(n ast.Node) bool  { return a.e.heapSite[n] }
 
 // siteHeap: must the allocation at n use the heap?
 func (g *gen) siteHeap(n ast.Node) bool {

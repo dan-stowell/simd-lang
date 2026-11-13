@@ -395,11 +395,17 @@ func buildMode(args []string) {
 		cfgFile := filepath.Join(*out, "importcfg.link")
 		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
 		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+		linker := "stock linker"
+		if fl := os.Getenv("FC_LINKER"); fl != "" {
+			// FC_LINKER=<path of fclink>: the campaign's linker (driver/fclink) instead of the stock one
+			cmd = exec.Command(fl, "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
+			linker = "fclink"
+		}
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 		if err := cmd.Run(); err != nil {
 			log.Fatalf("fc build -link: link: %v", err)
 		}
-		fmt.Printf("link: %d fc objects, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+		fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
 	}
 	total := cpuSeconds() - c0
 	var all int64

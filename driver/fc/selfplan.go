@@ -161,11 +161,29 @@ func newSelfPlan(srcdir string) (*selfPlan, error) {
 	}
 	var mf *modFile
 	if work != "" {
+		// a workspace: the build list is the highest version any of its modules requires
 		sp.root = work
 		b, _ := os.ReadFile(filepath.Join(work, "go.work"))
+		mf = &modFile{replace: map[string][2]string{}}
+		at := map[string]int{}
 		for _, u := range parseModFile(b).use {
-			if _, err := addMain(filepath.Join(work, u)); err != nil {
+			m, err := addMain(filepath.Join(work, u))
+			if err != nil {
 				return nil, err
+			}
+			for _, r := range m.require {
+				if i, ok := at[r[0]]; !ok {
+					at[r[0]] = len(mf.require)
+					mf.require = append(mf.require, r)
+				} else if semverLess(mf.require[i][1], r[1]) {
+					mf.require[i] = r
+				}
+			}
+			for k, v := range m.replace {
+				if v[1] == "" && !filepath.IsAbs(v[0]) {
+					v[0] = filepath.Join(work, u, v[0]) // (joined with mod below; absolute paths win)
+				}
+				mf.replace[k] = v
 			}
 		}
 	} else {
@@ -207,6 +225,9 @@ func newSelfPlan(srcdir string) (*selfPlan, error) {
 			if rp, ok := mf.replace[path]; ok {
 				if rp[1] == "" { // a directory
 					mi.Dir = filepath.Join(mod, rp[0])
+					if filepath.IsAbs(rp[0]) {
+						mi.Dir = rp[0]
+					}
 					mi.modFile = filepath.Join(mi.Dir, "go.mod")
 				} else {
 					mi.Dir = filepath.Join(sp.modcache, escapePath(rp[0])+"@"+rp[1])
@@ -438,4 +459,49 @@ func (pr *Program) selfMain(dir, pattern string) (*Pkg, error) {
 		}
 	}
 	return mainPkg, nil
+}
+
+// semverLess: a < b for module versions (vMAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]).
+func semverLess(a, b string) bool {
+	parse := func(v string) (nums [3]int, pre string) {
+		v = strings.TrimPrefix(v, "v")
+		if i := strings.IndexByte(v, '+'); i >= 0 {
+			v = v[:i]
+		}
+		if i := strings.IndexByte(v, '-'); i >= 0 {
+			v, pre = v[:i], v[i+1:]
+		}
+		for i, f := range strings.SplitN(v, ".", 3) {
+			nums[i], _ = strconv.Atoi(f)
+		}
+		return
+	}
+	an, ap := parse(a)
+	bn, bp := parse(b)
+	for i := range an {
+		if an[i] != bn[i] {
+			return an[i] < bn[i]
+		}
+	}
+	if ap == "" || bp == "" {
+		return ap != "" && bp == "" // a prerelease precedes its release
+	}
+	af, bf := strings.Split(ap, "."), strings.Split(bp, ".")
+	for i := 0; i < len(af) && i < len(bf); i++ {
+		if af[i] == bf[i] {
+			continue
+		}
+		x, ex := strconv.Atoi(af[i])
+		y, ey := strconv.Atoi(bf[i])
+		switch {
+		case ex == nil && ey == nil:
+			return x < y
+		case ex == nil:
+			return true // numeric identifiers precede alphanumeric ones
+		case ey == nil:
+			return false
+		}
+		return af[i] < bf[i]
+	}
+	return len(af) < len(bf)
 }
