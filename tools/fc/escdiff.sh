@@ -167,8 +167,15 @@ for pkg, slines in stock.items():
     for pos, (name, _) in S.vars.items():
         if pos in F.vars:
             continue
-        if name[:1] in '#.~' or name == '':
-            c['EXCEPTION variable the stock compiler made up'] += 1
+        if name[:1] == '.':
+            # a temporary: of new(expr), which is a site here
+            if F.heap.get(pos):
+                continue
+            unsound('site in frame' if F.stack.get(pos) else 'site unknown to fc', pos, 'moved to heap: ' + name)
+            continue
+        if name[:1] == '#':
+            # the state of a range over a function (#state, #next, #rv): fc's is its own
+            c['EXCEPTION range-over-func variable of the stock compiler'] += 1
             continue
         unsound('variable in frame', pos, 'moved to heap: ' + name)
     for pos, (name, tags) in F.vars.items():

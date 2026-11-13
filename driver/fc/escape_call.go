@@ -211,8 +211,14 @@ func (pk *escPkg) ptrsAfter(t types.Type, d int) bool {
 			}
 		}
 		return false
+	case *types.Map:
+		// what is in a map is in the heap already; a range over one flows its values (the stock
+		// compiler's model, kept so that the two agree)
+		return pk.ptrsAfter(u.Elem(), d-1)
+	case *types.Chan:
+		return false // what was sent is in the heap already
 	}
-	return true // an interface, a map, a channel, a function: anything
+	return true // an interface, a function, an unsafe.Pointer: anything
 }
 
 // arg flows an argument to k, and to extra if there is one (the closure object of a go or defer statement,
