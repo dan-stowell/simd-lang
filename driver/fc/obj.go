@@ -47,6 +47,8 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
+	hdrMu      sync.Mutex
+	fnSem      chan struct{} // slots for compiling functions in parallel (shared by all packages of a build)
 	embedOnce  sync.Once
 	layout     layoutCache
 	mixed      bool      // one package among stock-compiled ones (tools/fc/test.sh)

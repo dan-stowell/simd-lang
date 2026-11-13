@@ -268,6 +268,7 @@ func buildMode(args []string) {
 				path = "main"
 			}
 			c := newCompiler(pr, p, path, "")
+			c.fnSem = sem
 			var asmDir string
 			if len(p.SFiles) > 0 {
 				// assembly: the assembler says which symbols it defines and uses, before the compile

@@ -59,10 +59,10 @@ func (c *compiler) rtFunc(name string) *types.Func {
 
 func (c *compiler) staticSym(kind string) *obj.LSym {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.tmpN++
-	n := c.tmpN
-	c.mu.Unlock()
-	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(n))
+	// (obj's table of static symbols has no lock of its own)
+	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(c.tmpN))
 }
 
 func itoa(n int) string {

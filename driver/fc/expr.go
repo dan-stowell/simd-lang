@@ -996,20 +996,17 @@ func (g *gen) addressOf(x ast.Expr) loc {
 // ---- static data helpers
 
 func (c *compiler) stringHeader(s string) *obj.LSym {
-	data := c.stringSym(s)
-	c.mu.Lock()
-	h := c.strHdrs[s]
-	c.mu.Unlock()
-	if h != nil {
+	c.hdrMu.Lock()
+	defer c.hdrMu.Unlock()
+	if h := c.strHdrs[s]; h != nil {
 		return h
 	}
-	h = c.staticSym("strhdr")
+	data := c.stringSym(s)
+	h := c.staticSym("strhdr")
 	h.WriteAddr(c.ctxt, 0, 8, data, 0)
 	h.WriteInt(c.ctxt, 8, 8, int64(len(s)))
 	c.defData(h, objabi.SRODATA, 16)
-	c.mu.Lock()
 	c.strHdrs[s] = h
-	c.mu.Unlock()
 	return h
 }
 

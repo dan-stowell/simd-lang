@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"sync"
 
 	"cmd/internal/obj"
 	"cmd/internal/objabi"
@@ -16,11 +17,14 @@ import (
 // compilePackage compiles everything; it returns the reasons it could not, if any.
 func (c *compiler) compilePackage() (errs []string) {
 	c.registerFiles()
+	var errMu sync.Mutex
 	try := func(what string, f func()) {
 		defer func() {
 			if r := recover(); r != nil {
 				if b, ok := r.(bail); ok {
+					errMu.Lock()
 					errs = append(errs, what+": "+string(b))
+					errMu.Unlock()
 					return
 				}
 				fmt.Fprintf(os.Stderr, "fc: internal error in %s\n", what)
@@ -86,7 +90,8 @@ func (c *compiler) compilePackage() (errs []string) {
 			}
 		}
 	}
-	// functions
+	// functions: each is independent of the others; they are compiled on whatever cores are free
+	par := &parallel{sem: c.fnSem}
 	var inits []*obj.LSym
 	ninit := 0
 	for _, fd := range c.funcDecls() {
@@ -109,22 +114,25 @@ func (c *compiler) compilePackage() (errs []string) {
 		if sig.TypeParams().Len() > 0 || sig.RecvTypeParams().Len() > 0 {
 			continue // compiled where it is instantiated
 		}
-		try("func "+fn.FullName(), func() {
-			sym := initSym
-			if sym == nil {
-				sym = c.funcSym(fn)
-			}
-			g := c.newGen(sym.Name, sig, c.info, nil)
-			g.out.sym = sym
-			g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
-			for _, d := range []string{"//go:systemstack", "//go:nowritebarrier", "//go:nowritebarrierrec", "//go:yeswritebarrierrec", "//go:uintptrescapes", "//go:uintptrkeepalive", "//go:norace", "//go:nocheckptr", "//go:registerparams", "//go:notinheap", "//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
-				if hasDirective(fd.Doc, d) && d != "//go:norace" && d != "//go:nocheckptr" && d != "//go:uintptrkeepalive" && d != "//go:uintptrescapes" {
-					giveUp("directive %s", d)
+		par.run(func() {
+			try("func "+fn.FullName(), func() {
+				sym := initSym
+				if sym == nil {
+					sym = c.funcSym(fn)
 				}
-			}
-			g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
+				g := c.newGen(sym.Name, sig, c.info, nil)
+				g.out.sym = sym
+				g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
+				for _, d := range []string{"//go:systemstack", "//go:nowritebarrier", "//go:nowritebarrierrec", "//go:yeswritebarrierrec", "//go:uintptrescapes", "//go:uintptrkeepalive", "//go:norace", "//go:nocheckptr", "//go:registerparams", "//go:notinheap", "//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
+					if hasDirective(fd.Doc, d) && d != "//go:norace" && d != "//go:nocheckptr" && d != "//go:uintptrkeepalive" && d != "//go:uintptrescapes" {
+						giveUp("directive %s", d)
+					}
+				}
+				g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
+			})
 		})
 	}
+	par.wait()
 	c.abiWrappers(try)
 	// the init function: the dynamic initializers, in order
 	pp := objabi.PathToPrefix(c.path)
@@ -599,3 +607,28 @@ func (c *compiler) writeConst(s *obj.LSym, off int64, v constant.Value, t types.
 		giveUp("static constant of type %v", t)
 	}
 }
+
+// parallel runs jobs on free slots of a shared semaphore, or in the caller when there is none (the caller
+// already holds a slot, so nothing waits on a slot while holding one).
+type parallel struct {
+	sem chan struct{}
+	wg  sync.WaitGroup
+}
+
+func (p *parallel) run(f func()) {
+	if p.sem != nil {
+		select {
+		case p.sem <- struct{}{}:
+			p.wg.Add(1)
+			go func() {
+				defer func() { <-p.sem; p.wg.Done() }()
+				f()
+			}()
+			return
+		default:
+		}
+	}
+	f()
+}
+
+func (p *parallel) wait() { p.wg.Wait() }
