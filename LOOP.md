@@ -81,12 +81,33 @@ well as you:
 - running and triaging the oracle, soaks and corpus builds, and reporting failures
 - mechanical edits and re-reviews of a diff after a fix
 
-Keep Fable, yourself and Fable subagents, for design and the hard parts of the compiler. A
-subagent that only searches or summarizes runs on `model: "sonnet"`.
+Pick the model per job:
+- **You (Fable)**: the campaign's direction, design, and diagnosis that has stalled.
+- **Builders: `model: "opus"` by default.** A builder that implements a part you've specified,
+  with an oracle to check it, doesn't need Fable. Give a builder Fable only when the part is
+  deep (a garbage-collector bug, a design nobody has written down) or when an Opus builder
+  has already failed at it; say why in its one JOURNAL line.
+- **Codex**: the work listed above.
+- **Sonnet**: subagents that only search or summarize.
 
-Within that, don't ration. If the model limit is reached the session goes idle; `overnight.sh`'s watchdog
-types a "continue" once it has been quiet for 30 minutes, so work resumes when the limit
-resets. Commit often and nothing is lost.
+Within that, don't ration. If the model limit is reached the session goes idle; `overnight.sh`'s
+watchdog types a "continue" a minute after the limit's printed reset time. Commit often and
+nothing is lost.
+
+## Fresh contexts
+
+Most of a long session's usage is re-reading its own context: every turn re-reads all of it.
+On 2026-11-12/13 the main context had a median of 495k tokens and peaked at 966k, so re-reading
+was about 85% of the main thread's cost. The repo is your memory, so a fresh context loses nothing
+that matters. The Stop hook tells you when the context passes 250k tokens. Then, at the next
+clean point:
+
+1. Wait for your subagents to finish (or stop them, and note in the Now line what they were doing).
+2. Commit and push; make PLAN.md's Now line exact, the commands to run included.
+3. `touch .claude/fresh` and end your turn.
+
+The watchdog then types `/clear` and the start prompt, and you continue from the Now line with
+a context of about 30k tokens. Also take a fresh context after each milestone.
 
 ## VM safety
 
