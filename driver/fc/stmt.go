@@ -37,6 +37,7 @@ func (g *gen) stmt(s ast.Stmt) {
 		g.dirty = g.dirty[:0] // what the statement released is dead now
 	}()
 	g.pos(s.Pos())
+	g.curPos = s.Pos()
 	switch s := s.(type) {
 	case *ast.BlockStmt:
 		g.block(s.List)

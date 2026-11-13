@@ -118,13 +118,15 @@ type gen struct {
 	nosplit   bool
 	fallthru  *label
 	entry     func()
-	bpFix     []int    // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	lastPlace int      // the address of the label placed last (another label may already name the current address)
-	declSlots []int    // the slots of the variables declared in the blocks being compiled
-	tidy      bool     // tidy frames (see slotBorn)
-	liveSlot  []bool   // by slot: allocated now
-	dirty     []int    // slots released in the statement being compiled: still live until it ends
-	liveSets  []string // the distinct sets of live slots at calls (bit sets by slot index)
+	bpFix     []int     // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace int       // the address of the label placed last (another label may already name the current address)
+	declSlots []int     // the slots of the variables declared in the blocks being compiled
+	tidy      bool      // tidy frames (see slotBorn)
+	noWBDecl  bool      // the declaration says //go:nowritebarrier[rec]
+	curPos    token.Pos // the position of the statement being compiled
+	liveSlot  []bool    // by slot: allocated now
+	dirty     []int     // slots released in the statement being compiled: still live until it ends
+	liveSets  []string  // the distinct sets of live slots at calls (bit sets by slot index)
 	liveIdx   map[string]int
 	nDecl     int
 	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
@@ -604,6 +606,9 @@ func (g *gen) storePtr(m mem, reg int) {
 	if g.c.noWB {
 		g.a.store(m, reg, 8)
 		return
+	}
+	if g.noWBDecl && wbWarn {
+		fmt.Fprintf(os.Stderr, "wb: %s (marked nowritebarrier) at %v\n", g.name, g.c.pr.fset.Position(g.curPos))
 	}
 	g.unsafeBegin()
 	g.a.aluMI(aCMP, 4, msym(g.c.rtVar("writeBarrier"), 0), 0)
@@ -1363,3 +1368,7 @@ func (c *compiler) rtRealWidth(name string) int64 {
 	pr.rtWidth.Store(name, w)
 	return w
 }
+
+// wbWarn (FC_WBWARN=1): report write barriers emitted in functions the source marks //go:nowritebarrier or
+// //go:nowritebarrierrec (the stock compiler proves there are none).
+var wbWarn = os.Getenv("FC_WBWARN") != ""
