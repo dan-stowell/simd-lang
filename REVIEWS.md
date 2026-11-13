@@ -267,3 +267,19 @@ One line per inbox item; raw files in `reviews/done/`.
 | `20261112T1458-codex-skeptic.md` (1-4) | Front ends and the link still serialize the build (44 front ends, 5.8 s; cores stop helping at 12); the floors are aspirations; fusion alone leaves ~50 core-s; the export-IR round trip is still there (15.6 core-s). | **Accept**: all four are this session's own measurements, quoted back. | In MORNING.md. |
 | (5) | Night-sized choice: a consumed F4 slice, dense symbol ids and incremental resolution in the real MinIO build, aimed at the loader's ~390 ms. Says I keep choosing small steps and soaks for fear of starting a rung. | **Accept the choice, tried the smallest slice, it lost.** Iteration 25 measured the link's core in a spike (0.26 s); iteration 26 made pc tables plain symbols in the real build: link +76 ms, binary +2.3%, reverted. The criticism about small steps is fair for iterations 19-24. | NEXT.md item 1 has the next slices. |
 
+
+## 2026-11-13: after M2
+
+- `20261112T2322-codex-skeptic.md` (Codex skeptic; it read the second clone before the M2 commits landed there):
+  1. fc type-checks a package only after every dependency is fully checked (load.go): **accept, measured, not yet
+     acted on**: the front end is 1.8-1.9 s of MinIO's 5.4-6.3 s wall on 8 cores, 8 core-s, so its chain is on the
+     critical path; checking bodies after declarations (go/types cannot split them; a second pass with
+     IgnoreFuncBodies for importers can) is the candidate. Not before the binary passes its tests.
+  2. the link "floor" in TRACE is a copy floor: **accept** for M5 (resolution is memory-latency bound; the spike's numbers stand).
+  3. stock compiler under fc in the test harness is scaffolding: **agree**; `fc build -link` (whole program, one process) exists since M2.
+  4. export IR as the unnecessary intermediate: **done** in fc (none is written or read).
+  5. PLAN's log stale at M1: **fixed** (M2 line: 205 packages, kill test 0.45).
+- `fc-triage-1.md` (Codex triage of 49 failing std packages): **accepted and acted on**: six wrong-code reductions
+  fixed (narrow call results, interface comparison operand, assembly argument stack maps, reflection reachability,
+  return evaluation order), 16 skip lines taken; the ENV class (tests that fail with the stock compiler too at -l)
+  and the re-run are with Codex (`prompts/fc-grind.md`).
