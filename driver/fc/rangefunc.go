@@ -95,7 +95,7 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 			})
 		}
 	}
-	clo := g.closure(ysig, s.Body, s.Body, extra, func(cg *gen) {
+	clo := g.closure("-range", ysig, s.Body, s.Body, extra, func(cg *gen) {
 		cg.rf = rf
 		cg.root = root
 		// the iterator may call only while the loop is ready for a value

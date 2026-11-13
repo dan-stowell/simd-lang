@@ -70,9 +70,25 @@ func (g *gen) newClosure(code *obj.LSym, n int) loc {
 	return p
 }
 
+// childName names a function nested in this one as the stock compiler's ir.closureName does, so that
+// names in tracebacks and profiles agree (runtime/pprof's tests look for F.func4): F.func1, F.func1.1,
+// F-range1, F.gowrap1 / F.deferwrap1, each kind counted separately. (Method values and expressions are
+// fc's own: F.mv1, F.mexpr1.)
 func (g *gen) childName(kind string) string {
-	g.nclosure++
-	return g.name + "." + kind + itoa(g.nclosure)
+	i, suffix := 3, "."+kind
+	switch kind {
+	case "func":
+		i = 0
+		if g.isLit {
+			suffix = "."
+		}
+	case "-range":
+		i, suffix = 1, kind
+	case "gowrap", "deferwrap":
+		i = 2
+	}
+	g.ngen[i]++
+	return g.name + suffix + itoa(g.ngen[i])
 }
 
 // child starts the generator of a function nested in this one.
@@ -86,12 +102,12 @@ func (g *gen) child(name string, sig *types.Signature) *gen {
 
 func (g *gen) funcLit(e *ast.FuncLit) loc {
 	sig := g.info.Types[e].Type.(*types.Signature)
-	return g.closure(sig, e, e.Body, nil, func(cg *gen) { cg.block(e.Body.List) })
+	return g.closure("func", sig, e, e.Body, nil, func(cg *gen) { cg.block(e.Body.List) })
 }
 
 // closure compiles a nested function whose code is lit (searched for the variables it captures; extra
 // lists more to capture) and returns its value.
-func (g *gen) closure(sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt, extra []*types.Var, body func(cg *gen)) loc {
+func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt, extra []*types.Var, body func(cg *gen)) loc {
 	free := g.freeVars(lit)
 	for _, v := range extra {
 		dup := false
@@ -112,7 +128,8 @@ func (g *gen) closure(sig *types.Signature, lit ast.Node, litBody *ast.BlockStmt
 		}
 	}
 	e := litBody
-	cg := g.child(g.childName("func"), sig)
+	cg := g.child(g.childName(kind), sig)
+	cg.isLit = true
 	if len(free) > 0 {
 		cg.entry = func() {
 			cg.saveCtx()
@@ -332,6 +349,12 @@ func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 	}
 	if c.kind == 1 && len(args) == 0 && len(ai.out) == 0 {
 		return c.clo // already a func()
+	}
+	if c.kind == 0 && !c.abi0 && !c.asm && len(args) == 0 && len(ai.out) == 0 {
+		// go f() / defer f() of a function without parameters or results: no wrapper, as the stock
+		// compiler (typecheck.normalizeGoDeferCall), which keeps the wrappers' numbering the same
+		g.a.lea(AX, msym(g.c.staticClosure(c.sym), 0))
+		return loc{kind: lReg, reg: AX}
 	}
 	return g.bind(kind, ai, args, c, nil)
 }
