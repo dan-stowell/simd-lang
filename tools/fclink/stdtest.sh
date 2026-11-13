@@ -22,7 +22,7 @@ for p in "${pkgs[@]}"; do
   fi
   for w in stock new; do
     (cd "$d" && timeout "${TIMEOUT:-600}" taskset -c "${CPUS:-0-3}" "$out/$n.$w" -test.short -test.v > "$out/$n.$w.out" 2>&1; echo "exit $?" >> "$out/$n.$w.out")
-    grep -E '^(--- FAIL|FAIL|panic:|fatal error:|exit )' "$out/$n.$w.out" | sort > "$out/$n.$w.sum"
+    grep -E '^(--- FAIL|FAIL|panic:|fatal error:|exit )' "$out/$n.$w.out" | sed -E 's/ \([0-9.]+s\)//' | sort > "$out/$n.$w.sum"
   done
   if cmp -s "$out/$n.stock.sum" "$out/$n.new.sum"; then
     echo "PASS $p: $(tail -1 "$out/$n.new.out"), $(grep -c '^--- PASS' "$out/$n.new.out") tests pass, $(grep -c '^--- FAIL' "$out/$n.new.out") fail in both; stock $(stat -c %s "$out/$n.stock") bytes, fclink $(stat -c %s "$out/$n.new") bytes"
