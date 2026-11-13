@@ -11,24 +11,31 @@ import (
 // escCallee is what a call calls.
 type escCallee struct {
 	fn        *types.Func      // a declared function or method (its origin, if generic); or
-	lit       *escFn           // a function literal; or neither: unknown
+	lit       *escFn           // a function literal that captures variables (it is in this batch); or
+	sum       *escSummary      // a function literal that captures nothing; or none of them: unknown
 	sig       *types.Signature // as the call sees it
 	recv      ast.Expr         // x of x.M(...)
 	recvShift int
 	fun       ast.Expr // the callee expression, when it has a value that must be evaluated
 }
 
-// staticLit: the function literal that a variable always holds, if the walk has seen it already.
-func (e *escWalk) staticLit(id *ast.Ident) *escFn {
+// staticCallee: what a variable that is assigned once, where it is declared, always holds: a function
+// literal the walk has seen already, or a declared function.
+func (e *escWalk) staticCallee(id *ast.Ident, c *escCallee) bool {
 	v := e.local(id)
 	if v == nil || e.pk.reassigned[v] {
-		return nil
+		return false
 	}
-	lit := e.pk.staticLit[v]
-	if lit == nil {
-		return nil
+	if lit := e.pk.staticLit[v]; lit != nil {
+		c.lit = e.litFn[lit]
+		c.sum = e.pk.litSum[lit]
+		return c.lit != nil || c.sum != nil
 	}
-	return e.litFn[lit]
+	if fn := e.pk.staticFunc[v]; fn != nil {
+		c.fn = fn.Origin()
+		return true
+	}
+	return false
 }
 
 func (e *escWalk) callee(fun ast.Expr) escCallee {
@@ -51,8 +58,7 @@ func (e *escWalk) callee(fun ast.Expr) escCallee {
 			c.fn = o.Origin()
 			return c
 		case *types.Var:
-			if lit := e.staticLit(f); lit != nil {
-				c.lit = lit
+			if e.staticCallee(f, &c) {
 				return c
 			}
 		}
@@ -106,6 +112,9 @@ func (e *escWalk) paramHole(c *escCallee, ks []escHole, i int) escHole {
 		}
 		return e.discardHole()
 	}
+	if c.sum != nil {
+		return e.tagHole(c.sum, ks, i)
+	}
 	if c.fn == nil {
 		return e.heapHole()
 	}
@@ -127,8 +136,12 @@ func (e *escWalk) paramHole(c *escCallee, ks []escHole, i int) escHole {
 		}
 		return e.discardHole()
 	}
-	s := e.pk.summaryOf(c.fn)
-	if s == nil || j >= len(s.Params) {
+	return e.tagHole(e.pk.summaryOf(c.fn), ks, j)
+}
+
+// tagHole: where a summary says its parameter j flows.
+func (e *escWalk) tagHole(s *escSummary, ks []escHole, j int) escHole {
+	if s == nil || j < 0 || j >= len(s.Params) {
 		return e.heapHole()
 	}
 	lk := s.Params[j]
@@ -187,8 +200,9 @@ func (e *escWalk) call(ks []escHole, n *ast.CallExpr, extra *escHole) {
 		e.expr(k, c.fun)
 		if lit, ok := ast.Unparen(c.fun).(*ast.FuncLit); ok {
 			c.lit = e.litFn[lit]
+			c.sum = e.pk.litSum[lit]
 		}
-	} else if extra != nil && c.lit != nil {
+	} else if extra != nil && (c.lit != nil || c.sum != nil) {
 		e.expr(*extra, n.Fun)
 	}
 	if c.fn != nil && e.intrinsicCall(c.fn, n) {

@@ -19,13 +19,101 @@ func constantInt64(tv types.TypeAndValue) (int64, bool) {
 	return constant.Int64Val(v)
 }
 
-// block walks statements and restores the loop depth (a label inside may have raised it).
+// block walks statements and restores the loop depth (a label inside may have raised it). Statements that
+// cannot be reached are skipped, the ones the stock compiler's front end drops: what follows a return, a
+// goto or a panic up to the next label, and the branch of an if that a constant condition excludes.
 func (e *escWalk) block(list []ast.Stmt) {
 	old := e.loopDepth
-	for _, s := range list {
+	lastLabel := -1
+	for i, s := range list {
+		if _, ok := s.(*ast.LabeledStmt); ok {
+			lastLabel = i
+		}
+	}
+	dead := false
+	for i, s := range list {
+		if dead && i > lastLabel {
+			continue
+		}
 		e.stmt(s)
+		dead = e.terminates(s)
 	}
 	e.loopDepth = old
+}
+
+// staticBool: is the condition always true (+1), always false (-1), or neither (0)?
+func (e *escWalk) staticBool(x ast.Expr) int {
+	if x == nil {
+		return 0
+	}
+	if tv, ok := e.info.Types[x]; ok && tv.Value != nil && tv.Value.Kind() == constant.Bool {
+		if constant.BoolVal(tv.Value) {
+			return 1
+		}
+		return -1
+	}
+	if b, ok := ast.Unparen(x).(*ast.BinaryExpr); ok {
+		switch b.Op {
+		case token.LAND:
+			l := e.staticBool(b.X)
+			if l < 0 {
+				return -1
+			}
+			if r := e.staticBool(b.Y); l > 0 || r < 0 {
+				return r
+			}
+		case token.LOR:
+			l := e.staticBool(b.X)
+			if l > 0 {
+				return 1
+			}
+			if r := e.staticBool(b.Y); l < 0 || r > 0 {
+				return r
+			}
+		}
+	}
+	return 0
+}
+
+// terminates: control does not reach the statement after s.
+func (e *escWalk) terminates(s ast.Stmt) bool {
+	switch s := s.(type) {
+	case *ast.BranchStmt:
+		return s.Tok == token.GOTO
+	case *ast.ReturnStmt:
+		return true
+	case *ast.ExprStmt:
+		if call, ok := ast.Unparen(s.X).(*ast.CallExpr); ok {
+			return e.builtinName(ast.Unparen(call.Fun)) == "panic"
+		}
+	case *ast.IfStmt:
+		c := e.staticBool(s.Cond)
+		return (c < 0 || e.terminates(s.Body)) && (c > 0 || s.Else != nil && e.terminates(s.Else))
+	case *ast.BlockStmt:
+		for i := len(s.List) - 1; i >= 0; i-- {
+			if _, ok := s.List[i].(*ast.EmptyStmt); !ok {
+				return e.terminates(s.List[i])
+			}
+		}
+	}
+	return false
+}
+
+// cond evaluates a condition, without the operand that a constant operand before it excludes.
+func (e *escWalk) cond(x ast.Expr) {
+	if x == nil {
+		return
+	}
+	if b, ok := ast.Unparen(x).(*ast.BinaryExpr); ok && (b.Op == token.LAND || b.Op == token.LOR) {
+		l := e.staticBool(b.X)
+		e.cond(b.X)
+		if b.Op == token.LAND && l < 0 || b.Op == token.LOR && l > 0 {
+			return
+		}
+		e.cond(b.Y)
+		return
+	}
+	e.discard(x)
 }
 
 func (e *escWalk) stmt(s ast.Stmt) {
@@ -70,9 +158,12 @@ func (e *escWalk) stmt(s ast.Stmt) {
 	case *ast.IfStmt:
 		old := e.loopDepth
 		e.stmt(s.Init)
-		e.discard(s.Cond)
-		e.block(s.Body.List)
-		if s.Else != nil {
+		e.cond(s.Cond)
+		c := e.staticBool(s.Cond)
+		if c >= 0 {
+			e.block(s.Body.List)
+		}
+		if s.Else != nil && c <= 0 {
 			e.block([]ast.Stmt{s.Else})
 		}
 		e.loopDepth = old
@@ -86,9 +177,11 @@ func (e *escWalk) stmt(s ast.Stmt) {
 			e.declBump = 0
 		}
 		e.loopDepth++
-		e.discard(s.Cond)
-		e.stmt(s.Post)
-		e.block(s.Body.List)
+		e.cond(s.Cond)
+		if s.Cond == nil || e.staticBool(s.Cond) >= 0 {
+			e.stmt(s.Post)
+			e.block(s.Body.List)
+		}
 		e.loopDepth = old
 	case *ast.RangeStmt:
 		e.rangeStmt(s)
@@ -459,6 +552,7 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 		e.discard(c.fun)
 		if lit, ok := ast.Unparen(c.fun).(*ast.FuncLit); ok {
 			c.lit = e.litFn[lit]
+			c.sum = e.pk.litSum[lit]
 		}
 	}
 	if c.recv != nil {

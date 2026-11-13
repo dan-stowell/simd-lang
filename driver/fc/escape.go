@@ -433,7 +433,11 @@ type escPkg struct {
 	// variables assigned after their declaration, or whose address is taken: they do not name one function
 	reassigned map[*types.Var]bool
 	staticLit  map[*types.Var]*ast.FuncLit
+	staticFunc map[*types.Var]*types.Func
 	sumCache   map[*types.Func]*escSummary
+	// a function literal that captures nothing is a function of its own, analyzed before the function
+	// it is in (as in the stock compiler): it has a summary
+	litSum map[*ast.FuncLit]*escSummary
 }
 
 type escUnit struct {
@@ -456,7 +460,7 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 	}
 	pk := &escPkg{pr: pr, p: p, info: p.info, out: out, decls: map[*types.Func]*ast.FuncDecl{}, fileOf: map[*ast.FuncDecl]*ast.File{},
 		ptrCache: map[types.Type]bool{}, reassigned: map[*types.Var]bool{}, staticLit: map[*types.Var]*ast.FuncLit{},
-		sumCache: map[*types.Func]*escSummary{}}
+		sumCache: map[*types.Func]*escSummary{}, staticFunc: map[*types.Var]*types.Func{}, litSum: map[*ast.FuncLit]*escSummary{}}
 	var units []*escUnit
 	byObj := map[*types.Func]*escUnit{}
 	initUnit := &escUnit{}
@@ -580,9 +584,7 @@ func (pk *escPkg) scanAssigned(root ast.Node) {
 				id, ok := l.(*ast.Ident)
 				if n.Tok == token.DEFINE && ok && info.Defs[id] != nil {
 					if v, ok := info.Defs[id].(*types.Var); ok && len(n.Lhs) == len(n.Rhs) {
-						if lit, ok := ast.Unparen(n.Rhs[i]).(*ast.FuncLit); ok {
-							pk.staticLit[v] = lit
-						}
+						pk.staticValue(v, n.Rhs[i])
 					}
 					continue
 				}
@@ -592,9 +594,7 @@ func (pk *escPkg) scanAssigned(root ast.Node) {
 			if len(n.Names) == len(n.Values) {
 				for i, id := range n.Names {
 					if v, ok := info.Defs[id].(*types.Var); ok {
-						if lit, ok := ast.Unparen(n.Values[i]).(*ast.FuncLit); ok {
-							pk.staticLit[v] = lit
-						}
+						pk.staticValue(v, n.Values[i])
 					}
 				}
 			}
@@ -616,6 +616,25 @@ func (pk *escPkg) scanAssigned(root ast.Node) {
 		}
 		return true
 	})
+}
+
+// staticValue: v is declared with the value x. If x is a function literal or names a function, calls of v
+// (while nothing else is assigned to it) are calls of that.
+func (pk *escPkg) staticValue(v *types.Var, x ast.Expr) {
+	switch x := ast.Unparen(x).(type) {
+	case *ast.FuncLit:
+		pk.staticLit[v] = x
+	case *ast.Ident:
+		if fn, ok := pk.info.Uses[x].(*types.Func); ok {
+			pk.staticFunc[v] = fn
+		}
+	case *ast.SelectorExpr:
+		if pk.info.Selections[x] == nil {
+			if fn, ok := pk.info.Uses[x.Sel].(*types.Func); ok {
+				pk.staticFunc[v] = fn
+			}
+		}
+	}
 }
 
 // bodyless: an assembly function, or one another package provides through a linkname. Its pointer
@@ -729,6 +748,40 @@ func (pk *escPkg) batch(units []*escUnit) {
 	}
 	b.walkAll()
 	b.finish(units)
+}
+
+// loneLit analyzes a function literal that captures nothing, in a batch of its own.
+func (pk *escPkg) loneLit(n *ast.FuncLit, parent *escFn) {
+	sig, _ := pk.info.Types[n].Type.(*types.Signature)
+	if sig == nil || pk.litSum[n] != nil {
+		return
+	}
+	b := &escBatch{pr: pk.pr, p: pk.p, info: pk.info, out: pk.out, pk: pk, varLoc: map[*types.Var]*escLoc{},
+		fns: map[*types.Func]*escFn{}, litFn: map[*ast.FuncLit]*escFn{}}
+	b.heapLoc.escapes = true
+	b.heapLoc.leaks.Heap = -1
+	fn := pk.newFn(nil)
+	fn.lit = n
+	fn.sig = sig
+	fn.generic = parent.generic
+	fn.perIter = parent.perIter
+	fn.looping = escLoopingLabels(pk.info, n.Body)
+	b.initFn(fn)
+	b.lits = append(b.lits, fn)
+	e := &escWalk{escBatch: b, fn: fn, loopDepth: 1}
+	e.block(n.Body.List)
+	b.walkAll()
+	b.finish(nil)
+	s := &escSummary{}
+	for _, l := range fn.params {
+		lk := escLeaks{Heap: -1}
+		if l.v.Name() != "" && l.v.Name() != "_" && pk.hasPointers(l.v.Type()) {
+			lk = l.leaks
+			lk.optimize()
+		}
+		s.Params = append(s.Params, lk)
+	}
+	pk.litSum[n] = s
 }
 
 // initFn makes the locations of a function's parameters and results.

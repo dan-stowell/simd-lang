@@ -501,7 +501,13 @@ func (e *escWalk) freeVars(lo, hi token.Pos, nodes ...ast.Node) []*types.Var {
 // funcLit: the closure object holds the address of each variable the literal uses. Then the body.
 func (e *escWalk) funcLit(k escHole, n *ast.FuncLit) {
 	k = e.spill(k, n, escSiteClosure, n.Pos())
-	for _, v := range e.freeVars(n.Pos(), n.End(), n) {
+	free := e.freeVars(n.Pos(), n.End(), n)
+	if len(free) == 0 {
+		// it captures nothing: a function of its own, with a summary
+		e.pk.loneLit(n, e.fn)
+		return
+	}
+	for _, v := range free {
 		e.flow(k.addr(), e.varLoc[v])
 		if e.out.varWhy[v] == "" {
 			e.out.varWhy[v] = "captured"
