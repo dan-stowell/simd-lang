@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -75,6 +76,19 @@ func (pr *Program) readPlan(path string) error {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
+	// either a stream of objects (go list -json) or one array (the driver's own planner: sb -dumpplan)
+	br := bufio.NewReader(f)
+	if b, _ := br.Peek(1); len(b) == 1 && b[0] == '[' {
+		var ps []*Pkg
+		if err := json.NewDecoder(br).Decode(&ps); err != nil {
+			return err
+		}
+		for _, p := range ps {
+			pr.byPath[p.ImportPath] = p
+		}
+		return nil
+	}
+	dec = json.NewDecoder(br)
 	for {
 		p := new(Pkg)
 		if err := dec.Decode(p); err == io.EOF {

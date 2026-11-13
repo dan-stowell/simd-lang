@@ -19,7 +19,12 @@ cat > "$out/run.sh" <<IN
 #!/usr/bin/env bash
 cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup)
 t0=\$(date +%s.%N)
-taskset -c 0-$((P-1)) go list -deps -json "$target" runtime > "$out/plan.json" || exit 1
+if [ "${PLANNER:-self}" = self ]; then
+  # the driver's own planner (driver/plan.go: no go list; Strand's declaration pass reads every source)
+  taskset -c 0-$((P-1)) "$here/build/sb" -C "$T/$dir" -n -plan=self -decl "$here/build/godecl" -dumpplan "$out/plan.json" -o "$out/unused" "$target" > "$out/plan.log" 2>&1 || exit 1
+else
+  taskset -c 0-$((P-1)) go list -deps -json "$target" runtime > "$out/plan.json" || exit 1
+fi
 t1=\$(date +%s.%N)
 GOMAXPROCS=$P taskset -c 0-$((P-1)) "${FC_BIN:-$here/build/fc}" build -j $P -plan "$out/plan.json" -o "$out/objs" -link "$out/bin" "$main" > "$out/build.log" 2>&1; rc=\$?
 t2=\$(date +%s.%N)

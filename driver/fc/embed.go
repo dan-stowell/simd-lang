@@ -74,6 +74,30 @@ func (c *compiler) embedMatch(pattern string) []string {
 	}
 	glob, all := strings.CutPrefix(pattern, "all:")
 	var out []string
+	c.embedOnce.Do(func() {
+		if c.pkg.EmbedFiles != nil {
+			return
+		}
+		// the plan does not list the files (the driver's own planner): everything below the package's
+		// directory is a candidate, nested modules excepted
+		filepath.WalkDir(c.pkg.Dir, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if path != c.pkg.Dir {
+					if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil {
+						return filepath.SkipDir
+					}
+				}
+				return nil
+			}
+			if rel, err := filepath.Rel(c.pkg.Dir, path); err == nil && d.Type().IsRegular() {
+				c.pkg.EmbedFiles = append(c.pkg.EmbedFiles, filepath.ToSlash(rel))
+			}
+			return nil
+		})
+	})
 	for _, f := range c.pkg.EmbedFiles {
 		if ok, _ := path.Match(glob, f); ok {
 			out = append(out, f)

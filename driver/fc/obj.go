@@ -47,6 +47,7 @@ type compiler struct {
 	errs       []string
 	hasInit    bool
 	abis       *symABIs
+	embedOnce  sync.Once
 	layout     layoutCache
 	mixed      bool      // one package among stock-compiled ones (tools/fc/test.sh)
 	embed      *embedCfg // from -embedcfg (mixed mode)
