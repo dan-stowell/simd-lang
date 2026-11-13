@@ -91,29 +91,31 @@ func (c *compiler) forEachType(visit func(types.Type)) {
 			}
 		}
 	}
-	for _, tv := range c.info.Types {
-		walk(tv.Type)
-	}
-	for _, o := range c.info.Defs {
-		if o != nil {
+	for _, info := range c.pkg.infos() {
+		for _, tv := range info.Types {
+			walk(tv.Type)
+		}
+		for _, o := range info.Defs {
+			if o != nil {
+				walk(o.Type())
+			}
+		}
+		for _, o := range info.Uses {
 			walk(o.Type())
 		}
-	}
-	for _, o := range c.info.Uses {
-		walk(o.Type())
-	}
-	for _, in := range c.info.Instances {
-		walk(in.Type)
-		for i := 0; i < in.TypeArgs.Len(); i++ {
-			walk(in.TypeArgs.At(i))
+		for _, in := range info.Instances {
+			walk(in.Type)
+			for i := 0; i < in.TypeArgs.Len(); i++ {
+				walk(in.TypeArgs.At(i))
+			}
 		}
-	}
-	for _, o := range c.info.Implicits {
-		walk(o.Type())
-	}
-	for _, s := range c.info.Selections {
-		walk(s.Recv())
-		walk(s.Type())
+		for _, o := range info.Implicits {
+			walk(o.Type())
+		}
+		for _, s := range info.Selections {
+			walk(s.Recv())
+			walk(s.Type())
+		}
 	}
 }
 

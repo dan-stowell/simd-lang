@@ -211,13 +211,15 @@ func (c *compiler) declaredTypes() []types.Type {
 		}
 	}
 	var local []*types.TypeName
-	for id, o := range c.info.Defs {
-		tn, ok := o.(*types.TypeName)
-		if !ok || tn.IsAlias() || id.Name == "_" || tn.Parent() == scope {
-			continue
-		}
-		if n, ok := tn.Type().(*types.Named); ok && n.TypeParams().Len() == 0 && !mentionsTypeParamRT(n.Underlying(), nil) && !c.enclosedByGeneric(tn) {
-			local = append(local, tn)
+	for _, info := range c.pkg.infos() {
+		for id, o := range info.Defs {
+			tn, ok := o.(*types.TypeName)
+			if !ok || tn.IsAlias() || id.Name == "_" || tn.Parent() == scope {
+				continue
+			}
+			if n, ok := tn.Type().(*types.Named); ok && n.TypeParams().Len() == 0 && !mentionsTypeParamRT(n.Underlying(), nil) && !c.enclosedByGeneric(tn) {
+				local = append(local, tn)
+			}
 		}
 	}
 	sort.Slice(local, func(i, j int) bool { return local[i].Pos() < local[j].Pos() })

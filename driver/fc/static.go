@@ -120,7 +120,7 @@ func (c *compiler) compilePackage() (errs []string) {
 				if sym == nil {
 					sym = c.funcSym(fn)
 				}
-				g := c.newGen(sym.Name, sig, c.info, nil)
+				g := c.newGen(sym.Name, sig, c.pkg.infoFor(fd), nil)
 				g.out.sym = sym
 				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")

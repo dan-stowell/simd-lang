@@ -244,11 +244,11 @@ func buildMode(args []string) {
 	os.MkdirAll(*out, 0o777)
 	// back end
 	type result struct {
-		p         *Pkg
-		compileNS int64
+		p                       *Pkg
+		compileNS               int64
 		startMS, endMS, writeMS float64 // back end: start and end, ms after the program's start; of that, writing the object
-		objBytes  int64
-		errs      []string
+		objBytes                int64
+		errs                    []string
 	}
 	results := make([]result, len(targets))
 	sem := newPrioPool(*j)

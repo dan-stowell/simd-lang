@@ -65,24 +65,32 @@ func (b *Bodies) Size(i int) int { return int(b.jobs[i].body.End() - b.jobs[i].b
 // IsLit: is body i a function literal outside any function? All of those belong in one Check call.
 func (b *Bodies) IsLit(i int) bool { return b.jobs[i].lit }
 
-// Check checks the bodies idx, recording into info and reporting errors to onErr. Calls with disjoint
-// idx and distinct info may run concurrently. shard distinguishes the callers (any small number).
-func (b *Bodies) Check(shard int, idx []int, info *Info, onErr func(error)) (err error) {
+// Body is body i.
+func (b *Bodies) Body(i int) *ast.BlockStmt { return b.jobs[i].body }
+
+// Check checks the bodies idx, reporting errors to onErr. What the checker learns about body i is
+// recorded into infoOf(i) (the same Info for all of them, or one each: small maps stay in the cache,
+// where one map for a big package's five million expressions does not). Calls with disjoint idx and
+// Infos of their own may run concurrently. shard distinguishes the callers (any small number).
+func (b *Bodies) Check(shard int, idx []int, infoOf func(i int) *Info, onErr func(error)) (err error) {
 	c := b.conf
 	c.IgnoreFuncBodies = false
 	c.Error = onErr
-	check := NewChecker(&c, b.fset, b.pkg, info)
+	check := NewChecker(&c, b.fset, b.pkg, nil)
 	check.objMap = b.objMap
 	check.nextID = b.nextID + uint64(shard+1)<<40
 	defer check.handleBailout(&err)
 	for _, i := range idx {
 		j := &b.jobs[i]
+		check.Info = infoOf(i)
 		check.version = j.version
 		check.funcBody(j.decl, j.name, j.sig, j.body, j.iota)
 		check.processDelayed(0) // the function literals inside
+		check.cleanup()
+		check.recordUntyped()
+		clear(check.untyped)
+		clear(check.usedVars)
 	}
-	check.cleanup()
-	check.recordUntyped()
 	return
 }
 

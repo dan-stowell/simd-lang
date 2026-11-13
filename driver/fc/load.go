@@ -43,13 +43,15 @@ type Pkg struct {
 	err   error
 
 	// two-pass front end: the package as its importers see it (declarations only)
-	dpkg    *types.Package
-	dOnce   sync.Once
-	dinfo   *types.Info   // what the declarations pass recorded; becomes info when the bodies are checked (checkBodies)
-	bodies  *types.Bodies // the function bodies the declarations pass left
-	derr    error
-	depOnce sync.Once
-	depErr  error
+	dpkg     *types.Package
+	dOnce    sync.Once
+	dinfo    *types.Info   // what the declarations pass recorded; becomes info when the bodies are checked (checkBodies)
+	bodies   *types.Bodies // the function bodies the declarations pass left
+	perFn    bool          // each function body has an Info of its own (bodyInfo); info holds the package level only
+	bodyInfo map[*ast.BlockStmt]*types.Info
+	derr     error
+	depOnce  sync.Once
+	depErr   error
 
 	parseOnce sync.Once
 	discOnce  sync.Once
@@ -187,6 +189,82 @@ func newInfo(n int) *types.Info {
 	}
 }
 
+// fnInfos (off with FC_FNINFO=0): what the checker records about a function body goes into an Info of that
+// function's own, not into one set of maps for the package. The maps of a big package (five million
+// expressions in MinIO's closure, 0.9 GB) do not fit any cache, and both the checker writing them and the
+// code generator reading them were a quarter of the build's CPU in hash-map probes; a function's maps are
+// small and still in the cache when its code is generated. Not for packages compiled with the escape
+// analysis or the runtime's rules (the runtime's closure, FC_ESC=1), which look at a package as a whole.
+var fnInfos = os.Getenv("FC_FNINFO") != "0"
+
+// infoFor: the Info that knows about fd's body and signature.
+func (p *Pkg) infoFor(fd *ast.FuncDecl) *types.Info {
+	if fd != nil && fd.Body != nil {
+		if in := p.bodyInfo[fd.Body]; in != nil {
+			return in
+		}
+	}
+	return p.info
+}
+
+// infos: every Info of the package (the package level first).
+func (p *Pkg) infos() []*types.Info {
+	out := make([]*types.Info, 0, 1+len(p.bodyInfo))
+	out = append(out, p.info)
+	for _, f := range p.files {
+		for _, d := range f.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok && fd.Body != nil {
+				if in := p.bodyInfo[fd.Body]; in != nil {
+					out = append(out, in)
+				}
+			}
+		}
+	}
+	return out
+}
+
+// copySig copies what src knows about fd's name, receiver and signature into dst, so that a function's
+// Info answers for every node of its declaration.
+func copySig(dst, src *types.Info, fd *ast.FuncDecl) {
+	if o, ok := src.Defs[fd.Name]; ok {
+		dst.Defs[fd.Name] = o
+	}
+	visit := func(x ast.Node) bool {
+		if x == nil {
+			return true
+		}
+		switch x := x.(type) {
+		case *ast.Ident:
+			if o, ok := src.Defs[x]; ok {
+				dst.Defs[x] = o
+			}
+			if o, ok := src.Uses[x]; ok {
+				dst.Uses[x] = o
+			}
+			if in, ok := src.Instances[x]; ok {
+				dst.Instances[x] = in
+			}
+		case *ast.SelectorExpr:
+			if sel, ok := src.Selections[x]; ok {
+				dst.Selections[x] = sel
+			}
+		}
+		if e, ok := x.(ast.Expr); ok {
+			if tv, ok := src.Types[e]; ok {
+				dst.Types[e] = tv
+			}
+		}
+		if o, ok := src.Implicits[x]; ok {
+			dst.Implicits[x] = o
+		}
+		return true
+	}
+	if fd.Recv != nil {
+		ast.Inspect(fd.Recv, visit)
+	}
+	ast.Inspect(fd.Type, visit)
+}
+
 // checkBodies is the second half of p's check (bodiesLater); the caller holds a slot of pr.sem.
 func (pr *Program) checkBodies(p *Pkg) {
 	var mu sync.Mutex
@@ -206,48 +284,79 @@ func (pr *Program) checkBodies(p *Pkg) {
 	if declOnly {
 		n = 0
 	}
-	if k == 1 {
-		idx := make([]int, n)
-		for i := range idx {
-			idx[i] = i
+	// function literals outside functions to shard 0 (they share their variable's declaration, and are
+	// recorded with the package level); the functions biggest first, each to the lightest shard; a shard
+	// checks its bodies in source order
+	shards := make([][]int, k)
+	load := make([]int, k)
+	var fns []int
+	for i := 0; i < n; i++ {
+		if b.IsLit(i) {
+			shards[0] = append(shards[0], i)
+			load[0] += b.Size(i)
+		} else {
+			fns = append(fns, i)
 		}
-		b.Check(0, idx, p.dinfo, onErr)
-	} else {
-		// function literals outside functions to shard 0 (they share their variable's declaration); the
-		// functions biggest first, each to the lightest shard; a shard checks its bodies in source order
-		shards := make([][]int, k)
-		load := make([]int, k)
-		var fns []int
-		for i := 0; i < n; i++ {
-			if b.IsLit(i) {
-				shards[0] = append(shards[0], i)
-				load[0] += b.Size(i)
-			} else {
-				fns = append(fns, i)
+	}
+	if k > 1 {
+		sort.SliceStable(fns, func(x, y int) bool { return b.Size(fns[x]) > b.Size(fns[y]) })
+	}
+	for _, i := range fns {
+		m := 0
+		for s := 1; s < k; s++ {
+			if load[s] < load[m] {
+				m = s
 			}
 		}
-		sort.SliceStable(fns, func(x, y int) bool { return b.Size(fns[x]) > b.Size(fns[y]) })
-		for _, i := range fns {
-			m := 0
-			for s := 1; s < k; s++ {
-				if load[s] < load[m] {
-					m = s
+		shards[m] = append(shards[m], i)
+		load[m] += b.Size(i)
+	}
+	var fnInfo []*types.Info // by body, when each has its own
+	if p.perFn {
+		decls := make(map[*ast.BlockStmt]*ast.FuncDecl, len(fns))
+		for _, f := range p.files {
+			for _, d := range f.Decls {
+				if fd, ok := d.(*ast.FuncDecl); ok && fd.Body != nil {
+					decls[fd.Body] = fd
 				}
 			}
-			shards[m] = append(shards[m], i)
-			load[m] += b.Size(i)
 		}
-		infos := make([]*types.Info, k)
-		infos[0] = p.dinfo
-		par := &parallel{pool: pr.sem, prio: p.srcBytes + 1, helpers: k - 1}
-		for s := 0; s < k; s++ {
-			sort.Ints(shards[s])
-			if s > 0 {
-				infos[s] = newInfo(load[s] * 5 / 4)
+		fnInfo = make([]*types.Info, n)
+		p.bodyInfo = make(map[*ast.BlockStmt]*types.Info, len(fns))
+		for _, i := range fns {
+			body := b.Body(i)
+			fd := decls[body]
+			if fd == nil {
+				continue // (not a declared function: recorded with the package level)
 			}
-			par.run(func() { b.Check(s, shards[s], infos[s], onErr) })
+			in := newInfo(b.Size(i) + 64)
+			copySig(in, p.dinfo, fd)
+			fnInfo[i] = in
+			p.bodyInfo[body] = in
 		}
-		par.wait()
+	}
+	infos := make([]*types.Info, k) // per shard, when the bodies of a shard share one
+	infos[0] = p.dinfo
+	par := &parallel{pool: pr.sem, prio: p.srcBytes + 1, helpers: k - 1}
+	for s := 0; s < k; s++ {
+		sort.Ints(shards[s])
+		if s > 0 && !p.perFn {
+			infos[s] = newInfo(load[s] * 5 / 4)
+		}
+		par.run(func() {
+			b.Check(s, shards[s], func(i int) *types.Info {
+				if fnInfo != nil && fnInfo[i] != nil {
+					return fnInfo[i]
+				}
+				if p.perFn {
+					return p.dinfo // (only shard 0 has such bodies)
+				}
+				return infos[s]
+			}, onErr)
+		})
+	}
+	par.wait()
+	if k > 1 && !p.perFn {
 		// one Info for the package: the shards' maps into the first (a map each at a time)
 		d := p.dinfo
 		par.run(func() {
@@ -304,6 +413,8 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 		if d.derr = pr.resolveDeps(d); d.derr != nil {
 			return
 		}
+		// (asked before the slot is taken: inRuntime may parse, which waits for a slot)
+		d.perFn = bodiesLater && fnInfos && escWhere != "1" && tidyKnob != "all" && !pr.inRuntime(d)
 		pr.sem.acquire(prioDecl + d.srcBytes)
 		defer pr.sem.release()
 		conf := types.Config{Importer: pkgImporter{pr, d}, Sizes: pr.sizes, GoVersion: goVersionOf(d), Context: pr.tctx,
@@ -316,7 +427,11 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 		t0 := time.Now()
 		if bodiesLater {
 			conf.IgnoreFuncBodies = false
-			d.dinfo = newInfo(int(d.srcBytes))
+			if d.perFn {
+				d.dinfo = newInfo(int(d.srcBytes) / 4) // (the package level only)
+			} else {
+				d.dinfo = newInfo(int(d.srcBytes))
+			}
 			d.dpkg, d.bodies, _ = conf.CheckDecls(plainPath(d.ImportPath), pr.fset, d.files, d.dinfo)
 		} else {
 			d.dpkg, _ = conf.Check(plainPath(d.ImportPath), pr.fset, d.files, nil)

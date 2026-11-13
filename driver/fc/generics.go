@@ -368,7 +368,7 @@ func (c *compiler) compileInstance(in *instance) {
 		giveUp("no body for generic function %s", in.fn.FullName())
 	}
 	sig := in.fn.Type().(*types.Signature)
-	g := c.newGen(in.sym.Name, sig, p.info, in.env)
+	g := c.newGen(in.sym.Name, sig, p.infoFor(fd), in.env)
 	g.out.sym = in.sym
 	g.out.flags |= obj.DUPOK
 	g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || (in.fn.Pkg() != nil && intrinsicPkg[in.fn.Pkg().Path()])
