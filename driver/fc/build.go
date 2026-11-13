@@ -9,6 +9,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/constant"
@@ -96,6 +97,7 @@ func buildMode(args []string) {
 		keepStock[k] = true // (bisecting: these packages, and what they import, come from the stock archives)
 	}
 	var mainPkg *Pkg
+	var stockDone chan error
 	stock := map[*Pkg]bool{}
 	var closure []*Pkg
 	if *link != "" {
@@ -145,10 +147,37 @@ func buildMode(args []string) {
 			}
 		}
 		targets = nil
+		var need []string
 		for _, p := range closure {
 			if !stock[p] {
 				targets = append(targets, p)
+			} else if p.Export == "" && p.ImportPath != "unsafe" {
+				need = append(need, p.ImportPath)
 			}
+		}
+		if len(need) > 0 {
+			// The plan has no archives for the packages that stay with the stock compiler (a cold build):
+			// have the go command build them now, beside our own work.
+			stockDone = make(chan error, 1)
+			go func() {
+				cmd := exec.Command("go", append([]string{"list", "-export", "-json", "-gcflags=all=-l"}, need...)...)
+				cmd.Dir = mainPkg.Dir
+				cmd.Stderr = os.Stderr
+				outb, err := cmd.Output()
+				if err == nil {
+					dec := json.NewDecoder(bytes.NewReader(outb))
+					for {
+						var e struct{ ImportPath, Export string }
+						if dec.Decode(&e) != nil {
+							break
+						}
+						if p := pr.byPath[e.ImportPath]; p != nil {
+							p.Export = e.Export
+						}
+					}
+				}
+				stockDone <- err
+			}()
 		}
 	}
 	sort.Slice(targets, func(i, k int) bool { return targets[i].ImportPath < targets[k].ImportPath })
@@ -194,6 +223,16 @@ func buildMode(args []string) {
 		initMemo.Store(p, v)
 		return v
 	}
+	var stockOnce sync.Once
+	waitStock := func() {
+		stockOnce.Do(func() {
+			if stockDone != nil {
+				if err := <-stockDone; err != nil {
+					log.Fatalf("fc build: stock packages: %v", err)
+				}
+			}
+		})
+	}
 	for i, p := range targets {
 		wg.Add(1)
 		go func() {
@@ -227,6 +266,7 @@ func buildMode(args []string) {
 			}
 			c.depInit = func(d *Pkg) bool {
 				if stock[d] {
+					waitStock()
 					stockInitMu.Lock()
 					defer stockInitMu.Unlock()
 					v, ok := stockInit[d]
@@ -241,6 +281,9 @@ func buildMode(args []string) {
 			// the linker loads a package only if some loaded object says it imports it
 			for _, d := range p.deps {
 				ip := goobj.ImportedPkg{Pkg: d.ImportPath}
+				if stock[d] {
+					waitStock()
+				}
 				if stock[d] && d.Export != "" {
 					ip.Fingerprint = stockFingerprint(d.Export) // the linker compares it with the archive's
 				}
@@ -312,6 +355,7 @@ func buildMode(args []string) {
 		if failed > 0 {
 			log.Fatalf("fc build -link: %d packages not compiled", failed)
 		}
+		waitStock()
 		tl := time.Now()
 		var cfg strings.Builder
 		for _, p := range closure {
