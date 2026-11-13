@@ -121,7 +121,7 @@ func makeSpecials() {
 		}
 	}
 	// go:fipsinfo (crypto/internal/fips140/check.Linkinfo): magic, the hash of the FIPS sections, their bounds
-	if g := lookupName("go:fipsinfo", 0); isLive(g) && !isDef(g) {
+	if g := lookupName("go:fipsinfo", 0); isLive(g) {
 		fipsinfo = g
 		addSpecial(&dataSpecials, g, 16+32+8+8*8, 8, func(p []byte) {
 			copy(p, "\xff Go fipsinfo \xff\x00")

@@ -1611,3 +1611,4 @@ corpus 23 of 23 with test binaries built wholly by fc (runtime included, linked 
 kube-apiserver built that way pass their smoke tests.
 Is the oracle the right one? The wholly-fc test binary is, and it is new today; the std list is running in it.
 
+- 2026-11-13 22:08 UTC: fclink overrides go:fipsinfo when an object defines it (every object does: the check package's linknamed variable), so GODEBUG=fips140=on finds its checksum: crypto/cipher, crypto/fips140, crypto/internal/fips140only pass wholly by fc. encoding/binary TestSizeAllocs skipped (allocation counts; passes with FC_ESC=1). debug/buildinfo fails with stock here too (the test's go build cannot get VCS status).

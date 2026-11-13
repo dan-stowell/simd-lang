@@ -39,3 +39,4 @@ reflect ^TestMapIterSet$ fails with the stock compiler too when inlining is off 
 reflect ^(TestDeepEqualAllocs|TestAllocsInterfaceBig|TestAllocsInterfaceSmall|TestMapAlloc|TestChanAlloc|TestMapIterReset)$ asserts allocation counts that need escape analysis
 strings ^(TestBuilderGrow|TestBuilderAllocs|TestBuilderGrowSizeclasses|TestIndexRune|TestReplace)$ asserts allocation counts that need escape analysis
 sync ^(TestOnceFunc|TestOnceValue|TestOnceValues)$ asserts allocation counts that need escape analysis
+encoding/binary ^TestSizeAllocs$ asserts allocation counts that need escape analysis in the packages it calls through (wholly-fc mode; passes with FC_ESC=1)
