@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -44,6 +45,8 @@ type Pkg struct {
 	// two-pass front end: the package as its importers see it (declarations only)
 	dpkg    *types.Package
 	dOnce   sync.Once
+	dinfo   *types.Info   // what the declarations pass recorded; becomes info when the bodies are checked (checkBodies)
+	bodies  *types.Bodies // the function bodies the declarations pass left
 	derr    error
 	depOnce sync.Once
 	depErr  error
@@ -58,6 +61,7 @@ type Pkg struct {
 	parseNS, checkNS int64
 
 	lnOnce       sync.Once
+	checkEnd     time.Time // when the full check finished
 	linkname     map[string]string
 	linknamed    map[string]bool // local names with any //go:linkname directive
 	linknamedStd map[string]bool
@@ -69,7 +73,7 @@ type Program struct {
 	fset   *token.FileSet
 	byPath map[string]*Pkg
 	sizes  types.Sizes
-	sem    chan struct{}
+	sem    *prioPool
 	plan   *selfPlan  // nil when the packages come from a plan file
 	mu     sync.Mutex // guards byPath while packages are being discovered
 
@@ -93,7 +97,7 @@ type Program struct {
 
 func newProgram() *Program {
 	return &Program{fset: token.NewFileSet(), byPath: map[string]*Pkg{}, sizes: types.SizesFor("gc", "amd64"), tctx: types.NewContext(),
-		sem: make(chan struct{}, runtime.GOMAXPROCS(0))}
+		sem: newPrioPool(runtime.GOMAXPROCS(0))}
 }
 
 // readPlan reads a stream of `go list -json` objects.
@@ -160,6 +164,135 @@ func (i pkgImporter) Import(path string) (*types.Package, error) {
 // full() maps a function to the full pass's object).
 var twoPass = os.Getenv("FC_TWOPASS") != "0"
 
+// bodiesLater (off with FC_BODIES=0, which gives the two passes above): the declarations pass is the first
+// half of the one check of a package, not a second check: it records into the package's Info and keeps
+// the function bodies (types.CheckDecls, driver/gotypes), and check() checks those against the same
+// *types.Package, the bodies of a big package in several shards at once. So importers and the package's
+// own code see the same objects, declarations are checked once, and the longest serial step of a build
+// (the full check of its biggest package) is cut into its declarations and an n-th of its bodies.
+var bodiesLater = twoPass && os.Getenv("FC_BODIES") != "0"
+
+// newInfo: an Info with the maps fc reads, sized for n bytes of source: growing these maps is a tenth of
+// the type checker's time otherwise.
+func newInfo(n int) *types.Info {
+	return &types.Info{
+		// (measured over MinIO's closure: one entry per 14.1, 110, 24.3 and 158 source bytes)
+		Types:      make(map[ast.Expr]types.TypeAndValue, n/13),
+		Defs:       make(map[*ast.Ident]types.Object, n/95),
+		Uses:       make(map[*ast.Ident]types.Object, n/22),
+		Implicits:  map[ast.Node]types.Object{},
+		Selections: make(map[*ast.SelectorExpr]*types.Selection, n/130),
+		Instances:  map[*ast.Ident]types.Instance{},
+	}
+}
+
+// checkBodies is the second half of p's check (bodiesLater); the caller holds a slot of pr.sem.
+func (pr *Program) checkBodies(p *Pkg) {
+	var mu sync.Mutex
+	onErr := func(err error) {
+		mu.Lock()
+		if p.err == nil {
+			p.err = err
+		}
+		mu.Unlock()
+	}
+	b := p.bodies
+	n := b.Len()
+	k := 1
+	if p.srcBytes >= bodyShardMin {
+		k = min(runtime.GOMAXPROCS(0), int(p.srcBytes/(bodyShardMin/2)))
+	}
+	if declOnly {
+		n = 0
+	}
+	if k == 1 {
+		idx := make([]int, n)
+		for i := range idx {
+			idx[i] = i
+		}
+		b.Check(0, idx, p.dinfo, onErr)
+	} else {
+		// function literals outside functions to shard 0 (they share their variable's declaration); the
+		// functions biggest first, each to the lightest shard; a shard checks its bodies in source order
+		shards := make([][]int, k)
+		load := make([]int, k)
+		var fns []int
+		for i := 0; i < n; i++ {
+			if b.IsLit(i) {
+				shards[0] = append(shards[0], i)
+				load[0] += b.Size(i)
+			} else {
+				fns = append(fns, i)
+			}
+		}
+		sort.SliceStable(fns, func(x, y int) bool { return b.Size(fns[x]) > b.Size(fns[y]) })
+		for _, i := range fns {
+			m := 0
+			for s := 1; s < k; s++ {
+				if load[s] < load[m] {
+					m = s
+				}
+			}
+			shards[m] = append(shards[m], i)
+			load[m] += b.Size(i)
+		}
+		infos := make([]*types.Info, k)
+		infos[0] = p.dinfo
+		par := &parallel{pool: pr.sem, prio: p.srcBytes + 1, helpers: k - 1}
+		for s := 0; s < k; s++ {
+			sort.Ints(shards[s])
+			if s > 0 {
+				infos[s] = newInfo(load[s] * 5 / 4)
+			}
+			par.run(func() { b.Check(s, shards[s], infos[s], onErr) })
+		}
+		par.wait()
+		// one Info for the package: the shards' maps into the first (a map each at a time)
+		d := p.dinfo
+		par.run(func() {
+			for _, in := range infos[1:] {
+				for e, v := range in.Types {
+					d.Types[e] = v
+				}
+			}
+		})
+		par.run(func() {
+			for _, in := range infos[1:] {
+				for e, v := range in.Uses {
+					d.Uses[e] = v
+				}
+			}
+		})
+		par.run(func() {
+			for _, in := range infos[1:] {
+				for e, v := range in.Defs {
+					d.Defs[e] = v
+				}
+				for e, v := range in.Implicits {
+					d.Implicits[e] = v
+				}
+			}
+		})
+		par.run(func() {
+			for _, in := range infos[1:] {
+				for e, v := range in.Selections {
+					d.Selections[e] = v
+				}
+				for e, v := range in.Instances {
+					d.Instances[e] = v
+				}
+			}
+		})
+		par.wait()
+	}
+	b.InitOrder(p.dinfo, onErr)
+	p.bodies = nil
+}
+
+// bodyShardMin: a package with this much source has its bodies checked in shards (one per half of it,
+// up to the number of CPUs).
+const bodyShardMin = 512 << 10
+
 // view checks d as far as its importers need and returns the package they import.
 func (pr *Program) view(d *Pkg) (*types.Package, error) {
 	if !twoPass {
@@ -170,8 +303,8 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 		if d.derr = pr.resolveDeps(d); d.derr != nil {
 			return
 		}
-		pr.sem <- struct{}{}
-		defer func() { <-pr.sem }()
+		pr.sem.acquire(prioDecl + d.srcBytes)
+		defer pr.sem.release()
 		conf := types.Config{Importer: pkgImporter{pr, d}, Sizes: pr.sizes, GoVersion: goVersionOf(d), Context: pr.tctx,
 			IgnoreFuncBodies: true,
 			Error: func(err error) {
@@ -180,13 +313,24 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 				}
 			}}
 		t0 := time.Now()
-		d.dpkg, _ = conf.Check(plainPath(d.ImportPath), pr.fset, d.files, nil)
+		if bodiesLater {
+			conf.IgnoreFuncBodies = false
+			d.dinfo = newInfo(int(d.srcBytes))
+			d.dpkg, d.bodies, _ = conf.CheckDecls(plainPath(d.ImportPath), pr.fset, d.files, d.dinfo)
+		} else {
+			d.dpkg, _ = conf.Check(plainPath(d.ImportPath), pr.fset, d.files, nil)
+		}
 		atomic.AddInt64(&pr.declNS, int64(time.Since(t0)))
+		if declStat && time.Since(t0) > 30*time.Millisecond {
+			fmt.Fprintf(os.Stderr, "decl %s %d ms\n", d.ImportPath, time.Since(t0).Milliseconds())
+		}
 		if d.derr != nil {
 			d.dpkg = nil
 		} else {
 			pr.byTpkg.Store(d.dpkg, d)
-			pr.declPkgs.Store(d.dpkg, true)
+			if !bodiesLater {
+				pr.declPkgs.Store(d.dpkg, true)
+			}
 		}
 	})
 	return d.dpkg, d.derr
@@ -293,8 +437,8 @@ func (pr *Program) full(fn *types.Func) *types.Func {
 // directory belong to the build, from the bytes it then parses.
 func (pr *Program) parse(p *Pkg) {
 	p.parseOnce.Do(func() {
-		pr.sem <- struct{}{}
-		defer func() { <-pr.sem }()
+		pr.sem.acquire(prioParse)
+		defer pr.sem.release()
 		if pr.plan != nil && !p.listed {
 			if err := pr.plan.loadDir(p); err != nil {
 				p.err = err
@@ -354,19 +498,27 @@ func (pr *Program) check(p *Pkg) error {
 			}
 			return
 		}
-		pr.sem <- struct{}{}
-		defer func() { <-pr.sem }()
-		// sized from the source: growing these maps is a tenth of the type checker's time otherwise
-		n := int(p.srcBytes)
-		p.info = &types.Info{
-			// (measured over MinIO's closure: one entry per 14.1, 110, 24.3 and 158 source bytes)
-			Types:      make(map[ast.Expr]types.TypeAndValue, n/13),
-			Defs:       make(map[*ast.Ident]types.Object, n/95),
-			Uses:       make(map[*ast.Ident]types.Object, n/22),
-			Implicits:  map[ast.Node]types.Object{},
-			Selections: make(map[*ast.SelectorExpr]*types.Selection, n/130),
-			Instances:  map[*ast.Ident]types.Instance{},
+		if bodiesLater {
+			if _, err := pr.view(p); err != nil {
+				p.err = err
+				return
+			}
+			pr.sem.acquire(p.srcBytes)
+			defer pr.sem.release()
+			t0 := time.Now()
+			pr.checkBodies(p)
+			p.checkNS = int64(time.Since(t0))
+			p.checkEnd = time.Now()
+			if p.err == nil {
+				p.info = p.dinfo
+				pr.byInfo.Store(p.info, p)
+				p.tpkg = p.dpkg
+			}
+			return
 		}
+		pr.sem.acquire(p.srcBytes)
+		defer pr.sem.release()
+		p.info = newInfo(int(p.srcBytes))
 		pr.byInfo.Store(p.info, p)
 		gover := ""
 		if p.Module != nil && p.Module.GoVersion != "" {
@@ -386,6 +538,7 @@ func (pr *Program) check(p *Pkg) error {
 		t0 := time.Now()
 		p.tpkg, _ = conf.Check(path, pr.fset, p.files, p.info)
 		p.checkNS = int64(time.Since(t0))
+		p.checkEnd = time.Now()
 		if p.err != nil {
 			p.tpkg = nil
 		} else {
@@ -405,6 +558,8 @@ func (pr *Program) byTypes(tp *types.Package) *Pkg {
 
 // declOnly (FC_DECLONLY=1): an experiment: check declarations only and stop after the front end, to time
 // the chain of declaration checks through the import graph.
+var declStat = os.Getenv("FC_DECLSTAT") != ""
+
 var declOnly = os.Getenv("FC_DECLONLY") != ""
 
 // samePkg: the same package, whichever pass of the front end made the object.

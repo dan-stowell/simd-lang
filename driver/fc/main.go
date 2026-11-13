@@ -358,7 +358,7 @@ func main() {
 		return v
 	}
 	c.mixed = true
-	c.fnSem = make(chan struct{}, runtime.GOMAXPROCS(0))
+	c.fnSem, c.fnHelpers = newPrioPool(runtime.GOMAXPROCS(0)-1), runtime.GOMAXPROCS(0)-1
 	c.parity = func() { c.stockParity(stock) }
 	errs := c.compilePackage()
 	if len(errs) == 0 && c.hasInit && !c.forceInit {

@@ -91,7 +91,7 @@ func (c *compiler) compilePackage() (errs []string) {
 		}
 	}
 	// functions: each is independent of the others; they are compiled on whatever cores are free
-	par := &parallel{sem: c.fnSem}
+	par := &parallel{pool: c.fnSem, prio: c.pkg.srcBytes + 1, helpers: c.fnHelpers}
 	var inits []*obj.LSym
 	ninit := 0
 	for _, fd := range c.funcDecls() {
@@ -631,31 +631,6 @@ func (c *compiler) writeConst(s *obj.LSym, off int64, v constant.Value, t types.
 		giveUp("static constant of type %v", t)
 	}
 }
-
-// parallel runs jobs on free slots of a shared semaphore, or in the caller when there is none (the caller
-// already holds a slot, so nothing waits on a slot while holding one).
-type parallel struct {
-	sem chan struct{}
-	wg  sync.WaitGroup
-}
-
-func (p *parallel) run(f func()) {
-	if p.sem != nil {
-		select {
-		case p.sem <- struct{}{}:
-			p.wg.Add(1)
-			go func() {
-				defer func() { <-p.sem; p.wg.Done() }()
-				f()
-			}()
-			return
-		default:
-		}
-	}
-	f()
-}
-
-func (p *parallel) wait() { p.wg.Wait() }
 
 // intrinsicPkg: packages whose functions the stock compiler replaces by instructions (bit counting,
 // multi-word arithmetic). fc calls their Go bodies, and the runtime calls them inside regions that must

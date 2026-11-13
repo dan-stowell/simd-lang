@@ -6,6 +6,7 @@ set -e
 cd "$(dirname "$0")/.."
 dst=${SB_GOROOT:-/home/exedev/targets/goroot-sb}
 [ -d "$dst" ] || { echo "run driver/mkcompiler.sh first"; exit 1; }
+python3 driver/gotypes/patch.py "$(GOTOOLCHAIN=local go env GOROOT)/src/go/types" "$dst/src/go/types"   # CheckDecls + Bodies (sbbodies.go)
 d="$dst/src/cmd/fc${FC_TAG:-}"
 mkdir -p "$d" build
 find "$d" -maxdepth 1 -name '*.go' -delete

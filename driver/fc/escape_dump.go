@@ -73,9 +73,9 @@ func escMode(args []string) {
 		go func() {
 			defer wg.Done()
 			if pr.check(p) == nil {
-				pr.sem <- struct{}{}
+				pr.sem.acquire(0)
 				pr.escape(p)
-				<-pr.sem
+				pr.sem.release()
 			}
 		}()
 	}

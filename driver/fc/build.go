@@ -49,7 +49,7 @@ func buildMode(args []string) {
 	plan := fs.String("plan", "", "`go list -json` stream of the packages")
 	out := fs.String("o", "", "output directory for the objects")
 	j := fs.Int("j", runtime.GOMAXPROCS(0), "packages compiled at once")
-	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result")
+	stats := fs.String("stats", "", "write a line per package: path, source bytes, parse ms, check ms, compile ms, object bytes, result,\nthen ms after the start: check done, back end start, back end end; and ms writing the object")
 	link := fs.String("link", "", "link the program whose main package is the (single) argument into this file; packages of the\n"+
 		"runtime's closure and packages with assembly (and what they import) come from the plan's stock archives")
 	chdir := fs.String("C", "", "no plan file: find the packages from the main package in this directory (the argument is then a\n"+
@@ -246,11 +246,12 @@ func buildMode(args []string) {
 	type result struct {
 		p         *Pkg
 		compileNS int64
+		startMS, endMS, writeMS float64 // back end: start and end, ms after the program's start; of that, writing the object
 		objBytes  int64
 		errs      []string
 	}
 	results := make([]result, len(targets))
-	sem := make(chan struct{}, *j)
+	sem := newPrioPool(*j)
 	initMemo := sync.Map{}
 	var hasInit func(p *Pkg) bool
 	hasInit = func(p *Pkg) bool {
@@ -290,20 +291,24 @@ func buildMode(args []string) {
 			if declOnly {
 				select {} // (the experiment ends when the front end does)
 			}
-			sem <- struct{}{}
-			defer func() { <-sem }()
+			sem.acquire(p.srcBytes)
+			defer sem.release()
 			results[i].p = p
 			if p.err != nil {
 				results[i].errs = []string{"type check: " + p.err.Error()}
 				return
 			}
 			t := time.Now()
+			results[i].startMS = float64(t.Sub(t0).Microseconds()) / 1e3
 			path := p.ImportPath
 			if p.Name == "main" {
 				path = "main"
 			}
 			c := newCompiler(pr, p, path, "")
 			c.fnSem = sem
+			if p.srcBytes >= 64<<10 {
+				c.fnHelpers = *j - 1 // (a small package is one job; the cores are filled across packages)
+			}
 			var asmDir string
 			if len(p.SFiles) > 0 {
 				// assembly: the assembler says which symbols it defines and uses, before the compile
@@ -344,6 +349,7 @@ func buildMode(args []string) {
 				c.ctxt.Imports = append(c.ctxt.Imports, ip)
 			}
 			errs := c.compilePackage()
+			tw := time.Now()
 			if len(errs) == 0 {
 				name := objPath(*out, p)
 				if asmDir != "" {
@@ -372,6 +378,8 @@ func buildMode(args []string) {
 			}
 			results[i].errs = errs
 			results[i].compileNS = int64(time.Since(t))
+			results[i].writeMS = float64(time.Since(tw).Microseconds()) / 1e3
+			results[i].endMS = float64(time.Since(t0).Microseconds()) / 1e3
 		}()
 	}
 	wg.Wait()
@@ -396,7 +404,8 @@ func buildMode(args []string) {
 		}
 		src += r.p.srcBytes
 		if sf != nil {
-			fmt.Fprintf(sf, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\n", r.p.ImportPath, r.p.srcBytes, float64(r.p.parseNS)/1e6, float64(r.p.checkNS)/1e6, float64(r.compileNS)/1e6, r.objBytes, res)
+			fmt.Fprintf(sf, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\t%.0f\t%.0f\t%.0f\t%.0f\n", r.p.ImportPath, r.p.srcBytes, float64(r.p.parseNS)/1e6, float64(r.p.checkNS)/1e6, float64(r.compileNS)/1e6, r.objBytes, res,
+				float64(r.p.checkEnd.Sub(t0).Microseconds())/1e3, r.startMS, r.endMS, r.writeMS)
 		}
 	}
 	if *link != "" {

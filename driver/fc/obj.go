@@ -50,7 +50,8 @@ type compiler struct {
 	hasInit      bool
 	abis         *symABIs
 	hdrMu        sync.Mutex
-	fnSem        chan struct{} // slots for compiling functions in parallel (shared by all packages of a build)
+	fnSem        *prioPool // slots for compiling functions in parallel (shared by all packages of a build)
+	fnHelpers    int       // how many of them this package may ask for besides its own
 	embedOnce    sync.Once
 	layout       layoutCache
 	mixed        bool      // one package among stock-compiled ones (tools/fc/test.sh)
