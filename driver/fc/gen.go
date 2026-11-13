@@ -22,6 +22,8 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strings"
+	"sync"
 
 	"cmd/internal/obj"
 )
@@ -188,8 +190,36 @@ func isPtrWord(t types.Type) bool {
 	switch u := t.Underlying().(type) {
 	case *types.Basic:
 		return u.Kind() == types.UnsafePointer
-	case *types.Pointer, *types.Chan, *types.Map, *types.Signature:
+	case *types.Pointer:
+		return !nihElem(u.Elem())
+	case *types.Chan, *types.Map, *types.Signature:
 		return true
+	}
+	return false
+}
+
+var nihCache sync.Map // *types.Named -> bool
+
+// nihElem: is elem a type the runtime keeps outside the collected heap (it embeds
+// internal/runtime/sys.NotInHeap)? A pointer to one is not a pointer to the collector: no write barrier,
+// no bit in a pointer map. Such types exist only in the runtime's own packages.
+func nihElem(elem types.Type) bool {
+	elem = types.Unalias(elem)
+	if n, ok := elem.(*types.Named); ok {
+		p := n.Obj().Pkg()
+		if p == nil || (p.Path() != "runtime" && !strings.HasPrefix(p.Path(), "internal/runtime/")) {
+			return false
+		}
+		if v, ok := nihCache.Load(n); ok {
+			return v.(bool)
+		}
+		v := notInHeap(n)
+		nihCache.Store(n, v)
+		return v
+	}
+	switch elem.Underlying().(type) {
+	case *types.Struct, *types.Array:
+		return notInHeap(elem)
 	}
 	return false
 }
@@ -234,7 +264,11 @@ func (c *compiler) setPtrBits(t types.Type, off int64, bits []bool) {
 		if u.Kind() == types.UnsafePointer || u.Info()&types.IsString != 0 {
 			bits[off/8] = true
 		}
-	case *types.Pointer, *types.Chan, *types.Map, *types.Signature, *types.Slice:
+	case *types.Pointer:
+		bits[off/8] = !nihElem(u.Elem())
+	case *types.Slice:
+		bits[off/8] = !nihElem(u.Elem())
+	case *types.Chan, *types.Map, *types.Signature:
 		bits[off/8] = true
 	case *types.Interface:
 		bits[off/8] = true
@@ -263,7 +297,11 @@ func (c *compiler) hasPointers(t types.Type) bool {
 	switch u := t.Underlying().(type) {
 	case *types.Basic:
 		return u.Kind() == types.UnsafePointer || u.Info()&types.IsString != 0
-	case *types.Pointer, *types.Chan, *types.Map, *types.Signature, *types.Slice, *types.Interface:
+	case *types.Pointer:
+		return !nihElem(u.Elem())
+	case *types.Slice:
+		return !nihElem(u.Elem())
+	case *types.Chan, *types.Map, *types.Signature, *types.Interface:
 		return true
 	case *types.Struct:
 		for i := 0; i < u.NumFields(); i++ {
