@@ -58,6 +58,7 @@ type asm struct {
 	relocs    []obj.Reloc
 	maxTarget int    // the highest address any jump has been patched to
 	pre       func() // called before a call instruction is emitted (tidy frames: the stack map there)
+	indirect  bool   // a call through a register has been emitted
 }
 
 func (a *asm) pc() int         { return len(a.b) }
@@ -458,6 +459,7 @@ func (a *asm) call(s *obj.LSym) {
 	a.u32(0)
 }
 func (a *asm) callReg(reg int) {
+	a.indirect = true
 	if a.pre != nil {
 		a.pre()
 	}

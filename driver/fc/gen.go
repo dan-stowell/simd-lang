@@ -1011,6 +1011,19 @@ func (g *gen) epilogue() {
 func (g *gen) finish(pos token.Pos) {
 	L := align(g.locals, 8)
 	n := L + align(g.maxarg, 8)
+	if !g.nosplit && n+8 < 128 && !g.a.indirect {
+		// A leaf with a small frame needs no stack check (the stock assembler's rule): it runs in the
+		// space every function is guaranteed below the guard. Code that must not grow the stack calls
+		// such helpers (syscall's code between fork and exec calls capToIndex).
+		leaf := true
+		for _, r := range g.a.relocs {
+			if r.Type == objabiRCall {
+				leaf = false
+				break
+			}
+		}
+		g.nosplit = leaf
+	}
 	if f := os.Getenv("FC_FRAME"); f != "" && strings.Contains(g.out.sym.Name, f) {
 		hist := map[int64]int{}
 		for _, sl := range g.slots {
