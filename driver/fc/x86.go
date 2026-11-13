@@ -59,6 +59,7 @@ type asm struct {
 	maxTarget int    // the highest address any jump has been patched to
 	pre       func() // called before a call instruction is emitted (tidy frames: the stack map there)
 	indirect  bool   // a call through a register has been emitted
+	post      func() // called after a call instruction is emitted (the runtime's packages: BP recomputed)
 }
 
 func (a *asm) pc() int         { return len(a.b) }
@@ -457,6 +458,9 @@ func (a *asm) call(s *obj.LSym) {
 	a.byte(0xE8)
 	a.relocs = append(a.relocs, obj.Reloc{Off: int32(len(a.b)), Siz: 4, Type: objabi.R_CALL, Sym: s})
 	a.u32(0)
+	if a.post != nil {
+		a.post()
+	}
 }
 func (a *asm) callReg(reg int) {
 	a.indirect = true
@@ -464,6 +468,9 @@ func (a *asm) callReg(reg int) {
 		a.pre()
 	}
 	a.rr(0, 4, []byte{0xFF}, 2, reg)
+	if a.post != nil {
+		a.post()
+	}
 }
 func (a *asm) jmpReg(reg int) { a.rr(0, 4, []byte{0xFF}, 4, reg) }
 func (a *asm) ret()           { a.byte(0xC3) }

@@ -79,13 +79,9 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 	switch c.kind {
 	case 0:
 		g.a.call(c.sym)
-		if c.asm && !c.abi0 {
-			// runtime.mcall resumes its caller with BP one frame up (it saves the caller's saved BP, not
-			// BP: the stock compiler's code never reads BP, it only pops it). Locals here are
-			// BP-relative, so after assembly of this package BP is recomputed from SP.
-			g.a.byte(0x48, 0x8D, 0xAC, 0x24)
-			g.bpFix = append(g.bpFix, g.a.pc())
-			g.a.u32(0)
+		if c.asm && !c.abi0 && g.a.post == nil {
+			// (assembly of this package with the register ABI: BP is recomputed, as after ABI0 assembly)
+			g.fixBP()
 		}
 		if c.abi0 {
 			// assembly may have used the registers ABIInternal fixes

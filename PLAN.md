@@ -104,13 +104,17 @@ Log (append one line per milestone reached, with the oracle number):
   reflect calls under allocation pressure); `FC_ALL=rt tools/fc/lang.sh` (test binaries wholly by fc) is 17-19 of 23.
   SCOREBOARD.md's fc column is filled (cold, idle machine, fc + fclink, stock-compiled runtime): MinIO 6.8 s on 8
   cores, before the two-pass front end (warm 5.5 -> 4.8 s).
+- M3 nearly, 2026-11-13 13:30 UTC: **std with test binaries built wholly by fc, runtime included, linked by fclink
+  (`FC_ALL=rt tools/fc/test.sh`): 221 of 226 packages pass their own tests**; the language corpus 23 of 23 in that
+  mode; MinIO and kube-apiserver built that way pass their smoke tests. The lost-object bug had two causes (JOURNAL
+  12:10): stack checks in helpers the stock compiler inlines, and BP after the runtime's context switches.
 
-Now: (1) the concurrent-GC bug of the fc-built runtime: a builder is on it in its own worktree with the
-reproduction and the list of what is ruled out; when it reports, merge, rerun `FC_ALL=rt tools/fc/lang.sh`, then
-the std list in that mode, then MinIO's tests: that is M3 and M4. (2) /home/exedev/targets/fc-batch-m3.log is the
-std list (mixed mode) over today's code-generator changes: read it, fix regressions. (3) Then make FC_RUNTIME the
-default in `fc build` (the cold build then needs no `go` subprocess: 4.9 core-s of MinIO's 34) and rerun
-`tools/scoreboard/ours.sh` on an idle machine. (4) Speed, measured candidates in order: memory (8.1 GB peak costs
-6 s of system time in page faults and 0.7 s of exit teardown: allocate less), object files (2.6 core-s written
-then read back by fclink: hand symbols over in process, DESIGN at the top of driver/fclink/main.go), type
-checking (9 + 2.4 core-s).
+Now: (1) read /home/exedev/targets/fc-minio-rt.log (MinIO's own tests, wholly-fc binaries; it was started with an
+earlier fc, so rerun what failed with the current one): that is M4's oracle. (2) The 5 std packages left in
+FC_ALL=rt mode: crypto/cipher, crypto/fips140, crypto/internal/fips140only (FIPS tests, not looked at),
+encoding/binary (allocation counts: needs FC_ESC=1 for all packages), debug/buildinfo (its test's git call fails
+here). Then rerun the whole list once in that mode with one fc binary. (3) Make FC_RUNTIME the default in
+`fc build` (the cold build then needs no `go` subprocess: 4.9 core-s of MinIO's 34), rerun
+`tools/scoreboard/ours.sh` on an idle machine, update STATUS and MORNING (they predate today's M3 work). (4) Speed,
+measured candidates in order: memory (8.1 GB peak costs 6 s of system time and 0.7 s of exit teardown), object
+files handed to fclink in process (2.6 core-s), type checking (9 + 2.4 core-s).

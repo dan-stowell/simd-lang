@@ -857,6 +857,11 @@ func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, e
 	if p, ok := c.pr.byInfo.Load(info); tidyKnob == "all" || ok && c.pr.inRuntime(p.(*Pkg)) && tidyKnob != "0" {
 		g.tidy = true
 		g.a.pre = g.safepoint
+		// The runtime resumes its own functions with whatever BP its context switches leave: mcall with
+		// the caller's saved BP, the gogo that "returns" from mstart1 with g0's. The stock compiler's code
+		// only pops BP; here locals are BP-relative. So in the runtime's packages BP is recomputed from SP
+		// after every call.
+		g.a.post = g.fixBP
 	}
 	if escWhere != "0" {
 		if p, ok := c.pr.byInfo.Load(info); ok && (escWhere == "1" || c.pr.inRuntime(p.(*Pkg))) {
@@ -1410,3 +1415,10 @@ var callGraph = func() *os.File {
 	return nil
 }()
 var callGraphMu sync.Mutex
+
+// fixBP: BP = SP + the frame size (patched in when it is known).
+func (g *gen) fixBP() {
+	g.a.byte(0x48, 0x8D, 0xAC, 0x24)
+	g.bpFix = append(g.bpFix, g.a.pc())
+	g.a.u32(0)
+}
