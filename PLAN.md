@@ -97,12 +97,20 @@ Log (append one line per milestone reached, with the oracle number):
   test that fails with the stock compiler too** (package under test by fc; the all-packages-by-fc run,
   `FC_ALL=1 tools/fc/test.sh`, is in /home/exedev/targets/fc-minio-all.log). std: 228 packages pass. Escape analysis
   (driver/fc/escape*.go) and fclink (driver/fclink) are merged into main, not yet used by `fc build`.
+- M3 in part, 2026-11-13 10:40 UTC: **a program compiled entirely by fc, the runtime included, and linked by
+  fclink runs**: hello and three of tools/fclink/progs match stock output; MinIO built that way (1,313 fc objects,
+  no stock archive) passes its smoke test (`FC_RUNTIME=1`, off by default). Not M3: with an fc-built runtime the
+  collector loses live objects when it marks concurrently on more than two CPUs (deterministic reproduction:
+  reflect calls under allocation pressure); `FC_ALL=rt tools/fc/lang.sh` (test binaries wholly by fc) is 17-19 of 23.
+  SCOREBOARD.md's fc column is filled (cold, idle machine, fc + fclink, stock-compiled runtime): MinIO 6.8 s on 8
+  cores, before the two-pass front end (warm 5.5 -> 4.8 s).
 
-Now: (1) wire the merged escape analysis into the code generator (gen.go escResult: `g.esc` is still nil, so
-everything escapes; adapter over `pr.escape(p)`: heapVar, heapSite), then retry the runtime through fc
-(`FC_RUNTIME=1`: it compiles; 6 nosplit chains over the bound, mostly through write barriers on variables that
-would then stay in the frame) and the allocation-count skips: that is M3. (2) Read fc-minio-all.log and
-fc-batch-refail.log (some entries there failed only because the harness scripts were edited mid-run; rerun them).
-(3) `fc build -link` through fclink instead of the stock linker (M5). (4) On an idle machine:
-`tools/scoreboard/ours.sh`, then regenerate SCOREBOARD.md; no timing taken on 2026-11-13 is trustworthy (load 17-27).
-The two builders (escape, fclink) may still be committing to their worktree branches: merge again before starting.
+Now: (1) the concurrent-GC bug of the fc-built runtime: a builder is on it in its own worktree with the
+reproduction and the list of what is ruled out; when it reports, merge, rerun `FC_ALL=rt tools/fc/lang.sh`, then
+the std list in that mode, then MinIO's tests: that is M3 and M4. (2) /home/exedev/targets/fc-batch-m3.log is the
+std list (mixed mode) over today's code-generator changes: read it, fix regressions. (3) Then make FC_RUNTIME the
+default in `fc build` (the cold build then needs no `go` subprocess: 4.9 core-s of MinIO's 34) and rerun
+`tools/scoreboard/ours.sh` on an idle machine. (4) Speed, measured candidates in order: memory (8.1 GB peak costs
+6 s of system time in page faults and 0.7 s of exit teardown: allocate less), object files (2.6 core-s written
+then read back by fclink: hand symbols over in process, DESIGN at the top of driver/fclink/main.go), type
+checking (9 + 2.4 core-s).

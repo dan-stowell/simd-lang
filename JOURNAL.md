@@ -1565,3 +1565,24 @@ Is the oracle still the right one? For speed, yes: cold wall on 8 cores with che
 correctness the escape oracle (stock's -m) missed what the language corpus caught at once, so analysis
 changes are now judged by both, corpus first.
 
+## 2026-11-13 10:40 UTC: the runtime through fc
+
+Escape analysis came back from its builder with zero unsound decisions against the stock compiler on std and on
+our corpus, and one rule worth keeping: a site the analysis calls non-escaping must be in the frame, or the
+analysis must be told the code generator will heap-allocate it, because a heap object must not hold a frame
+address. It costs 12-19% of a build's CPU, so it is on only for the runtime's packages, which need it to be
+correct. With it, frame forms for the allocations the runtime makes before the heap exists, the race build's
+stack guard (fc's frames are twice the stock compiler's; the worst nosplit chain is 1040 bytes against 792),
+and direct calls of stack-ABI assembly (the runtime's recover counts frames to systemstack), hello ran, then
+MinIO passed its smoke test with no stock-compiled package in it.
+What the stock compiler gives the runtime silently and fc had to be taught, each found by a crash: liveness
+(the collector followed a stale slot into a span's inline mark bits: "tidy frames", per-call stack maps for the
+runtime's packages only); linknamed variables are one symbol across packages (maps.errNilAssign was two);
+static initialization of []byte("...") (read before any init runs); the real signatures of runtime functions
+the compiler's own list declares with stand-ins (a callee compiled by fc spills by its real signature).
+Still wrong: under concurrent marking on more than two CPUs the collector loses objects. STW collection, one
+or two CPUs, and the stock runtime are all fine.
+Is the oracle the right one? For the runtime, no longer: a smoke test and four small programs passed while the
+collector was unsound. The oracle for M3 is now test binaries built wholly by fc (`FC_ALL=rt`), corpus first,
+then std, and a reproduction that fails every time rather than one run in four.
+
