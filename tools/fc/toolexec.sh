@@ -5,6 +5,9 @@
 # FC_ONLY: the import paths (space-separated) fc compiles, or '*'. FC_REASONS: a file that collects fc's stderr. FC_BIN: the fc binary. FC_PLAN: `go list -json` of the dependencies. FC_LOG: a line per package.
 # FC_STRICT=1: a package fc cannot compile fails the build (otherwise the stock object stays and the log says so).
 tool=$1; shift
+# FC_TEST_LINKER=<fclink>: the campaign's linker links the binary (it does not check nosplit depth, which an
+# fc-built runtime exceeds under the stock bound)
+if [ -n "$FC_TEST_LINKER" ] && [ "$(basename "$tool")" = link ] && [ "${1:-}" != "-V=full" ]; then exec "$FC_TEST_LINKER" "$@"; fi
 if [ "$(basename "$tool")" != compile ]; then exec "$tool" "$@"; fi
 fc=0; args=()
 for a in "$@"; do case "$a" in -d=fc=*) fc=1;; *) args+=("$a");; esac; done
@@ -17,6 +20,7 @@ case "$FC_STOCK" in *" $pkg "*) mine=0;; esac
 # (the generated test main and external test packages stay with the stock compiler)
 if [ "$FC_ONLY" = '*' ]; then case "$pkg" in main|*_test) mine=0;; esac; fi
 runtimepkg=0; for a in "${args[@]}"; do [ "$a" = "-+" ] && runtimepkg=1; done
+case "$FC_RTPKGS" in *" $pkg "*) runtimepkg=1;; esac   # (the runtime's packages may not let anything escape)
 if [ $mine = 1 ] && [ -n "$FC_ESC_COMPILE" ] && [ $runtimepkg = 0 ]; then
   # the export data importers read says every pointer parameter escapes (tools/fc/mkcompile-esc.sh)
   "$FC_ESC_COMPILE" "${args[@]}" || exit $?

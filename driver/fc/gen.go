@@ -829,6 +829,12 @@ func (g *gen) callRT(name string) {
 	if ai.argWidth > g.maxarg {
 		g.maxarg = ai.argWidth
 	}
+	// The compiler's list declares some of these with stand-in types (convTslice(val any) takes a slice:
+	// three words, not two). The callee spills its register arguments into this frame by its real
+	// signature (a runtime compiled by fc always does), so the room is the real one's.
+	if w := g.c.rtRealWidth(name); w > g.maxarg {
+		g.maxarg = w
+	}
 	g.a.call(g.c.rt(name))
 }
 
@@ -1332,3 +1338,28 @@ func (g *gen) smallConst(e ast.Expr, t types.Type) (int64, bool) {
 
 // tidyKnob (FC_TIDY): 0 turns tidy frames off; "vars" and "temps" restrict which slots ever die (debugging).
 var tidyKnob = os.Getenv("FC_TIDY")
+
+// rtRealWidth: the argument area of runtime function name as package runtime declares it (0 if unknown).
+func (c *compiler) rtRealWidth(name string) int64 {
+	pr := c.pr
+	if v, ok := pr.rtWidth.Load(name); ok {
+		return v.(int64)
+	}
+	var w int64
+	rp := pr.byPath["runtime"]
+	var rtp *types.Package
+	if rp == c.pkg {
+		rtp = c.tpkg
+	} else if rp != nil {
+		rtp, _ = pr.view(rp)
+	}
+	if rtp != nil {
+		if fn, ok := rtp.Scope().Lookup(name).(*types.Func); ok {
+			if sig := fn.Type().(*types.Signature); sig.TypeParams().Len() == 0 {
+				w = c.abiOf(sig).argWidth
+			}
+		}
+	}
+	pr.rtWidth.Store(name, w)
+	return w
+}

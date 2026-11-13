@@ -18,9 +18,12 @@ if [ -n "$FC_ALL" ]; then
   # FC_ALL=1: every package of the test binary by fc, except the runtime and what it imports (as fc build does)
   export FC_ONLY='*' FC_STOCK; all=all
   FC_STOCK=" runtime $(go list -deps runtime | tr '\n' ' ') "
+  # FC_ALL=rt: the runtime and what it imports by fc too, linked by fclink: nothing of the test binary but
+  # the generated main, the external test package and the assembly comes from the stock toolchain
+  if [ "$FC_ALL" = rt ]; then export FC_RTPKGS=$FC_STOCK; FC_STOCK=; export FC_RUNTIME=1 FC_TEST_LINKER=${FC_TEST_LINKER:-$here/build/fclink}; fi
 fi
 # (the settings of the escape analysis change the object too: they are part of what the go command caches by)
-hash=$( (cat "$FC_BIN" "${FC_ESC_COMPILE:-/dev/null}"; echo "$FC_ESC/$FC_ESC_ALLFRAME/$FC_ESC_BYVALUE/$FC_TWOPASS/$FC_TIDY") | sha1sum | cut -c1-12)
+hash=$( (cat "$FC_BIN" "${FC_ESC_COMPILE:-/dev/null}"; echo "$FC_ESC/$FC_ESC_ALLFRAME/$FC_ESC_BYVALUE/$FC_TWOPASS/$FC_TIDY/$FC_RUNTIME/$FC_ALL/v2") | sha1sum | cut -c1-12)
 # tests the dev build is excused from (tests/fc/skips.txt: package, test name pattern, reason)
 skip=$(awk -v p="$pkg" '$1==p{printf "%s%s", sep, $2; sep="|"}' "$here/tests/fc/skips.txt" 2>/dev/null)
 [ -z "$skip" ] || set -- -skip "$skip" "$@"

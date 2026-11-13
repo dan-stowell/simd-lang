@@ -77,6 +77,7 @@ type Program struct {
 	byTpkg       sync.Map       // *types.Package -> *Pkg
 	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
+	rtWidth      sync.Map       // runtime function name -> the argument area of its real signature
 	rtcOnce      sync.Once
 	rtClosure    map[*Pkg]bool // the runtime and what it imports
 	fullFn       sync.Map      // a declarations-pass *types.Func -> the full pass's
@@ -293,11 +294,11 @@ func (pr *Program) parse(p *Pkg) {
 		}
 		seen := map[string]bool{}
 		for _, name := range p.GoFiles {
-			if rtByFc && name == "consts_norace.go" && p.ImportPath == "internal/runtime/sys" {
+			if rtByFc && filepath.Base(name) == "consts_norace.go" && plainPath(p.ImportPath) == "internal/runtime/sys" {
 				// fc's frames are larger than the stock compiler's (every variable has a slot), and the
 				// runtime's nosplit call chains must fit under the stack guard: an fc-built runtime takes
 				// the guard the race detector's build uses (twice the bound; StackGuardMultiplier 2).
-				name = "consts_race.go"
+				name = filepath.Join(filepath.Dir(name), "consts_race.go")
 			}
 			path := name
 			if !filepath.IsAbs(path) {
