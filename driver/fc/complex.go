@@ -153,6 +153,14 @@ func (g *gen) complexConv(l loc, from, to types.Type) loc {
 	return res
 }
 
+// runtimeTypeName is the name of t if it is a type declared in package runtime, else "" (types.RuntimeSymName).
+func runtimeTypeName(t types.Type) string {
+	if n, ok := types.Unalias(t).(*types.Named); ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "runtime" {
+		return n.Obj().Name()
+	}
+	return ""
+}
+
 // printCall: print and println, as calls of the runtime's printers.
 func printType(t types.Type) types.Type {
 	if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
@@ -191,7 +199,11 @@ func (g *gen) printLocs(vals []typedLoc, nl bool) {
 			case u.Info()&types.IsString != 0:
 				g.a.load(AX, m, 8, false)
 				g.a.load(BX, m.plus(8), 8, false)
-				g.callRT("printstring")
+				if runtimeTypeName(t) == "quoted" {
+					g.callRT("printquoted") // the runtime's quoted: as the stock compiler's walk does
+				} else {
+					g.callRT("printstring")
+				}
 			case u.Info()&types.IsFloat != 0:
 				g.loadTo(X0, v.l, t)
 				if g.c.sizeof(t) == 4 {
@@ -211,10 +223,9 @@ func (g *gen) printLocs(vals []typedLoc, nl bool) {
 			case u.Kind() == types.UnsafePointer:
 				g.loadTo(AX, v.l, t)
 				g.callRT("printpointer")
-			case u.Kind() == types.Uintptr && t != u:
+			case u.Info()&types.IsUnsigned != 0 && runtimeTypeName(t) == "hex":
 				g.loadTo(AX, v.l, t)
-				g.callRT("printuintptr") // a named uintptr type (the runtime's hex)
-
+				g.callRT("printhex") // the runtime's hex (any other named unsigned type prints in decimal)
 			case u.Info()&types.IsUnsigned != 0:
 				g.loadTo(AX, v.l, t)
 				g.callRT("printuint")
