@@ -208,6 +208,9 @@ func (pr *Program) resolveDeps(p *Pkg) error {
 				p.depErr = fmt.Errorf("%s: import %q is not in the plan", p.ImportPath, ip)
 				return
 			}
+			if dbg := os.Getenv("FC_DBGDEPS"); dbg != "" && plainPath(d.ImportPath) == dbg {
+				fmt.Fprintf(os.Stderr, "dep: %q imports %q -> %q (%p)\n", p.ImportPath, ip, d.ImportPath, d)
+			}
 			p.deps = append(p.deps, d)
 			wg.Add(1)
 			go func() { defer wg.Done(); pr.view(d) }()

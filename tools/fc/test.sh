@@ -11,7 +11,7 @@ export FC_BIN=${FC_BIN:-$here/build/fc} FC_STRICT=${FC_STRICT-1}
 [ -x "$here/build/compile-esc" ] && export FC_ESC_COMPILE=${FC_ESC_COMPILE-$here/build/compile-esc}
 cd "$dir" || exit 2
 plan=$(mktemp /tmp/fcplan.XXXXXX); trap 'rm -f $plan' EXIT
-go list -deps -test -json "$pkg" runtime > "$plan" || exit 2
+{ go list -deps -test -json "$pkg" && go list -deps -json runtime; } > "$plan" || exit 2   # (runtime without -test: its test variants are not part of this binary)
 export FC_PLAN=$plan FC_ONLY=$pkg
 all=$pkg
 if [ -n "$FC_ALL" ]; then
