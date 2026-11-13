@@ -136,10 +136,8 @@ internal/poll
 internal/profile
 internal/reflectlite
 internal/runtime/atomic
-internal/runtime/gc/scan
 internal/runtime/math
 internal/runtime/sys
-internal/runtime/syscall/linux
 internal/runtime/wasitest
 internal/saferio
 internal/singleflight
