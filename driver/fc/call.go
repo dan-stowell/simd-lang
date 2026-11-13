@@ -281,8 +281,11 @@ func (g *gen) addrOfLoc(l loc) loc {
 	case lSym:
 		g.a.lea(AX, msym(l.sym, l.off))
 		return loc{kind: lReg, reg: AX}
+	case lFrame:
+		g.a.lea(AX, mb(BP, l.off))
+		return loc{kind: lReg, reg: AX}
 	}
-	giveUp("address of a value in the frame")
+	giveUp("address of a value that is not in memory")
 	return loc{}
 }
 
@@ -600,6 +603,22 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		}
 	case "new":
 		t := g.typeOf(e.Args[0])
+		if !g.siteHeap(e) {
+			// the object does not outlive this activation: it lives in the frame
+			isType := g.info.Types[e.Args[0]].IsType()
+			if !isType {
+				t = g.typeOf(e).Underlying().(*types.Pointer).Elem()
+			}
+			var v loc
+			if !isType {
+				v = g.keep(g.exprAs(e.Args[0], t), t)
+			}
+			obj := g.frameObject(t)
+			if !isType {
+				g.move(obj, v, t)
+			}
+			return one(g.frameAddr(obj))
+		}
 		if !g.info.Types[e.Args[0]].IsType() {
 			// new(v): a new variable holding v
 			t = g.typeOf(e).Underlying().(*types.Pointer).Elem()

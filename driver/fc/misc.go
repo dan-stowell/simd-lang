@@ -188,9 +188,16 @@ func (g *gen) findHeapVars(body ast.Node) {
 		}
 		return nil
 	}
+	if g.addrVars == nil {
+		g.addrVars = map[*types.Var]bool{}
+	}
 	mark := func(v *types.Var) {
 		if v != nil && v.Pkg() != nil && v.Parent() != v.Pkg().Scope() {
-			g.heapVars[v] = true
+			g.addrVars[v] = true
+			// in the frame only when the analysis says its address stays inside this activation
+			if g.esc == nil || g.esc.varOnHeap(v) {
+				g.heapVars[v] = true
+			}
 		}
 	}
 	var lits []*ast.FuncLit

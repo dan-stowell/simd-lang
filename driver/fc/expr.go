@@ -195,7 +195,10 @@ func (g *gen) expr(e ast.Expr) loc {
 func (g *gen) exprAs(e ast.Expr, t types.Type) loc {
 	et := g.typeOf(e)
 	l := g.expr(e)
-	return g.convertImplicit(l, et, t)
+	g.convSite = e
+	l = g.convertImplicit(l, et, t)
+	g.convSite = nil
+	return l
 }
 
 func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
@@ -213,7 +216,7 @@ func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
 
 // exprTo evaluates e into dst (memory), a variable of type t.
 func (g *gen) exprTo(e ast.Expr, dst loc, t types.Type) {
-	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) {
+	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) && !g.addrFrame(dst) {
 		g.compositeTo(cl, dst, t)
 		return
 	}
@@ -948,6 +951,11 @@ func (g *gen) addressOf(x ast.Expr) loc {
 	x = ast.Unparen(x)
 	if cl, ok := x.(*ast.CompositeLit); ok {
 		t := g.typeOf(cl)
+		if !g.siteHeap(cl) {
+			obj := g.frameObject(t)
+			g.compositeTo(cl, obj, t)
+			return g.frameAddr(obj)
+		}
 		g.a.lea(AX, msym(g.c.typeSym(t), 0))
 		g.callRT("newobject")
 		p := g.ptrTemp()
@@ -976,8 +984,12 @@ func (g *gen) addressOf(x ast.Expr) loc {
 	case lSym:
 		g.a.lea(AX, msym(l.sym, l.off))
 		return loc{kind: lReg, reg: AX}
+	case lFrame:
+		// a variable the escape analysis left in the frame
+		g.a.lea(AX, mb(BP, l.off))
+		return loc{kind: lReg, reg: AX}
 	}
-	giveUp("address of a value in the frame")
+	giveUp("address of a value that is not in memory")
 	return loc{}
 }
 
@@ -1013,4 +1025,20 @@ func (c *compiler) complexSym(re, im float64, c64 bool) *obj.LSym {
 		c.defData(s, objabi.SRODATA, 16)
 	}
 	return s
+}
+
+// addrFrame: is dst (part of) a frame variable whose address is taken? Such a variable can be read through
+// a pointer while it is being assigned, so a literal is not built in place there.
+func (g *gen) addrFrame(dst loc) bool {
+	if dst.kind != lFrame {
+		return false
+	}
+	for v := range g.addrVars {
+		if l, ok := g.vars[v]; ok && l.kind == lFrame {
+			if dst.off >= l.off && dst.off < l.off+align(g.c.sizeof(g.vt(v)), 8) {
+				return true
+			}
+		}
+	}
+	return false
 }

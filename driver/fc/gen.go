@@ -115,11 +115,14 @@ type gen struct {
 	nosplit  bool
 	fallthru *label
 	entry    func()
-	bpFix    []int      // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	rf       *rfCtx     // set in the body of a range-over-func loop
-	deferTok *types.Var // the runtime's token for defers made in range-over-func loop bodies
-	root     *gen       // the function whose results a return there sets
-	abi0     bool       // the function itself is called with ABI0 (a wrapper for assembly callers)
+	bpFix    []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	esc      escResult           // escape analysis of the package the body is in; nil: everything escapes
+	addrVars map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	convSite ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	rf       *rfCtx              // set in the body of a range-over-func loop
+	deferTok *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	root     *gen                // the function whose results a return there sets
+	abi0     bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -1056,4 +1059,32 @@ func binaryPatch(code []byte, at int, target int) {
 	code[at+1] = byte(v >> 8)
 	code[at+2] = byte(v >> 16)
 	code[at+3] = byte(v >> 24)
+}
+
+// escResult is what the code generator asks the escape analysis.
+type escResult interface {
+	varOnHeap(v *types.Var) bool // must this address-taken or captured variable live on the heap?
+	siteOnHeap(n ast.Node) bool  // must this allocation (literal, new, make, closure, boxed value) use the heap?
+}
+
+// siteHeap: must the allocation at n use the heap?
+func (g *gen) siteHeap(n ast.Node) bool {
+	return g.esc == nil || n == nil || g.esc.siteOnHeap(n)
+}
+
+// frameObject reserves a slot for an object of type t that lives as long as the function (an allocation
+// that does not escape) and returns it zeroed.
+func (g *gen) frameObject(t types.Type) loc {
+	i := g.newSlotBits(g.c.sizeof(t), g.c.ptrBits(t, nil))
+	l := loc{kind: lFrame, off: -g.slots[i].off}
+	g.zero(l, t)
+	return l
+}
+
+// frameAddr: a pointer temporary holding the address of a frame location.
+func (g *gen) frameAddr(l loc) loc {
+	p := g.ptrTemp()
+	g.a.lea(R8, mb(BP, l.off))
+	g.a.store(mb(BP, p.off), R8, 8)
+	return p
 }
