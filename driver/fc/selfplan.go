@@ -116,6 +116,32 @@ func escapePath(p string) string {
 func newSelfPlan(srcdir string) (*selfPlan, error) {
 	sp := &selfPlan{mem: map[string][]byte{}, stdDir: map[string]bool{}}
 	sp.goroot, sp.modcache = os.Getenv("FC_GOROOT"), os.Getenv("GOMODCACHE")
+	// Without asking the go command (a process start, and 10-20 ms): GOROOT from the environment or from
+	// where the go on PATH lives, the module cache from GOPATH or the home directory. Anything set in the go
+	// command's own env file is not seen this way, so the go command is asked when a guess does not exist.
+	if sp.goroot == "" {
+		sp.goroot = os.Getenv("GOROOT")
+	}
+	if sp.goroot == "" {
+		if g, err := exec.LookPath("go"); err == nil {
+			if g, err = filepath.EvalSymlinks(g); err == nil {
+				sp.goroot = filepath.Dir(filepath.Dir(g))
+			}
+		}
+	}
+	if sp.modcache == "" {
+		if gp := filepath.SplitList(os.Getenv("GOPATH")); len(gp) > 0 && gp[0] != "" {
+			sp.modcache = filepath.Join(gp[0], "pkg", "mod")
+		} else if home, err := os.UserHomeDir(); err == nil {
+			sp.modcache = filepath.Join(home, "go", "pkg", "mod")
+		}
+	}
+	if _, err := os.Stat(filepath.Join(sp.goroot, "src", "runtime", "proc.go")); err != nil {
+		sp.goroot = ""
+	}
+	if _, err := os.Stat(filepath.Join(sp.modcache, "cache")); err != nil {
+		sp.modcache = ""
+	}
 	if sp.goroot == "" || sp.modcache == "" {
 		out, err := exec.Command("go", "env", "GOROOT", "GOMODCACHE").Output()
 		if err != nil {

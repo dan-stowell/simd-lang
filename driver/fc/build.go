@@ -85,6 +85,10 @@ func buildMode(args []string) {
 			debug.SetGCPercent(v) // (an experiment: the collector on)
 		}
 	}
+	if *link != "" && os.Getenv("FC_RUNTIME") == "" {
+		// a whole program for our own linker: the runtime is ours too, and the go command is not needed
+		rtByFc = linkerPath() != ""
+	}
 	t0 := time.Now()
 	c0 := cpuSeconds()
 	pr := newProgram()
@@ -164,7 +168,7 @@ func buildMode(args []string) {
 			}
 		}
 		for _, p := range closure {
-			if (p.ImportPath == "runtime" && os.Getenv("FC_RUNTIME") == "") || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
+			if (p.ImportPath == "runtime" && !rtByFc) || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
 				markStock(p)
 			}
 		}
@@ -427,8 +431,8 @@ func buildMode(args []string) {
 		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
 		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
 		linker := "stock linker"
-		if fl := os.Getenv("FC_LINKER"); fl != "" {
-			// FC_LINKER=<path of fclink>: the campaign's linker (driver/fclink) instead of the stock one
+		if fl := linkerPath(); fl != "" {
+			// the campaign's linker (driver/fclink) instead of the stock one
 			cmd = exec.Command(fl, "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
 			linker = "fclink"
 		}

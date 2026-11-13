@@ -406,5 +406,22 @@ func samePkg(a, b *types.Package) bool {
 	return a == b || a != nil && b != nil && a.Path() == b.Path()
 }
 
-// rtByFc (FC_RUNTIME=1): the runtime and what it imports are compiled by fc too.
-var rtByFc = os.Getenv("FC_RUNTIME") != ""
+// rtByFc: the runtime and what it imports are compiled by fc too. FC_RUNTIME=1 turns it on, FC_RUNTIME=0
+// off; unset, it is on in `fc build -link` when the linker is fclink (buildMode), off in the mixed mode of
+// the tests, where the runtime is the stock compiler's.
+var rtByFc = os.Getenv("FC_RUNTIME") != "" && os.Getenv("FC_RUNTIME") != "0"
+
+// linkerPath: fclink's path, or "" for the stock linker. FC_LINKER names it (empty: the stock linker);
+// unset, it is the fclink beside this binary, if there is one.
+func linkerPath() string {
+	if fl, ok := os.LookupEnv("FC_LINKER"); ok {
+		return fl
+	}
+	if exe, err := os.Executable(); err == nil {
+		fl := filepath.Join(filepath.Dir(exe), "fclink")
+		if st, err := os.Stat(fl); err == nil && !st.IsDir() {
+			return fl
+		}
+	}
+	return ""
+}
