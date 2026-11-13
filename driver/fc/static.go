@@ -122,7 +122,7 @@ func (c *compiler) compilePackage() (errs []string) {
 				}
 				g := c.newGen(sym.Name, sig, c.info, nil)
 				g.out.sym = sym
-				g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
+				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
 				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
 				// the stock compiler verifies; nothing to generate for them)
@@ -656,3 +656,32 @@ func (p *parallel) run(f func()) {
 }
 
 func (p *parallel) wait() { p.wg.Wait() }
+
+// intrinsicPkg: packages whose functions the stock compiler replaces by instructions (bit counting,
+// multi-word arithmetic). fc calls their Go bodies, and the runtime calls them inside regions that must
+// not be preempted (the bulk write barrier walks pointer masks with TrailingZeros64): a call there must
+// not be a preemption point, so these functions have no stack check.
+var intrinsicPkg = map[string]bool{"internal/runtime/sys": true, "internal/runtime/math": true, "math/bits": true}
+
+// inlinable: would the stock compiler plausibly inline fd (a small body without loops, defers or
+// closures, not marked //go:noinline)? The runtime calls such helpers ((*mspan).base, markBits.setMarked,
+// (*Type).Pointers) from regions that must not be preempted and counts on their having no stack check,
+// which inlining gives the stock compiler. fc does not inline: in the runtime's packages it compiles them
+// without a stack check instead.
+func inlinable(fd *ast.FuncDecl) bool {
+	if fd.Body == nil || hasDirective(fd.Doc, "//go:noinline") || hasDirective(fd.Doc, "//go:systemstack") {
+		return false
+	}
+	n, ok := 0, true
+	ast.Inspect(fd.Body, func(x ast.Node) bool {
+		switch x.(type) {
+		case nil:
+			return false
+		case *ast.ForStmt, *ast.RangeStmt, *ast.DeferStmt, *ast.GoStmt, *ast.SelectStmt, *ast.FuncLit, *ast.LabeledStmt:
+			ok = false
+		}
+		n++
+		return ok && n <= 120
+	})
+	return ok && n <= 120
+}

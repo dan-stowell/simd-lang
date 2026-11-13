@@ -371,7 +371,7 @@ func (c *compiler) compileInstance(in *instance) {
 	g := c.newGen(in.sym.Name, sig, p.info, in.env)
 	g.out.sym = in.sym
 	g.out.flags |= obj.DUPOK
-	g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
+	g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || (in.fn.Pkg() != nil && intrinsicPkg[in.fn.Pkg().Path()])
 	g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 }
 

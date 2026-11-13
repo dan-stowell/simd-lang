@@ -40,6 +40,7 @@ type callee struct {
 	imeth int
 	kind  int  // 0 direct, 1 closure, 2 interface
 	abi0  bool // a direct call of an assembly function with ABI0
+	asm   bool // a direct call of an assembly function of this package with the register ABI
 }
 
 // emitCall moves the arguments to where the ABI wants them, calls, and collects the results.
@@ -78,6 +79,14 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 	switch c.kind {
 	case 0:
 		g.a.call(c.sym)
+		if c.asm && !c.abi0 {
+			// runtime.mcall resumes its caller with BP one frame up (it saves the caller's saved BP, not
+			// BP: the stock compiler's code never reads BP, it only pops it). Locals here are
+			// BP-relative, so after assembly of this package BP is recomputed from SP.
+			g.a.byte(0x48, 0x8D, 0xAC, 0x24)
+			g.bpFix = append(g.bpFix, g.a.pc())
+			g.a.u32(0)
+		}
 		if c.abi0 {
 			// assembly may have used the registers ABIInternal fixes
 			g.a.xorps(X15, X15)
@@ -206,11 +215,14 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 			out = append(out, sig.Results().At(i).Type())
 		}
 		ai = g.c.abiOfTypes(in, out)
+		if g.env == nil && fsig.Recv() == nil && samePkg(fn.Pkg(), g.c.tpkg) && g.c.bodyless()[fn.Name()] {
+			c.asm = true
+		}
 		if now && g.env == nil && fsig.Recv() == nil && samePkg(fn.Pkg(), g.c.tpkg) && g.c.abis != nil && g.c.abis.defs[sym.Name] {
 			// an assembly function of this package with the stack ABI is called as it is, not through
 			// its wrapper (as the stock compiler does: the runtime counts on there being no frame between
 			// a function and systemstack)
-			c = callee{sym: g.c.lookup(sym.Name, obj.ABI0, sym.Pkg), abi0: true}
+			c = callee{sym: g.c.lookup(sym.Name, obj.ABI0, sym.Pkg), abi0: true, asm: true}
 			ai = g.c.abi0Of(in, out)
 		}
 	}
@@ -1178,4 +1190,17 @@ func (g *gen) tmpBuf(site *ast.CallExpr, elem types.Type, n int64) {
 	}
 	i := g.newSlotBits(g.c.sizeof(elem)*n, make([]bool, (g.c.sizeof(elem)*n+7)/8))
 	g.a.lea(AX, mb(BP, -g.slots[i].off))
+}
+
+// bodyless: the names of the package's functions declared without a body (assembly, or linknamed elsewhere).
+func (c *compiler) bodyless() map[string]bool {
+	c.bodylessOnce.Do(func() {
+		c.bodylessFns = map[string]bool{}
+		for _, fd := range c.funcDecls() {
+			if fd.Body == nil && fd.Recv == nil {
+				c.bodylessFns[fd.Name.Name] = true
+			}
+		}
+	})
+	return c.bodylessFns
 }

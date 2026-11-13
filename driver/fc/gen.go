@@ -1176,6 +1176,21 @@ func (g *gen) finish(pos token.Pos) {
 		sp = append(sp, pcval{tpc, 0})
 		lines = append(lines, pcval{tpc, int32(len(out.poss) - 1)})
 	}
+	if callGraph != nil {
+		var b strings.Builder
+		fmt.Fprintf(&b, "%s\t%v", g.out.sym.Name, g.nosplit)
+		seen := map[string]bool{}
+		for _, r := range relocs {
+			if r.Type == objabiRCall && r.Sym != nil && !seen[r.Sym.Name] {
+				seen[r.Sym.Name] = true
+				fmt.Fprintf(&b, "\t%s", r.Sym.Name)
+			}
+		}
+		b.WriteByte('\n')
+		callGraphMu.Lock()
+		callGraph.WriteString(b.String())
+		callGraphMu.Unlock()
+	}
 	out.code = code
 	out.relocs = relocs
 	out.sp = sp
@@ -1372,3 +1387,13 @@ func (c *compiler) rtRealWidth(name string) int64 {
 // wbWarn (FC_WBWARN=1): report write barriers emitted in functions the source marks //go:nowritebarrier or
 // //go:nowritebarrierrec (the stock compiler proves there are none).
 var wbWarn = os.Getenv("FC_WBWARN") != ""
+
+// callGraph (FC_CALLGRAPH=<file>): a line per function: name, nosplit, the symbols it calls.
+var callGraph = func() *os.File {
+	if name := os.Getenv("FC_CALLGRAPH"); name != "" {
+		f, _ := os.Create(name)
+		return f
+	}
+	return nil
+}()
+var callGraphMu sync.Mutex
