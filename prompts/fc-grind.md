@@ -25,23 +25,21 @@ and the harness's flags (`CGO_ENABLED=0 go test -count=1 -gcflags=all=-l <pkg>`)
    the skips) and, if it now passes, add it to passing.txt.
 
 Job 3: what is left. For every package that still fails or does not compile, write a section in the report
-(path below) as in the previous triage (reviews/inbox/fc-triage-1.md shows the form): class BUG / CRASH /
-NOFC / TIMEOUT, the deciding log lines, and for BUG and CRASH a reduced standalone case (a 10-30 line package
+(path below) as in the previous triage (reviews/inbox/fc-triage-1.md shows the form): class BUG / ABORT (the test binary stops abnormally or does not link) /
+NOFC / TIMEOUT, the deciding log lines, and for BUG and ABORT a reduced standalone case (a 10-30 line package
 with an external _test file under /tmp/fc-grind/<name>, run with `tools/fc/test.sh -C <dir> <module>/<pkg>`;
 `git init` the directory first) with expected and observed behaviour and, if you can see it, the cause in
 driver/fc. Packages many others depend on first. Reduced cases are the most valuable output.
 
-Job 4: MinIO. /home/exedev/targets/minio is built whole-program by fc like this:
-  cd /home/exedev/targets/minio && CGO_ENABLED=0 GOFLAGS=-buildvcs=false GOCACHE=/home/exedev/targets/fc-gocache go list -deps -export -json -gcflags=all=-l . runtime > /tmp/fc-grind/minio.plan.json
-  $FC_BIN build -plan /tmp/fc-grind/minio.plan.json -o /tmp/fc-grind/minio-objs -link /tmp/fc-grind/minio.bin github.com/minio/minio
-then `tests/minio_smoke.sh /tmp/fc-grind/minio.bin 19200` (from the repository root). The server currently
-panics with a nil pointer dereference in github.com/minio/minio/cmd.configRetriableErrors
-(cmd/server-main.go:511) after logging `failed to load rebalance metadata ... %!w(<nil>)`. Find the first
-point where the fc-built server's behaviour differs from a stock build and reduce it to a standalone case as
-in job 3 (a small main package built with `fc build -link` works the same way: `go list -deps -export -json
--gcflags=all=-l . runtime > plan`, then `fc build -plan plan -o objs -link bin <module path>`; setting
-FC_KEEP_STOCK=<pkg,pkg> keeps those packages and what they import stock-compiled, which bisects by package).
-Report every distinct failure you find on the way to a passing smoke test, each with its reduced case.
+Job 4: a corpus project's own unit tests. /home/exedev/targets/minio is a large Go program (an object
+store). Its packages can be tested the same way, one package at a time compiled by fc:
+`tools/fc/test.sh -C /home/exedev/targets/minio <import path> -short -count=1` (import paths from
+`cd /home/exedev/targets/minio && go list ./... `; packages without test files report "no test files").
+Run them all with `tools/fc/batch.sh -j 3 -C /home/exedev/targets/minio <paths>` (FC_TIMEOUT=600), compare each
+failure with the stock result for the same package and flags (`CGO_ENABLED=0 go test -short -count=1
+-gcflags=all=-l <pkg>` in that directory), and report as in job 3: per package PASS / FAIL (same as stock or
+different) / not compiled, with reduced cases for behaviour that differs between the two compilers. Write the
+passing import paths to tests/fc/passing-minio.txt (you may create that one file).
 
 Write the report incrementally to the path given below. End it with the counts (pass / fail / not compiled),
-the lines you added to skips.txt, and the list of open BUG/CRASH items.
+the lines you added to skips.txt, and the list of open BUG/ABORT items.
