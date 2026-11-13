@@ -422,13 +422,14 @@ func (pr *Program) pkgFor(ip string, from *Pkg) (*Pkg, error) {
 	return p, nil
 }
 
-// discover parses p and everything it imports, creating the packages as their imports are met.
+// discover finds p and everything it imports, creating the packages as their imports are met.
 func (pr *Program) discover(p *Pkg) {
 	p.discOnce.Do(func() {
-		pr.parse(p)
+		pr.scan(p)
 		if p.err != nil {
 			return
 		}
+		go pr.parse(p) // (the parse itself goes on behind the discovery of the graph)
 		var wg sync.WaitGroup
 		for _, ip := range p.imps {
 			d, err := pr.pkgFor(ip, p)

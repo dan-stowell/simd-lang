@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
+	"go/scanner"
 	"go/token"
 	"go/types"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -54,6 +56,8 @@ type Pkg struct {
 	depErr   error
 
 	parseOnce sync.Once
+	scanOnce  sync.Once
+	scanned   bool // imps, srcBytes and Name come from scan (a self plan)
 	discOnce  sync.Once
 	imps      []string          // import paths as written in the files
 	src       map[string][]byte // file bytes read by the self plan, until parsed
@@ -76,8 +80,9 @@ type Program struct {
 	byPath map[string]*Pkg
 	sizes  types.Sizes
 	sem    *prioPool
-	plan   *selfPlan  // nil when the packages come from a plan file
-	mu     sync.Mutex // guards byPath while packages are being discovered
+	io     chan struct{} // packages being read from disk at once
+	plan   *selfPlan     // nil when the packages come from a plan file
+	mu     sync.Mutex    // guards byPath while packages are being discovered
 
 	tctx         *types.Context // shared by every package: one object per instantiated type
 	byTpkg       sync.Map       // *types.Package -> *Pkg
@@ -100,7 +105,7 @@ type Program struct {
 
 func newProgram() *Program {
 	return &Program{fset: token.NewFileSet(), byPath: map[string]*Pkg{}, sizes: types.SizesFor("gc", "amd64"), tctx: types.NewContext(),
-		sem: newPrioPool(runtime.GOMAXPROCS(0))}
+		sem: newPrioPool(runtime.GOMAXPROCS(0)), io: make(chan struct{}, ioWidth)}
 }
 
 // readPlan reads a stream of `go list -json` objects.
@@ -399,6 +404,14 @@ func (pr *Program) checkBodies(p *Pkg) {
 	p.bodies = nil
 }
 
+// ioWidth: packages read at once (FC_IO).
+var ioWidth = func() int {
+	if n, err := strconv.Atoi(os.Getenv("FC_IO")); err == nil && n > 0 {
+		return n
+	}
+	return 32
+}()
+
 // bodyShardMin: a package with this much source has its bodies checked in shards (one per half of it,
 // up to the number of CPUs).
 const bodyShardMin = 512 << 10
@@ -455,11 +468,26 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 // resolveDeps parses p, finds the packages it imports and has each checked as far as an importer needs.
 func (pr *Program) resolveDeps(p *Pkg) error {
 	p.depOnce.Do(func() {
-		pr.parse(p)
+		// (a self plan knows the imports from the scan: the packages p imports are started while p is parsed)
+		parsed := make(chan struct{})
+		if pr.plan != nil && !p.listed {
+			pr.scan(p)
+			go func() { pr.parse(p); close(parsed) }()
+		} else {
+			pr.parse(p)
+			close(parsed)
+		}
 		if p.err != nil {
+			<-parsed
 			p.depErr = p.err
 			return
 		}
+		defer func() {
+			<-parsed
+			if p.depErr == nil && p.err != nil {
+				p.depErr = p.err
+			}
+		}()
 		var wg sync.WaitGroup
 		for _, ip := range p.imps {
 			if m, ok := p.ImportMap[ip]; ok {
@@ -551,29 +579,130 @@ func (pr *Program) full(fn *types.Func) *types.Func {
 
 // parse reads and parses p's files (once). With a self plan (selfplan.go) it first finds which files of the
 // directory belong to the build, from the bytes it then parses.
-func (pr *Program) parse(p *Pkg) {
-	p.parseOnce.Do(func() {
-		pr.sem.acquire(prioParse)
-		defer pr.sem.release()
-		if pr.plan != nil && !p.listed {
-			if err := pr.plan.loadDir(p); err != nil {
-				p.err = err
-				return
-			}
+// scan reads p's files (a self plan: the directory decides which) and finds what they import, from the
+// import declarations alone: the graph of a program is known after reading its files' heads, not after
+// parsing it (MinIO's cmd parses for 130 ms; its imports are the next level of the graph). No slot: this
+// is waiting for the disk and a few microseconds per file.
+func (pr *Program) scan(p *Pkg) {
+	p.scanOnce.Do(func() {
+		if pr.plan == nil || p.listed {
+			return
+		}
+		// Reading a directory and its files is waiting for the disk, not work for a core: on a cold
+		// page cache eight readers (the slots) left cores idle at the start of a build. So reads have
+		// their own, wider limit.
+		pr.io <- struct{}{}
+		err := pr.plan.loadDir(p)
+		<-pr.io
+		if err != nil {
+			p.err = err
+			return
 		}
 		seen := map[string]bool{}
 		for _, name := range p.GoFiles {
-			if rtByFc && filepath.Base(name) == "consts_norace.go" && plainPath(p.ImportPath) == "internal/runtime/sys" {
-				// fc's frames are larger than the stock compiler's (every variable has a slot), and the
-				// runtime's nosplit call chains must fit under the stack guard: an fc-built runtime takes
-				// the guard the race detector's build uses (twice the bound; StackGuardMultiplier 2).
-				name = filepath.Join(filepath.Dir(name), "consts_race.go")
+			src := p.src[name]
+			p.srcBytes += int64(len(src))
+			pkgName, imports, ok := scanImports(src)
+			if !ok {
+				p.err = fmt.Errorf("%s: cannot read the package clause and imports", filepath.Join(p.Dir, name))
+				return
 			}
+			if p.Name == "" {
+				p.Name = pkgName
+			}
+			for _, ip := range imports {
+				if ip != "unsafe" && ip != "C" && !seen[ip] {
+					seen[ip] = true
+					p.imps = append(p.imps, ip)
+				}
+			}
+		}
+		p.scanned = true
+	})
+}
+
+// scanImports reads the head of a Go file with the tokenizer alone: the package name and the import
+// paths, in order. It stops at the first token after the import declarations.
+func scanImports(src []byte) (pkg string, imports []string, ok bool) {
+	var sc scanner.Scanner
+	fset := token.NewFileSet() // (positions are not kept)
+	sc.Init(fset.AddFile("", -1, len(src)), src, nil, 0)
+	next := func() (token.Token, string) {
+		for {
+			_, tok, lit := sc.Scan()
+			if tok != token.SEMICOLON {
+				return tok, lit
+			}
+		}
+	}
+	tok, _ := next()
+	if tok != token.PACKAGE {
+		return "", nil, false
+	}
+	tok, pkg = next()
+	if tok != token.IDENT {
+		return "", nil, false
+	}
+	spec := func(tok token.Token, lit string) bool { // [name | . | _] "path"
+		if tok == token.IDENT || tok == token.PERIOD {
+			tok, lit = next()
+		}
+		if tok != token.STRING {
+			return false
+		}
+		path, err := strconv.Unquote(lit)
+		if err != nil {
+			return false
+		}
+		imports = append(imports, path)
+		return true
+	}
+	for {
+		tok, _ = next()
+		if tok != token.IMPORT {
+			return pkg, imports, true
+		}
+		tok, lit := next()
+		if tok != token.LPAREN {
+			if !spec(tok, lit) {
+				return "", nil, false
+			}
+			continue
+		}
+		for {
+			tok, lit = next()
+			if tok == token.RPAREN {
+				break
+			}
+			if !spec(tok, lit) {
+				return "", nil, false
+			}
+		}
+	}
+}
+
+func (pr *Program) parse(p *Pkg) {
+	p.parseOnce.Do(func() {
+		pr.scan(p)
+		if p.err != nil {
+			return
+		}
+		pr.sem.acquire(prioParse)
+		defer pr.sem.release()
+		seen := map[string]bool{}
+		for _, name := range p.GoFiles {
 			path := name
 			if !filepath.IsAbs(path) {
 				path = filepath.Join(p.Dir, name)
 			}
 			src := p.src[name]
+			if rtByFc && filepath.Base(name) == "consts_norace.go" && plainPath(p.ImportPath) == "internal/runtime/sys" {
+				// fc's frames are larger than the stock compiler's (every variable has a slot), and the
+				// runtime's nosplit call chains must fit under the stack guard: an fc-built runtime takes
+				// the guard the race detector's build uses (twice the bound; StackGuardMultiplier 2).
+				path = filepath.Join(filepath.Dir(path), "consts_race.go")
+				src = nil
+			}
 			if src == nil {
 				var err error
 				if src, err = os.ReadFile(path); err != nil {
@@ -581,7 +710,9 @@ func (pr *Program) parse(p *Pkg) {
 					return
 				}
 			}
-			p.srcBytes += int64(len(src))
+			if !p.scanned {
+				p.srcBytes += int64(len(src))
+			}
 			t0 := time.Now()
 			f, err := parser.ParseFile(pr.fset, path, src, parser.ParseComments|parser.SkipObjectResolution)
 			p.parseNS += int64(time.Since(t0))
@@ -592,6 +723,9 @@ func (pr *Program) parse(p *Pkg) {
 			p.files = append(p.files, f)
 			if p.Name == "" {
 				p.Name = f.Name.Name
+			}
+			if p.scanned {
+				continue
 			}
 			for _, im := range f.Imports {
 				ip := strings.Trim(im.Path.Value, "\"`")

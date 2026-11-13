@@ -1299,7 +1299,11 @@ func (pr *Program) inRuntime(p *Pkg) bool {
 				return
 			}
 			pr.rtClosure[plainPath(p.ImportPath)] = true // (by path: a test binary has variants of these packages)
-			pr.parse(p)
+			if pr.plan != nil && !p.listed {
+				pr.scan(p)
+			} else {
+				pr.parse(p)
+			}
 			for _, ip := range p.imps {
 				if m, ok := p.ImportMap[ip]; ok {
 					ip = m
