@@ -688,12 +688,20 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 			nodes = append(nodes, s.Value)
 		}
 	}
-	for _, v := range e.freeVars(s.Pos(), s.End(), nodes...) {
-		e.flow(k.addr(), e.varLoc[v])
+	free := e.freeVars(s.Pos(), s.End(), nodes...)
+	for _, v := range free {
+		l := e.varLoc[v]
+		if !l.captured {
+			l.captured = true
+			if l.loopDepth == e.loopDepth {
+				l.reassigned = false
+			}
+		}
 		if e.out.varWhy[v] == "" {
 			e.out.varWhy[v] = "captured"
 		}
 	}
+	e.closures = append(e.closures, escClosure{k, free})
 	returns := false
 	ast.Inspect(s.Body, func(n ast.Node) bool {
 		switch n.(type) {
