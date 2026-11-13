@@ -442,7 +442,7 @@ func buildMode(args []string) {
 		linker := "stock linker"
 		if fl := linkerPath(); fl != "" {
 			// the campaign's linker (driver/fclink) instead of the stock one
-			cmd = exec.Command(fl, "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
+			cmd = exec.Command(fl, "-s", "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
 			linker = "fclink"
 		}
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr

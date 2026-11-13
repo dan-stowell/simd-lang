@@ -112,7 +112,8 @@ type gen struct {
 	labels    map[*types.Label]*label
 	lblScope  map[*types.Label]*scope
 	hasDefer  bool
-	nclosure  int
+	ngen      [4]int // closures named so far: function literals, range-over-func bodies, go/defer wrappers, others
+	isLit     bool   // a function literal or range-over-func body (its literals are named outer.N)
 	lastPos   token.Pos
 	ctxSlot   loc // the closure object, in a closure
 	nosplit   bool

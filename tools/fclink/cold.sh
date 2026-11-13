@@ -22,7 +22,7 @@ print("evicted %.0f MB of inputs" % (n / 1e6))' "$cfg" "$obj"
 }
 for r in $(seq 1 "$rounds"); do
   evict
-  /usr/bin/time -f "fclink cold: %e s wall, %U+%S core-s" "$fclink" -stats -o "$out/$name.cold" -importcfg "$cfg" "$obj" > "$out/cold.log" 2>"$out/cold.time"
+  /usr/bin/time -f "fclink cold: %e s wall, %U+%S core-s" "$fclink" -s -stats -o "$out/$name.cold" -importcfg "$cfg" "$obj" > "$out/cold.log" 2>"$out/cold.time"
   cat "$out/cold.time"; awk '{printf "    %-10s %8s %8s\n", $1, $2, $3}' "$out/cold.log"
   evict > /dev/null
   /usr/bin/time -f "stock  cold: %e s wall, %U+%S core-s" go tool link -o "$out/$name.coldstock" -importcfg "$cfg" -buildmode=exe -s -w "$obj"
