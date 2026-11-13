@@ -110,6 +110,11 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 			g.move(tmp, loc{kind: lOut, off: p.off}, p.typ)
 			rs = append(rs, tmp)
 		case len(ai.out) == 1 && len(p.parts) == 1 && (isWord(p.typ) || isFloat(p.typ)):
+			if isWord(p.typ) && size < 8 {
+				// the ABI leaves the upper bits of a narrow result undefined; here a word in a register is
+				// always extended to 64 bits
+				g.a.extend(p.parts[0].reg, int(size), isSigned(p.typ))
+			}
 			rs = append(rs, loc{kind: lReg, reg: p.parts[0].reg})
 		default:
 			tmp := g.temp(p.typ)
@@ -219,6 +224,11 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		if sel.Kind() != types.MethodVal {
 			break // a field of function type, or a method expression: a function value
 		}
+		if n := f.Sel.Name; n == "Method" || n == "MethodByName" {
+			// perhaps reflection finding a method by index or name: the linker must then keep every
+			// exported method of every reachable type (stock: walk's usemethod, more selectively)
+			g.out.flags |= obj.REFLECTMETHOD
+		}
 		var rl loc
 		c, ai, rl = g.method(f, sel, sig)
 		args = append(args, rl)
@@ -308,9 +318,17 @@ func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 		}
 		return g.stashValue(l, t)
 	}
-	for i := 0; i < nfixed; i++ {
+	// arguments that contain calls first, in order; then the others (the stock compiler hoists calls out
+	// of expressions, so a variable passed beside a call that changes it is read after the call)
+	out = make([]loc, nfixed)
+	for _, i := range callsFirst(e.Args[:nfixed]) {
 		pt := sig.Params().At(i).Type()
-		out = append(out, hold(g.exprAs(e.Args[i], pt), pt, i))
+		l := g.exprAs(e.Args[i], pt)
+		if hasCall(e.Args[i]) {
+			out[i] = g.keep(l, pt)
+		} else {
+			out[i] = hold(l, pt, i)
+		}
 	}
 	if !sig.Variadic() {
 		return out
@@ -1056,4 +1074,35 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 func selOf(e ast.Expr) *ast.SelectorExpr {
 	s, _ := e.(*ast.SelectorExpr)
 	return s
+}
+
+// hasCall: does evaluating e call a function or receive from a channel?
+func hasCall(e ast.Expr) bool {
+	found := false
+	ast.Inspect(e, func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.CallExpr:
+			found = true
+		case *ast.UnaryExpr:
+			found = found || n.Op == token.ARROW
+		case *ast.FuncLit:
+			return false
+		}
+		return !found
+	})
+	return found
+}
+
+// callsFirst: the order in which the stock compiler evaluates a list of operands: those with calls, in
+// order, then the rest, in order.
+func callsFirst(es []ast.Expr) []int {
+	var first, rest []int
+	for i, e := range es {
+		if hasCall(e) {
+			first = append(first, i)
+		} else {
+			rest = append(rest, i)
+		}
+	}
+	return append(first, rest...)
 }

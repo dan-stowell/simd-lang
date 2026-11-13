@@ -5,6 +5,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"go/ast"
 	"go/types"
 	"log"
@@ -75,6 +76,46 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 		}
 		sym := c.funcSym(fn)
 		name := sym.Name
+		if fd.Body == nil {
+			// the argument stack map assembly functions refer to (the assembler adds the reference): the
+			// collector and stack growth read the arguments of an assembly frame through it
+			in, out := sigTypes(sig)
+			ai := c.abi0Of(in, out)
+			n := int(ai.argWidth / 8)
+			args := make([]bool, n)
+			for _, p := range ai.in {
+				if c.sizeof(p.typ) != 0 && c.hasPointers(p.typ) {
+					c.setPtrBits(p.typ, p.off, args)
+				}
+			}
+			maps := [][]bool{args}
+			if len(ai.out) > 0 {
+				res := append([]bool(nil), args...)
+				for _, p := range ai.out {
+					if c.sizeof(p.typ) != 0 && c.hasPointers(p.typ) {
+						c.setPtrBits(p.typ, p.off, res)
+					}
+				}
+				maps = append(maps, res)
+			}
+			data := binary.LittleEndian.AppendUint32(nil, uint32(len(maps)))
+			data = binary.LittleEndian.AppendUint32(data, uint32(n))
+			for _, m := range maps {
+				bs := make([]byte, (n+7)/8)
+				for i, b := range m {
+					if b {
+						bs[i/8] |= 1 << (i % 8)
+					}
+				}
+				data = append(data, bs...)
+			}
+			ms := c.lookup(name+".args_stackmap", obj.ABI0, sym.Pkg)
+			if !ms.OnList() {
+				ms.P = data
+				ms.Set(obj.AttrLocal, true)
+				c.defData(ms, objabi.SRODATA, int64(len(data)))
+			}
+		}
 		c.pr.linknames(c.pkg)
 		linknamed := c.pkg.linknamed[fn.Name()] || c.pkg.linknamedStd[fn.Name()]
 		switch {

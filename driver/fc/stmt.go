@@ -639,9 +639,9 @@ func (g *gen) returnStmt(s *ast.ReturnStmt) {
 		}
 	default:
 		vals := make([]loc, n)
-		for i, e := range s.Results {
+		for _, i := range callsFirst(s.Results) {
 			t := out[i].typ
-			vals[i] = g.keep(g.exprAs(e, t), t)
+			vals[i] = g.keep(g.exprAs(s.Results[i], t), t)
 		}
 		for i := range vals {
 			g.move(dst(i), vals[i], out[i].typ)

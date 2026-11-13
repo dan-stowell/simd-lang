@@ -13,7 +13,8 @@ for a in "${args[@]}"; do [ "$prev" = -p ] && pkg=$a; prev=$a; done
 # the flag also reaches the package's external test package (<pkg>_test): that one stays with the stock compiler
 mine=$fc
 [ "$FC_ONLY" = '*' ] || case " $FC_ONLY " in *" $pkg "*) ;; *) mine=0;; esac
-if [ $mine = 1 ] && [ -n "$FC_ESC_COMPILE" ]; then
+runtimepkg=0; for a in "${args[@]}"; do [ "$a" = "-+" ] && runtimepkg=1; done
+if [ $mine = 1 ] && [ -n "$FC_ESC_COMPILE" ] && [ $runtimepkg = 0 ]; then
   # the export data importers read says every pointer parameter escapes (tools/fc/mkcompile-esc.sh)
   "$FC_ESC_COMPILE" "${args[@]}" || exit $?
 else

@@ -4,3 +4,18 @@
 # (allocation counts that need escape analysis, inlining, code size), or it waits on object liveness
 # (finalizers). Anything else is a bug in fc.
 unicode/utf8 ^TestRuneCountNonASCIIAllocation$ asserts zero allocations for string(p[n:]) passed to a function: needs escape analysis
+strconv ^TestAllocationsFromBytes$ asserts allocation counts that need escape analysis
+encoding/binary ^TestAppendAllocs$ asserts allocation counts that need escape analysis
+bufio ^TestReadStringAllocs$ asserts allocation counts that need escape analysis
+crypto/md5 ^TestAllocations$ asserts allocation counts that need escape analysis
+database/sql ^(TestRawBytesAllocs|TestGrabConnAllocs)$ asserts allocation counts that need escape analysis
+hash/maphash ^TestComparableAllocations$ asserts allocation counts that need escape analysis
+internal/zstd ^TestAlloc$ asserts allocation counts that need escape analysis
+log ^TestDiscard$ asserts allocation counts that need escape analysis
+log/slog ^(TestAttrNoAlloc|TestJSONAllocs|TestAlloc|TestTextHandlerAlloc|TestValueNoAlloc|TestAnyLevelAlloc)$ asserts allocation counts that need escape analysis
+log/slog/internal/buffer ^TestAlloc$ asserts allocation counts that need escape analysis
+mime ^TestLookupMallocs$ asserts allocation counts that need escape analysis
+net/http/internal ^TestChunkReaderAllocs$ asserts allocation counts that need escape analysis
+net/netip ^(TestNoAllocs|TestAddrStringAllocs)$ asserts allocation counts that need escape analysis
+net/textproto ^TestCommonHeaders$ asserts allocation counts that need escape analysis
+unique ^(TestCanonMap|TestCanonMapBadHash|TestCanonMapTruncHash|TestHandle|TestMakeClonesStrings|TestNestedHandle|TestMakeAllocs)$ waits for weak references to be cleared while fc keeps locals alive; one allocation count

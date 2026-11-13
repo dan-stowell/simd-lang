@@ -131,9 +131,9 @@ func (g *gen) compareLocs(op token.Token, xl loc, xt types.Type, yl loc, yt type
 			yl = g.toInterface(yl, yt, xt)
 			yt = xt
 		} else {
+			yl = g.keep(g.inMem(yl, yt), yt) // (before the conversion below, which calls the runtime)
 			xl = g.toInterface(g.inMem(xl, xt), xt, yt)
 			xt = yt
-			yl = g.inMem(yl, yt)
 		}
 		t = xt
 	}
