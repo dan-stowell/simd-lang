@@ -513,6 +513,27 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 	case *ast.CallExpr:
 		// a conversion that keeps the representation
 		if ftv := c.info.Types[e.Fun]; ftv.IsType() && len(e.Args) == 1 {
+			// []byte("constant"): the bytes are data (the runtime reads such variables before any
+			// initializer has run)
+			if sl, ok := t.Underlying().(*types.Slice); ok {
+				if b, ok := sl.Elem().Underlying().(*types.Basic); ok && b.Kind() == types.Uint8 {
+					if v := c.info.Types[e.Args[0]].Value; v != nil && v.Kind() == constant.String {
+						if write {
+							str := constant.StringVal(v)
+							n := int64(len(str))
+							data := c.rtVar("zerobase")
+							if n > 0 {
+								data = c.defStaticVar(types.NewArray(sl.Elem(), n), false)
+								data.WriteBytes(c.ctxt, 0, []byte(str))
+							}
+							s.WriteAddr(c.ctxt, off, 8, data, 0)
+							s.WriteInt(c.ctxt, off+8, 8, n)
+							s.WriteInt(c.ctxt, off+16, 8, n)
+						}
+						return true
+					}
+				}
+			}
 			at := c.info.Types[e.Args[0]].Type
 			if at != nil && !isInterface(at) && (types.Identical(at.Underlying(), t.Underlying()) || isPtrWord(at) && isPtrWord(t)) {
 				return c.static(s, off, e.Args[0], at, write)

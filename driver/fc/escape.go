@@ -244,7 +244,7 @@ var escSiteNames = [...]string{"new", "&literal", "slice literal", "map literal"
 //
 // FC_ESC_ALLFRAME=1 (`fc esc -allframe`) ignores the list: the analysis as it would be if every kind had a
 // frame form, which is what compares with the stock compiler's decisions kind by kind.
-var escHeapOnly = [...]bool{escSiteSliceLit: true, escSiteDDD: true, escSiteMethodValue: true, escSiteGoDefer: true, escSiteString: false}
+var escHeapOnly = [...]bool{escSiteSliceLit: false, escSiteDDD: false, escSiteMethodValue: true, escSiteGoDefer: true, escSiteString: false}
 
 var escAllFrame = os.Getenv("FC_ESC_ALLFRAME") != ""
 

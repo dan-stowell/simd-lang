@@ -125,6 +125,7 @@ type gen struct {
 	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
 	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
 	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	convCall  *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
 	rf        *rfCtx              // set in the body of a range-over-func loop
 	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
 	root      *gen                // the function whose results a return there sets
@@ -770,8 +771,8 @@ func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, e
 	if env != nil {
 		g.substCache = map[types.Type]types.Type{}
 	}
-	if escOn {
-		if p, ok := c.pr.byInfo.Load(info); ok {
+	if escWhere != "0" {
+		if p, ok := c.pr.byInfo.Load(info); ok && (escWhere == "1" || c.pr.inRuntime(p.(*Pkg))) {
 			g.esc = escAdapter{c.pr.escape(p.(*Pkg))}
 		}
 	}
@@ -1142,8 +1143,35 @@ type escResult interface {
 	siteOnHeap(n ast.Node) bool  // must this allocation (literal, new, make, closure, boxed value) use the heap?
 }
 
-// escOn: FC_ESC=1 uses the escape analysis (escape.go); without it everything escapes.
-var escOn = os.Getenv("FC_ESC") != ""
+// escWhere (FC_ESC): which packages are compiled with the escape analysis (escape.go). By default only the
+// runtime and what it imports: their code must not allocate where the source says it does not (the
+// allocator itself, code that runs before the heap exists, nosplit chains), and the analysis costs a tenth
+// to a fifth of a build's CPU, which the other packages do not need to be correct. 1: every package;
+// 0: none. Without the analysis everything whose address is taken lives on the heap.
+var escWhere = os.Getenv("FC_ESC")
+
+// inRuntime: is p the runtime or one of the packages it imports?
+func (pr *Program) inRuntime(p *Pkg) bool {
+	pr.rtcOnce.Do(func() {
+		pr.rtClosure = map[*Pkg]bool{}
+		var walk func(p *Pkg)
+		walk = func(p *Pkg) {
+			if p == nil || pr.rtClosure[p] {
+				return
+			}
+			pr.rtClosure[p] = true
+			pr.parse(p)
+			for _, ip := range p.imps {
+				if m, ok := p.ImportMap[ip]; ok {
+					ip = m
+				}
+				walk(pr.byPath[ip])
+			}
+		}
+		walk(pr.byPath["runtime"])
+	})
+	return pr.rtClosure[p]
+}
 
 type escAdapter struct{ e *escInfo }
 

@@ -96,10 +96,16 @@ func (g *gen) concatLocs(ls []loc, t types.Type) loc {
 		return g.inMem(g.rtCall(name, args...)[0], strT)
 	}
 	sliceT := types.NewSlice(strT)
-	sl := g.newBacking(strT, int64(len(ls)), sliceT)
+	// the operands in an array the runtime reads and does not keep: a temporary in the frame
+	arr := g.temp(types.NewArray(strT, int64(len(ls))))
 	for i, l := range ls {
-		g.move(loc{kind: lInd, slot: sl.off, off: int64(i) * 16}, l, strT)
+		g.move(loc{kind: lFrame, off: arr.off + int64(i)*16}, l, strT)
 	}
+	sl := g.temp(sliceT)
+	g.a.lea(AX, mb(BP, arr.off))
+	g.a.store(mb(BP, sl.off), AX, 8)
+	g.a.storeImm(mb(BP, sl.off+8), int64(len(ls)), 8)
+	g.a.storeImm(mb(BP, sl.off+16), int64(len(ls)), 8)
 	return g.inMem(g.rtCall("concatstrings", nilp, sl)[0], strT)
 }
 

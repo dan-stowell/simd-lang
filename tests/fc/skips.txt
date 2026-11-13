@@ -1,9 +1,14 @@
 # Tests the dev build (CHARTER.md, "This is a dev build") is excused from, one per line:
 #   <import path> <test name pattern for go test -skip> <reason>
 # Every line here is reported in MORNING.md. Only two reasons are allowed: the test asserts an optimization
+# (allocation counts that need escape analysis, inlining, code size), or it waits on object liveness
 # (finalizers). Anything else is a bug in fc.
 unicode/utf8 ^TestRuneCountNonASCIIAllocation$ asserts zero allocations for string(p[n:]) passed to a function: needs escape analysis
-database/sql ^TestRawBytesAllocs$ asserts allocation counts that need escape analysis
+strconv ^TestAllocationsFromBytes$ asserts allocation counts that need escape analysis
+encoding/binary ^TestAppendAllocs$ asserts allocation counts that need escape analysis
+bufio ^TestReadStringAllocs$ asserts allocation counts that need escape analysis
+crypto/md5 ^TestAllocations$ asserts allocation counts that need escape analysis
+database/sql ^(TestRawBytesAllocs|TestGrabConnAllocs)$ asserts allocation counts that need escape analysis
 hash/maphash ^TestComparableAllocations$ asserts allocation counts that need escape analysis
 internal/zstd ^TestAlloc$ asserts allocation counts that need escape analysis
 log ^TestDiscard$ asserts allocation counts that need escape analysis
@@ -11,11 +16,12 @@ log/slog ^(TestAttrNoAlloc|TestJSONAllocs|TestAlloc|TestTextHandlerAlloc|TestVal
 log/slog/internal/buffer ^TestAlloc$ asserts allocation counts that need escape analysis
 mime ^TestLookupMallocs$ asserts allocation counts that need escape analysis
 net/http/internal ^TestChunkReaderAllocs$ asserts allocation counts that need escape analysis
-net/netip ^TestAddrStringAllocs$ asserts allocation counts that need escape analysis
+net/netip ^(TestNoAllocs|TestAddrStringAllocs)$ asserts allocation counts that need escape analysis
 net/textproto ^TestCommonHeaders$ asserts allocation counts that need escape analysis
 unique ^(TestCanonMap|TestCanonMapBadHash|TestCanonMapTruncHash|TestHandle|TestMakeClonesStrings|TestNestedHandle|TestMakeAllocs)$ waits for weak references to be cleared while fc keeps locals alive; one allocation count
+crypto/sha1 ^TestAllocations$ asserts allocation counts that need escape analysis
 bytes ^TestNewBufferShallow$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
-bytes ^(TestEqual|TestIndex|TestLastIndex)$ asserts allocation counts that need escape analysis
+bytes ^(TestEqual|TestIndex|TestLastIndex|TestIndexRune)$ asserts allocation counts that need escape analysis
 context ^TestAllocs$ asserts allocation counts that need escape analysis
 crypto/ed25519 ^TestAllocations$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 crypto/internal/fips140test ^(TestEdwards25519Allocations|TestNISTECAllocations|TestXAESAllocations)$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
@@ -30,5 +36,6 @@ fmt ^TestCountMallocs$ fails with the stock compiler too when inlining is off (-
 crypto/internal/fips140cache ^TestCache$ waits on object liveness
 math/big ^TestNewIntAllocs$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
 reflect ^TestMapIterSet$ fails with the stock compiler too when inlining is off (-gcflags=all=-l)
-reflect ^TestDeepEqualAllocs$ asserts allocation counts that need escape analysis
-strings ^TestIndexRune$ asserts allocation counts that need escape analysis
+reflect ^(TestDeepEqualAllocs|TestAllocsInterfaceBig|TestAllocsInterfaceSmall|TestMapAlloc|TestChanAlloc|TestMapIterReset)$ asserts allocation counts that need escape analysis
+strings ^(TestBuilderGrow|TestBuilderAllocs|TestBuilderGrowSizeclasses|TestIndexRune|TestReplace)$ asserts allocation counts that need escape analysis
+sync ^(TestOnceFunc|TestOnceValue|TestOnceValues)$ asserts allocation counts that need escape analysis

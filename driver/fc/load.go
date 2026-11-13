@@ -77,9 +77,11 @@ type Program struct {
 	byTpkg       sync.Map       // *types.Package -> *Pkg
 	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	instOwner    sync.Map       // instance symbol name -> the *compiler that compiles it
-	fullFn       sync.Map       // a declarations-pass *types.Func -> the full pass's
-	declNS       int64          // time in declarations-only checks
-	byInfo       sync.Map       // *types.Info -> *Pkg
+	rtcOnce      sync.Once
+	rtClosure    map[*Pkg]bool // the runtime and what it imports
+	fullFn       sync.Map      // a declarations-pass *types.Func -> the full pass's
+	declNS       int64         // time in declarations-only checks
+	byInfo       sync.Map      // *types.Info -> *Pkg
 	rtOnce       sync.Once
 	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
 	localMu      sync.Mutex
@@ -291,6 +293,12 @@ func (pr *Program) parse(p *Pkg) {
 		}
 		seen := map[string]bool{}
 		for _, name := range p.GoFiles {
+			if rtByFc && name == "consts_norace.go" && p.ImportPath == "internal/runtime/sys" {
+				// fc's frames are larger than the stock compiler's (every variable has a slot), and the
+				// runtime's nosplit call chains must fit under the stack guard: an fc-built runtime takes
+				// the guard the race detector's build uses (twice the bound; StackGuardMultiplier 2).
+				name = "consts_race.go"
+			}
 			path := name
 			if !filepath.IsAbs(path) {
 				path = filepath.Join(p.Dir, name)
@@ -393,3 +401,6 @@ var declOnly = os.Getenv("FC_DECLONLY") != ""
 func samePkg(a, b *types.Package) bool {
 	return a == b || a != nil && b != nil && a.Path() == b.Path()
 }
+
+// rtByFc (FC_RUNTIME=1): the runtime and what it imports are compiled by fc too.
+var rtByFc = os.Getenv("FC_RUNTIME") != ""

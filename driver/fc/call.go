@@ -159,7 +159,10 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		if !now {
 			giveUp("deferred conversion")
 		}
-		return nil, nil, c, []loc{g.convert(e.Args[0], g.subst(tv.Type))}, true
+		g.convCall = e
+		cl := g.convert(e.Args[0], g.subst(tv.Type))
+		g.convCall = nil
+		return nil, nil, c, []loc{cl}, true
 	}
 	// F[int](x): the callee is under the index expression
 	switch ix := fun.(type) {
@@ -351,7 +354,7 @@ func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 		return out
 	}
 	et := st.Underlying().(*types.Slice).Elem()
-	sl := g.newBacking(et, int64(len(extra)), st)
+	sl := g.newBacking(et, int64(len(extra)), st, e)
 	es := g.c.sizeof(et)
 	for i, a := range extra {
 		g.exprTo(a, loc{kind: lInd, slot: sl.off, off: int64(i) * es}, et)
@@ -365,8 +368,18 @@ func isTuple(t types.Type) bool {
 	return ok
 }
 
-// newBacking allocates an array of n elements and returns a slice temporary (type st) over it.
-func (g *gen) newBacking(et types.Type, n int64, st types.Type) loc {
+// newBacking allocates an array of n elements and returns a slice temporary (type st) over it. site is the
+// allocation as the escape analysis knows it: an array that does not outlive the activation is in the frame.
+func (g *gen) newBacking(et types.Type, n int64, st types.Type, site ast.Node) loc {
+	if !g.siteHeap(site) {
+		arr := g.frameObject(types.NewArray(et, n))
+		sl := g.temp(st)
+		g.a.lea(AX, mb(BP, arr.off))
+		g.a.store(mb(BP, sl.off), AX, 8)
+		g.a.storeImm(mb(BP, sl.off+8), n, 8)
+		g.a.storeImm(mb(BP, sl.off+16), n, 8)
+		return sl
+	}
 	g.a.lea(AX, msym(g.c.typeSym(et), 0))
 	g.a.movImm(BX, n)
 	g.callRT("newarray")
@@ -459,8 +472,9 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 		g.a.cvtf2f(int(g.c.sizeof(from)), X0, X0)
 		return loc{kind: lReg, reg: X0}
 	case isStr(tb) && isInt(fb):
+		site := g.convCall
 		g.loadTo(BX, l, from)
-		g.a.movImm(AX, 0)
+		g.tmpBuf(site, types.Typ[types.Byte], 4)
 		g.callRT("intstring")
 		return g.pairResult(to)
 	case isStr(tb) && !isStr(fb):
@@ -471,19 +485,20 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 		if l.kind == lZero {
 			return l
 		}
+		site := g.convCall
 		l = g.stash(l, from)
 		m := g.m(l, R13)
 		eb := sl.Elem().Underlying().(*types.Basic)
 		if eb.Kind() == types.Byte {
 			g.a.load(BX, m, 8, false)
 			g.a.load(CX, m.plus(8), 8, false)
-			g.a.movImm(AX, 0)
+			g.tmpBuf(site, types.Typ[types.Byte], 32)
 			g.callRT("slicebytetostring")
 		} else {
 			g.a.load(BX, m, 8, false)
 			g.a.load(CX, m.plus(8), 8, false)
 			g.a.load(DI, m.plus(16), 8, false)
-			g.a.movImm(AX, 0)
+			g.tmpBuf(site, types.Typ[types.Byte], 32)
 			g.callRT("slicerunetostring")
 		}
 		return g.pairResult(to)
@@ -495,14 +510,16 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 		if l.kind == lZero {
 			l = g.zeroTemp(from)
 		}
+		site := g.convCall
 		l = g.stash(l, from)
 		m := g.m(l, R13)
 		g.a.load(BX, m, 8, false)
 		g.a.load(CX, m.plus(8), 8, false)
-		g.a.movImm(AX, 0)
 		if sl.Elem().Underlying().(*types.Basic).Kind() == types.Byte {
+			g.tmpBuf(site, types.Typ[types.Byte], 32)
 			g.callRT("stringtoslicebyte")
 		} else {
+			g.tmpBuf(site, types.Typ[types.Int32], 32)
 			g.callRT("stringtoslicerune")
 		}
 		res := g.temp(to)
@@ -904,6 +921,20 @@ func (g *gen) makeCall(e *ast.CallExpr) loc {
 		if len(e.Args) > 2 {
 			cp = argInt(e.Args[2])
 		}
+		if ln.kind == lImm && cp.kind == lImm && ln.imm >= 0 && cp.imm >= ln.imm && !g.siteHeap(e) {
+			// constant size and it does not outlive the activation: the array is in the frame
+			res := g.temp(t)
+			if cp.imm == 0 {
+				g.a.lea(AX, msym(g.c.rtVar("zerobase"), 0))
+			} else {
+				arr := g.frameObject(types.NewArray(g.subst(u.Elem()), cp.imm))
+				g.a.lea(AX, mb(BP, arr.off))
+			}
+			g.a.store(mb(BP, res.off), AX, 8)
+			g.a.storeImm(mb(BP, res.off+8), ln.imm, 8)
+			g.a.storeImm(mb(BP, res.off+16), cp.imm, 8)
+			return res
+		}
 		g.a.lea(AX, msym(g.c.typeSym(u.Elem()), 0))
 		g.loadTo(BX, ln, intT)
 		g.loadTo(CX, cp, intT)
@@ -1128,4 +1159,16 @@ func callsFirst(es []ast.Expr) []int {
 		}
 	}
 	return append(first, rest...)
+}
+
+// tmpBuf: AX = the buffer argument of a runtime string conversion: a [n]elem in the frame when the result
+// does not outlive the activation (the runtime uses it if the result fits), else nil (the result is
+// allocated). Preserves the other registers.
+func (g *gen) tmpBuf(site *ast.CallExpr, elem types.Type, n int64) {
+	if site == nil || g.siteHeap(site) {
+		g.a.movImm(AX, 0)
+		return
+	}
+	i := g.newSlotBits(g.c.sizeof(elem)*n, make([]bool, (g.c.sizeof(elem)*n+7)/8))
+	g.a.lea(AX, mb(BP, -g.slots[i].off))
 }

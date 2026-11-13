@@ -65,7 +65,7 @@ func (g *gen) compositeTo(e *ast.CompositeLit, dst loc, t types.Type) {
 			g.a.storeImm(m.plus(16), 0, 8)
 			return
 		}
-		sl := g.newBacking(u.Elem(), n, t)
+		sl := g.newBacking(u.Elem(), n, t, e)
 		g.arrayElems(e, loc{kind: lInd, slot: sl.off}, u.Elem())
 		g.move(dst, sl, t)
 	case *types.Map:
