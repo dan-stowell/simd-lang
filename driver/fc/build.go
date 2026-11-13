@@ -168,6 +168,13 @@ func buildMode(args []string) {
 				markStock(p)
 			}
 		}
+		// FC_RT_FC="pkg pkg": bisecting the runtime's packages: these are compiled by fc although the runtime
+		// that imports them is the stock compiler's.
+		for _, name := range strings.Fields(os.Getenv("FC_RT_FC")) {
+			if p := pr.byPath[name]; p != nil && len(p.GoFiles) > 0 {
+				delete(stock, p)
+			}
+		}
 		targets = nil
 		var need []string
 		for _, p := range closure {

@@ -118,9 +118,14 @@ type gen struct {
 	nosplit   bool
 	fallthru  *label
 	entry     func()
-	bpFix     []int // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	lastPlace int   // the address of the label placed last (another label may already name the current address)
-	declSlots []int // the slots of the variables declared in the blocks being compiled
+	bpFix     []int    // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace int      // the address of the label placed last (another label may already name the current address)
+	declSlots []int    // the slots of the variables declared in the blocks being compiled
+	tidy      bool     // tidy frames (see slotBorn)
+	liveSlot  []bool   // by slot: allocated now
+	dirty     []int    // slots released in the statement being compiled: still live until it ends
+	liveSets  []string // the distinct sets of live slots at calls (bit sets by slot index)
+	liveIdx   map[string]int
 	nDecl     int
 	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
 	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
@@ -364,11 +369,75 @@ func (g *gen) newSlotBits(size int64, ptrs []bool) int {
 	if fl := g.free[key]; len(fl) > 0 {
 		i := fl[len(fl)-1]
 		g.free[key] = fl[:len(fl)-1]
+		g.slotBorn(i)
 		return i
 	}
 	g.locals += size
 	g.slots = append(g.slots, slotInfo{off: g.locals, size: size, ptrs: ptrs})
+	g.slotBorn(len(g.slots) - 1)
 	return len(g.slots) - 1
+}
+
+// Tidy frames (the runtime's own packages). Elsewhere a frame has one stack map in which every slot is
+// always live: a slot that is free still holds what was last stored there, the collector follows it, and
+// that is sound as long as every such value points to an object (the object just lives longer). The
+// runtime also holds pointers into heap memory that is not an object (a span's inline mark bits, its heap
+// bitmap); the stock compiler never shows the collector one, because they are dead at every safepoint.
+// So in the runtime's packages a slot is live only while it is allocated (a temporary until the end of the
+// statement it was released in, a variable until the end of its block), each call has the stack map of the
+// slots live there, and a slot's pointer words are cleared when it is allocated.
+func (g *gen) slotBorn(i int) {
+	if !g.tidy {
+		return
+	}
+	for len(g.liveSlot) <= i {
+		g.liveSlot = append(g.liveSlot, false)
+	}
+	g.liveSlot[i] = true
+	s := g.slots[i]
+	for w, p := range s.ptrs {
+		if p {
+			g.a.storeImm(mb(BP, -s.off+int64(8*w)), 0, 8) // (no flags, no registers)
+		}
+	}
+}
+
+func (g *gen) slotDead(i int) {
+	if g.tidy && i < len(g.liveSlot) && g.liveSlot[i] {
+		g.liveSlot[i] = false
+		g.dirty = append(g.dirty, i)
+	}
+}
+
+// safepoint records the stack map for the call about to be emitted.
+func (g *gen) safepoint() {
+	n := (len(g.slots) + 7) / 8
+	key := make([]byte, n)
+	for i, l := range g.liveSlot {
+		if l {
+			key[i/8] |= 1 << (i % 8)
+		}
+	}
+	for _, i := range g.dirty {
+		key[i/8] |= 1 << (i % 8)
+	}
+	for n > 0 && key[n-1] == 0 {
+		n--
+	}
+	k := string(key[:n])
+	idx, ok := g.liveIdx[k]
+	if !ok {
+		if g.liveIdx == nil {
+			g.liveIdx = map[string]int{}
+		}
+		idx = len(g.liveSets)
+		g.liveIdx[k] = idx
+		g.liveSets = append(g.liveSets, k)
+	}
+	if ev := g.out.stackmap; len(ev) > 0 && ev[len(ev)-1].val == int32(idx) {
+		return
+	}
+	g.out.stackmap = append(g.out.stackmap, pcval{g.a.pc(), int32(idx)})
 }
 
 // temp returns a frame slot for a value of type t, released by the enclosing mark.
@@ -399,6 +468,9 @@ func (g *gen) release(mark int) {
 		s := g.slots[i]
 		key := shapeKey(s.size, s.ptrs)
 		g.free[key] = append(g.free[key], i)
+		if tidyKnob != "vars" {
+			g.slotDead(i)
+		}
 	}
 	g.temps = g.temps[:mark]
 }
@@ -771,6 +843,10 @@ func (c *compiler) newGen(name string, sig *types.Signature, info *types.Info, e
 	if env != nil {
 		g.substCache = map[types.Type]types.Type{}
 	}
+	if p, ok := c.pr.byInfo.Load(info); tidyKnob == "all" || ok && c.pr.inRuntime(p.(*Pkg)) && tidyKnob != "0" {
+		g.tidy = true
+		g.a.pre = g.safepoint
+	}
 	if escWhere != "0" {
 		if p, ok := c.pr.byInfo.Load(info); ok && (escWhere == "1" || c.pr.inRuntime(p.(*Pkg))) {
 			g.esc = escAdapter{c.pr.escape(p.(*Pkg))}
@@ -1031,6 +1107,9 @@ func (g *gen) finish(pos token.Pos) {
 	for _, e := range out.lines {
 		lines = append(lines, pcval{e.pc + plen, e.val})
 	}
+	for _, e := range out.stackmap {
+		stackmap = append(stackmap, pcval{e.pc + plen, e.val + 2}) // (maps 0 and 1 are the entry's and the whole frame's)
+	}
 	for _, e := range out.sp {
 		v := e.val
 		if v == fullFrame {
@@ -1113,7 +1192,6 @@ func (g *gen) finish(pos token.Pos) {
 			g.c.setPtrBits(o.typ, o.off, bodyMap)
 		}
 	}
-	out.argsMap = g.c.stackMapSym(nargs, entry, bodyMap)
 	lm := make([]bool, n/8)
 	for _, s := range g.slots {
 		base := int((n - s.off) / 8)
@@ -1123,7 +1201,24 @@ func (g *gen) finish(pos token.Pos) {
 			}
 		}
 	}
-	out.localsMap = g.c.stackMapSym(int(n/8), lm, lm)
+	argMaps, localMaps := [][]bool{entry, bodyMap}, [][]bool{lm, lm}
+	for _, set := range g.liveSets {
+		// the slots live at one or more calls
+		m := make([]bool, n/8)
+		for si, s := range g.slots {
+			if si/8 < len(set) && set[si/8]&(1<<(si%8)) != 0 {
+				base := int((n - s.off) / 8)
+				for i, b := range s.ptrs {
+					if b {
+						m[base+i] = true
+					}
+				}
+			}
+		}
+		argMaps, localMaps = append(argMaps, bodyMap), append(localMaps, m)
+	}
+	out.argsMap = g.c.stackMapSym(nargs, argMaps...)
+	out.localsMap = g.c.stackMapSym(int(n/8), localMaps...)
 	g.c.mu.Lock()
 	g.c.funcs = append(g.c.funcs, out)
 	g.c.mu.Unlock()
@@ -1234,3 +1329,6 @@ func (g *gen) smallConst(e ast.Expr, t types.Type) (int64, bool) {
 	}
 	return l.imm, true
 }
+
+// tidyKnob (FC_TIDY): 0 turns tidy frames off; "vars" and "temps" restrict which slots ever die (debugging).
+var tidyKnob = os.Getenv("FC_TIDY")

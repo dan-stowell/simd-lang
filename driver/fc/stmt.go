@@ -22,6 +22,9 @@ func (g *gen) block(list []ast.Stmt) {
 			s := g.slots[i]
 			key := shapeKey(s.size, s.ptrs)
 			g.free[key] = append(g.free[key], i)
+			if tidyKnob != "temps" {
+				g.slotDead(i)
+			}
 		}
 	}
 	g.declSlots = g.declSlots[:n]
@@ -29,7 +32,10 @@ func (g *gen) block(list []ast.Stmt) {
 
 func (g *gen) stmt(s ast.Stmt) {
 	mark := g.mark()
-	defer g.release(mark)
+	defer func() {
+		g.release(mark)
+		g.dirty = g.dirty[:0] // what the statement released is dead now
+	}()
 	g.pos(s.Pos())
 	switch s := s.(type) {
 	case *ast.BlockStmt:

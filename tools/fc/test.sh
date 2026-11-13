@@ -20,7 +20,7 @@ if [ -n "$FC_ALL" ]; then
   FC_STOCK=" runtime $(go list -deps runtime | tr '\n' ' ') "
 fi
 # (the settings of the escape analysis change the object too: they are part of what the go command caches by)
-hash=$( (cat "$FC_BIN" "${FC_ESC_COMPILE:-/dev/null}"; echo "$FC_ESC/$FC_ESC_ALLFRAME/$FC_ESC_BYVALUE/$FC_TWOPASS") | sha1sum | cut -c1-12)
+hash=$( (cat "$FC_BIN" "${FC_ESC_COMPILE:-/dev/null}"; echo "$FC_ESC/$FC_ESC_ALLFRAME/$FC_ESC_BYVALUE/$FC_TWOPASS/$FC_TIDY") | sha1sum | cut -c1-12)
 # tests the dev build is excused from (tests/fc/skips.txt: package, test name pattern, reason)
 skip=$(awk -v p="$pkg" '$1==p{printf "%s%s", sep, $2; sep="|"}' "$here/tests/fc/skips.txt" 2>/dev/null)
 [ -z "$skip" ] || set -- -skip "$skip" "$@"

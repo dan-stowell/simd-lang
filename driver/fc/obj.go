@@ -484,7 +484,21 @@ func (c *compiler) globalSym(v *types.Var) *obj.LSym {
 		if i := strings.LastIndex(ln, "."); i >= 0 {
 			pkg = ln[:i]
 		}
+		if !c.mixed {
+			pkg = "_" // (see below)
+		}
 		return c.lookup(ln, obj.ABI0, pkg)
+	}
+	if !c.mixed && v.Pkg() != nil {
+		// A variable with a //go:linkname directive may be defined by another package under this name
+		// (internal/runtime/maps.errNilAssign has its value from package runtime): it is a symbol found
+		// by name, even from its own package, so that the linker makes one of the two.
+		if p := c.pr.byTypes(v.Pkg()); p != nil {
+			c.pr.linknames(p)
+			if p.linknamed[v.Name()] || p.linknamedStd[v.Name()] {
+				return c.lookup(c.pkgPrefix(v.Pkg())+"."+v.Name(), obj.ABI0, "_")
+			}
+		}
 	}
 	return c.lookup(c.pkgPrefix(v.Pkg())+"."+v.Name(), obj.ABI0, c.pkgPrefix(v.Pkg()))
 }

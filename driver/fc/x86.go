@@ -56,7 +56,8 @@ func (m mem) plus(off int64) mem { m.disp += off; return m }
 type asm struct {
 	b         []byte
 	relocs    []obj.Reloc
-	maxTarget int // the highest address any jump has been patched to
+	maxTarget int    // the highest address any jump has been patched to
+	pre       func() // called before a call instruction is emitted (tidy frames: the stack map there)
 }
 
 func (a *asm) pc() int         { return len(a.b) }
@@ -449,14 +450,22 @@ func (a *asm) jmpTo(target int)         { a.patch(a.jmp(), target) }
 func (a *asm) jccTo(cc int, target int) { a.patch(a.jcc(cc), target) }
 
 func (a *asm) call(s *obj.LSym) {
+	if a.pre != nil {
+		a.pre()
+	}
 	a.byte(0xE8)
 	a.relocs = append(a.relocs, obj.Reloc{Off: int32(len(a.b)), Siz: 4, Type: objabi.R_CALL, Sym: s})
 	a.u32(0)
 }
-func (a *asm) callReg(reg int) { a.rr(0, 4, []byte{0xFF}, 2, reg) }
-func (a *asm) jmpReg(reg int)  { a.rr(0, 4, []byte{0xFF}, 4, reg) }
-func (a *asm) ret()            { a.byte(0xC3) }
-func (a *asm) ud2()            { a.byte(0x0F, 0x0B) }
+func (a *asm) callReg(reg int) {
+	if a.pre != nil {
+		a.pre()
+	}
+	a.rr(0, 4, []byte{0xFF}, 2, reg)
+}
+func (a *asm) jmpReg(reg int) { a.rr(0, 4, []byte{0xFF}, 4, reg) }
+func (a *asm) ret()           { a.byte(0xC3) }
+func (a *asm) ud2()           { a.byte(0x0F, 0x0B) }
 func (a *asm) push(reg int) {
 	a.rex(4, noReg, noReg, reg, false)
 	a.byte(0x50 | byte(reg&7))
