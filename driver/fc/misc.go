@@ -139,9 +139,17 @@ func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 		}
 		f, ok := g.info.Uses[id].(*types.Func)
 		if !ok {
-			// a function value: its code pointer is the first word of the closure object
+			// a function value: its code pointer is the first word of the closure object. An interface
+			// (FuncPCABIInternal(f) with f any, as runtime/pprof's tests do) holds the function value in
+			// its data word.
+			t := g.typeOf(e.Args[0])
 			l := g.expr(e.Args[0])
-			g.loadTo(AX, l, unsafePtr)
+			if types.IsInterface(t) {
+				l = g.inMem(l, t)
+				g.a.load(AX, g.m(l, R13).plus(8), 8, false)
+			} else {
+				g.loadTo(AX, l, unsafePtr)
+			}
 			g.a.load(AX, mb(AX, 0), 8, false)
 			return ax
 		}
