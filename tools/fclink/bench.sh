@@ -23,7 +23,7 @@ for r in $(seq 1 "$rounds"); do
     if [ $w = stock ]; then
       tm stock go tool link -o "$out/$name.stock" -importcfg "$cfg" -buildmode=exe -s -w "$obj"
     else
-      tm fclink "$fclink" -stats -o "$out/$name.fclink" -importcfg "$cfg" "$obj"
+      tm fclink "$fclink" -s -stats -o "$out/$name.fclink" -importcfg "$cfg" "$obj"
       t=$(awk '$1=="total"{print int($2*1000)}' "$out/fclink.log")
       [ "$t" -lt "$best" ] && { best=$t; cp "$out/fclink.log" "$out/best.stats"; }
     fi

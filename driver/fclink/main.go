@@ -1,9 +1,10 @@
 // fclink: a linker for statically linked linux/amd64 Go executables, built for wall-clock speed on many
 // cores. It reads the same inputs as `go tool link -s -w -buildmode=exe` (an importcfg.link and the main
 // package's object; archives or bare Go objects from the stock compiler and assembler or from fc) and
-// writes an ELF executable without DWARF and without a symbol table. CGO_ENABLED=0, internal linking only.
+// writes an ELF executable without DWARF, and with a symbol table of the functions only without -s.
+// CGO_ENABLED=0, internal linking only.
 //
-//	fclink -o out -importcfg importcfg.link [-buildid id] [-stats] main.o
+//	fclink -o out -importcfg importcfg.link [-buildid id] [-s] [-stats] main.o
 //
 // Every phase works on dense symbol ids (object base + index in the object) held in flat arrays:
 //
@@ -104,9 +105,11 @@ var (
 	flagDumpLive  = flag.String("dumplive", "", "write the names of the live symbols to `file` (debugging)")
 	flagEntry     = flag.String("E", "_rt0_amd64_linux", "entry `symbol`")
 	flagDetach    = flag.Bool("detach", false, "return when the output is complete, without waiting for the process that wrote it to exit")
+	// as the stock linker's: without -s, an ELF symbol table of the functions (go tool objdump and nm need
+	// one; the go command leaves -s out only for the runtime's own tests and for go build)
+	flagStrip = flag.Bool("s", false, "omit the symbol table")
 	// accepted for compatibility with the go command's link line
 	_         = flag.String("buildmode", "exe", "only exe")
-	_         = flag.Bool("s", true, "no symbol table (always)")
 	_         = flag.Bool("w", true, "no DWARF (always)")
 	_         = flag.String("extld", "", "ignored")
 	_         = flag.String("installsuffix", "", "ignored")

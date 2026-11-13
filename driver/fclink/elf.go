@@ -1,7 +1,10 @@
 // elf.go: the ELF header, program headers, the Go build id note and a minimal section table.
 package main
 
-import "debug/elf"
+import (
+	"bytes"
+	"debug/elf"
+)
 
 func writeELF() {
 	type seg struct {
@@ -47,6 +50,12 @@ func writeELF() {
 		addr, size uint32
 		align      uint64
 	}
+	type fileOnly struct { // a section that is only in the file (the symbol table and its names)
+		data       []byte
+		link, info uint32
+		entsize    uint64
+	}
+	extra := map[int]fileOnly{}
 	bi := buildinfoSym
 	sects := []sect{
 		{},
@@ -71,11 +80,24 @@ func writeELF() {
 	if note != nil {
 		sects = append(sects, sect{".note.go.buildid", elf.SHT_NOTE, elf.SHF_ALLOC, imageBase + uint32(noteOff), uint32(len(note)), 4})
 	}
+	if !*flagStrip {
+		syms, names := symtab()
+		extra[len(sects)] = fileOnly{syms, uint32(len(sects) + 1), 1, 24}
+		extra[len(sects)+1] = fileOnly{data: names}
+		sects = append(sects, sect{name: ".symtab", typ: elf.SHT_SYMTAB, align: 8}, sect{name: ".strtab", typ: elf.SHT_STRTAB, align: 1})
+	}
 	sects = append(sects, sect{name: ".shstrtab", typ: elf.SHT_STRTAB, align: 1})
 	strtab := []byte{0}
 	shoff := uint64(rnd(lay.edata-imageBase, 8))
 	stroff := shoff + uint64(64*len(sects))
+	for _, s := range sects {
+		strtab = append(strtab, s.name...)
+		strtab = append(strtab, 0)
+	}
+	// the file-only sections go after the section names, written to the file (the mapping ends there)
+	dataOff := (stroff + uint64(len(strtab)) + 7) &^ 7
 	sh := out[shoff:]
+	strtab = strtab[:1]
 	for i, s := range sects {
 		if i == 0 {
 			continue
@@ -92,14 +114,25 @@ func writeELF() {
 		}
 		le.PutUint64(e[32:], uint64(s.size))
 		le.PutUint64(e[48:], s.align)
-		if s.typ == elf.SHT_STRTAB {
+		if x, ok := extra[i]; ok {
+			le.PutUint32(e[40:], x.link)
+			le.PutUint32(e[44:], x.info)
+			le.PutUint64(e[56:], x.entsize)
+			dataOff = (dataOff + s.align - 1) &^ (s.align - 1)
+			le.PutUint64(e[24:], dataOff)
+			le.PutUint64(e[32:], uint64(len(x.data)))
+			if _, err := outFile.WriteAt(x.data, int64(dataOff)); err != nil {
+				fatalf("%v", err)
+			}
+			dataOff += uint64(len(x.data))
+		} else if s.name == ".shstrtab" {
 			le.PutUint64(e[24:], stroff)
 			le.PutUint64(e[32:], uint64(len(strtab)))
 		}
 	}
 	copy(out[stroff:], strtab)
-	outSize = int64(stroff) + int64(len(strtab))
-	if outSize > int64(len(out)) {
+	outSize = max(int64(stroff)+int64(len(strtab)), int64(dataOff))
+	if int64(stroff)+int64(len(strtab)) > int64(len(out)) {
 		fatalf("section table does not fit")
 	}
 
@@ -132,4 +165,32 @@ func writeELF() {
 		fatalf("%v", err)
 	}
 	outFile.Close()
+}
+
+// symtab: an ELF symbol table of the functions, read back from the function table and the function names
+// already in the output (pclntab): what go tool objdump, nm and addr2line look functions up by. A
+// function's size reaches to the next one's entry.
+func symtab() (syms, names []byte) {
+	at := func(a uint32) []byte { return out[a-imageBase:] }
+	ftab, fnames := at(lay.functab), at(lay.funcnametab)
+	syms = make([]byte, 24, 24*(lay.nfunc+1))
+	names = []byte{0}
+	for i := uint32(0); i < lay.nfunc; i++ {
+		entry, next := le.Uint32(ftab[8*i:]), le.Uint32(ftab[8*i+8:])
+		f := ftab[le.Uint32(ftab[8*i+4:]):]
+		name := fnames[le.Uint32(f[4:]):]
+		if n := bytes.IndexByte(name, 0); n >= 0 {
+			name = name[:n]
+		}
+		var e [24]byte
+		le.PutUint32(e[0:], uint32(len(names)))
+		e[4] = byte(elf.STB_GLOBAL)<<4 | byte(elf.STT_FUNC)
+		le.PutUint16(e[6:], 1) // .text
+		le.PutUint64(e[8:], uint64(lay.text+entry))
+		le.PutUint64(e[16:], uint64(next-entry))
+		syms = append(syms, e[:]...)
+		names = append(names, name...)
+		names = append(names, 0)
+	}
+	return syms, names
 }
