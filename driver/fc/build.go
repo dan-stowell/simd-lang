@@ -475,7 +475,7 @@ func buildMode(args []string) {
 		}
 	}
 	fmt.Printf("front end: %d packages, %.1f MB of source, all checked %.0f ms after the start (%.2f core-s spent by then, back end included)\n", n, float64(all)/1e6, float64(tCheck.Milliseconds()), cCheck)
-	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB), overlapping the front end; everything done at %.0f ms\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, float64(time.Since(t0).Milliseconds()))
+	fmt.Printf("back end:  %d of %d packages compiled (%.2f of %.2f MB; %d functions, %.1f MB of code), overlapping the front end; everything done at %.0f ms\n", okN, len(targets), float64(okSrc)/1e6, float64(src)/1e6, statFuncs, float64(statCode)/1e6, float64(time.Since(t0).Milliseconds()))
 	fmt.Printf("compiled packages only: parse %.2f s + check %.2f s + compile %.2f s = %.2f core-s for %.2f MB: %.2f core-s per MB\n",
 		float64(parse)/1e9, float64(check)/1e9, float64(compile)/1e9, float64(parse+check+compile)/1e9, float64(okSrc)/1e6, float64(parse+check+compile)/1e9/(float64(okSrc)/1e6+1e-9))
 	var ru syscall.Rusage

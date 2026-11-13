@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"cmd/internal/bio"
 	"cmd/internal/obj"
@@ -399,6 +400,9 @@ func (c *compiler) installFuncs() {
 	}
 }
 
+// statFuncs, statCode: functions compiled and their code bytes, over the whole build.
+var statFuncs, statCode int64
+
 func (c *compiler) installFunc(f *funcOut) {
 	{
 		s := f.sym
@@ -412,6 +416,8 @@ func (c *compiler) installFunc(f *funcOut) {
 		fn.Locals = f.locals
 		s.P = f.code
 		s.Size = int64(len(f.code))
+		atomic.AddInt64(&statFuncs, 1)
+		atomic.AddInt64(&statCode, int64(len(f.code)))
 		s.R = f.relocs
 		size := len(f.code)
 		pc := &fn.Pcln

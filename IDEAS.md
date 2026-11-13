@@ -109,3 +109,18 @@ Picked for the next step: none of these. The head of the build (plan, then `runt
   (binary 128 MB against 100 MB). Every emitted byte is written to an object, hashed, read and relocated.
   Operations with immediates and memory operands, and not reloading a value just stored, are the cheap part.
   Status: not started.
+- **Compile only reachable functions, by demand** (update, 2026-11-13 late): with fc's own code the numbers
+  are 160,710 functions / 81.7 MB compiled, 121,936 / 64.9 MB kept by fclink: 24% of the functions, 21% of
+  the code. The build is CPU-bound at ~20 core-s with code generation 42%, type descriptors 14% and object
+  writing 12% of it, so the ceiling is about 2 core-s. The form that fits fc: the back end as a queue of
+  functions fed by what compiled code refers to (calls, function values, the methods of types converted to
+  interfaces: the linker's rule, applied as code is generated), started from main, the inits and the
+  runtime's entry points. That is CHARTER's F3. Kill test: count the functions such a rule keeps against
+  fclink's 121,936 on the existing objects (the relocations are the references); if it keeps more than 90%
+  of the 160,710, drop it. Status: measured, not started; M5 (objects to the linker in memory) first.
+- **Declarations once, bodies in shards** replaced the two-pass idea above (done 2026-11-13: types.CheckDecls
+  and Bodies in driver/gotypes; the two passes' distinct objects are gone).
+- **Per-function scratch reuse in the back end**: fc allocates 7.5 GB for MinIO with the collector off
+  (compileFunc 2.7 GB, type descriptors 1.2 GB, checker 1.6 GB); fresh memory is zeroed by the kernel and
+  missed by the cache. Kill test: pool the gen's maps and the assembler's buffers and look for more than
+  0.5 core-s. Status: not started.
