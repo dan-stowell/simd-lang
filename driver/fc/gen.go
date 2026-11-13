@@ -22,6 +22,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"os"
 	"strings"
 	"sync"
 
@@ -117,8 +118,10 @@ type gen struct {
 	nosplit   bool
 	fallthru  *label
 	entry     func()
-	bpFix     []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	lastPlace int                 // the address of the label placed last (another label may already name the current address)
+	bpFix     []int // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace int   // the address of the label placed last (another label may already name the current address)
+	declSlots []int // the slots of the variables declared in the blocks being compiled
+	nDecl     int
 	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
 	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
 	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
@@ -790,11 +793,15 @@ func (g *gen) paramLoc(p abiParam) loc { return loc{kind: lFrame, off: 16 + p.of
 func (g *gen) declare(v *types.Var) loc {
 	if g.heapVars[v] {
 		i := g.newSlotBits(8, ptrShape)
+		g.declSlots = append(g.declSlots, i)
+		g.nDecl++
 		l := loc{kind: lInd, slot: -g.slots[i].off}
 		g.vars[v] = l
 		return l
 	}
 	i := g.newSlotBits(g.c.sizeof(g.vt(v)), g.c.ptrBits(g.vt(v), nil))
+	g.declSlots = append(g.declSlots, i)
+	g.nDecl++
 	l := loc{kind: lFrame, off: -g.slots[i].off}
 	g.vars[v] = l
 	return l
@@ -909,6 +916,13 @@ func (g *gen) epilogue() {
 func (g *gen) finish(pos token.Pos) {
 	L := align(g.locals, 8)
 	n := L + align(g.maxarg, 8)
+	if f := os.Getenv("FC_FRAME"); f != "" && strings.Contains(g.out.sym.Name, f) {
+		hist := map[int64]int{}
+		for _, sl := range g.slots {
+			hist[sl.size]++
+		}
+		fmt.Fprintf(os.Stderr, "frame %s: locals %d, outgoing %d, %d slots (%d declared), by size %v\n", g.out.sym.Name, L, g.maxarg, len(g.slots), g.nDecl, hist)
+	}
 	var p asm
 	var moreJumps []int
 	if !g.nosplit {

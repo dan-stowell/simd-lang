@@ -232,6 +232,10 @@ func (g *gen) findHeapVars(body ast.Node) {
 					}
 				}
 			}
+		case *ast.CallExpr:
+			if id := identOf(ast.Unparen(n.Fun)); id != nil && (id.Name == "getclosureptr" || id.Name == "GetClosurePtr") && g.entry == nil {
+				g.entry = g.saveCtx // the function reads its context register: keep it from the start
+			}
 		case *ast.FuncLit:
 			lits = append(lits, n)
 		case *ast.RangeStmt:
@@ -311,6 +315,9 @@ func (pr *Program) linknames(p *Pkg) map[string]string {
 								p.linknamedStd = map[string]bool{}
 							}
 							p.linknamedStd[fs[1]] = true
+							if len(fs) == 3 {
+								p.linkname[fs[1]] = fs[2]
+							}
 						}
 						continue
 					}

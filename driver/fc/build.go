@@ -151,7 +151,7 @@ func buildMode(args []string) {
 			}
 		}
 		for _, p := range closure {
-			if p.ImportPath == "runtime" || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
+			if (p.ImportPath == "runtime" && os.Getenv("FC_RUNTIME") == "") || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
 				markStock(p)
 			}
 		}

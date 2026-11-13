@@ -123,8 +123,10 @@ func (c *compiler) compilePackage() (errs []string) {
 				g := c.newGen(sym.Name, sig, c.info, nil)
 				g.out.sym = sym
 				g.nosplit = hasDirective(fd.Doc, "//go:nosplit")
-				for _, d := range []string{"//go:systemstack", "//go:nowritebarrier", "//go:nowritebarrierrec", "//go:yeswritebarrierrec", "//go:uintptrescapes", "//go:uintptrkeepalive", "//go:norace", "//go:nocheckptr", "//go:registerparams", "//go:notinheap", "//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
-					if hasDirective(fd.Doc, d) && d != "//go:norace" && d != "//go:nocheckptr" && d != "//go:uintptrkeepalive" && d != "//go:uintptrescapes" {
+				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
+				// the stock compiler verifies; nothing to generate for them)
+				for _, d := range []string{"//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
+					if hasDirective(fd.Doc, d) {
 						giveUp("directive %s", d)
 					}
 				}
