@@ -122,7 +122,7 @@ func (c *compiler) compilePackage() (errs []string) {
 				}
 				g := c.newGen(sym.Name, sig, c.info, nil)
 				g.out.sym = sym
-				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd))
+				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd, fn, c.info))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
 				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
 				// the stock compiler verifies; nothing to generate for them)
@@ -642,8 +642,9 @@ var intrinsicPkg = map[string]bool{"internal/runtime/sys": true, "internal/runti
 // closures, not marked //go:noinline)? The runtime calls such helpers ((*mspan).base, markBits.setMarked,
 // (*Type).Pointers) from regions that must not be preempted and counts on their having no stack check,
 // which inlining gives the stock compiler. fc does not inline: in the runtime's packages it compiles them
-// without a stack check instead.
-func inlinable(fd *ast.FuncDecl) bool {
+// without a stack check instead. A function that calls itself the stock compiler never inlines, and its
+// stack check is what stops the recursion (the runtime's TestG0StackOverflow counts on it).
+func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 	if fd.Body == nil || hasDirective(fd.Doc, "//go:noinline") || hasDirective(fd.Doc, "//go:systemstack") {
 		return false
 	}
@@ -654,6 +655,17 @@ func inlinable(fd *ast.FuncDecl) bool {
 			return false
 		case *ast.ForStmt, *ast.RangeStmt, *ast.DeferStmt, *ast.GoStmt, *ast.SelectStmt, *ast.FuncLit, *ast.LabeledStmt:
 			ok = false
+		case *ast.CallExpr:
+			var id *ast.Ident
+			switch f := ast.Unparen(x.(*ast.CallExpr).Fun).(type) {
+			case *ast.Ident:
+				id = f
+			case *ast.SelectorExpr:
+				id = f.Sel
+			}
+			if id != nil && info.Uses[id] == fn {
+				ok = false
+			}
 		}
 		n++
 		return ok && n <= 120
