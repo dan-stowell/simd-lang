@@ -98,24 +98,21 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 		g.a.load(R12, mb(R12, int64(24+8*c.imeth)), 8, false)
 		g.a.callReg(R12)
 	}
-	// results
-	var rs []loc
-	for _, p := range ai.out {
+	// results: the registers first (copying a result that came back on the stack uses registers)
+	rs := make([]loc, len(ai.out))
+	for i, p := range ai.out {
 		size := g.c.sizeof(p.typ)
 		switch {
 		case size == 0:
-			rs = append(rs, loc{kind: lZero})
+			rs[i] = loc{kind: lZero}
 		case p.parts == nil:
-			tmp := g.temp(p.typ)
-			g.move(tmp, loc{kind: lOut, off: p.off}, p.typ)
-			rs = append(rs, tmp)
 		case len(ai.out) == 1 && len(p.parts) == 1 && (isWord(p.typ) || isFloat(p.typ)):
 			if isWord(p.typ) && size < 8 {
 				// the ABI leaves the upper bits of a narrow result undefined; here a word in a register is
 				// always extended to 64 bits
 				g.a.extend(p.parts[0].reg, int(size), isSigned(p.typ))
 			}
-			rs = append(rs, loc{kind: lReg, reg: p.parts[0].reg})
+			rs[i] = loc{kind: lReg, reg: p.parts[0].reg}
 		default:
 			tmp := g.temp(p.typ)
 			for _, q := range p.parts {
@@ -126,7 +123,14 @@ func (g *gen) emitCall(ai *abiInfo, args []loc, c callee) []loc {
 					g.a.store(m, q.reg, q.size)
 				}
 			}
-			rs = append(rs, tmp)
+			rs[i] = tmp
+		}
+	}
+	for i, p := range ai.out {
+		if p.parts == nil && g.c.sizeof(p.typ) != 0 {
+			tmp := g.temp(p.typ)
+			g.move(tmp, loc{kind: lOut, off: p.off}, p.typ)
+			rs[i] = tmp
 		}
 	}
 	return rs
