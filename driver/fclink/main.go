@@ -278,7 +278,7 @@ type Input struct {
 // (the main package last). Errors exit the process, as they do the command's. Once per process.
 func Link(args []string, inputs []Input) {
 	linkT0, linkCPU0 = time.Now(), cpuSeconds()
-	phaseT0, phaseC0 = linkT0, linkCPU0
+	phaseT0, phaseC0, phaseS0 = linkT0, linkCPU0, sysSeconds()
 	flags.Parse(args)
 	if flags.NArg() != 0 {
 		fatalf("Link: unexpected arguments %q", flags.Args())

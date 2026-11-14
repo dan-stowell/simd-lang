@@ -28,6 +28,7 @@ import (
 	"syscall"
 	"time"
 
+	"cmd/internal/fclinklib"
 	"cmd/internal/goobj"
 	"cmd/internal/objabi"
 )
@@ -85,9 +86,13 @@ func buildMode(args []string) {
 			debug.SetGCPercent(v) // (an experiment: the collector on)
 		}
 	}
+	// fclink: in this process, the packages handed over in memory (fclinklib.NewUnit) instead of objects;
+	// with FC_OBJFILES=1 the fclink command on written objects, if there is one
+	withFclink := useFclink() && (!objFiles || linkerPath() != "")
+	inProc := *link != "" && withFclink && !objFiles
 	if *link != "" && os.Getenv("FC_RUNTIME") == "" {
 		// a whole program for our own linker: the runtime is ours too, and the go command is not needed
-		rtByFc = linkerPath() != ""
+		rtByFc = withFclink
 	}
 	t0 := time.Now()
 	c0 := cpuSeconds()
@@ -246,9 +251,11 @@ func buildMode(args []string) {
 	type result struct {
 		p                       *Pkg
 		compileNS               int64
-		startMS, endMS, writeMS float64 // back end: start and end, ms after the program's start; of that, writing the object
+		startMS, endMS, writeMS float64 // back end: start and end, ms after the program's start; of that, writing the object (or making the unit)
 		objBytes                int64
 		errs                    []string
+		unit                    *fclinklib.Unit // in-process link: the package's symbols
+		asmObjs                 []string        // in-process link: the assembler's objects
 	}
 	results := make([]result, len(targets))
 	sem := newPrioPool(*j)
@@ -350,7 +357,21 @@ func buildMode(args []string) {
 			}
 			errs := c.compilePackage()
 			tw := time.Now()
-			if len(errs) == 0 {
+			if len(errs) == 0 && inProc {
+				// no object: the linker reads the package's symbols where they are
+				if asmDir != "" {
+					c.writeAsmHdr(filepath.Join(asmDir, "go_asm.h"))
+					for _, sf := range p.SFiles {
+						o := filepath.Join(asmDir, strings.TrimSuffix(sf, ".s")+".o")
+						if err := runAsmFile(p, asmDir, sf, o); err != nil {
+							errs = append(errs, "assembler: "+err.Error())
+							break
+						}
+						results[i].asmObjs = append(results[i].asmObjs, o)
+					}
+				}
+				results[i].unit = fclinklib.NewUnit(c.ctxt)
+			} else if len(errs) == 0 {
 				name := objPath(*out, p)
 				if asmDir != "" {
 					// the object and the assembler's objects go into one archive
@@ -421,35 +442,73 @@ func buildMode(args []string) {
 		}
 		waitStock()
 		tl := time.Now()
-		var cfg strings.Builder
-		for _, p := range closure {
-			path := p.ImportPath
-			switch {
-			case path == "unsafe":
-			case stock[p]:
-				if p.Export == "" {
-					log.Fatalf("fc build -link: no stock archive for %s in the plan (go list -export)", path)
-				}
-				fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, p.Export)
-			case p == mainPkg:
-			default:
-				fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, objPath(*out, p))
+		if inProc {
+			// the inputs in the order the importcfg would have them, the main package last
+			byPkg := map[*Pkg]*result{}
+			for i := range results {
+				byPkg[results[i].p] = &results[i]
 			}
+			var inputs, mainIn []fclinklib.Input
+			for _, p := range closure {
+				path := p.ImportPath
+				switch {
+				case path == "unsafe":
+				case stock[p]:
+					if p.Export == "" {
+						log.Fatalf("fc build -link: no stock archive for %s in the plan (go list -export)", path)
+					}
+					inputs = append(inputs, fclinklib.Input{Pkg: path, File: p.Export})
+				default:
+					r := byPkg[p]
+					if p == mainPkg {
+						path = "main"
+					}
+					in := []fclinklib.Input{{Pkg: path, Unit: r.unit}}
+					for _, o := range r.asmObjs {
+						in = append(in, fclinklib.Input{Pkg: path, File: o})
+					}
+					if p == mainPkg {
+						mainIn = in
+					} else {
+						inputs = append(inputs, in...)
+					}
+				}
+			}
+			args := append([]string{"-s", "-o", *link}, strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+			fclinklib.Link(args, append(inputs, mainIn...))
+			fmt.Printf("link (fclink in process): %d fc units, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+		} else {
+			var cfg strings.Builder
+			for _, p := range closure {
+				path := p.ImportPath
+				switch {
+				case path == "unsafe":
+				case stock[p]:
+					if p.Export == "" {
+						log.Fatalf("fc build -link: no stock archive for %s in the plan (go list -export)", path)
+					}
+					fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, p.Export)
+				case p == mainPkg:
+				default:
+					fmt.Fprintf(&cfg, "packagefile %s=%s\n", path, objPath(*out, p))
+				}
+			}
+			cfgFile := filepath.Join(*out, "importcfg.link")
+			os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
+			cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+			linker := "stock linker"
+			if withFclink {
+				// the campaign's linker (driver/fclink) instead of the stock one
+				args := append([]string{"-s", "-o", *link, "-importcfg", cfgFile}, strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+				cmd = exec.Command(linkerPath(), append(args, objPath(*out, mainPkg))...)
+				linker = "fclink"
+			}
+			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+			if err := cmd.Run(); err != nil {
+				log.Fatalf("fc build -link: link: %v", err)
+			}
+			fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
 		}
-		cfgFile := filepath.Join(*out, "importcfg.link")
-		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
-		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
-		linker := "stock linker"
-		if fl := linkerPath(); fl != "" {
-			// the campaign's linker (driver/fclink) instead of the stock one
-			cmd = exec.Command(fl, "-s", "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
-			linker = "fclink"
-		}
-		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			log.Fatalf("fc build -link: link: %v", err)
-		}
-		fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
 	}
 	if os.Getenv("FC_INFOSTATS") != "" {
 		var nt, nd, nu, ns, nb int64
