@@ -58,7 +58,8 @@ def main():
            'One run per cell on a noisy shared host: read differences under ~10% as noise.',
            '', '- **stock**: `go build -trimpath`, or `bazel build` with the project\'s own configuration.',
            '- **fair**: stock with the relaxations ours uses: `GOGC=off go build -trimpath -gcflags=all=\'-dwarf=false -l\' -ldflags=\'-s -w\'` (go rows only).',
-           '- **ours**: fc (driver/fc), whole program in one process, cold (`tools/scoreboard/ours.sh`): every Go package by fc, the runtime included, linked by fclink (driver/fclink); assembly by the stock assembler; fc\'s heap on a 10 GB pool of explicit huge pages reserved for the run. "stock fallback" where fc does not build the project yet. No critical-path figure yet.', '']
+           '- **ours**: fc (driver/fc), whole program in one process, cold (`tools/scoreboard/ours.sh`): every Go package by fc, the runtime included, linked by fclink (driver/fclink); assembly by the stock assembler; fc\'s heap on a 10 GB pool of explicit huge pages reserved for the run. "stock fallback" where fc does not build the project yet. No critical-path figure yet.',
+           '  Bazel rows (`tools/bazel/cold.sh`): Bazel reads the DAG inside the timer (fresh output base, server start, `bazel aquery deps(<target>)`: loading and analysis, nothing built); `tools/bazel/bzfc` then runs the actions that generate sources (protoc, genrules), with the Go tools they need built by fc, and fc builds the binary from the packages of the go_binary\'s GoCompilePkg actions; Bazel\'s GoStdlib, builder and compile actions never run.', '']
     pins = []
     for name, tool, d, target in corpus():
         out += [f'## {name} ({tool}: `{target}`)', '',
