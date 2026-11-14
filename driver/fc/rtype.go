@@ -182,6 +182,8 @@ func (c *compiler) itabSym(t, iface types.Type) *obj.LSym {
 // method tables, the wrappers and the signatures of every method (for MinIO 28.9 MB of descriptors, of
 // which the linker keeps 9.1). Here the first package whose code asks for a type writes it, whichever
 // package declares it (typeOwner), and nobody writes the ones never asked for. FC_EAGERTYPES=1: as stock.
+func (c *compiler) wholeProgram() bool { return c.pr.lazyTypes && !c.mixed }
+
 func (c *compiler) lazyNamed(p *types.Package) bool {
 	return c.pr.lazyTypes && !c.mixed && p != nil && !c.pr.stockPath[p.Path()]
 }

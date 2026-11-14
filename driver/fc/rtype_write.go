@@ -306,7 +306,13 @@ func (c *compiler) writeCommon(s *obj.LSym, t types.Type) {
 		if hasSym(t) || len(c.methods(tptr)) > 0 {
 			weak = false
 		}
-		sptr = c.writeType(tptr)
+		// A weak reference keeps nothing alive: the linker drops *T unless something else uses it, and
+		// then T points to nothing. In a whole-program build *T is written when something asks for it
+		// and T never points to it (reflect finds a pointer type by name when the field is zero): of
+		// MinIO's 98,413 pointers to unnamed types the linker kept 289.
+		if !weak || !c.wholeProgram() {
+			sptr = c.writeType(tptr)
+		}
 	}
 	gc, onDemand, ptrdata := c.gcSym(t)
 
@@ -578,8 +584,11 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 
 // writeUncommon writes the abi.UncommonType at off and the method table after the type's own data.
 func (c *compiler) writeUncommon(s *obj.LSym, off int64, t types.Type, ms []methodSig, dataAdd int64) {
-	for _, m := range ms {
-		c.writeType(m.typ)
+	if !c.wholeProgram() {
+		// (the stock compiler writes the method's type with its receiver; nothing refers to it)
+		for _, m := range ms {
+			c.writeType(m.typ)
+		}
 	}
 	tpkg, hasPkg := typePkg(t)
 	if hasPkg {
