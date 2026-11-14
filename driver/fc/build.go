@@ -268,7 +268,7 @@ func buildMode(args []string) {
 		v := false
 		pr.check(p)
 		if p.tpkg != nil {
-			c := newCompiler(pr, p, p.ImportPath, "")
+			c := newCompiler(pr, p, plainPath(p.ImportPath), "")
 			v = c.needsInit()
 			for _, d := range p.deps {
 				if v {
@@ -294,7 +294,7 @@ func buildMode(args []string) {
 		pr.lazyTypes = true
 		pr.stockPath = map[string]bool{}
 		for p := range stock {
-			pr.stockPath[p.ImportPath] = true
+			pr.stockPath[plainPath(p.ImportPath)] = true
 		}
 		if lazyFuncsOn() {
 			// functions by demand (demand.go)
@@ -333,7 +333,7 @@ func buildMode(args []string) {
 			}
 			t := time.Now()
 			results[i].startMS = float64(t.Sub(t0).Microseconds()) / 1e3
-			path := p.ImportPath
+			path := plainPath(p.ImportPath) // (a test variant, "P [P.test]", is package P to the code and the linker)
 			if p.Name == "main" {
 				path = "main"
 			}
@@ -363,7 +363,7 @@ func buildMode(args []string) {
 					defer stockInitMu.Unlock()
 					v, ok := stockInit[d]
 					if !ok {
-						v = d.Export != "" && definedSyms(d.Export)[objabi.PathToPrefix(d.ImportPath)+"..inittask"]
+						v = d.Export != "" && definedSyms(d.Export)[objabi.PathToPrefix(plainPath(d.ImportPath))+"..inittask"]
 						stockInit[d] = v
 					}
 					return v
@@ -372,7 +372,7 @@ func buildMode(args []string) {
 			}
 			// the linker loads a package only if some loaded object says it imports it
 			for _, d := range p.deps {
-				ip := goobj.ImportedPkg{Pkg: d.ImportPath}
+				ip := goobj.ImportedPkg{Pkg: plainPath(d.ImportPath)}
 				if stock[d] {
 					waitStock()
 				}
@@ -482,7 +482,7 @@ func buildMode(args []string) {
 			}
 			var inputs, mainIn []fclinklib.Input
 			for _, p := range closure {
-				path := p.ImportPath
+				path := plainPath(p.ImportPath)
 				switch {
 				case path == "unsafe":
 				case stock[p]:
@@ -512,7 +512,7 @@ func buildMode(args []string) {
 		} else {
 			var cfg strings.Builder
 			for _, p := range closure {
-				path := p.ImportPath
+				path := plainPath(p.ImportPath)
 				switch {
 				case path == "unsafe":
 				case stock[p]:
@@ -610,7 +610,7 @@ func stockFingerprint(path string) goobj.FingerprintType {
 }
 
 func asmArgs(p *Pkg, dir string) []string {
-	args := []string{"-p", p.ImportPath, "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
+	args := []string{"-p", plainPath(p.ImportPath), "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
 		"-D", "GOOS_linux", "-D", "GOARCH_amd64", "-D", "GOAMD64_v1"}
 	if p.Standard {
 		args = append(args, "-std")
