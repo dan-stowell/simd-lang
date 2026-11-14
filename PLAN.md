@@ -129,16 +129,22 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-14 00:08 UTC): M3 and M4 are logged; MORNING.md and STATUS.md are current except for the scoreboard.
-(1) On an IDLE machine (`uptime` first: the 3.6-4.1 s cold MinIO figure was measured at load 4-5):
-`tools/scoreboard/ours.sh` (cold.sh reserves a 10 GB huge page pool; every binary is checked), then
-`python3 tools/scoreboard/mkscoreboard.py`, regenerate TRACE.md, and put the numbers into MORNING.md and STATUS.md.
-Disk first: `df -h /` (7 GB free at midnight; `GOCACHE=/home/exedev/targets/fc-gocache go clean -cache` frees 24 GB
-when no test batch runs). (2) M5, the largest item left in a CPU-bound build (~20 core-s; profile in JOURNAL
-2026-11-13 23:20): objects handed to fclink in process. Design in driver/fclink/main.go's header; fclink reads
-objects through goobj.Reader in about 43 places (r.Sym 17, r.Relocs 8, r.Data 6, r.Auxs 5). What it removes:
-writeObject 2.2 core-s (hashing 1.3 million content-addressed symbols, string table, relocation sort), 0.3-0.5 s of
-write(), fclink's load + resolve (80 ms wall, 0.25 core-s), and minio/cmd's 0.3 s serial object write at the tail.
-(3) After M5: demand-driven compilation (IDEAS.md: 21% of fc's code is dead), per-function scratch reuse (7.5 GB
-allocated per build), frame-allocated defer closures. (4) Fire the background reviewers on the M3/M4 commit
-(LOOP.md) from /home/exedev/strand-w.
+Now (2026-11-14 00:40 UTC): M3 and M4 are logged; SCOREBOARD.md, MORNING.md and STATUS.md are current (idle machine,
+00:26-00:34 UTC: MinIO cold 3.7-4.2 s / 21-24 core-s on 8 cores; exit test 3.3 s). The build is close to CPU-bound:
+what is left is core-seconds and three measured leaks. In order:
+(1) **Why core-seconds grow with cores** (MinIO 16.4 on 1 core, 17.7 on 2, 18.3 on 4, 22.8 on 8; lscpu says 8
+single-thread cores). Separate the candidates with counters before designing anything: memory bandwidth (7.5 GB
+allocated per build, all fresh: try `FC_GOGC` on, and a pooled gen), the per-package rtMu lock around
+writeType/typeSym (goroutine census: ~0.4 of 8 slots blocked on it; make descriptor writes concurrent: claim the
+symbol with LoadOrStore as rtDone does now, small locks on the shared maps), sync.Map traffic (0.5 s in the profile).
+`tools/fc/timeline.py` and `fc build -cpuprofile/-memprofile` exist; a goroutine census is 20 lines (JOURNAL 00:28).
+(2) **M5**: objects handed to fclink in process (design in driver/fclink/main.go's header; fclink reads objects
+through goobj.Reader in about 43 places: r.Sym 17, r.Relocs 8, r.Data 6, r.Auxs 5). Removes writeObject 2.2 core-s
+(hashing 1.3 million content-addressed symbols, string table, relocation sort), 0.2-0.5 s of write(), fclink's load
+and resolve (80 ms wall), and minio/cmd's 0.3 s serial object write at the tail.
+(3) Demand-driven compilation (IDEAS.md: 21% of fc's code is dead), per-function scratch reuse, frame-allocated
+defer closures. prometheus: its heap outgrows the 10 GB huge page pool (9.3 s, 50 core-s): try HUGEPAGES=8192.
+(4) Fire the background reviewers on the M3/M4 commit (LOOP.md) from /home/exedev/strand-w (git pull there first).
+Housekeeping: `df -h /` before long test runs (31 GB free at 00:26 after `GOCACHE=/home/exedev/targets/fc-gocache
+go clean -cache`); the builder's worktrees under .claude/worktrees are merged and can be removed
+(`git worktree remove`); branch worktree-agent-a937e32fdf2263d17's last two commits duplicate main and are not merged.
