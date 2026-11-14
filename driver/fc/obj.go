@@ -57,6 +57,7 @@ type compiler struct {
 	embedOnce    sync.Once
 	layout       layoutCache
 	mixed        bool      // one package among stock-compiled ones (tools/fc/test.sh)
+	settled      bool      // functions by demand: the package's count of Program.pending is given back
 	embed        *embedCfg // from -embedcfg (mixed mode)
 	zeroSyms     map[int64]*obj.LSym
 	globGen      *gen // names the function literals of package-level initializers
@@ -497,7 +498,19 @@ func (c *compiler) funcSymName(fn *types.Func) string {
 	return pp + "." + fn.Name()
 }
 
+// funcSym is the symbol of a declared function or method, for a reference to it: the function is asked
+// for (demand.go). funcSymDecl is the symbol alone.
 func (c *compiler) funcSym(fn *types.Func) *obj.LSym {
+	c.pr.demand(fn)
+	if c.pr.lazyFuncs && fn.Type().(*types.Signature).Recv() == nil {
+		if ln := c.linknameOf(fn.Pkg(), fn.Name()); ln != "" {
+			c.pr.demandName(ln)
+		}
+	}
+	return c.funcSymDecl(fn)
+}
+
+func (c *compiler) funcSymDecl(fn *types.Func) *obj.LSym {
 	if fn.Type().(*types.Signature).Recv() == nil {
 		if ln := c.linknameOf(fn.Pkg(), fn.Name()); ln != "" {
 			pkg := ""

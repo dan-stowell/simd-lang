@@ -12,10 +12,10 @@ import (
 // unwrittenTypeCode compiles everything the descriptors written so far need, until nothing is left.
 func (c *compiler) unwrittenTypeCode() (did bool) {
 	for {
-		c.rtMu.Lock()
+		c.rtSm.Lock()
 		eqs, hashes, wraps := c.needEq, c.needHash, c.needWrapper
 		c.needEq, c.needHash, c.needWrapper = nil, nil, nil
-		c.rtMu.Unlock()
+		c.rtSm.Unlock()
 		if len(eqs)+len(hashes)+len(wraps) == 0 {
 			return
 		}
@@ -214,11 +214,11 @@ func (c *compiler) genWrapper(r wrapperReq) {
 // interface value).
 func (c *compiler) ifaceMethodWrapper(it types.Type, m *types.Func, name string) {
 	sym := c.lookup(name, obj.ABIInternal, "_")
-	c.rtMu.Lock()
 	c.rtInit()
+	c.rtSm.Lock()
 	done := sym.OnList() || c.rtWrap[sym]
 	c.rtWrap[sym] = true
-	c.rtMu.Unlock()
+	c.rtSm.Unlock()
 	if done {
 		return
 	}

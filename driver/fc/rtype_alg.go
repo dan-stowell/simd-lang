@@ -99,7 +99,7 @@ func (c *compiler) gcSym(t types.Type) (s *obj.LSym, onDemand bool, ptrdata int6
 		mask := make([]byte, n)
 		c.setPtrMask(t, 0, mask)
 		s = c.lookup(fmt.Sprintf("runtime.gcbits.%x", mask), obj.ABI0, "")
-		if !s.OnList() {
+		if c.claim(s) {
 			for i, x := range mask {
 				s.WriteInt(c.ctxt, int64(i), 1, int64(x))
 			}
@@ -112,7 +112,7 @@ func (c *compiler) gcSym(t types.Type) (s *obj.LSym, onDemand bool, ptrdata int6
 		return s, false, ptrdata
 	}
 	s = c.lookup("type:.gcmask."+c.typeLinkName(t), obj.ABI0, "")
-	if !s.OnList() {
+	if c.claim(s) {
 		s.Set(obj.AttrLocal, true)
 		s.Set(obj.AttrDuplicateOK, true)
 		c.defData(s, objabi.SNOPTRBSS, 8)
@@ -137,7 +137,10 @@ var algPriority = [...]int8{algMem: -1, algOther: 0, algSpecial: 1, algNoeq: 2, 
 // noalgFlag: is t marked as having no algorithms: a compiler-made type, or a pointer to one (stock: Noalg)?
 func (c *compiler) noalgFlag(t types.Type) bool {
 	t = types.Unalias(t)
-	if c.rtNoalg[t] {
+	c.rtSm.Lock()
+	na := c.rtNoalg[t]
+	c.rtSm.Unlock()
+	if na {
 		return true
 	}
 	if p, ok := t.(*types.Pointer); ok {
@@ -397,7 +400,7 @@ func (c *compiler) algClosure(t types.Type, sig string, hash bool) *obj.LSym {
 		return c.sysClosure(fmt.Sprintf(f, word))
 	}
 	s := c.lookup("type:"+closure+sig, obj.ABI0, "")
-	if s.OnList() {
+	if !c.claim(s) {
 		return s
 	}
 	if sig[0] == 'M' {
@@ -410,6 +413,7 @@ func (c *compiler) algClosure(t types.Type, sig string, hash bool) *obj.LSym {
 		}
 	}
 	f := c.lookup("type:"+fn+sig, obj.ABIInternal, "")
+	c.rtSm.Lock()
 	if !c.rtAlg[f.Name] {
 		c.rtAlg[f.Name] = true
 		if hash {
@@ -418,6 +422,7 @@ func (c *compiler) algClosure(t types.Type, sig string, hash bool) *obj.LSym {
 			c.needEq = append(c.needEq, algReq{sig, f, t})
 		}
 	}
+	c.rtSm.Unlock()
 	s.WriteAddr(c.ctxt, 0, 8, f, 0)
 	s.Set(obj.AttrDuplicateOK, true)
 	c.defData(s, objabi.SRODATA, 8)
@@ -450,8 +455,12 @@ const (
 // (stock: reflectdata.MapGroupType). Its fields belong to no package, and it and its parts have no equality.
 func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 	key := c.typeLinkName(m)
-	if g := c.rtGroups[key]; g != nil {
-		return g
+	c.rtInit()
+	c.rtSm.Lock()
+	g0 := c.rtGroups[key]
+	c.rtSm.Unlock()
+	if g0 != nil {
+		return g0
 	}
 	kt, et := m.Key(), m.Elem()
 	if c.sizeof(kt) > mapMaxKeyBytes {
@@ -459,6 +468,12 @@ func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 	}
 	if c.sizeof(et) > mapMaxElemBytes {
 		et = types.NewPointer(et)
+	}
+	// (made and registered under the lock: one group type per map, whichever thread asks first)
+	c.rtSm.Lock()
+	defer c.rtSm.Unlock()
+	if g := c.rtGroups[key]; g != nil {
+		return g
 	}
 	field := func(name string, t types.Type) *types.Var { return types.NewField(0, nil, name, t, false) }
 	noalg := func(t types.Type) types.Type { c.rtNoalg[t] = true; return t }

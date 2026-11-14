@@ -37,6 +37,12 @@ type Pkg struct {
 	Standard   bool
 	Module     *struct{ Path, Version, GoVersion string }
 
+	// functions by demand (demand.go)
+	eager bool // every function is compiled, asked for or not
+	dmu   sync.Mutex
+	dq    []*types.Func // asked for by compiled code, not compiled yet
+	dch   chan struct{} // a token when dq grows
+
 	files []*ast.File
 	tpkg  *types.Package
 	info  *types.Info
@@ -84,16 +90,22 @@ type Program struct {
 	plan   *selfPlan     // nil when the packages come from a plan file
 	mu     sync.Mutex    // guards byPath while packages are being discovered
 
-	tctx         *types.Context  // shared by every package: one object per instantiated type
-	byTpkg       sync.Map        // *types.Package -> *Pkg
-	declPkgs     sync.Map        // *types.Package -> true: the packages made by the declarations-only pass
-	linkNames    sync.Map        // types.Type -> its link name, for every compiler of a whole-program build
-	typeOwner    sync.Map        // descriptor symbol name -> the *compiler that writes it (whole-program builds)
-	wrapOwner    sync.Map        // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
-	lazyTypes    bool            // descriptors by demand (rtype.go: lazyNamed)
-	stockPath    map[string]bool // lazyTypes: the packages the stock compiler compiles in this build
-	instOwner    sync.Map        // instance symbol name -> the *compiler that compiles it
-	rtWidth      sync.Map        // runtime function name -> the argument area of its real signature
+	tctx         *types.Context // shared by every package: one object per instantiated type
+	byTpkg       sync.Map       // *types.Package -> *Pkg
+	declPkgs     sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
+	linkNames    sync.Map       // types.Type -> its link name, for every compiler of a whole-program build
+	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
+	wrapOwner    sync.Map       // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
+	lazyTypes    bool           // descriptors by demand (rtype.go: lazyNamed)
+	lazyFuncs    bool           // functions by demand (demand.go)
+	fnWanted     sync.Map       // *types.Func -> true: compiled as a root or queued for its package
+	pending      atomic.Int64   // packages in their first pass + queued functions not yet compiled
+	quiet        chan struct{}  // closed when pending reaches zero: nothing more will be asked for
+	quietOnce    sync.Once
+	idleJobs     chan chan func() // parked goroutines of runJob
+	stockPath    map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
+	instOwner    sync.Map         // instance symbol name -> the *compiler that compiles it
+	rtWidth      sync.Map         // runtime function name -> the argument area of its real signature
 	rtcOnce      sync.Once
 	rtClosure    map[string]bool // the runtime and what it imports, by plain import path
 	fullFn       sync.Map        // a declarations-pass *types.Func -> the full pass's

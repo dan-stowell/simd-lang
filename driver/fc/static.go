@@ -94,26 +94,12 @@ func (c *compiler) compilePackage() (errs []string) {
 	par := &parallel{pool: c.fnSem, prio: c.pkg.srcBytes + 1, helpers: c.fnHelpers}
 	var inits []*obj.LSym
 	ninit := 0
-	for _, fd := range c.funcDecls() {
-		fd := fd
-		fn, _ := c.info.Defs[fd.Name].(*types.Func)
-		if fn == nil {
-			continue
-		}
-		isInit := fd.Recv == nil && fd.Name.Name == "init"
-		var initSym *obj.LSym
-		if isInit {
-			initSym = c.lookup(fmt.Sprintf("%s.init.%d", objabi.PathToPrefix(c.path), ninit), obj.ABIInternal, objabi.PathToPrefix(c.path))
-			ninit++
-			inits = append(inits, initSym)
-		}
-		if fd.Body == nil || fd.Name.Name == "_" {
-			continue
-		}
+	lazy := c.pr.lazyFuncs && !c.pkg.eager // functions by demand (demand.go)
+	if lazy {
+		c.pr.linknames(c.pkg)
+	}
+	compileDecl := func(fd *ast.FuncDecl, fn *types.Func, initSym *obj.LSym, par *parallel) {
 		sig := fn.Type().(*types.Signature)
-		if sig.TypeParams().Len() > 0 || sig.RecvTypeParams().Len() > 0 {
-			continue // compiled where it is instantiated
-		}
 		par.run(func() {
 			try("func "+fn.FullName(), func() {
 				sym := initSym
@@ -134,6 +120,37 @@ func (c *compiler) compilePackage() (errs []string) {
 				g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 			})
 		})
+	}
+	for _, fd := range c.funcDecls() {
+		fd := fd
+		fn, _ := c.info.Defs[fd.Name].(*types.Func)
+		if fn == nil {
+			continue
+		}
+		isInit := fd.Recv == nil && fd.Name.Name == "init"
+		var initSym *obj.LSym
+		if isInit {
+			initSym = c.lookup(fmt.Sprintf("%s.init.%d", objabi.PathToPrefix(c.path), ninit), obj.ABIInternal, objabi.PathToPrefix(c.path))
+			ninit++
+			inits = append(inits, initSym)
+		}
+		if fd.Body == nil || fd.Name.Name == "_" {
+			continue
+		}
+		sig := fn.Type().(*types.Signature)
+		if sig.TypeParams().Len() > 0 || sig.RecvTypeParams().Len() > 0 {
+			continue // compiled where it is instantiated
+		}
+		if lazy {
+			root := isInit || fd.Recv == nil && (c.pkg.linknamed[fd.Name.Name] || c.pkg.linknamedStd[fd.Name.Name] || c.path == "main" && fd.Name.Name == "main")
+			if !root {
+				continue // when something asks for it
+			}
+			if _, asked := c.pr.fnWanted.LoadOrStore(fn, true); asked && !isInit {
+				continue // already in the queue
+			}
+		}
+		compileDecl(fd, fn, initSym, par)
 	}
 	par.wait()
 	c.abiWrappers(try)
@@ -230,19 +247,29 @@ func (c *compiler) compilePackage() (errs []string) {
 		try("symbols the stock object defines", c.parity)
 	}
 	// instances of generic functions and the code descriptors need, each of which may ask for more
-	for again := true; again; {
-		again = false
-		for len(c.instQueue) > 0 {
-			in := c.instQueue[0]
-			c.instQueue = c.instQueue[1:]
-			try("instance "+in.sym.Name, func() { c.compileInstance(in) })
-			again = true
-		}
-		try("code for type descriptors", func() {
-			if c.unwrittenTypeCode() {
+	fixpoint := func() {
+		for again := true; again; {
+			again = false
+			for len(c.instQueue) > 0 {
+				in := c.instQueue[0]
+				c.instQueue = c.instQueue[1:]
+				try("instance "+in.sym.Name, func() { c.compileInstance(in) })
 				again = true
 			}
-		})
+			try("code for type descriptors", func() {
+				if c.unwrittenTypeCode() {
+					again = true
+				}
+			})
+		}
+	}
+	fixpoint()
+	if lazy {
+		c.serveDemands(func(fd *ast.FuncDecl, fn *types.Func, par *parallel) { compileDecl(fd, fn, nil, par) }, fixpoint)
+		c.settled = true
+	} else if c.pr.lazyFuncs && !c.mixed {
+		c.pr.settle(1)
+		c.settled = true
 	}
 	if len(errs) == 0 {
 		c.installFuncs()

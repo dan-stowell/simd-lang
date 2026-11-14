@@ -289,11 +289,30 @@ func buildMode(args []string) {
 		for p := range stock {
 			pr.stockPath[p.ImportPath] = true
 		}
+		if lazyFuncsOn() {
+			// functions by demand (demand.go)
+			pr.lazyFuncs = true
+			pr.quiet = make(chan struct{})
+			pr.idleJobs = make(chan chan func(), 4096)
+			pr.pending.Store(int64(len(targets)))
+			for _, p := range targets {
+				p.eager = len(p.SFiles) > 0 || pr.inRuntime(p)
+				p.dch = make(chan struct{}, 1)
+			}
+		}
 	}
 	for i, p := range targets {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			var c *compiler
+			if pr.lazyFuncs {
+				defer func() {
+					if c == nil || !c.settled {
+						pr.settle(1) // (the package failed before its first pass was over)
+					}
+				}()
+			}
 			pr.check(p)
 			if declOnly {
 				select {} // (the experiment ends when the front end does)
@@ -311,7 +330,7 @@ func buildMode(args []string) {
 			if p.Name == "main" {
 				path = "main"
 			}
-			c := newCompiler(pr, p, path, "")
+			c = newCompiler(pr, p, path, "")
 			c.fnSem = sem
 			if p.srcBytes >= 64<<10 {
 				c.fnHelpers = *j - 1 // (a small package is one job; the cores are filled across packages)
@@ -391,6 +410,9 @@ func buildMode(args []string) {
 	}
 	wg.Wait()
 	<-frontDone
+	if demandStat {
+		printDemandStat()
+	}
 	var sf *os.File
 	if *stats != "" {
 		sf, _ = os.Create(*stats)

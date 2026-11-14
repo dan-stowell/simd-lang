@@ -23,9 +23,16 @@ import (
 
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
-	tsFast      sync.Map // types.Type -> *obj.LSym: descriptors already asked for by that type object
-	rtMu        sync.Mutex
-	rtDone      map[*obj.LSym]bool           // descriptors considered (written, or left to another object)
+	tsFast sync.Map // types.Type -> *obj.LSym: descriptors already asked for by that type object
+	// Descriptors are written by the threads that compile functions, concurrently: the first thread to
+	// claim a symbol (rtClaim) writes it, the others take its address and go on. rtSm guards the small
+	// maps and lists below and is never held across a call that writes a descriptor. (One lock around the
+	// whole writer was the build's widest queue once a big package wrote most descriptors: demand.go.)
+	rtMu        sync.Mutex // (rtype_diff.go only)
+	rtSm        sync.Mutex
+	rtOnce      sync.Once
+	rtPtrOnce   sync.Once
+	rtClaim     sync.Map                     // *obj.LSym -> true: descriptors and their parts considered (written, or left to another object)
 	rtMeth      map[string][]methodSig       // method tables, by type symbol name
 	rtNoalg     map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
 	rtGroup     map[*types.Struct]*types.Map // the map a group struct belongs to
@@ -36,8 +43,7 @@ type rtypeState struct {
 	rtAlg       map[string]bool
 	rtPtrTo     map[string]bool          // link names X such that the package mentions *X (stock: Type.IsPtrElem)
 	rtPtrToInst map[*types.TypeName]bool // generic types G such that generic code mentions **G[...]
-	rtPtrSet    bool
-	rtNames     int // counter of package-qualified name data (stock: dnameCount)
+	rtNames     int                      // counter of package-qualified name data (stock: dnameCount)
 
 	// What the code generator must write. The descriptors refer to these symbols; their bodies are code.
 	needEq      []algReq     // type:.eq.<sig>: func(p, q unsafe.Pointer) bool, ABIInternal, DUPOK
@@ -66,9 +72,14 @@ type wrapperReq struct {
 	dupok    bool             // as the stock compiler: DUPOK unless recv's base type is declared in this package
 }
 
+// claim: is the caller the one to define s? True once per symbol.
+func (c *compiler) claim(s *obj.LSym) bool {
+	_, loaded := c.rtClaim.LoadOrStore(s, true)
+	return !loaded
+}
+
 func (c *compiler) rtInit() {
-	if c.rtDone == nil {
-		c.rtDone = map[*obj.LSym]bool{}
+	c.rtOnce.Do(func() {
 		c.rtMeth = map[string][]methodSig{}
 		c.rtNoalg = map[types.Type]bool{}
 		c.rtGroup = map[*types.Struct]*types.Map{}
@@ -76,7 +87,7 @@ func (c *compiler) rtInit() {
 		c.rtVargen = map[*types.Package]map[token.Pos]int{}
 		c.rtWrap = map[*obj.LSym]bool{}
 		c.rtAlg = map[string]bool{}
-	}
+	})
 }
 
 // typeLinkName is the name of t as the linker knows it (stock: Type.LinkString); t's descriptor is "type:"
@@ -137,8 +148,6 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 	if s, ok := c.tsFast.Load(t); ok {
 		return s.(*obj.LSym)
 	}
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	t0 := t
 	t = types.Unalias(t)
@@ -154,17 +163,15 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 // typeSymNoalg is the descriptor of a compiler-made type that has no equality (closure structs and the
 // like): "type:noalg.<name>".
 func (c *compiler) typeSymNoalg(t types.Type) *obj.LSym {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
+	c.rtSm.Lock()
 	c.rtNoalg[t] = true
+	c.rtSm.Unlock()
 	return c.writeType(t)
 }
 
 // itabSym is the symbol of the interface table for the concrete type t as the interface type iface.
 func (c *compiler) itabSym(t, iface types.Type) *obj.LSym {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	return c.writeITab(types.Unalias(t), types.Unalias(iface))
 }
@@ -196,15 +203,11 @@ func (c *compiler) writeDeclaredTypes() {
 // eqFuncSym is the closure (a func(p, q unsafe.Pointer) bool value) that compares two values of the
 // comparable type t: of a runtime function, or type:.eqfunc.<signature>. hashFuncSym likewise hashes.
 func (c *compiler) eqFuncSym(t types.Type) *obj.LSym {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	return c.eqClosure(t)
 }
 
 func (c *compiler) hashFuncSym(t types.Type) *obj.LSym {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	return c.hashClosure(t)
 }
@@ -265,8 +268,6 @@ func (c *compiler) writeBasicTypes() {
 	}
 	errT := types.Universe.Lookup("error").Type()
 	list = append(list, types.NewInterfaceType(nil, nil), errT)
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	for _, t := range list {
 		c.writeType(types.NewPointer(t))
@@ -606,7 +607,10 @@ func (c *compiler) tconv(b *strings.Builder, t types.Type, mode fmtMode, short b
 			c.tconvParams(b, u.Results(), false, mode)
 		}
 	case *types.Struct:
-		if m := c.rtGroup[u]; m != nil {
+		c.rtSm.Lock()
+		m := c.rtGroup[u]
+		c.rtSm.Unlock()
+		if m != nil {
 			b.WriteString("map.group[")
 			c.tconv(b, m.Key(), mode, false)
 			b.WriteByte(']')
@@ -782,6 +786,7 @@ func (c *compiler) methodSymName(recv types.Type, m *types.Func) (name, pkg stri
 // not a method this or another package declares.
 func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 	m := sel.Obj().(*types.Func)
+	c.pr.demand(m) // (called directly, or by the wrapper this symbol is)
 	name, pkg := c.methodSymName(recv, m)
 	s := c.lookup(name, obj.ABIInternal, pkg)
 	base, ptr := recvBase(recv)
@@ -789,10 +794,16 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 		base, _ = recvBase(types.Unalias(recv).(*types.Pointer).Elem())
 		ptr = true
 	}
-	if !c.needEmit(base) || c.rtWrap[s] {
+	if !c.needEmit(base) {
 		return s
 	}
+	c.rtSm.Lock()
+	seen := c.rtWrap[s]
 	c.rtWrap[s] = true
+	c.rtSm.Unlock()
+	if seen {
+		return s
+	}
 	sig := m.Type().(*types.Signature)
 	declPtr := false
 	if sig.Recv() != nil {
@@ -811,8 +822,10 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 			return s
 		}
 	}
+	c.rtSm.Lock()
 	c.needWrapper = append(c.needWrapper, wrapperReq{sym: s, recv: recv, method: m, sel: sel, declPtr: declPtr,
 		instance: direct && inst, dupok: named == nil || inst || lazy})
+	c.rtSm.Unlock()
 	return s
 }
 
@@ -823,7 +836,10 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		return nil
 	}
 	key := c.typeSymName(t)
-	if ms, ok := c.rtMeth[key]; ok {
+	c.rtSm.Lock()
+	ms, ok := c.rtMeth[key]
+	c.rtSm.Unlock()
+	if ok {
 		return ms
 	}
 	mset := types.NewMethodSet(t)
@@ -832,7 +848,7 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		sels = append(sels, mset.At(i))
 	}
 	sort.Slice(sels, func(i, j int) bool { return methodLess(sels[i].Obj().(*types.Func), sels[j].Obj().(*types.Func)) })
-	ms := make([]methodSig, 0, len(sels))
+	ms = make([]methodSig, 0, len(sels))
 	irecv := t
 	if !isDirectIface(t) {
 		irecv = types.NewPointer(t)
@@ -867,14 +883,14 @@ func (c *compiler) methods(t types.Type) []methodSig {
 			typ:   types.NewSignatureType(nil, nil, nil, types.NewTuple(ps...), sig.Results(), sig.Variadic()),
 		})
 	}
+	c.rtSm.Lock()
 	c.rtMeth[key] = ms
+	c.rtSm.Unlock()
 	return ms
 }
 
 // methodSymFor is methodSym for callers outside the descriptor writer (it takes the lock).
 func (c *compiler) methodSymFor(recv types.Type, sel *types.Selection) *obj.LSym {
-	c.rtMu.Lock()
-	defer c.rtMu.Unlock()
 	c.rtInit()
 	return c.methodSym(recv, sel)
 }

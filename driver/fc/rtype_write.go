@@ -125,7 +125,7 @@ func (c *compiler) pkgPathSym(p *types.Package) *obj.LSym {
 		}
 	}
 	s := c.lookup("type:.importpath."+prefix+".", obj.ABI0, "")
-	if !s.OnList() {
+	if c.claim(s) {
 		n := c.nameData(s, path, "", nil, false, false, false)
 		s.Set(obj.AttrDuplicateOK, true)
 		s.Set(obj.AttrContentAddressable, true)
@@ -181,14 +181,17 @@ func (c *compiler) nameSym(name, tag string, pkg *types.Package, hasPkg, exporte
 			sname += name + "-" + tag
 		}
 	} else {
-		sname += objabi.PathToPrefix(c.path) + "." + strconv.Itoa(c.rtNames)
+		c.rtSm.Lock()
+		n := c.rtNames
 		c.rtNames++
+		c.rtSm.Unlock()
+		sname += objabi.PathToPrefix(c.path) + "." + strconv.Itoa(n)
 	}
 	if embedded {
 		sname += ".embedded"
 	}
 	s := c.lookup(sname, obj.ABI0, "")
-	if s.OnList() {
+	if !c.claim(s) {
 		return s
 	}
 	n := c.nameData(s, name, tag, pkg, hasPkg, exported, embedded)
@@ -270,8 +273,7 @@ func (c *compiler) isPtrElem(t types.Type) bool {
 	if !c.mixed {
 		return false // in a build of our own nothing depends on it (reflect makes pointer types itself)
 	}
-	if !c.rtPtrSet {
-		c.rtPtrSet = true
+	c.rtPtrOnce.Do(func() {
 		c.rtPtrTo = map[string]bool{}
 		c.rtPtrToInst = map[*types.TypeName]bool{}
 		c.forEachType(func(x types.Type) {
@@ -285,7 +287,7 @@ func (c *compiler) isPtrElem(t types.Type) bool {
 				}
 			}
 		})
-	}
+	})
 	if n, ok := types.Unalias(t.Underlying().(*types.Pointer).Elem()).(*types.Named); ok && n.TypeArgs().Len() > 0 && c.rtPtrToInst[n.Obj()] {
 		return true
 	}
@@ -380,7 +382,7 @@ func (c *compiler) writeMethodOff(s *obj.LSym, off int64, target *obj.LSym) {
 }
 
 // writeType returns t's descriptor symbol, defining it when this object is the one to (stock: writeType).
-// Called with rtMu held.
+// Any thread may call it; the first to claim the symbol writes it.
 func (c *compiler) writeType(t types.Type) *obj.LSym {
 	t = types.Unalias(t)
 	if b, ok := t.(*types.Basic); ok {
@@ -390,10 +392,9 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 		}
 	}
 	s := c.lookup("type:"+c.typeSymName(t), obj.ABI0, "")
-	if c.rtDone[s] {
+	if !c.claim(s) {
 		return s
 	}
-	c.rtDone[s] = true
 	tbase := typeBase(t)
 	if !c.needEmit(tbase) {
 		return s
@@ -670,10 +671,9 @@ func (c *compiler) writeITab(t, iface types.Type) *obj.LSym {
 		giveUp("itab for %v as %v", t, iface)
 	}
 	s := c.lookup("go:itab."+c.typeLinkName(t)+","+c.typeLinkName(iface), obj.ABI0, "")
-	if c.rtDone[s] {
+	if !c.claim(s) {
 		return s
 	}
-	c.rtDone[s] = true
 	sigs := ifaceMethods(it)
 	var entries []*obj.LSym
 	for _, m := range c.methods(t) {
