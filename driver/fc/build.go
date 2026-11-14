@@ -283,6 +283,13 @@ func buildMode(args []string) {
 			}
 		})
 	}
+	if *link != "" && os.Getenv("FC_EAGERTYPES") == "" {
+		pr.lazyTypes = true
+		pr.stockPath = map[string]bool{}
+		for p := range stock {
+			pr.stockPath[p.ImportPath] = true
+		}
+	}
 	for i, p := range targets {
 		wg.Add(1)
 		go func() {

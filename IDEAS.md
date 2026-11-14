@@ -118,6 +118,12 @@ Picked for the next step: none of these. The head of the build (plan, then `runt
   runtime's entry points. That is CHARTER's F3. Kill test: count the functions such a rule keeps against
   fclink's 121,936 on the existing objects (the relocations are the references); if it keeps more than 90%
   of the 160,710, drop it. Status: measured, not started; M5 (objects to the linker in memory) first.
+  **Kill test run, 2026-11-14 00:50 UTC: passes.** On MinIO's objects (158,199 functions, 81.3 MB of code, 27.8 MB
+  of type descriptors) fclink's flood keeps 121,928 functions / 64.9 MB / 9.1 MB of types; without method
+  pruning (FCLINK_KEEPMETHODS=1: every method of a type used in an interface) 126,622 / 66.0 / 9.5; and with the
+  rule a compiler can apply as it writes a descriptor (FCLINK_KEEPMETHODS=2: every live type keeps every method)
+  132,136 functions (84%), 68.6 MB of code (84%), 9.9 MB of descriptors (36%). So following references while
+  generating code avoids 16% of the code and 64% of the descriptor bytes. Being built (PLAN Now line).
 - **Declarations once, bodies in shards** replaced the two-pass idea above (done 2026-11-13: types.CheckDecls
   and Bodies in driver/gotypes; the two passes' distinct objects are gone).
 - **Per-function scratch reuse in the back end**: fc allocates 7.5 GB for MinIO with the collector off

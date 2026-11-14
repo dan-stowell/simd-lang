@@ -204,6 +204,9 @@ func (w *floodWorker) process(c uint32) {
 	}
 	isType := s.IsGoType()
 	uii := false
+	if isType && allIface {
+		atomic.OrUint32(&state[c], stUsedInIface) // (a measurement: every reachable type as if converted to an interface)
+	}
 	if isType && atomic.LoadUint32(&state[c])&stUsedInIface != 0 {
 		uii = true
 		if atomic.OrUint32(&state[c], stIfaceDone)&stIfaceDone != 0 {
@@ -428,7 +431,7 @@ func deadcode() {
 		par((len(markable)+mgrain-1)/mgrain, func(w, i int) {
 			for k := i * mgrain; k < min((i+1)*mgrain, len(markable)); k++ {
 				m := &markable[k]
-				if reflectSeen && isExported(m.name) || ifaceMethod[m.methodsig] || genericIfaceMethod[m.name] || *flagNoDCE {
+				if reflectSeen && isExported(m.name) || ifaceMethod[m.methodsig] || genericIfaceMethod[m.name] || *flagNoDCE || keepMethods {
 					o, j := objOf(m.src)
 					relocs := o.r.Relocs(j)
 					for d := uint32(0); d < 3; d++ {
@@ -474,3 +477,10 @@ func deadcode() {
 	}
 	lap("deadcode", "%d symbols live, %d levels in %d rounds, %d methods pruned, reflection %v", nlive, levels, rounds, len(markable), reflectSeen)
 }
+
+// keepMethods (FCLINK_KEEPMETHODS=1, a measurement): no method pruning: every method of a type used in an
+// interface is live. What a compiler that follows references while it generates code would have to compile.
+var keepMethods = os.Getenv("FCLINK_KEEPMETHODS") != ""
+
+// allIface (FCLINK_KEEPMETHODS=2, a measurement): every live type keeps every method.
+var allIface = os.Getenv("FCLINK_KEEPMETHODS") == "2"

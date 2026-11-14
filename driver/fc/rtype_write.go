@@ -71,7 +71,7 @@ func (c *compiler) needEmit(t types.Type) bool {
 	if !ok {
 		return true // an unnamed type: every object that mentions it carries it
 	}
-	if samePkg(n.Obj().Pkg(), c.tpkg) {
+	if samePkg(n.Obj().Pkg(), c.tpkg) || c.lazyNamed(n.Obj().Pkg()) {
 		return true
 	}
 	return n.TypeArgs().Len() > 0 || isLocalInstance(n) // an instance of a generic type, perhaps never made before
@@ -401,7 +401,7 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if !c.mixed {
 		// One address space, one build: a descriptor that any object may carry (an unnamed type, an
 		// instance) is written by the first package that asks, and only referenced by the others.
-		if n, ok := tbase.(*types.Named); !ok || !samePkg(n.Obj().Pkg(), c.tpkg) || n.TypeArgs().Len() > 0 || isLocalInstance(n) {
+		if n, ok := tbase.(*types.Named); !ok || !samePkg(n.Obj().Pkg(), c.tpkg) || n.TypeArgs().Len() > 0 || isLocalInstance(n) || c.pr.lazyTypes {
 			if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
 				return s
 			}

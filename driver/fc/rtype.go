@@ -169,11 +169,24 @@ func (c *compiler) itabSym(t, iface types.Type) *obj.LSym {
 	return c.writeITab(types.Unalias(t), types.Unalias(iface))
 }
 
+// lazyNamed: is the descriptor of a type declared in package p written by demand? In a whole-program build
+// (fc build -link) nothing needs a descriptor that no compiled code and no other descriptor refers to: the
+// linker would drop it. The stock compiler writes one for every declared type, with the pointer type, the
+// method tables, the wrappers and the signatures of every method (for MinIO 28.9 MB of descriptors, of
+// which the linker keeps 9.1). Here the first package whose code asks for a type writes it, whichever
+// package declares it (typeOwner), and nobody writes the ones never asked for. FC_EAGERTYPES=1: as stock.
+func (c *compiler) lazyNamed(p *types.Package) bool {
+	return c.pr.lazyTypes && !c.mixed && p != nil && !c.pr.stockPath[p.Path()]
+}
+
 // writeDeclaredTypes defines the descriptors the stock compiler writes whatever the code does: every type
 // declared in the package (and the pointer to it), and in package runtime the basic types.
 func (c *compiler) writeDeclaredTypes() {
 	if c.path == "runtime" {
 		c.writeBasicTypes()
+	}
+	if c.lazyNamed(c.tpkg) {
+		return
 	}
 	for _, t := range c.declaredTypes() {
 		c.typeSym(t)
@@ -789,10 +802,17 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 	named, _ := base.(*types.Named)
 	inst := named != nil && named.TypeArgs().Len() > 0
 	if direct && !inst {
-		return s // a declared method of this package
+		return s // a declared method of this package (lazyNamed: or of the package that declares the type)
+	}
+	lazy := named != nil && c.lazyNamed(named.Obj().Pkg())
+	if c.pr.lazyTypes && !c.mixed {
+		// one wrapper for the program, compiled by the first package that writes a method table with it
+		if owner, loaded := c.pr.wrapOwner.LoadOrStore(s.Name, c); loaded && owner != c {
+			return s
+		}
 	}
 	c.needWrapper = append(c.needWrapper, wrapperReq{sym: s, recv: recv, method: m, sel: sel, declPtr: declPtr,
-		instance: direct && inst, dupok: named == nil || inst})
+		instance: direct && inst, dupok: named == nil || inst || lazy})
 	return s
 }
 
