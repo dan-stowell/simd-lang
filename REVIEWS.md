@@ -301,3 +301,21 @@ One line per inbox item; raw files in `reviews/done/`.
   - Its net/* failures are the same sandbox limit; rerun outside it (`/home/exedev/targets/fc-batch-refail.log`).
   - Found on the way: the default GOCACHE held a broken stock object (a stock test binary panicked at init);
     cleared. Stock comparisons use their own cache.
+
+## 2026-11-14 01:20 UTC: reviews fired at M3/M4 (commit 8a5824d)
+
+- `20261114T0035-codex-skeptic.md` (Codex, skeptic):
+  1. *Object emission + separate linker is the remaining serial boundary; planned, not eliminated.* **Accept**: M5
+     (objects to fclink in process) is with a builder since 00:44 UTC.
+  2. *TRACE's 16 ms link floor is a memory-copy budget; the real floor must include resolution, dead code, pclntab.*
+     **Accept**: the floor line in TRACE.md gets the measured parts (fclink today: resolve 43 ms, dead code 57,
+     layout 26, write 71 on 8 cores) at the next regeneration; the 16 ms stays labelled as bytes only.
+  3. *Not a dead end; build reachability before code generation, dense ids, records passed to layout directly.*
+     **Accept, in part done**: functions and descriptors by demand landed today (2fd69d1: 158,189 -> 137,624
+     functions compiled for MinIO, FC_LAZYFUNCS=1 until timed); ids and direct records are M5's second step.
+  4. *Objects are still materialized (420 MB).* Same as 1.
+  5. *The largest unattended exit blocker is BuildBuddy/Bazel: both demo targets are stock fallback; no step on the
+     list.* **Accept, answered with work**: a builder starts on "fc from the Bazel DAG" (buildifier and runsc via
+     `bazel aquery` first, then bb-cli and bb-executor, with a count of what cgo and generated code block).
+     The quoted retreat ("no time left in this session", 2026-11-12) predates the current LOOP.md rule.
+- `20261114T0035-sol.md` (sol, correctness): **stalled**: the file holds only the conversation id; dropped.

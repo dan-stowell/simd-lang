@@ -129,23 +129,26 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-14 00:35 UTC): M3 and M4 are logged; SCOREBOARD.md, MORNING.md and STATUS.md are current (idle machine,
-00:26-00:34 UTC: MinIO cold 3.7-4.2 s / 21-24 core-s on 8 cores; exit test 3.3 s). The build is close to CPU-bound:
-what is left is core-seconds and three measured leaks. In order:
-(1) **Why core-seconds grow with cores** (MinIO 16.4 on 1 core, 17.7 on 2, 18.3 on 4, 22.8 on 8; lscpu says 8
-single-thread cores). Separate the candidates with counters before designing anything: memory bandwidth (7.5 GB
-allocated per build, all fresh: try `FC_GOGC` on, and a pooled gen), the per-package rtMu lock around
-writeType/typeSym (goroutine census: ~0.4 of 8 slots blocked on it; make descriptor writes concurrent: claim the
-symbol with LoadOrStore as rtDone does now, small locks on the shared maps), sync.Map traffic (0.5 s in the profile).
-`tools/fc/timeline.py` and `fc build -cpuprofile/-memprofile` exist; a goroutine census is 20 lines (JOURNAL 00:28).
-(2) **M5**: objects handed to fclink in process (design in driver/fclink/main.go's header; fclink reads objects
-through goobj.Reader in about 43 places: r.Sym 17, r.Relocs 8, r.Data 6, r.Auxs 5). Removes writeObject 2.2 core-s
-(hashing 1.3 million content-addressed symbols, string table, relocation sort), 0.2-0.5 s of write(), fclink's load
-and resolve (80 ms wall), and minio/cmd's 0.3 s serial object write at the tail.
-(3) Demand-driven compilation (IDEAS.md: 21% of fc's code is dead), per-function scratch reuse, frame-allocated
-defer closures. prometheus: its heap outgrows the 10 GB huge page pool (9.3 s, 50 core-s): try HUGEPAGES=8192.
-(4) The background reviewers were fired at 00:35 UTC on commit 8a5824d (Codex skeptic, sol correctness; 40 min limit):
-triage reviews/inbox/20261114T0035-*.md into REVIEWS.md and move them to reviews/done/.
-Housekeeping: `df -h /` before long test runs (31 GB free at 00:26 after `GOCACHE=/home/exedev/targets/fc-gocache
-go clean -cache`); the builder's worktrees under .claude/worktrees are merged and can be removed
-(`git worktree remove`); branch worktree-agent-a937e32fdf2263d17's last two commits duplicate main and are not merged.
+Now (2026-11-14 01:25 UTC): MinIO cold 3.7-4.2 s / 21-24 core-s on 8 cores at 00:26-00:34 (idle); exit test 3.3 s.
+Since then, all committed (JOURNAL 00:55, 01:15): the scaling question is answered (memory hierarchy, not locks);
+type descriptors by demand (on in `fc build -link`); **functions by demand** (driver/fc/demand.go, `FC_LAZYFUNCS=1`,
+off by default): MinIO 158,189 -> 137,624 functions, same linked program; rtMu replaced by per-symbol claims.
+In order:
+(1) **Time functions by demand on a quiet machine and flip the default** (`lazyFuncsDefault` in demand.go) if wall
+is not worse: order-balanced pairs of `FC_LAZYFUNCS=1` vs unset, cold and warm (`tools/fc/cold.sh minio 8`;
+scratch script: 4 pairs, user+sys and wall). If cores idle (tools/fc/timeline.py; goroutine census by
+`kill -QUIT` at 2.5 s with GOTRACEBACK=all), look at who holds slots. Then the corpus (`tools/scoreboard/ours.sh . 8`
+with FC_LAZYFUNCS=1 exported) and the live-set differential on kube-apiserver as was done for MinIO.
+(2) Next cuts of dead work, by the same instrument (`FC_DEMANDSTAT=1` prints who asks): globals by demand (every
+global is defined and its type's methods asked for: ~10,000 requests on MinIO); the linker's rule for methods
+(only types converted to interfaces keep their methods: 132,136 -> 126,622 functions); bodies checked by demand
+(go/types Bodies per function: the check is 3.3 core-s, 13% of it for functions never compiled); `demand()`'s
+sync.Map load per reference (0.3 s in the profile: cache per gen).
+(3) **Builders running in worktrees** (wait for their notifications; do not redo their work): M5, objects handed to
+fclink in process (Opus, since 00:44; FC_TAG=m5; brief: design in driver/fclink/main.go's header); fc from the
+Bazel DAG (Opus, since 01:22; FC_TAG=bz; buildifier, runsc, then bb-cli and bb-executor with a measured blocker
+list). Merge each when its oracle holds (lang 23/23 both modes, MinIO smoke, corpus checks); M5 touches
+build.go/obj.go where demand.go's hooks are (serveDemands returns before installFuncs: hand-off goes after it).
+(4) After M5 merges: per-function scratch reuse, frame-allocated defer closures, prometheus with HUGEPAGES=8192.
+Housekeeping: `df -h /` before long test runs; old worktrees under .claude/worktrees (agent-a43..., a4799..., a4da...,
+a937...) are merged and can be removed with `git worktree remove`; reviews are triaged (REVIEWS.md 01:20).
