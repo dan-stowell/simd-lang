@@ -133,7 +133,7 @@ func (g *gen) mapLit(e *ast.CompositeLit, dst loc, t types.Type) {
 	for _, pass := range []bool{true, false} {
 		for _, el := range e.Elts {
 			kv := el.(*ast.KeyValueExpr)
-			if (g.info.Types[kv.Key].Value != nil && g.info.Types[kv.Value].Value != nil) == pass {
+			if (tvOf(kv.Key).Value != nil && tvOf(kv.Value).Value != nil) == pass {
 				elts = append(elts, el)
 			}
 		}
@@ -204,7 +204,7 @@ func (g *gen) rangeMap(s *ast.RangeStmt, name string, set func(ast.Expr, *types.
 // rangeVar: the variable a range clause declares for e, if it declares one.
 func (g *gen) rangeVar(e ast.Expr) *types.Var {
 	if id, ok := e.(*ast.Ident); ok && id.Name != "_" {
-		v, _ := g.info.Defs[id].(*types.Var)
+		v, _ := defOf(id).(*types.Var)
 		return v
 	}
 	return nil

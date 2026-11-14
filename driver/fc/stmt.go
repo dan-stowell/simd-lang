@@ -115,7 +115,7 @@ func (g *gen) stmt(s ast.Stmt) {
 	case *ast.SelectStmt:
 		g.selectStmt(s, "")
 	case *ast.LabeledStmt:
-		lb := g.labelFor(g.info.Defs[s.Label].(*types.Label))
+		lb := g.labelFor(defOf(s.Label).(*types.Label))
 		g.place(lb)
 		switch st := s.Stmt.(type) {
 		case *ast.ForStmt:
@@ -156,7 +156,7 @@ func (g *gen) labelFor(l *types.Label) *label {
 func (g *gen) branch(s *ast.BranchStmt) {
 	switch s.Tok {
 	case token.GOTO:
-		lbl := g.info.Uses[s.Label].(*types.Label)
+		lbl := useOf(s.Label).(*types.Label)
 		if g.rf != nil && (lbl.Pos() < g.rf.body.Pos() || lbl.Pos() >= g.rf.body.End()) {
 			// out of this loop body: the loop's function jumps
 			g.rf.targets = append(g.rf.targets, rfTarget{s.Tok, s.Label.Name, lbl})
@@ -210,7 +210,7 @@ func (g *gen) declareVar(v *types.Var) loc {
 func (g *gen) varSpec(sp *ast.ValueSpec) {
 	var vars []*types.Var
 	for _, n := range sp.Names {
-		v, _ := g.info.Defs[n].(*types.Var)
+		v, _ := defOf(n).(*types.Var)
 		vars = append(vars, v)
 	}
 	switch {
@@ -380,7 +380,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			return nil
 		}
 		if id, ok := e.(*ast.Ident); ok {
-			if v, ok := g.info.Defs[id].(*types.Var); ok {
+			if v, ok := defOf(id).(*types.Var); ok {
 				return v
 			}
 		}
@@ -391,7 +391,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			if id.Name == "_" {
 				return nil
 			}
-			if v, ok := g.info.Defs[id].(*types.Var); ok {
+			if v, ok := defOf(id).(*types.Var); ok {
 				return g.vt(v)
 			}
 		}
@@ -409,7 +409,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			return
 		}
 		if id, ok := ast.Unparen(lhs).(*ast.Ident); ok {
-			if v, ok := g.info.Uses[id].(*types.Var); ok {
+			if v, ok := useOf(id).(*types.Var); ok {
 				g.exprTo(rhs, g.varLoc(v), t)
 				return
 			}
@@ -701,7 +701,7 @@ func (g *gen) forStmt(s *ast.ForStmt, name string) {
 	if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE {
 		for _, lhs := range as.Lhs {
 			if id, ok := lhs.(*ast.Ident); ok {
-				if v, ok := g.info.Defs[id].(*types.Var); ok && g.heapVars[v] {
+				if v, ok := defOf(id).(*types.Var); ok && g.heapVars[v] {
 					perIter = append(perIter, v)
 				}
 			}
@@ -817,10 +817,10 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 	}
 	if define {
 		if !blank(s.Key) {
-			keyVar = g.info.Defs[s.Key.(*ast.Ident)].(*types.Var)
+			keyVar = defOf(s.Key.(*ast.Ident)).(*types.Var)
 		}
 		if !blank(s.Value) {
-			valVar = g.info.Defs[s.Value.(*ast.Ident)].(*types.Var)
+			valVar = defOf(s.Value.(*ast.Ident)).(*types.Var)
 		}
 	}
 	// setKey / setVal store an iteration value
@@ -1018,7 +1018,7 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 // staticCond: the value of a condition that constants decide.
 func (g *gen) staticCond(e ast.Expr) (val, known bool) {
 	e = ast.Unparen(e)
-	if tv := g.info.Types[e]; tv.Value != nil {
+	if tv := tvOf(e); tv.Value != nil {
 		return constant.BoolVal(tv.Value), true
 	}
 	switch e := e.(type) {

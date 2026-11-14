@@ -21,7 +21,7 @@ func (g *gen) compositeTo(e *ast.CompositeLit, dst loc, t types.Type) {
 			fi := i
 			val := el
 			if kv, ok := el.(*ast.KeyValueExpr); ok {
-				f := g.info.Uses[kv.Key.(*ast.Ident)].(*types.Var)
+				f := useOf(kv.Key.(*ast.Ident)).(*types.Var)
 				fi = -1
 				for j := 0; j < u.NumFields(); j++ {
 					if u.Field(j) == f || u.Field(j).Name() == f.Name() && samePkg(u.Field(j).Pkg(), f.Pkg()) {
@@ -123,7 +123,7 @@ func (g *gen) litLen(e *ast.CompositeLit) int64 {
 	var n, i int64
 	for _, el := range e.Elts {
 		if kv, ok := el.(*ast.KeyValueExpr); ok {
-			v, _ := constant.Int64Val(constant.ToInt(g.info.Types[kv.Key].Value))
+			v, _ := constant.Int64Val(constant.ToInt(tvOf(kv.Key).Value))
 			i = v
 		}
 		i++
@@ -140,7 +140,7 @@ func (g *gen) arrayElems(e *ast.CompositeLit, dst loc, et types.Type) {
 	for _, el := range e.Elts {
 		val := el
 		if kv, ok := el.(*ast.KeyValueExpr); ok {
-			v, _ := constant.Int64Val(constant.ToInt(g.info.Types[kv.Key].Value))
+			v, _ := constant.Int64Val(constant.ToInt(tvOf(kv.Key).Value))
 			i = v
 			val = kv.Value
 		}

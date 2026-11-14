@@ -227,7 +227,7 @@ func (g *gen) selectStmt(s *ast.SelectStmt, name string) {
 					continue
 				}
 				if as.Tok == token.DEFINE {
-					v := g.info.Defs[lhs.(*ast.Ident)].(*types.Var)
+					v := defOf(lhs.(*ast.Ident)).(*types.Var)
 					g.move(g.declareVar(v), g.convertImplicit(vals[i].l, vals[i].t, g.vt(v)), g.vt(v))
 					continue
 				}

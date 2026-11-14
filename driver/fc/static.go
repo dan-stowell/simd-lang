@@ -52,7 +52,7 @@ func (c *compiler) compilePackage() (errs []string) {
 					if n.Name == "_" {
 						continue
 					}
-					v := c.info.Defs[n].(*types.Var)
+					v := defOf(n).(*types.Var)
 					try("var "+n.Name, func() {
 						c.defGlobal(v)
 						if len(embeds) > 0 {
@@ -123,7 +123,7 @@ func (c *compiler) compilePackage() (errs []string) {
 	}
 	for _, fd := range c.funcDecls() {
 		fd := fd
-		fn, _ := c.info.Defs[fd.Name].(*types.Func)
+		fn, _ := defOf(fd.Name).(*types.Func)
 		if fn == nil {
 			continue
 		}
@@ -318,13 +318,13 @@ func (c *compiler) defStaticVar(t types.Type, readonly bool) *obj.LSym {
 func (c *compiler) globalAddr(e ast.Expr) (*obj.LSym, int64, bool) {
 	switch e := ast.Unparen(e).(type) {
 	case *ast.Ident:
-		if v, ok := c.info.Uses[e].(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
+		if v, ok := useOf(e).(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
 			return c.globalSym(v), 0, true
 		}
 	case *ast.SelectorExpr:
-		sel := c.info.Selections[e]
+		sel := selnOf(e)
 		if sel == nil {
-			if v, ok := c.info.Uses[e.Sel].(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
+			if v, ok := useOf(e.Sel).(*types.Var); ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
 				return c.globalSym(v), 0, true
 			}
 			return nil, 0, false
@@ -336,7 +336,7 @@ func (c *compiler) globalAddr(e ast.Expr) (*obj.LSym, int64, bool) {
 		if !ok {
 			return nil, 0, false
 		}
-		t := c.info.Types[e.X].Type
+		t := tvOf(e.X).Type
 		for _, i := range sel.Index() {
 			st, ok := t.Underlying().(*types.Struct)
 			if !ok {
@@ -347,8 +347,8 @@ func (c *compiler) globalAddr(e ast.Expr) (*obj.LSym, int64, bool) {
 		}
 		return s, off, true
 	case *ast.IndexExpr:
-		arr, ok := c.info.Types[e.X].Type.Underlying().(*types.Array)
-		iv := c.info.Types[e.Index].Value
+		arr, ok := tvOf(e.X).Type.Underlying().(*types.Array)
+		iv := tvOf(e.Index).Value
 		if !ok || iv == nil {
 			return nil, 0, false
 		}
@@ -369,7 +369,7 @@ func (c *compiler) globalAddr(e ast.Expr) (*obj.LSym, int64, bool) {
 // s+off.
 func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, write bool) bool {
 	e = ast.Unparen(e)
-	tv := c.info.Types[e]
+	tv := tvOf(e)
 	if isInterface(t) {
 		if tv.IsNil() {
 			return true
@@ -426,7 +426,7 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 				fi := i
 				val := el
 				if kv, ok := el.(*ast.KeyValueExpr); ok {
-					f, _ := c.info.Uses[kv.Key.(*ast.Ident)].(*types.Var)
+					f, _ := useOf(kv.Key.(*ast.Ident)).(*types.Var)
 					fi = -1
 					for j := 0; j < u.NumFields(); j++ {
 						if u.Field(j) == f {
@@ -450,7 +450,7 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 			var i int64
 			for _, el := range e.Elts {
 				if kv, ok := el.(*ast.KeyValueExpr); ok {
-					iv := c.info.Types[kv.Key].Value
+					iv := tvOf(kv.Key).Value
 					if iv == nil {
 						return false
 					}
@@ -495,7 +495,7 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 			return false
 		}
 		if cl, ok := ast.Unparen(e.X).(*ast.CompositeLit); ok {
-			et := c.info.Types[cl].Type
+			et := tvOf(cl).Type
 			if et == nil || mentionsTypeParam(et) || !c.static(nil, 0, cl, et, false) {
 				return false
 			}
@@ -515,10 +515,10 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 		return false
 	case *ast.Ident, *ast.SelectorExpr:
 		id := identOf(e)
-		if se, ok := e.(*ast.SelectorExpr); ok && c.info.Selections[se] != nil {
+		if se, ok := e.(*ast.SelectorExpr); ok && selnOf(se) != nil {
 			return false
 		}
-		fn, ok := c.info.Uses[id].(*types.Func)
+		fn, ok := useOf(id).(*types.Func)
 		if !ok || c.isIntrinsic(fn) {
 			return false
 		}
@@ -540,12 +540,12 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 		return true
 	case *ast.CallExpr:
 		// a conversion that keeps the representation
-		if ftv := c.info.Types[e.Fun]; ftv.IsType() && len(e.Args) == 1 {
+		if ftv := tvOf(e.Fun); ftv.IsType() && len(e.Args) == 1 {
 			// []byte("constant"): the bytes are data (the runtime reads such variables before any
 			// initializer has run)
 			if sl, ok := t.Underlying().(*types.Slice); ok {
 				if b, ok := sl.Elem().Underlying().(*types.Basic); ok && b.Kind() == types.Uint8 {
-					if v := c.info.Types[e.Args[0]].Value; v != nil && v.Kind() == constant.String {
+					if v := tvOf(e.Args[0]).Value; v != nil && v.Kind() == constant.String {
 						if write {
 							str := constant.StringVal(v)
 							n := int64(len(str))
@@ -562,7 +562,7 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 					}
 				}
 			}
-			at := c.info.Types[e.Args[0]].Type
+			at := tvOf(e.Args[0]).Type
 			if at != nil && !isInterface(at) && (types.Identical(at.Underlying(), t.Underlying()) || isPtrWord(at) && isPtrWord(t)) {
 				return c.static(s, off, e.Args[0], at, write)
 			}
@@ -579,7 +579,7 @@ func (c *compiler) staticElems(s *obj.LSym, off int64, cl *ast.CompositeLit, et 
 	for _, el := range cl.Elts {
 		val := el
 		if kv, ok := el.(*ast.KeyValueExpr); ok {
-			iv := c.info.Types[kv.Key].Value
+			iv := tvOf(kv.Key).Value
 			if iv == nil {
 				return false
 			}
@@ -602,7 +602,7 @@ func (c *compiler) staticFuncLit(e *ast.FuncLit) *obj.LSym {
 	}
 	g := c.globGen
 	c.mu.Unlock()
-	sig := c.info.Types[e].Type.(*types.Signature)
+	sig := tvOf(e).Type.(*types.Signature)
 	cg := g.child(g.childName("func"), sig)
 	cg.compileFunc(nil, e.Pos(), e.Body.Rbrace, e.Body, func() { cg.block(e.Body.List) })
 	return c.staticClosure(cg.out.sym)
@@ -690,7 +690,7 @@ func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 			case *ast.SelectorExpr:
 				id = f.Sel
 			}
-			if id != nil && info.Uses[id] == fn {
+			if id != nil && useOf(id) == fn {
 				ok = false
 			}
 		}

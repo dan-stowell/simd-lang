@@ -195,17 +195,22 @@ var twoPass = os.Getenv("FC_TWOPASS") != "0"
 // (the full check of its biggest package) is cut into its declarations and an n-th of its bodies.
 var bodiesLater = twoPass && os.Getenv("FC_BODIES") != "0"
 
-// newInfo: an Info with the maps fc reads, sized for n bytes of source: growing these maps is a tenth of
-// the type checker's time otherwise.
+// newInfo: an Info for a check. Types, Defs, Uses and Selections are not made: the checker stores those in
+// the nodes (slots.go). n is the size of the source the Info is for (unused now).
 func newInfo(n int) *types.Info {
+	if slotCheck {
+		return &types.Info{
+			Types:      map[ast.Expr]types.TypeAndValue{},
+			Defs:       map[*ast.Ident]types.Object{},
+			Uses:       map[*ast.Ident]types.Object{},
+			Implicits:  map[ast.Node]types.Object{},
+			Selections: map[*ast.SelectorExpr]*types.Selection{},
+			Instances:  map[*ast.Ident]types.Instance{},
+		}
+	}
 	return &types.Info{
-		// (measured over MinIO's closure: one entry per 14.1, 110, 24.3 and 158 source bytes)
-		Types:      make(map[ast.Expr]types.TypeAndValue, n/13),
-		Defs:       make(map[*ast.Ident]types.Object, n/95),
-		Uses:       make(map[*ast.Ident]types.Object, n/22),
-		Implicits:  map[ast.Node]types.Object{},
-		Selections: make(map[*ast.SelectorExpr]*types.Selection, n/130),
-		Instances:  map[*ast.Ident]types.Instance{},
+		Implicits: map[ast.Node]types.Object{},
+		Instances: map[*ast.Ident]types.Instance{},
 	}
 }
 
@@ -244,34 +249,18 @@ func (p *Pkg) infos() []*types.Info {
 }
 
 // copySig copies what src knows about fd's name, receiver and signature into dst, so that a function's
-// Info answers for every node of its declaration.
+// Info answers for every node of its declaration (the maps that are left: Instances and Implicits).
 func copySig(dst, src *types.Info, fd *ast.FuncDecl) {
-	if o, ok := src.Defs[fd.Name]; ok {
-		dst.Defs[fd.Name] = o
+	if len(src.Instances) == 0 && len(src.Implicits) == 0 {
+		return
 	}
 	visit := func(x ast.Node) bool {
 		if x == nil {
 			return true
 		}
-		switch x := x.(type) {
-		case *ast.Ident:
-			if o, ok := src.Defs[x]; ok {
-				dst.Defs[x] = o
-			}
-			if o, ok := src.Uses[x]; ok {
-				dst.Uses[x] = o
-			}
-			if in, ok := src.Instances[x]; ok {
-				dst.Instances[x] = in
-			}
-		case *ast.SelectorExpr:
-			if sel, ok := src.Selections[x]; ok {
-				dst.Selections[x] = sel
-			}
-		}
-		if e, ok := x.(ast.Expr); ok {
-			if tv, ok := src.Types[e]; ok {
-				dst.Types[e] = tv
+		if id, ok := x.(*ast.Ident); ok {
+			if in, ok := src.Instances[id]; ok {
+				dst.Instances[id] = in
 			}
 		}
 		if o, ok := src.Implicits[x]; ok {
@@ -377,42 +366,30 @@ func (pr *Program) checkBodies(p *Pkg) {
 	}
 	par.wait()
 	if k > 1 && !p.perFn {
-		// one Info for the package: the shards' maps into the first (a map each at a time)
+		// one Info for the package: the shards' maps into the first
 		d := p.dinfo
-		par.run(func() {
-			for _, in := range infos[1:] {
+		for _, in := range infos[1:] {
+			for e, v := range in.Implicits {
+				d.Implicits[e] = v
+			}
+			for e, v := range in.Instances {
+				d.Instances[e] = v
+			}
+			if slotCheck {
 				for e, v := range in.Types {
 					d.Types[e] = v
 				}
-			}
-		})
-		par.run(func() {
-			for _, in := range infos[1:] {
-				for e, v := range in.Uses {
-					d.Uses[e] = v
-				}
-			}
-		})
-		par.run(func() {
-			for _, in := range infos[1:] {
 				for e, v := range in.Defs {
 					d.Defs[e] = v
 				}
-				for e, v := range in.Implicits {
-					d.Implicits[e] = v
+				for e, v := range in.Uses {
+					d.Uses[e] = v
 				}
-			}
-		})
-		par.run(func() {
-			for _, in := range infos[1:] {
 				for e, v := range in.Selections {
 					d.Selections[e] = v
 				}
-				for e, v := range in.Instances {
-					d.Instances[e] = v
-				}
 			}
-		})
+		}
 		par.wait()
 	}
 	b.InitOrder(p.dinfo, onErr)

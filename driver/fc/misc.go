@@ -137,7 +137,7 @@ func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 		if id == nil {
 			giveUp("%s of an expression", fn.Name())
 		}
-		f, ok := g.info.Uses[id].(*types.Func)
+		f, ok := useOf(id).(*types.Func)
 		if !ok {
 			// a function value: its code pointer is the first word of the closure object. An interface
 			// (FuncPCABIInternal(f) with f any, as runtime/pprof's tests do) holds the function value in
@@ -167,21 +167,21 @@ func (g *gen) intrinsic(fn *types.Func, e *ast.CallExpr) []loc {
 // findHeapVars marks the local variables that must live on the heap: their address is taken (explicitly,
 // by a method call with a pointer receiver, or by slicing an array), or a closure captures them.
 func (g *gen) findHeapVars(body ast.Node) {
-	info := g.info
+	_ = g.info
 	var root func(e ast.Expr) *types.Var
 	root = func(e ast.Expr) *types.Var {
 		switch e := e.(type) {
 		case *ast.Ident:
-			if v, ok := info.Uses[e].(*types.Var); ok && !v.IsField() {
+			if v, ok := useOf(e).(*types.Var); ok && !v.IsField() {
 				return v
 			}
-			if v, ok := info.Defs[e].(*types.Var); ok && !v.IsField() {
+			if v, ok := defOf(e).(*types.Var); ok && !v.IsField() {
 				return v
 			}
 		case *ast.ParenExpr:
 			return root(e.X)
 		case *ast.SelectorExpr:
-			if sel := info.Selections[e]; sel != nil && sel.Kind() == types.FieldVal {
+			if sel := selnOf(e); sel != nil && sel.Kind() == types.FieldVal {
 				// only while no pointer is followed on the way
 				t := g.typeOf(e.X)
 				for _, i := range sel.Index() {
@@ -224,7 +224,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 				mark(root(n.X))
 			}
 		case *ast.SelectorExpr:
-			if sel := info.Selections[n]; sel != nil && sel.Kind() == types.MethodVal {
+			if sel := selnOf(n); sel != nil && sel.Kind() == types.MethodVal {
 				fn := sel.Obj().(*types.Func)
 				if _, ptr := fn.Type().(*types.Signature).Recv().Type().(*types.Pointer); ptr {
 					// x.M() with a pointer receiver: &x, unless a pointer is followed first
@@ -271,7 +271,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 						if kv != nil {
 							ast.Inspect(kv, func(m ast.Node) bool {
 								if id, ok := m.(*ast.Ident); ok {
-									if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+									if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
 										mark(v)
 									}
 								}
@@ -290,7 +290,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 	for _, b := range rangeBodies {
 		ast.Inspect(b, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
-				if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+				if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
 					if v.Pos() < b.Pos() || v.Pos() >= b.End() {
 						mark(v)
 					}
@@ -302,7 +302,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 	for _, lit := range lits {
 		ast.Inspect(lit.Body, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
-				if v, ok := info.Uses[id].(*types.Var); ok && !v.IsField() {
+				if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
 					if v.Pos() < lit.Pos() || v.Pos() >= lit.End() {
 						mark(v)
 					}

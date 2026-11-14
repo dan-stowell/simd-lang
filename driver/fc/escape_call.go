@@ -53,7 +53,7 @@ func (e *escWalk) callee(fun ast.Expr) escCallee {
 	}
 	switch f := f.(type) {
 	case *ast.Ident:
-		switch o := e.info.Uses[f].(type) {
+		switch o := useOf(f).(type) {
 		case *types.Func:
 			c.fn = o.Origin()
 			return c
@@ -66,9 +66,9 @@ func (e *escWalk) callee(fun ast.Expr) escCallee {
 		c.fun = fun
 		return c // the walk of the literal names its function: see call
 	case *ast.SelectorExpr:
-		sel := e.info.Selections[f]
+		sel := selnOf(f)
 		if sel == nil {
-			if o, ok := e.info.Uses[f.Sel].(*types.Func); ok {
+			if o, ok := useOf(f.Sel).(*types.Func); ok {
 				c.fn = o.Origin()
 				return c
 			}
@@ -233,7 +233,7 @@ func (e *escWalk) arg(k escHole, a ast.Expr, t types.Type, extra *escHole) {
 // call: ks is where the results flow, nil if nowhere.
 func (e *escWalk) call(ks []escHole, n *ast.CallExpr, extra *escHole) {
 	fun := ast.Unparen(n.Fun)
-	if tv, ok := e.info.Types[fun]; ok && tv.IsType() {
+	if tv, ok := types.SBTypeOf(fun); ok && tv.IsType() {
 		k := e.discardHole()
 		if len(ks) > 0 {
 			k = ks[0]
@@ -403,7 +403,7 @@ func (e *escWalk) uintptrArg(a ast.Expr) bool {
 	if !ok || len(call.Args) != 1 {
 		return false
 	}
-	if tv := e.info.Types[call.Fun]; !tv.IsType() {
+	if tv := tvOf(call.Fun); !tv.IsType() {
 		return false
 	}
 	tb, _ := escUnder(e.typeOf(call)).(*types.Basic)
@@ -428,7 +428,7 @@ func (e *escWalk) intrinsicCall(fn *types.Func, n *ast.CallExpr) bool {
 			// call of a function without a body: the value escapes. So it does here.)
 			if len(n.Args) == 1 {
 				if id := escFuncName(n.Args[0]); id != nil {
-					if _, ok := e.info.Uses[id].(*types.Func); ok {
+					if _, ok := useOf(id).(*types.Func); ok {
 						return true
 					}
 				}
@@ -492,7 +492,7 @@ func (e *escWalk) builtinName(fun ast.Expr) string {
 	default:
 		return ""
 	}
-	if b, ok := e.info.Uses[id].(*types.Builtin); ok {
+	if b, ok := useOf(id).(*types.Builtin); ok {
 		return b.Name()
 	}
 	return ""
@@ -569,7 +569,7 @@ func (e *escWalk) builtin(ks []escHole, n *ast.CallExpr, name string, extra *esc
 		if p, ok := escUnder(e.typeOf(n)).(*types.Pointer); ok {
 			e.implicitSize(k, p.Elem())
 		}
-		if tv := e.info.Types[args[0]]; !tv.IsType() {
+		if tv := tvOf(args[0]); !tv.IsType() {
 			e.expr(k, args[0]) // new(expr)
 		}
 	case "make":
@@ -634,7 +634,7 @@ func (e *escWalk) makeSize(k escHole, n *ast.CallExpr, t *types.Slice) {
 		e.heapSiteWhy(k, "non-constant size")
 		return
 	}
-	tv := e.info.Types[r]
+	tv := tvOf(r)
 	if tv.Value == nil {
 		e.heapSiteWhy(k, "non-constant size")
 		return

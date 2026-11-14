@@ -18,11 +18,11 @@ type escWalk struct {
 }
 
 func (e *escWalk) typeOf(n ast.Expr) types.Type {
-	if tv, ok := e.info.Types[n]; ok {
+	if tv, ok := types.SBTypeOf(n); ok {
 		return tv.Type
 	}
 	if id, ok := n.(*ast.Ident); ok {
-		if o := e.info.ObjectOf(id); o != nil {
+		if o := objOf(id); o != nil {
 			return o.Type()
 		}
 	}
@@ -31,9 +31,9 @@ func (e *escWalk) typeOf(n ast.Expr) types.Type {
 
 // local: the local variable an identifier names, if it names one.
 func (e *escWalk) local(id *ast.Ident) *types.Var {
-	v, ok := e.info.Uses[id].(*types.Var)
+	v, ok := useOf(id).(*types.Var)
 	if !ok {
-		v, ok = e.info.Defs[id].(*types.Var)
+		v, ok = defOf(id).(*types.Var)
 		if !ok {
 			return nil
 		}
@@ -201,7 +201,7 @@ func (e *escWalk) expr(k escHole, n ast.Expr) {
 	if n == nil {
 		return
 	}
-	tv, ok := e.info.Types[n]
+	tv, ok := types.SBTypeOf(n)
 	if ok {
 		if tv.Value != nil || tv.IsType() {
 			return
@@ -322,7 +322,7 @@ func escPath(t types.Type, index []int) (derefs int, last types.Type) {
 }
 
 func (e *escWalk) selector(k escHole, n *ast.SelectorExpr) {
-	sel := e.info.Selections[n]
+	sel := selnOf(n)
 	if sel == nil {
 		return // a qualified identifier: a package's variable or function
 	}
@@ -413,7 +413,7 @@ func (e *escWalk) compositeBody(k escHole, n *ast.CompositeLit, t types.Type) {
 			if kv, ok := el.(*ast.KeyValueExpr); ok {
 				var ft types.Type
 				if id, ok := kv.Key.(*ast.Ident); ok {
-					if f, ok := e.info.Uses[id].(*types.Var); ok {
+					if f, ok := useOf(id).(*types.Var); ok {
 						ft = f.Type()
 					}
 				}
@@ -436,7 +436,7 @@ func (e *escWalk) compositeBody(k escHole, n *ast.CompositeLit, t types.Type) {
 			var next int64
 			for _, el := range n.Elts {
 				if kv, ok := el.(*ast.KeyValueExpr); ok {
-					if tv := e.info.Types[kv.Key]; tv.Value != nil {
+					if tv := tvOf(kv.Key); tv.Value != nil {
 						if i, ok := constant.Int64Val(constant.ToInt(tv.Value)); ok {
 							next = i
 						}
@@ -489,7 +489,7 @@ func (e *escWalk) freeVars(lo, hi token.Pos, nodes ...ast.Node) []*types.Var {
 			if !ok {
 				return true
 			}
-			v, ok := e.info.Uses[id].(*types.Var)
+			v, ok := useOf(id).(*types.Var)
 			if !ok || v.IsField() || v.Pkg() == nil || v.Parent() == v.Pkg().Scope() || seen[v] {
 				return true
 			}
@@ -547,7 +547,7 @@ func (e *escWalk) funcLit(k escHole, n *ast.FuncLit) {
 // unsafeValue: a uintptr expression about to become an unsafe.Pointer. The pointers converted to uintptr
 // inside its arithmetic are what it points to.
 func (e *escWalk) unsafeValue(k escHole, n ast.Expr) {
-	if tv, ok := e.info.Types[n]; ok && tv.Value != nil {
+	if tv, ok := types.SBTypeOf(n); ok && tv.Value != nil {
 		return
 	}
 	switch n := n.(type) {
@@ -555,7 +555,7 @@ func (e *escWalk) unsafeValue(k escHole, n ast.Expr) {
 		e.unsafeValue(k, n.X)
 		return
 	case *ast.CallExpr:
-		if tv := e.info.Types[n.Fun]; tv.IsType() && len(n.Args) == 1 {
+		if tv := tvOf(n.Fun); tv.IsType() && len(n.Args) == 1 {
 			if b, ok := escUnder(e.typeOf(n.Args[0])).(*types.Basic); ok && b.Kind() == types.UnsafePointer {
 				e.expr(k, n.Args[0])
 			} else {
@@ -649,7 +649,7 @@ func (e *escWalk) conversion(k escHole, n *ast.CallExpr) {
 		e.unsafeValue(k, x)
 	case isString(tb) && !isString(fb), isString(fb) && !isString(tb):
 		// string <-> []byte, []rune; string(rune): a new string or slice
-		if tv := e.info.Types[n]; tv.Value == nil {
+		if tv := tvOf(n); tv.Value == nil {
 			e.spill(k, n, escSiteString, escPos(x))
 		}
 		e.discard(x)

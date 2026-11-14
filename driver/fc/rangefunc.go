@@ -85,7 +85,7 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 			}
 			ast.Inspect(kv, func(m ast.Node) bool {
 				if id, ok := m.(*ast.Ident); ok {
-					if v, ok := g.info.Uses[id].(*types.Var); ok && !v.IsField() {
+					if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
 						if _, ok := g.vars[v]; ok {
 							extra = append(extra, v)
 						}
@@ -117,7 +117,7 @@ func (g *gen) rangeFunc(s *ast.RangeStmt, name string) {
 			src := cg.paramLoc(cg.abi.in[i])
 			st := cg.abi.in[i].typ
 			if define {
-				v := cg.info.Defs[e.(*ast.Ident)].(*types.Var)
+				v := defOf(e.(*ast.Ident)).(*types.Var)
 				cg.move(cg.declareVar(v), cg.convertImplicit(src, st, cg.vt(v)), cg.vt(v))
 				continue
 			}

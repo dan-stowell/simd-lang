@@ -73,7 +73,7 @@ func sigTypes(sig *types.Signature) (in, out []types.Type) {
 func (c *compiler) abiWrappers(try func(string, func())) {
 	for _, fd := range c.funcDecls() {
 		fd := fd
-		fn, _ := c.info.Defs[fd.Name].(*types.Func)
+		fn, _ := defOf(fd.Name).(*types.Func)
 		if fn == nil || fd.Name.Name == "_" || fd.Recv != nil {
 			continue
 		}

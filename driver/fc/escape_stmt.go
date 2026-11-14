@@ -54,7 +54,7 @@ func (e *escPkg) staticBool(x ast.Expr) int {
 	if x == nil {
 		return 0
 	}
-	if tv, ok := e.info.Types[x]; ok && tv.Value != nil && tv.Value.Kind() == constant.Bool {
+	if tv, ok := types.SBTypeOf(x); ok && tv.Value != nil && tv.Value.Kind() == constant.Bool {
 		if constant.BoolVal(tv.Value) {
 			return 1
 		}
@@ -95,7 +95,7 @@ func (e *escPkg) terminates(s ast.Stmt) bool {
 	case *ast.ExprStmt:
 		if call, ok := ast.Unparen(s.X).(*ast.CallExpr); ok {
 			if id, ok := ast.Unparen(call.Fun).(*ast.Ident); ok && id.Name == "panic" {
-				_, ok := e.info.Uses[id].(*types.Builtin)
+				_, ok := useOf(id).(*types.Builtin)
 				return ok
 			}
 		}
@@ -243,7 +243,7 @@ func (e *escWalk) stmt(s ast.Stmt) {
 	case *ast.ReturnStmt:
 		e.ret(s)
 	case *ast.LabeledStmt:
-		if l, ok := e.info.Defs[s.Label].(*types.Label); ok && e.fn.looping[l] {
+		if l, ok := defOf(s.Label).(*types.Label); ok && e.fn.looping[l] {
 			e.loopDepth++
 		}
 		e.stmt(s.Stmt)
@@ -281,7 +281,7 @@ func (e *escWalk) stmt(s ast.Stmt) {
 			if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE && e.fn.perIter {
 				for _, l := range as.Lhs {
 					if id, ok := l.(*ast.Ident); ok {
-						if v, ok := e.info.Defs[id].(*types.Var); ok && e.varLoc[v] != nil {
+						if v, ok := defOf(id).(*types.Var); ok && e.varLoc[v] != nil {
 							vars = append(vars, e.varLoc[v])
 							was = append(was, e.varLoc[v].reassigned)
 						}
@@ -381,7 +381,7 @@ func (e *escWalk) valueSpec(s *ast.ValueSpec) {
 	var ks []escHole
 	var ts []types.Type
 	for _, id := range s.Names {
-		v, _ := e.info.Defs[id].(*types.Var)
+		v, _ := defOf(id).(*types.Var)
 		if v == nil || id.Name == "_" {
 			ks = append(ks, e.discardHole())
 			ts = append(ts, nil)
@@ -400,7 +400,7 @@ func (e *escWalk) initSpec(s *ast.ValueSpec) {
 	var ks []escHole
 	var ts []types.Type
 	for _, id := range s.Names {
-		v, _ := e.info.Defs[id].(*types.Var)
+		v, _ := defOf(id).(*types.Var)
 		if v == nil || id.Name == "_" {
 			ks = append(ks, e.discardHole())
 			ts = append(ts, nil)
@@ -503,7 +503,7 @@ func (e *escWalk) addr(n ast.Expr) escHole {
 			return e.loc(v).hole()
 		}
 	case *ast.SelectorExpr:
-		sel := e.info.Selections[n]
+		sel := selnOf(n)
 		if sel == nil || sel.Kind() != types.FieldVal {
 			break
 		}
@@ -602,7 +602,7 @@ func (e *escWalk) assign(s *ast.AssignStmt) {
 	if s.Tok == token.DEFINE {
 		for _, l := range s.Lhs {
 			if id, ok := l.(*ast.Ident); ok && id.Name != "_" {
-				if v, ok := e.info.Defs[id].(*types.Var); ok {
+				if v, ok := defOf(id).(*types.Var); ok {
 					e.dcl(v)
 				}
 			}
@@ -613,7 +613,7 @@ func (e *escWalk) assign(s *ast.AssignStmt) {
 	for i, l := range s.Lhs {
 		ks[i] = e.addr(l)
 		ts[i] = e.lhsType(l)
-		if id, ok := l.(*ast.Ident); !ok || s.Tok != token.DEFINE || e.info.Defs[id] == nil {
+		if id, ok := l.(*ast.Ident); !ok || s.Tok != token.DEFINE || defOf(id) == nil {
 			// (marked after the right side is walked: a function literal there that captures the
 			// variable is assigned to it before the capture, not after)
 			defer e.reassign(ks[i])
@@ -706,7 +706,7 @@ func (e *escWalk) rangeStmt(s *ast.RangeStmt) {
 	if s.Tok == token.DEFINE {
 		for _, x := range []ast.Expr{s.Key, s.Value} {
 			if id, ok := x.(*ast.Ident); ok && id.Name != "_" {
-				if v, ok := e.info.Defs[id].(*types.Var); ok {
+				if v, ok := defOf(id).(*types.Var); ok {
 					e.dcl(v)
 				}
 			}
@@ -832,7 +832,7 @@ func (e *escWalk) rangeFunc(s *ast.RangeStmt) {
 	if s.Tok == token.DEFINE {
 		for _, x := range []ast.Expr{s.Key, s.Value} {
 			if id, ok := x.(*ast.Ident); ok && id.Name != "_" {
-				if v, ok := e.info.Defs[id].(*types.Var); ok {
+				if v, ok := defOf(id).(*types.Var); ok {
 					l := w.dcl(v)
 					l.param = true
 					fn.params = append(fn.params, l)
@@ -863,10 +863,10 @@ func (e *escWalk) selfAssign(dst, src ast.Expr) bool {
 		switch x := ast.Unparen(x).(type) {
 		case *ast.StarExpr:
 			if id, ok := ast.Unparen(x.X).(*ast.Ident); ok {
-				return e.info.Uses[id]
+				return useOf(id)
 			}
 		case *ast.SelectorExpr:
-			sel := e.info.Selections[x]
+			sel := selnOf(x)
 			if sel == nil || sel.Kind() != types.FieldVal || len(sel.Index()) != 1 {
 				return nil
 			}
@@ -874,7 +874,7 @@ func (e *escWalk) selfAssign(dst, src ast.Expr) bool {
 				return nil
 			}
 			if id, ok := ast.Unparen(x.X).(*ast.Ident); ok {
-				return e.info.Uses[id]
+				return useOf(id)
 			}
 		}
 		return nil
@@ -894,7 +894,7 @@ func (e *escWalk) selfAssign(dst, src ast.Expr) bool {
 		if !ok {
 			return false
 		}
-		ds, ss := e.info.Selections[d], e.info.Selections[s]
+		ds, ss := selnOf(d), selnOf(s)
 		if ds == nil || ss == nil || ds.Kind() != types.FieldVal || ss.Kind() != types.FieldVal ||
 			len(ds.Index()) != 1 || len(ss.Index()) != 1 {
 			return false
@@ -920,7 +920,7 @@ func (e *escWalk) selfAssign(dst, src ast.Expr) bool {
 }
 
 func (e *escWalk) affectsMemory(n ast.Expr) bool {
-	if tv, ok := e.info.Types[n]; ok && tv.Value != nil {
+	if tv, ok := types.SBTypeOf(n); ok && tv.Value != nil {
 		return false
 	}
 	switch n := n.(type) {
@@ -944,14 +944,14 @@ func (e *escWalk) affectsMemory(n ast.Expr) bool {
 			return e.affectsMemory(n.X)
 		}
 	case *ast.SelectorExpr:
-		if sel := e.info.Selections[n]; sel != nil && sel.Kind() == types.FieldVal {
+		if sel := selnOf(n); sel != nil && sel.Kind() == types.FieldVal {
 			return e.affectsMemory(n.X)
 		}
 	case *ast.StarExpr:
 		return e.affectsMemory(n.X)
 	case *ast.CallExpr:
 		if len(n.Args) == 1 {
-			if tv := e.info.Types[n.Fun]; tv.IsType() {
+			if tv := tvOf(n.Fun); tv.IsType() {
 				return e.affectsMemory(n.Args[0])
 			}
 			if name := e.builtinName(n.Fun); name == "len" || name == "cap" {
@@ -971,7 +971,7 @@ func (e *escWalk) sameSafe(l, r ast.Expr) bool {
 		if !ok {
 			return false
 		}
-		lo, ro := e.info.Uses[l], e.info.Uses[r]
+		lo, ro := useOf(l), useOf(r)
 		_, isVar := lo.(*types.Var)
 		return isVar && lo == ro
 	case *ast.SelectorExpr:
@@ -979,9 +979,9 @@ func (e *escWalk) sameSafe(l, r ast.Expr) bool {
 		if !ok {
 			return false
 		}
-		ls, rs := e.info.Selections[l], e.info.Selections[r]
+		ls, rs := selnOf(l), selnOf(r)
 		if ls == nil || rs == nil {
-			return ls == nil && rs == nil && e.info.Uses[l.Sel] == e.info.Uses[r.Sel] && e.info.Uses[l.Sel] != nil
+			return ls == nil && rs == nil && useOf(l.Sel) == useOf(r.Sel) && useOf(l.Sel) != nil
 		}
 		return ls.Kind() == types.FieldVal && rs.Kind() == types.FieldVal && ls.Obj() == rs.Obj() && e.sameSafe(l.X, r.X)
 	case *ast.StarExpr:
@@ -997,7 +997,7 @@ func (e *escWalk) sameSafe(l, r ast.Expr) bool {
 		}
 		return e.sameSafe(l.X, r.X) && e.sameSafe(l.Index, r.Index)
 	case *ast.BasicLit:
-		lt, rt := e.info.Types[l], e.info.Types[r]
+		lt, rt := tvOf(l), tvOf(r)
 		return lt.Value != nil && rt.Value != nil && constant.Compare(lt.Value, token.EQL, rt.Value)
 	}
 	return false

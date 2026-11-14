@@ -183,7 +183,7 @@ func (g *gen) typeSwitch(s *ast.TypeSwitchStmt, name string) {
 			continue
 		}
 		for _, te := range cc.List {
-			if g.info.Types[te].IsNil() {
+			if tvOf(te).IsNil() {
 				g.a.aluMI(aCMP, 8, mb(BP, dyn.off), 0)
 				g.jcc(ccE, bodies[i])
 				continue
@@ -223,16 +223,16 @@ func (g *gen) typeSwitch(s *ast.TypeSwitchStmt, name string) {
 			vt := g.vt(v)
 			var val loc
 			switch {
-			case len(cc.List) == 1 && !g.info.Types[cc.List[0]].IsNil() && !isInterface(vt):
+			case len(cc.List) == 1 && !tvOf(cc.List[0]).IsNil() && !isInterface(vt):
 				val = g.ifaceValue(x, vt)
-			case len(cc.List) == 1 && !g.info.Types[cc.List[0]].IsNil() && isEmptyIface(vt):
+			case len(cc.List) == 1 && !tvOf(cc.List[0]).IsNil() && isEmptyIface(vt):
 				tmp := g.temp(vt)
 				g.a.load(R8, mb(BP, dyn.off), 8, false)
 				g.a.store(mb(BP, tmp.off), R8, 8)
 				g.a.load(R8, mb(BP, x.off+8), 8, false)
 				g.a.store(mb(BP, tmp.off+8), R8, 8)
 				val = tmp
-			case len(cc.List) == 1 && !g.info.Types[cc.List[0]].IsNil():
+			case len(cc.List) == 1 && !tvOf(cc.List[0]).IsNil():
 				tmp := g.temp(vt)
 				g.a.load(R8, mb(BP, itab.off), 8, false)
 				g.a.store(mb(BP, tmp.off), R8, 8)

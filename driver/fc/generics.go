@@ -351,7 +351,7 @@ func (pr *Program) declOf(fn *types.Func) (*Pkg, *ast.FuncDecl) {
 		for _, f := range p.files {
 			for _, d := range f.Decls {
 				if fd, ok := d.(*ast.FuncDecl); ok {
-					if o, ok := p.info.Defs[fd.Name].(*types.Func); ok {
+					if o, ok := defOf(fd.Name).(*types.Func); ok {
 						p.decls[o] = fd
 					}
 				}

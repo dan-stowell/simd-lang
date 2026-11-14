@@ -25,7 +25,7 @@ func (g *gen) freeVars(lit ast.Node) []*types.Var {
 		if !ok {
 			return true
 		}
-		v, ok := g.info.Uses[id].(*types.Var)
+		v, ok := useOf(id).(*types.Var)
 		if !ok || v.IsField() || v.Pkg() == nil || v.Parent() == v.Pkg().Scope() || seen[v] {
 			return true
 		}
@@ -101,7 +101,7 @@ func (g *gen) child(name string, sig *types.Signature) *gen {
 }
 
 func (g *gen) funcLit(e *ast.FuncLit) loc {
-	sig := g.info.Types[e].Type.(*types.Signature)
+	sig := tvOf(e).Type.(*types.Signature)
 	return g.closure("func", sig, e, e.Body, nil, func(cg *gen) { cg.block(e.Body.List) })
 }
 
@@ -337,7 +337,7 @@ func (g *gen) goStmt(s *ast.GoStmt) {
 // deferred: a func() that performs the call later, its callee and arguments evaluated now.
 func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 	if id := identOf(ast.Unparen(call.Fun)); id != nil {
-		if b, ok := g.info.Uses[id].(*types.Builtin); ok {
+		if b, ok := useOf(id).(*types.Builtin); ok {
 			return g.deferredBuiltin(call, b.Name(), kind)
 		}
 	}

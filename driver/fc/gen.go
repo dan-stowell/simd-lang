@@ -145,13 +145,13 @@ const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: th
 // ---- types
 
 func (g *gen) typeOf(e ast.Expr) types.Type {
-	tv, ok := g.info.Types[e]
+	tv, ok := types.SBTypeOf(e)
 	if !ok {
 		if id, ok := e.(*ast.Ident); ok {
-			if o := g.info.Uses[id]; o != nil {
+			if o := useOf(id); o != nil {
 				return g.subst(o.Type())
 			}
-			if o := g.info.Defs[id]; o != nil {
+			if o := defOf(id); o != nil {
 				return g.subst(o.Type())
 			}
 		}
@@ -1364,7 +1364,7 @@ func (g *gen) smallConst(e ast.Expr, t types.Type) (int64, bool) {
 	if e == nil {
 		return 0, false
 	}
-	tv := g.info.Types[e]
+	tv := tvOf(e)
 	if tv.Value == nil || !isWord(t) {
 		return 0, false
 	}

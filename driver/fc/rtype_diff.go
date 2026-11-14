@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"go/ast"
 	"go/types"
 	"os"
 	"sort"
@@ -91,18 +92,28 @@ func (c *compiler) forEachType(visit func(types.Type)) {
 			}
 		}
 	}
-	for _, info := range c.pkg.infos() {
-		for _, tv := range info.Types {
-			walk(tv.Type)
-		}
-		for _, o := range info.Defs {
-			if o != nil {
-				walk(o.Type())
+	c.pkg.eachNode(func(x ast.Node) {
+		if e, ok := x.(ast.Expr); ok {
+			if tv, ok := types.SBTypeOf(e); ok {
+				walk(tv.Type)
 			}
 		}
-		for _, o := range info.Uses {
-			walk(o.Type())
+		switch x := x.(type) {
+		case *ast.Ident:
+			if o := defOf(x); o != nil {
+				walk(o.Type())
+			}
+			if o := useOf(x); o != nil {
+				walk(o.Type())
+			}
+		case *ast.SelectorExpr:
+			if s := selnOf(x); s != nil {
+				walk(s.Recv())
+				walk(s.Type())
+			}
 		}
+	})
+	for _, info := range c.pkg.infos() {
 		for _, in := range info.Instances {
 			walk(in.Type)
 			for i := 0; i < in.TypeArgs.Len(); i++ {
@@ -111,10 +122,6 @@ func (c *compiler) forEachType(visit func(types.Type)) {
 		}
 		for _, o := range info.Implicits {
 			walk(o.Type())
-		}
-		for _, s := range info.Selections {
-			walk(s.Recv())
-			walk(s.Type())
 		}
 	}
 }

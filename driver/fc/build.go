@@ -413,6 +413,9 @@ func buildMode(args []string) {
 	if demandStat {
 		printDemandStat()
 	}
+	if slotCheck {
+		pr.checkSlots()
+	}
 	var sf *os.File
 	if *stats != "" {
 		sf, _ = os.Create(*stats)
@@ -479,20 +482,6 @@ func buildMode(args []string) {
 			log.Fatalf("fc build -link: link: %v", err)
 		}
 		fmt.Printf("link (%s): %d fc objects, %d stock archives, %.0f ms\n", linker, len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
-	}
-	if os.Getenv("FC_INFOSTATS") != "" {
-		var nt, nd, nu, ns, nb int64
-		for _, p := range pr.byPath {
-			if p.info != nil {
-				nt += int64(len(p.info.Types))
-				nd += int64(len(p.info.Defs))
-				nu += int64(len(p.info.Uses))
-				ns += int64(len(p.info.Selections))
-				nb += p.srcBytes
-			}
-		}
-		fmt.Printf("info maps: %d source bytes; bytes per entry: Types %.1f, Defs %.1f, Uses %.1f, Selections %.1f\n", nb,
-			float64(nb)/float64(nt), float64(nb)/float64(nd), float64(nb)/float64(nu), float64(nb)/float64(ns))
 	}
 	total := cpuSeconds() - c0
 	var all int64

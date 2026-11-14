@@ -603,7 +603,7 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 		for _, d := range f.Decls {
 			switch d := d.(type) {
 			case *ast.FuncDecl:
-				obj, _ := p.info.Defs[d.Name].(*types.Func)
+				obj, _ := defOf(d.Name).(*types.Func)
 				if obj == nil {
 					continue
 				}
@@ -636,7 +636,7 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 		seen := map[*escUnit]bool{}
 		visit := func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
-				if fn, ok := p.info.Uses[id].(*types.Func); ok {
+				if fn, ok := useOf(id).(*types.Func); ok {
 					if t := byObj[fn.Origin()]; t != nil && !seen[t] {
 						seen[t] = true
 						u.refs = append(u.refs, t)
@@ -698,12 +698,12 @@ func (pr *Program) escapePkg(p *Pkg) *escInfo {
 // scanAssigned records the local variables that are assigned after their declaration or have their address
 // taken, and the function literals that variables are declared with.
 func (pk *escPkg) scanAssigned(root ast.Node) {
-	info := pk.info
+	_ = pk.info
 	var mark func(e ast.Expr)
 	mark = func(e ast.Expr) {
 		switch e := ast.Unparen(e).(type) {
 		case *ast.Ident:
-			if v, ok := info.Uses[e].(*types.Var); ok {
+			if v, ok := useOf(e).(*types.Var); ok {
 				pk.reassigned[v] = true
 			}
 		case *ast.SelectorExpr:
@@ -717,8 +717,8 @@ func (pk *escPkg) scanAssigned(root ast.Node) {
 		case *ast.AssignStmt:
 			for i, l := range n.Lhs {
 				id, ok := l.(*ast.Ident)
-				if n.Tok == token.DEFINE && ok && info.Defs[id] != nil {
-					if v, ok := info.Defs[id].(*types.Var); ok && len(n.Lhs) == len(n.Rhs) {
+				if n.Tok == token.DEFINE && ok && defOf(id) != nil {
+					if v, ok := defOf(id).(*types.Var); ok && len(n.Lhs) == len(n.Rhs) {
 						pk.staticValue(v, n.Rhs[i])
 					}
 					continue
@@ -728,7 +728,7 @@ func (pk *escPkg) scanAssigned(root ast.Node) {
 		case *ast.ValueSpec:
 			if len(n.Names) == len(n.Values) {
 				for i, id := range n.Names {
-					if v, ok := info.Defs[id].(*types.Var); ok {
+					if v, ok := defOf(id).(*types.Var); ok {
 						pk.staticValue(v, n.Values[i])
 					}
 				}
@@ -760,12 +760,12 @@ func (pk *escPkg) staticValue(v *types.Var, x ast.Expr) {
 	case *ast.FuncLit:
 		pk.staticLit[v] = x
 	case *ast.Ident:
-		if fn, ok := pk.info.Uses[x].(*types.Func); ok {
+		if fn, ok := useOf(x).(*types.Func); ok {
 			pk.staticFunc[v] = fn
 		}
 	case *ast.SelectorExpr:
-		if pk.info.Selections[x] == nil {
-			if fn, ok := pk.info.Uses[x.Sel].(*types.Func); ok {
+		if selnOf(x) == nil {
+			if fn, ok := useOf(x.Sel).(*types.Func); ok {
 				pk.staticFunc[v] = fn
 			}
 		}
@@ -902,7 +902,7 @@ func (pk *escPkg) batch(units []*escUnit) {
 
 // loneLit analyzes a function literal that captures nothing, in a batch of its own.
 func (pk *escPkg) loneLit(n *ast.FuncLit, parent *escFn) {
-	sig, _ := pk.info.Types[n].Type.(*types.Signature)
+	sig, _ := tvOf(n).Type.(*types.Signature)
 	if sig == nil || pk.litSum[n] != nil {
 		return
 	}
@@ -1055,12 +1055,12 @@ func escLoopingLabels(info *types.Info, body *ast.BlockStmt) map[*types.Label]bo
 		case *ast.FuncLit:
 			return false
 		case *ast.LabeledStmt:
-			if l, ok := info.Defs[n.Label].(*types.Label); ok {
+			if l, ok := defOf(n.Label).(*types.Label); ok {
 				seen[l] = true
 			}
 		case *ast.BranchStmt:
 			if n.Tok == token.GOTO && n.Label != nil {
-				if l, ok := info.Uses[n.Label].(*types.Label); ok && seen[l] {
+				if l, ok := useOf(n.Label).(*types.Label); ok && seen[l] {
 					if looping == nil {
 						looping = map[*types.Label]bool{}
 					}

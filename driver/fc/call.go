@@ -160,7 +160,7 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 // the spot (done is true and rs its results) when now is set, and given up on otherwise.
 func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c callee, rs []loc, done bool) {
 	fun := ast.Unparen(e.Fun)
-	if tv := g.info.Types[fun]; tv.IsType() {
+	if tv := tvOf(fun); tv.IsType() {
 		if !now {
 			giveUp("deferred conversion")
 		}
@@ -181,7 +181,7 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		fun = ast.Unparen(ix.X)
 	}
 	if id := identOf(fun); id != nil {
-		if b, ok := g.info.Uses[id].(*types.Builtin); ok {
+		if b, ok := useOf(id).(*types.Builtin); ok {
 			if !now {
 				giveUp("deferred built-in %s", b.Name())
 			}
@@ -223,7 +223,7 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		}
 	}
 	if id := identOf(fun); id != nil {
-		if fn, ok := g.info.Uses[id].(*types.Func); ok && g.info.Selections[selOf(fun)] == nil && g.c.isIntrinsic(fn) {
+		if fn, ok := useOf(id).(*types.Func); ok && selnOf(selOf(fun)) == nil && g.c.isIntrinsic(fn) {
 			if !now {
 				giveUp("deferred intrinsic %s", fn.Name())
 			}
@@ -232,13 +232,13 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 	}
 	switch f := fun.(type) {
 	case *ast.Ident:
-		if fn, ok := g.info.Uses[f].(*types.Func); ok {
+		if fn, ok := useOf(f).(*types.Func); ok {
 			direct(fn)
 		}
 	case *ast.SelectorExpr:
-		sel := g.info.Selections[f]
+		sel := selnOf(f)
 		if sel == nil {
-			if fn, ok := g.info.Uses[f.Sel].(*types.Func); ok {
+			if fn, ok := useOf(f.Sel).(*types.Func); ok {
 				direct(fn)
 			}
 			break
@@ -311,7 +311,7 @@ func (g *gen) addrOfLoc(l loc) loc {
 func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 	np := sig.Params().Len()
 	var out []loc
-	if len(e.Args) == 1 && isTuple(g.info.Types[e.Args[0]].Type) {
+	if len(e.Args) == 1 && isTuple(tvOf(e.Args[0]).Type) {
 		if tup, ok := g.typeOf(e.Args[0]).(*types.Tuple); ok {
 			// f(g()) with several results
 			rs := g.multi(e.Args[0])
@@ -637,7 +637,7 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		t := g.typeOf(e.Args[0])
 		if !g.siteHeap(e) {
 			// the object does not outlive this activation: it lives in the frame
-			isType := g.info.Types[e.Args[0]].IsType()
+			isType := tvOf(e.Args[0]).IsType()
 			if !isType {
 				t = g.typeOf(e).Underlying().(*types.Pointer).Elem()
 			}
@@ -651,7 +651,7 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 			}
 			return one(g.frameAddr(obj))
 		}
-		if !g.info.Types[e.Args[0]].IsType() {
+		if !tvOf(e.Args[0]).IsType() {
 			// new(v): a new variable holding v
 			t = g.typeOf(e).Underlying().(*types.Pointer).Elem()
 			v := g.keep(g.exprAs(e.Args[0], t), t)
@@ -707,7 +707,7 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		return one(loc{kind: lImm, imm: g.c.alignof(g.typeOf(e.Args[0]))})
 	case "Offsetof":
 		se := ast.Unparen(e.Args[0]).(*ast.SelectorExpr)
-		sel := g.info.Selections[se]
+		sel := selnOf(se)
 		t := g.typeOf(se.X)
 		off := int64(0)
 		for _, i := range sel.Index() {
