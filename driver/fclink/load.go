@@ -1,6 +1,6 @@
 // load.go: the inputs. Every file of the importcfg is mapped, the Go objects in it are found, and every
 // symbol slot of every object gets a dense global id.
-package main
+package fclinklib
 
 import (
 	"bytes"
@@ -19,10 +19,15 @@ import (
 // package index (ndef), content-addressed definitions with a 64-bit hash (nh64) and with a longer hash
 // (nh), definitions referenced by name (nnonpkg), and references by name to symbols defined elsewhere
 // (nref). Slot j has the global id base+j.
+//
+// An object is read through one of two sources (source.go has the accessors every phase uses): r, a Go
+// object file; or m, one of fc's packages handed over in memory (unit.go), whose slots are in the same
+// order and use the same kinds of reference.
 type object struct {
 	idx                           int
 	pkg, file                     string
 	r                             *goobj.Reader
+	m                             *Unit
 	base                          uint32
 	ndef, nh64, nh, nnonpkg, nref uint32
 	nalldef, total                uint32
@@ -152,12 +157,25 @@ func newObject(pkg, file string, body []byte) *object {
 	return o
 }
 
-func load(cfgFile, mainFile string) {
+func newMemObject(pkg string, u *Unit) *object {
+	o := &object{pkg: pkg, file: "fc:" + pkg, m: u, ndef: u.ndef, nh64: u.nh64, nh: u.nh, nnonpkg: u.nnonpkg, nref: u.nref}
+	o.nalldef = o.ndef + o.nh64 + o.nh + o.nnonpkg
+	o.total = o.nalldef + o.nref
+	return o
+}
+
+// A lib is one input: a file (an archive or a bare object), or one of fc's units.
+type lib struct {
+	pkg, file string
+	unit      *Unit
+}
+
+// readImportcfg: the inputs an importcfg.link and the main object name.
+func readImportcfg(cfgFile, mainFile string) []lib {
 	cfg, err := os.ReadFile(cfgFile)
 	if err != nil {
 		fatalf("%v", err)
 	}
-	type lib struct{ pkg, file string }
 	var libs []lib
 	mainAbs, _ := filepath.Abs(mainFile)
 	haveMain := false
@@ -177,7 +195,7 @@ func load(cfgFile, mainFile string) {
 			if abs, _ := filepath.Abs(f); abs == mainAbs {
 				p, haveMain = "main", true
 			}
-			libs = append(libs, lib{p, f})
+			libs = append(libs, lib{p, f, nil})
 		case "modinfo":
 			s, err := strconv.Unquote(args)
 			if err != nil {
@@ -191,11 +209,18 @@ func load(cfgFile, mainFile string) {
 		}
 	}
 	if !haveMain {
-		libs = append(libs, lib{"main", mainFile})
+		libs = append(libs, lib{"main", mainFile, nil})
 	}
+	return libs
+}
 
+func load(libs []lib) {
 	perLib := make([][]*object, len(libs))
 	par(len(libs), func(_, i int) {
+		if u := libs[i].unit; u != nil {
+			perLib[i] = []*object{newMemObject(libs[i].pkg, u)}
+			return
+		}
 		b := mapFile(libs[i].file)
 		if !bytes.HasPrefix(b, []byte("!<arch>\n")) {
 			if o := newObject(libs[i].pkg, libs[i].file, b); o != nil {
@@ -271,10 +296,10 @@ func load(cfgFile, mainFile string) {
 	}
 	par(len(objs), func(_, i int) {
 		o := objs[i]
-		n := o.r.NPkg()
+		n := o.npkg()
 		o.pkgBase = make([]uint32, n)
 		for p := 1; p < n; p++ {
-			if q := primary[o.r.Pkg(p)]; q != nil {
+			if q := primary[o.pkgName(p)]; q != nil {
 				o.pkgBase[p] = q.base
 			} else {
 				o.pkgBase[p] = badBase
@@ -303,7 +328,7 @@ func (o *object) ref(s goobj.SymRef) uint32 {
 	}
 	b := o.pkgBase[s.PkgIdx]
 	if b == badBase {
-		errorf("%s: reference to package %s, which is not in the importcfg", o.file, o.r.Pkg(int(s.PkgIdx)))
+		errorf("%s: reference to package %s, which is not in the importcfg", o.file, o.pkgName(int(s.PkgIdx)))
 		return 0
 	}
 	return b + s.SymIdx

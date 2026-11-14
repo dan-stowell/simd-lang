@@ -1,7 +1,7 @@
 // special.go: what the linker itself contributes: runtime.firstmoduledata, the init task lists, the string
 // variables it sets, go:buildinfo, go:fipsinfo, the section boundary symbols, the fixed tables of pclntab,
 // findfunctab, the GC programs of the data and bss sections.
-package main
+package fclinklib
 
 import (
 	"cmd/internal/gcprog"
@@ -61,7 +61,7 @@ func makeSpecials() {
 		str := synth(name + ".str")
 		addSpecial(&roSpecials, str, uint32(len(val)), 1, func(p []byte) { copy(p, val) })
 		o, j := objOf(v)
-		addSpecial(&dataSpecials, v, max(16, o.r.Sym(j).Siz()), 8, func(p []byte) {
+		addSpecial(&dataSpecials, v, max(16, o.sym(j).Siz()), 8, func(p []byte) {
 			le.PutUint64(p, uint64(addr[str]))
 			le.PutUint64(p[8:], uint64(len(val)))
 		})
@@ -86,7 +86,7 @@ func makeSpecials() {
 		fatalf("runtime.firstmoduledata is not defined: is the runtime in the importcfg?")
 	}
 	o, j := objOf(md)
-	addSpecial(&dataSpecials, md, o.r.Sym(j).Siz(), 8, fillModuledata)
+	addSpecial(&dataSpecials, md, o.sym(j).Siz(), 8, fillModuledata)
 	if g := lookupName("runtime.lastmoduledatap", 0); isLive(g) {
 		addSpecial(&dataSpecials, g, 8, 8, func(p []byte) { le.PutUint64(p, uint64(addr[md])) })
 	}

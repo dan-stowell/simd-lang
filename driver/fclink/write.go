@@ -1,7 +1,7 @@
 // write.go: the output. One parallel pass over the units copies every live symbol into the mapped output
 // file, applies its relocations, writes its function-table entry (pclntab) and records the pointer words
 // of data and bss symbols for the GC bitmaps.
-package main
+package fclinklib
 
 import (
 	"cmd/internal/goobj"
@@ -86,7 +86,7 @@ func sectBase(a uint32) uint32 {
 }
 
 func writeUnit(u *unit) (nrel uint64) {
-	o, r := u.o, u.o.r
+	o := u.o
 	fidx := u.funcBase
 	foff := lay.ftabStructs + u.ftabBase
 	inl := u.inlBase
@@ -98,16 +98,16 @@ func writeUnit(u *unit) (nrel uint64) {
 		if st&(stLive|stPC|stNameNeeded) == 0 || canon[gid] != gid {
 			continue
 		}
-		s := r.Sym(j)
+		s := o.sym(j)
 		if st&stPC != 0 {
 			if a := addr[gid]; a != 0 {
-				copy(pctab[a:], r.Data(j))
+				copy(pctab[a:], o.data(j))
 			}
 		}
 		b := int(st >> stBucketShift & 31)
 		text := isTextBucket(b)
 		if text || st&stNameNeeded != 0 {
-			copy(names[aux[gid]:], s.Name(r))
+			copy(names[aux[gid]:], o.name(j))
 		}
 		if b == bNone {
 			continue
@@ -123,9 +123,9 @@ func writeUnit(u *unit) (nrel uint64) {
 		case bData, bDataFIPS:
 			gcSym(gcDataBit, o, j, a-lay.data)
 		}
-		d := r.Data(j)
+		d := o.data(j)
 		if uint32(len(d)) > siz {
-			errorf("%s: initialize bounds (%d < %d)", s.Name(r), siz, len(d))
+			errorf("%s: initialize bounds (%d < %d)", o.name(j), siz, len(d))
 			continue
 		}
 		P := out[a-imageBase : a-imageBase+siz : a-imageBase+siz]
@@ -136,11 +136,11 @@ func writeUnit(u *unit) (nrel uint64) {
 				pad[i] = 0xCC // INT3
 			}
 		}
-		relocs := r.Relocs(j)
-		nrel += uint64(len(relocs))
+		relocs := o.relocs(j)
+		nrel += uint64(relocs.Len())
 		deferreturn := uint32(0)
-		for i := range relocs {
-			rl := &relocs[i]
+		for i := 0; i < relocs.Len(); i++ {
+			rl := relocs.At(i)
 			rsiz := uint32(rl.Siz())
 			if rsiz == 0 {
 				continue // a marker for the dead-code pass
@@ -150,7 +150,7 @@ func writeUnit(u *unit) (nrel uint64) {
 			t &^= objabi.R_WEAK
 			off := uint32(rl.Off())
 			if off+rsiz > siz {
-				errorf("%s: invalid relocation at %d+%d, size %d", s.Name(r), off, rsiz, siz)
+				errorf("%s: invalid relocation at %d+%d, size %d", o.name(j), off, rsiz, siz)
 				continue
 			}
 			tg := o.ref(rl.Sym())
@@ -160,14 +160,14 @@ func writeUnit(u *unit) (nrel uint64) {
 			case objabi.R_ADDR:
 				if ta == 0 && tg != 0 {
 					if !weak {
-						undefined(o, s, tg)
+						undefined(o, j, tg)
 						continue
 					}
 					ta = unreachableMethodAddr // a method nothing can call: throws if called
 				}
 				v = int64(ta) + rl.Add()
 				if rsiz == 4 && int32(v) < 0 {
-					errorf("%s: non-pc-relative relocation address for %s is too big: %#x", s.Name(r), symName(canon[tg]), v)
+					errorf("%s: non-pc-relative relocation address for %s is too big: %#x", o.name(j), symName(canon[tg]), v)
 				}
 			case objabi.R_METHODOFF, objabi.R_ADDROFF:
 				if ta == 0 {
@@ -176,7 +176,7 @@ func writeUnit(u *unit) (nrel uint64) {
 						continue
 					}
 					if !weak {
-						undefined(o, s, tg)
+						undefined(o, j, tg)
 					}
 					continue
 				}
@@ -184,7 +184,7 @@ func writeUnit(u *unit) (nrel uint64) {
 			case objabi.R_CALL, objabi.R_PCREL:
 				if ta == 0 && tg != 0 {
 					if !(weak && t == objabi.R_CALL) {
-						undefined(o, s, tg)
+						undefined(o, j, tg)
 						continue
 					}
 					ta = mapinitnoopAddr // the initializer of a map variable that is not live
@@ -197,7 +197,7 @@ func writeUnit(u *unit) (nrel uint64) {
 					v = rl.Add() - int64(a+off+rsiz)
 				}
 				if v != int64(int32(v)) {
-					errorf("%s: pc-relative relocation to %s is too far", s.Name(r), symName(canon[tg]))
+					errorf("%s: pc-relative relocation to %s is too far", o.name(j), symName(canon[tg]))
 				}
 			case objabi.R_TLS_LE:
 				v = -8 + rl.Add() // ELF: g is at -8(FS)
@@ -206,11 +206,11 @@ func writeUnit(u *unit) (nrel uint64) {
 			case objabi.R_SIZE:
 				if c := canon[tg]; isDef(c) {
 					o2, j2 := objOf(c)
-					v = int64(o2.r.Sym(j2).Siz())
+					v = int64(o2.sym(j2).Siz())
 				}
 				v += rl.Add()
 			default:
-				errorf("%s: unsupported relocation type %v to %s", s.Name(r), t, symName(canon[tg]))
+				errorf("%s: unsupported relocation type %v to %s", o.name(j), t, symName(canon[tg]))
 				continue
 			}
 			switch rsiz {
@@ -223,7 +223,7 @@ func writeUnit(u *unit) (nrel uint64) {
 			case 1:
 				P[off] = byte(v)
 			default:
-				errorf("%s: bad relocation size %d", s.Name(r), rsiz)
+				errorf("%s: bad relocation size %d", o.name(j), rsiz)
 			}
 		}
 		if !text {
@@ -251,7 +251,7 @@ func writeUnit(u *unit) (nrel uint64) {
 			for k := uint32(0); k < nfd; k++ {
 				le.PutUint32(fdd[4*k:], ^uint32(0))
 			}
-			auxs := r.Auxs(j)
+			auxs := o.auxs(j)
 			kp, kf, pcinline := 0, 0, uint32(0)
 			for i := range auxs {
 				x := &auxs[i]
@@ -304,7 +304,7 @@ func funcInfoOf(c uint32) []byte {
 		return nil
 	}
 	o, j := objOf(c)
-	auxs := o.r.Auxs(j)
+	auxs := o.auxs(j)
 	for i := range auxs {
 		if auxs[i].Type() == goobj.AuxFuncInfo {
 			return dataOf(canon[o.ref(auxs[i].Sym())])
@@ -313,19 +313,19 @@ func funcInfoOf(c uint32) []byte {
 	return nil
 }
 
-func undefined(o *object, s *goobj.Sym, tg uint32) {
+func undefined(o *object, j uint32, tg uint32) {
 	c := canon[tg]
 	what := "undefined"
 	if isDef(c) {
 		what = "not reachable (fclink's dead-code pass and the code disagree)"
 	}
-	errorf("%s: relocation target %s %s", s.Name(o.r), symName(c), what)
+	errorf("%s: relocation target %s %s", o.name(j), symName(c), what)
 }
 
 // gcSym sets, in bitmap bm, the bits of the pointer words of data symbol j of o, which is at byte offset
 // off of the bitmap's section. The symbol's Go type says where its pointers are (ld.GCProg.AddSym).
 func gcSym(bm []byte, o *object, j uint32, off uint32) {
-	auxs := o.r.Auxs(j)
+	auxs := o.auxs(j)
 	for i := range auxs {
 		if auxs[i].Type() == goobj.AuxGotype {
 			if t := canon[o.ref(auxs[i].Sym())]; isDef(t) {
@@ -342,7 +342,7 @@ func gcSym(bm []byte, o *object, j uint32, off uint32) {
 // typePtrs calls emit with the index of every pointer word of a value of type t.
 func typePtrs(t uint32, emit func(w int64)) {
 	o, j := objOf(t)
-	p := o.r.Data(j)
+	p := o.data(j)
 	if len(p) < 48 {
 		return
 	}
@@ -350,9 +350,9 @@ func typePtrs(t uint32, emit func(w int64)) {
 	if ptrdata == 0 {
 		return
 	}
-	relocs := o.r.Relocs(j)
+	relocs := o.relocs(j)
 	target := func(off int32) uint32 {
-		if rl := relocAt(relocs, off); rl != nil {
+		if rl, ok := relocAt(relocs, off); ok {
 			if c := canon[o.ref(rl.Sym())]; isDef(c) {
 				return c
 			}
@@ -362,7 +362,7 @@ func typePtrs(t uint32, emit func(w int64)) {
 	switch typeKind(p) {
 	default:
 		if p[abi.TFlagOff(8)]&byte(abi.TFlagGCMaskOnDemand) != 0 {
-			errorf("%s: GC mask not available", o.r.Sym(j).Name(o.r))
+			errorf("%s: GC mask not available", o.name(j))
 			return
 		}
 		mask := dataOf(target(32))

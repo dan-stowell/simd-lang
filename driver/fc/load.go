@@ -814,16 +814,30 @@ func samePkg(a, b *types.Package) bool {
 // the tests, where the runtime is the stock compiler's.
 var rtByFc = os.Getenv("FC_RUNTIME") != "" && os.Getenv("FC_RUNTIME") != "0"
 
-// linkerPath: fclink's path, or "" for the stock linker. FC_LINKER names it (empty: the stock linker);
-// unset, it is the fclink beside this binary, if there is one.
+// useFclink: is the linker fclink (rather than the stock linker)? fclink is part of fc (fclinklib) and
+// links in process; FC_LINKER= (set, empty) asks for the stock linker.
+func useFclink() bool {
+	fl, ok := os.LookupEnv("FC_LINKER")
+	return !ok || fl != ""
+}
+
+// objFiles: FC_OBJFILES=1: fc build -link writes objects and runs the fclink command (linkerPath) on them,
+// as before the in-process link (M5).
+var objFiles = os.Getenv("FC_OBJFILES") != "" && os.Getenv("FC_OBJFILES") != "0"
+
+// linkerPath: the fclink command's path, for FC_OBJFILES=1. FC_LINKER names it; unset, it is the one
+// beside this binary: fclink<X> for fc<X> (a builder's FC_TAG), else fclink.
 func linkerPath() string {
 	if fl, ok := os.LookupEnv("FC_LINKER"); ok {
 		return fl
 	}
 	if exe, err := os.Executable(); err == nil {
-		fl := filepath.Join(filepath.Dir(exe), "fclink")
-		if st, err := os.Stat(fl); err == nil && !st.IsDir() {
-			return fl
+		dir, base := filepath.Split(exe)
+		for _, name := range []string{"fclink" + strings.TrimPrefix(base, "fc"), "fclink"} {
+			fl := filepath.Join(dir, name)
+			if st, err := os.Stat(fl); err == nil && !st.IsDir() {
+				return fl
+			}
 		}
 	}
 	return ""

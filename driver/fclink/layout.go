@@ -16,7 +16,7 @@
 //	noptrdata       build info, moduledata, init task lists; pointer-free data; FIPS
 //	data            data with pointers; FIPS
 //	bss, noptrbss   (not in the file)
-package main
+package fclinklib
 
 import (
 	"cmd/internal/goobj"
@@ -94,7 +94,7 @@ var lay struct {
 
 func rnd(v, a uint32) uint32 { return (v + a - 1) &^ (a - 1) }
 
-func symAlign(s *goobj.Sym) uint32 {
+func symAlign(s symv) uint32 {
 	if a := s.Align(); a != 0 {
 		return a
 	}
@@ -108,7 +108,7 @@ func symAlign(s *goobj.Sym) uint32 {
 // funcShape reads what a function's pclntab entry needs to know: its FuncInfo, and how many pcdata and
 // funcdata slots it has (an inlined-into function has at least the inline-tree ones).
 func funcShape(o *object, j uint32) (fi []byte, npc, nfd, ninl uint32) {
-	auxs := o.r.Auxs(j)
+	auxs := o.auxs(j)
 	for i := range auxs {
 		switch auxs[i].Type() {
 		case goobj.AuxFuncInfo:
@@ -130,7 +130,7 @@ func funcShape(o *object, j uint32) (fi []byte, npc, nfd, ninl uint32) {
 	return
 }
 
-func bucketOf(o *object, s *goobj.Sym, st uint32) int {
+func bucketOf(o *object, j uint32, s symv, st uint32) int {
 	switch objabi.SymKind(s.Type()) {
 	case objabi.STEXT:
 		return bText
@@ -142,7 +142,7 @@ func bucketOf(o *object, s *goobj.Sym, st uint32) int {
 			return bGofunc
 		case s.IsItab():
 			return bItab
-		case strings.HasPrefix(s.Name(o.r), "type:"):
+		case strings.HasPrefix(o.name(j), "type:"):
 			if s.Typelink() {
 				return bTypelink
 			}
@@ -187,9 +187,9 @@ type typelink struct {
 // typeString returns a type descriptor's string (what reflect's lookup by string compares).
 func typeString(gid uint32) string {
 	o, j := objOf(gid)
-	p := o.r.Data(j)
-	rl := relocAt(o.r.Relocs(j), 4*8+8)
-	if rl == nil {
+	p := o.data(j)
+	rl, ok := relocAt(o.relocs(j), 4*8+8)
+	if !ok {
 		return ""
 	}
 	d := dataOf(canon[o.ref(rl.Sym())])
@@ -243,29 +243,29 @@ func layout() {
 	// ---- sizes
 	par(len(units), func(_, ui int) {
 		u := units[ui]
-		o, r := u.o, u.o.r
+		o := u.o
 		for j := u.lo; j < min(u.hi, o.nalldef); j++ {
 			gid := o.base + j
 			st := state[gid]
 			if st&(stLive|stPC|stNameNeeded) == 0 || canon[gid] != gid {
 				continue
 			}
-			s := r.Sym(j)
+			s := o.sym(j)
 			if st&stPC != 0 {
-				u.pcSize += uint32(r.DataSize(j))
+				u.pcSize += uint32(o.dataSize(j))
 			}
 			b := bNone
 			if st&stLive != 0 && st&stOverride == 0 {
-				b = bucketOf(o, s, st)
+				b = bucketOf(o, j, s, st)
 			}
 			if isTextBucket(b) {
 				_, npc, nfd, ninl := funcShape(o, j)
 				u.nfunc[b-bText]++
 				u.ftabSize += rnd(funcSize+4*npc+4*nfd, 8)
 				u.inlSize += 16 * ninl
-				u.nameSize += uint32(s.NameLen(r)) + 1
+				u.nameSize += uint32(o.nameLen(j)) + 1
 			} else if st&stNameNeeded != 0 {
-				u.nameSize += uint32(s.NameLen(r)) + 1
+				u.nameSize += uint32(o.nameLen(j)) + 1
 			}
 			if b == bNone {
 				continue
@@ -284,7 +284,7 @@ func layout() {
 			}
 			cl := uint32(bits.TrailingZeros32(a))
 			if a&(a-1) != 0 || cl >= nClasses {
-				errorf("%s: alignment %d", s.Name(r), a)
+				errorf("%s: alignment %d", o.name(j), a)
 				continue
 			}
 			state[gid] = st | uint32(b)<<stBucketShift | cl<<stClassShft
@@ -311,7 +311,7 @@ func layout() {
 					continue
 				}
 				state[gid] = st&^(15<<stClassShft) | top<<stClassShft
-				u.csize[b][top] += occupied(r.Sym(j).Siz(), b, top)
+				u.csize[b][top] += occupied(o.sym(j).Siz(), b, top)
 			}
 		}
 	})
@@ -346,8 +346,8 @@ func layout() {
 			continue
 		}
 		o.cuOff = uint32(len(lay.cutabData))
-		for f, n := 0, o.r.NFile(); f < n; f++ {
-			name := o.r.File(f)
+		for f, n := 0, o.nfile(); f < n; f++ {
+			name := o.fileName(f)
 			off, ok := fileOff[name]
 			if !ok {
 				x := expandFile(name)
@@ -469,7 +469,7 @@ func layout() {
 	va += 8 // so that no type has offset 0
 	for i := range tls {
 		o, j := objOf(tls[i].gid)
-		s := o.r.Sym(j)
+		s := o.sym(j)
 		va = rnd(va, max(8, symAlign(s)))
 		addr[tls[i].gid] = va
 		va += s.Siz()
@@ -506,7 +506,7 @@ func layout() {
 	// ---- every live definition's address, name offset, pc-value table offset
 	par(len(units), func(_, ui int) {
 		u := units[ui]
-		o, r := u.o, u.o.r
+		o := u.o
 		cur := u.cbase
 		pc, name := u.pcBase, u.nameBase
 		for j := u.lo; j < min(u.hi, o.nalldef); j++ {
@@ -515,9 +515,9 @@ func layout() {
 			if st&(stLive|stPC|stNameNeeded) == 0 || canon[gid] != gid {
 				continue
 			}
-			s := r.Sym(j)
+			s := o.sym(j)
 			if st&stPC != 0 {
-				if n := uint32(r.DataSize(j)); n != 0 {
+				if n := uint32(o.dataSize(j)); n != 0 {
 					addr[gid] = pc
 					pc += n
 				}
@@ -525,7 +525,7 @@ func layout() {
 			b := int(st >> stBucketShift & 31)
 			if isTextBucket(b) || st&stNameNeeded != 0 {
 				aux[gid] = name
-				name += uint32(s.NameLen(r)) + 1
+				name += uint32(o.nameLen(j)) + 1
 			}
 			if b == bNone || b == bTypelink {
 				continue
