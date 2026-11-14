@@ -8,7 +8,7 @@ here=$(cd "$(dirname "$0")/../.." && pwd); T=/home/exedev/targets
 SB_OUT=${SB_OUT:-$T/scoreboard}; export FC_COLD=$T/fc-cold
 re=${1:-.}; shift; cores=${*:-8 4 2 1}
 # the Bazel rows fc builds from the DAG so far (the others stay "stock fallback"; tools/bazel/bzfc -stats says why)
-BAZEL_OURS=${BAZEL_OURS:-buildifier}
+BAZEL_OURS=${BAZEL_OURS:-buildifier runsc}
 check() { # check <name> <binary>
   case $1 in
     minio) "$here/tests/minio_smoke.sh" "$2" 19300 >/dev/null 2>&1 ;;

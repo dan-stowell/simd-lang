@@ -46,7 +46,7 @@ IN
 chmod +x "$out/run.sh"
 systemd-run --user --scope -q -p MemoryMax=$mem "$out/run.sh" > "$out/meta.txt"
 { echo "name $name"; echo "P $P"; echo "tool bazel+fc"
-  sed -n 's/^bzfc: *\([0-9]*\) ms  generate: \([0-9]*\) files, \([0-9]*\) actions run, \([0-9.]*\) core-s/gen_end_ms \1\ngen_files \2\ngen_actions \3\ngen_core_s \4/p' "$out/build.log"
+  sed -n 's/^bzfc: *\([0-9]*\) ms  generate: \([0-9]*\) files, \([0-9]*\) actions run, \([0-9.]*\) core-s, \([0-9]*\) retried/gen_end_ms \1\ngen_files \2\ngen_actions \3\ngen_core_s \4\ngen_retries \5/p' "$out/build.log"
   sed -n 's/^bzfc: *\([0-9]*\) ms  read the DAG.*/dag_ms \1/p' "$out/build.log"
   sed -n 's/^bzfc: *\([0-9]*\) ms  fc build.*/bzfc_ms \1/p' "$out/build.log"
   grep -E '^(link|front end|back end):' "$out/build.log" | sed 's/^/fc /'

@@ -29,6 +29,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
@@ -45,6 +46,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -247,7 +249,7 @@ func main() {
 		}
 		log.Fatalf("generation failed")
 	}
-	stage("generate: %d files, %d actions run, %.2f core-s", len(gen), nact, childCPU()-c0)
+	stage("generate: %d files, %d actions run, %.2f core-s, %d retried", len(gen), nact, childCPU()-c0, retries.Load())
 	// the binary
 	// x_defs as rules_go's link does: {KEY} from the workspace status when the workspace stamps (its
 	// .bazelrc says --stamp), and an x_def that names a key there is no value for is dropped
@@ -562,18 +564,36 @@ func execute(a *action) error {
 	} else if !filepath.IsAbs(argv0) {
 		argv0 = abs(argv0)
 	}
-	cmd := exec.Command(argv0, a.Arguments[1:]...)
-	cmd.Dir = execroot
-	cmd.Env = []string{"PATH=/bin:/usr/bin", "HOME=" + os.Getenv("HOME"), "TMPDIR=" + filepath.Join(*flagWork, "tmp")}
-	os.MkdirAll(filepath.Join(*flagWork, "tmp"), 0o777)
-	for _, kv := range a.Env {
-		cmd.Env = append(cmd.Env, kv.Key+"="+kv.Value)
-	}
-	if out, err := cmd.CombinedOutput(); err != nil {
+	// A tool fc built hung once in about a thousand runs (go_generics, 2026-11-14; not reproduced in 320 runs
+	// of 8 builds): an action that outlives -action_timeout is killed and run again, once, and counted.
+	for try := 0; ; try++ {
+		ctx, cancel := context.WithTimeout(context.Background(), *flagActionTimeout)
+		cmd := exec.CommandContext(ctx, argv0, a.Arguments[1:]...)
+		cmd.Dir = execroot
+		cmd.Env = []string{"PATH=/bin:/usr/bin", "HOME=" + os.Getenv("HOME"), "TMPDIR=" + filepath.Join(*flagWork, "tmp")}
+		os.MkdirAll(filepath.Join(*flagWork, "tmp"), 0o777)
+		for _, kv := range a.Env {
+			cmd.Env = append(cmd.Env, kv.Key+"="+kv.Value)
+		}
+		out, err := cmd.CombinedOutput()
+		timedOut := ctx.Err() != nil
+		cancel()
+		if err == nil {
+			return nil
+		}
+		if timedOut && try == 0 {
+			retries.Add(1)
+			fmt.Fprintf(os.Stderr, "bzfc: %s %s: no exit after %v; run again\n", a.Mnemonic, a.outs[0], *flagActionTimeout)
+			continue
+		}
 		return fmt.Errorf("%v\n%s", err, bytes.TrimSpace(out))
 	}
-	return nil
 }
+
+var (
+	flagActionTimeout = flag.Duration("action_timeout", 60*time.Second, "kill an action that runs longer, and run it again once")
+	retries           atomic.Int64
+)
 
 type built struct {
 	done chan struct{}
