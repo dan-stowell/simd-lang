@@ -1,12 +1,12 @@
-# MORNING: 2026-11-13 23:55 UTC (campaign 1, M4 reached, M3 two packages short)
+# MORNING: 2026-11-14 00:08 UTC (campaign 1, M3 and M4 reached)
 
 ## The oracle number
 
 | | now | this morning (09:20) |
 |---|---|---|
-| standard-library packages whose own tests pass with every package of the test binary by fc, the runtime included, linked by fclink (`FC_ALL=rt`) | **258 of the 262 with tests** (tests/fc/passing.txt); runtime and runtime/pprof are being finished (9 + 1 tests failed this evening; fixes merged, rerun in progress); 2 need cgo | 228, with the runtime's 30 packages by the stock compiler |
+| standard-library packages whose own tests pass with every package of the test binary by fc, the runtime included, linked by fclink (`FC_ALL=rt`) | **260 of the 262 with tests** (tests/fc/passing.txt), the runtime's own suite included; the other 2 need cgo | 228, with the runtime's 30 packages by the stock compiler |
 | language corpus (tests/fc/lang, differential against stock), wholly by fc | **23 of 23** | 22 of 22, mixed |
-| MinIO's own tests, test binaries wholly by fc | **45 of 46 packages pass; cmd fails one test that stock fails too** (fc-minio-rt2.log; rerun with tonight's fc: fc-minio-rt3.log) | same count, runtime by stock |
+| MinIO's own tests, test binaries wholly by fc | **45 of 46 packages pass; cmd fails one test that stock fails too** (fc-minio-rt3.log, tonight's fc) | same count, runtime by stock |
 | MinIO binary wholly by fc | **smoke test passes** (25 of 25 starts; one "not live" under load right after a cache drop, not reproduced) | passed, runtime by stock |
 | kube-apiserver wholly by fc | builds, smoke test passes | passed, runtime by stock |
 | core-seconds per MB of source, MinIO (75.5 MB) | **0.27** (20 core-s, everything included) | 0.41 (31 core-s) |
@@ -62,7 +62,7 @@ binary; 57 process starts; 160,710 functions compiled of which the linker keeps 
   about 8x slower than the stock compiler's at -l (index/suffixarray's tests: 387 s against 51 s).
 - Escape analysis only in the runtime's packages: everything whose address is taken is on the heap elsewhere.
 - Objects can stay alive until their function returns.
-- **Skipped tests: tests/fc/skips.txt, 53 lines**: allocation counts that need escape analysis or inlining (most
+- **Skipped tests: tests/fc/skips.txt, 54 lines**: allocation counts that need escape analysis or inlining (most
   fail with the stock compiler at -l too; each line says which), tests that wait on object liveness, and one
   environment skip (crypto/tls's BoGo suite fetches BoringSSL and fails with stock here).
 - An fc-built runtime uses the race detector's stack guard (twice the bound): fc's frames are larger.

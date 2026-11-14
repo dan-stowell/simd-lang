@@ -228,8 +228,10 @@ plugin
 reflect
 regexp
 regexp/syntax
+runtime
 runtime/debug
 runtime/metrics
+runtime/pprof
 runtime/trace
 slices
 sort

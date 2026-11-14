@@ -121,18 +121,24 @@ Log (append one line per milestone reached, with the oracle number):
   internal/runtime/cgobench need cgo (not buildable with stock either at CGO_ENABLED=0). Bugs found by the last 36:
   one-case select through selectgo (tickers deadlocked), fclink's function table order with mixed alignment,
   go:fipsinfo, two data races in fc.
+- **M3, 2026-11-14 00:08 UTC: the standard library and the runtime our way.** With every package of the test binary
+  compiled by fc, the runtime included, and linked by fclink (`FC_ALL=rt tools/fc/test.sh`): **260 of the 262 std
+  packages that have tests pass their own tests** (tests/fc/passing.txt), the runtime's own suite among them (284 s).
+  The two left need cgo (runtime/cgo, internal/runtime/cgobench: not buildable by stock either at CGO_ENABLED=0).
+  54 skip lines (tests/fc/skips.txt): allocation counts and inlining assertions (most fail with stock at -l too),
+  liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
+  cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-13 23:45 UTC): (1) Merge the builder's branch `worktree-agent-a937e32fdf2263d17` (7+ commits: runtime print
-of hex/quoted types, stack check of self-recursive runtime functions, FuncPCABIInternal of an interface, an ELF symbol
-table in fclink unless -s, skips): `git merge` it, `driver/mkfc.sh && driver/mkfclink.sh`, then
-`FC_ALL=rt FC_TIMEOUT=1200 tools/fc/batch.sh -j 2 runtime runtime/pprof` and `FC_ALL=rt tools/fc/lang.sh`; add the two to
-tests/fc/passing.txt and log M3. (2) On an IDLE machine (`uptime` first; the builder kept load at 4-9 all evening):
-`tools/scoreboard/ours.sh` (cold.sh now reserves a 10 GB huge page pool), `python3 tools/scoreboard/mkscoreboard.py`,
-regenerate TRACE.md, overwrite STATUS.md and MORNING.md (dev-build differences to list: huge pages, the skips file,
-builds not byte-reproducible, fc's code ~8x slower than stock -l in tight loops, stack guard doubled). (3) Speed: the
-build is CPU-bound at ~20 core-s (profile: back end 61% of which codegen 42, type descriptors 14, object writing 12;
-bodies check 16; parse 8; declarations 8; kernel 2.7 s). Largest single item left: objects handed to fclink in process
-(M5; design in driver/fclink/main.go): writeObject 2.2 core-s + 0.46 s of write() + fclink's load and resolve. Then
-memory volume (7.5 GB allocated: per-function scratch reuse), and parsing a big package's files in parallel.
-(4) Rerun MinIO's own tests wholly by fc with the current fc before quoting M4 again
-(`FC_ALL=rt FC_TIMEOUT=900 tools/fc/batch.sh -j 3 -C /home/exedev/targets/minio $(cat tests/fc/passing-minio.txt)`).
+Now (2026-11-14 00:08 UTC): M3 and M4 are logged; MORNING.md and STATUS.md are current except for the scoreboard.
+(1) On an IDLE machine (`uptime` first: the 3.6-4.1 s cold MinIO figure was measured at load 4-5):
+`tools/scoreboard/ours.sh` (cold.sh reserves a 10 GB huge page pool; every binary is checked), then
+`python3 tools/scoreboard/mkscoreboard.py`, regenerate TRACE.md, and put the numbers into MORNING.md and STATUS.md.
+Disk first: `df -h /` (7 GB free at midnight; `GOCACHE=/home/exedev/targets/fc-gocache go clean -cache` frees 24 GB
+when no test batch runs). (2) M5, the largest item left in a CPU-bound build (~20 core-s; profile in JOURNAL
+2026-11-13 23:20): objects handed to fclink in process. Design in driver/fclink/main.go's header; fclink reads
+objects through goobj.Reader in about 43 places (r.Sym 17, r.Relocs 8, r.Data 6, r.Auxs 5). What it removes:
+writeObject 2.2 core-s (hashing 1.3 million content-addressed symbols, string table, relocation sort), 0.3-0.5 s of
+write(), fclink's load + resolve (80 ms wall, 0.25 core-s), and minio/cmd's 0.3 s serial object write at the tail.
+(3) After M5: demand-driven compilation (IDEAS.md: 21% of fc's code is dead), per-function scratch reuse (7.5 GB
+allocated per build), frame-allocated defer closures. (4) Fire the background reviewers on the M3/M4 commit
+(LOOP.md) from /home/exedev/strand-w.
