@@ -56,6 +56,11 @@ func buildMode(args []string) {
 		"directory relative to it, like . or ./cmd/x); the go command is not asked")
 	prof := fs.String("cpuprofile", "", "write a CPU profile")
 	memprof := fs.String("memprofile", "", "write an allocation profile at the end")
+	var xdefs []string // -X importpath.name=value, passed to the linker (a Bazel go_binary's x_defs)
+	fs.Func("X", "`importpath.name=value`: set a string variable at link time (repeatable)", func(v string) error {
+		xdefs = append(xdefs, v)
+		return nil
+	})
 	fs.Parse(args)
 	if *memprof != "" {
 		defer func() {
@@ -467,11 +472,15 @@ func buildMode(args []string) {
 		}
 		cfgFile := filepath.Join(*out, "importcfg.link")
 		os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
-		cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+		var xargs []string
+		for _, x := range xdefs {
+			xargs = append(xargs, "-X", x)
+		}
+		cmd := exec.Command("go", append(append([]string{"tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w"}, xargs...), objPath(*out, mainPkg))...)
 		linker := "stock linker"
 		if fl := linkerPath(); fl != "" {
 			// the campaign's linker (driver/fclink) instead of the stock one
-			cmd = exec.Command(fl, "-s", "-o", *link, "-importcfg", cfgFile, objPath(*out, mainPkg))
+			cmd = exec.Command(fl, append(append([]string{"-s", "-o", *link, "-importcfg", cfgFile}, xargs...), objPath(*out, mainPkg))...)
 			linker = "fclink"
 		}
 		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
