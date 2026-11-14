@@ -1,4 +1,4 @@
-package main
+package fclinklib
 
 // A plist is one worker's records of one partition of a join (resolve.go): chunks cut from the worker's
 // slab, so that filling it never copies records and touches only the memory the records need.

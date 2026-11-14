@@ -17,7 +17,7 @@
 // Definitions referenced by package index take part in the join by name only if some object refers to
 // their name (or the linker itself looks it up): a bit filter of the referenced names decides, so most of
 // them cost a hash and one bit test.
-package main
+package fclinklib
 
 import (
 	"cmd/internal/goobj"
@@ -144,10 +144,10 @@ func symName(gid uint32) string {
 		return synthNames[gid-nslots-1]
 	}
 	o, j := objOf(gid)
-	return o.r.Sym(j).Name(o.r)
+	return o.name(j)
 }
 
-func rank(o *object, j uint32, s *goobj.Sym) uint32 {
+func rank(o *object, j uint32, s symv) uint32 {
 	r := min(s.Siz(), 1<<28-1) | rankDef
 	if s.UsedInIface() {
 		r |= rankIface
@@ -156,7 +156,7 @@ func rank(o *object, j uint32, s *goobj.Sym) uint32 {
 		return r
 	}
 	r |= rankNoDup
-	if k := objabi.SymKind(s.Type()); k.IsText() || o.r.DataSize(j) != 0 {
+	if k := objabi.SymKind(s.Type()); k.IsText() || o.dataSize(j) != 0 {
 		r |= rankContent
 	}
 	return r
@@ -193,24 +193,23 @@ func resolve() {
 	// 1. records for the definitions and references by name and for the content-addressed definitions
 	par(len(units), func(w, ui int) {
 		u, rw := units[ui], &ws[w]
-		o, r := u.o, u.o.r
+		o := u.o
 		h64End, hEnd := o.ndef+o.nh64, o.ndef+o.nh64+o.nh
 		for j := max(u.lo, o.ndef); j < u.hi; j++ {
-			s := r.Sym(j)
+			s := o.sym(j)
 			gid := o.base + j
 			switch {
 			case j < h64End:
-				h := r.Hash64(j - o.ndef)
+				h := o.hash64(j - o.ndef)
 				k := mix64(h)
 				rw.h64s[k>>56].add(&rw.h6slab, hash64Rec{h, gid, s.Siz()})
 			case j < hEnd:
-				h := r.Hash(j - h64End)
-				k1, k2 := le.Uint64(h[:8]), le.Uint64(h[8:])
+				k1, k2 := o.hash(j - h64End)
 				rw.hashes[k1>>56].add(&rw.hslab, hashRec{k1, k2, gid, s.Siz()})
 			default:
 				rk := uint32(0)
 				if j < o.nalldef {
-					if s.ABI() == goobj.SymABIstatic || s.NameLen(r) == 0 {
+					if s.ABI() == goobj.SymABIstatic || o.nameLen(j) == 0 {
 						canon[gid] = gid // file-local, or an unnamed auxiliary symbol
 						continue
 					}
@@ -218,7 +217,7 @@ func resolve() {
 				} else if s.UsedInIface() {
 					rk = rankIface
 				}
-				rec := mkNameRec(s.Name(r), s.ABI(), gid, rk)
+				rec := mkNameRec(o.name(j), s.ABI(), gid, rk)
 				rw.names[rec.key>>56].add(&rw.nslab, rec)
 				k := rec.key % filterBits
 				atomic.OrUint64(&nameFilter[k>>6], 1<<(k&63))
@@ -241,12 +240,12 @@ func resolve() {
 	// 2. definitions by package index: themselves, unless something may refer to their name
 	par(len(units), func(w, ui int) {
 		u, rw := units[ui], &ws[w]
-		o, r := u.o, u.o.r
+		o := u.o
 		for j := u.lo; j < min(u.hi, o.ndef); j++ {
-			s := r.Sym(j)
+			s := o.sym(j)
 			gid := o.base + j
-			if s.ABI() != goobj.SymABIstatic && s.NameLen(r) != 0 {
-				name := s.Name(r)
+			if s.ABI() != goobj.SymABIstatic && o.nameLen(j) != 0 {
+				name := o.name(j)
 				key := nameKey(name, s.ABI())
 				if k := key % filterBits; nameFilter[k>>6]>>(k&63)&1 != 0 {
 					rw.names[key>>56].add(&rw.nslab, nameRec{key, unsafe.StringData(name), uint32(len(name)), gid, rank(o, j, s), s.ABI()})
@@ -418,7 +417,7 @@ func resolve() {
 	// 4. "this type is converted to an interface" flags on references by package index
 	par(len(objs), func(_, i int) {
 		o := objs[i]
-		for k, n := 0, o.r.NRefFlags(); k < n; k++ {
+		for k, n := 0, o.nrefFlags(); k < n; k++ {
 			rf := o.r.RefFlags(k)
 			if rf.Flag2()&goobj.SymFlagUsedInIface != 0 {
 				if g := o.ref(rf.Sym()); g != 0 {

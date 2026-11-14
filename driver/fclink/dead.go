@@ -1,7 +1,7 @@
 // dead.go: the init order, and reachability with the stock linker's method pruning (cmd/link/internal/ld
 // deadcode.go), as a flood that all cores advance one frontier at a time. Marking is a fetch-or on the
 // symbol's state word; whoever sets the bit queues the symbol for the next level.
-package main
+package fclinklib
 
 import (
 	"cmd/internal/goobj"
@@ -68,7 +68,9 @@ func inittaskOrder(root string) []uint32 {
 		ndeps := 0
 		if isDef(x) {
 			o, j := objOf(x)
-			for _, rl := range o.r.Relocs(j) {
+			rs := o.relocs(j)
+			for i := 0; i < rs.Len(); i++ {
+				rl := rs.At(i)
 				if objabi.RelocType(rl.Type()) != objabi.R_INITORDER {
 					continue
 				}
@@ -94,7 +96,7 @@ func inittaskOrder(root string) []uint32 {
 			gid  uint32
 		}).gid
 		if isDef(s) {
-			if o, j := objOf(s); o.r.Sym(j).Siz() > 8 {
+			if o, j := objOf(s); o.sym(j).Siz() > 8 {
 				sched = append(sched, s)
 			}
 		}
@@ -158,13 +160,13 @@ func (w *floodWorker) setIface(c uint32) {
 	}
 }
 
-func relocAt(relocs []goobj.Reloc, off int32) *goobj.Reloc {
-	for i := range relocs {
-		if relocs[i].Off() == off {
-			return &relocs[i]
+func relocAt(relocs relocs, off int32) (reloc, bool) {
+	for i := 0; i < relocs.Len(); i++ {
+		if r := relocs.At(i); r.Off() == off {
+			return r, true
 		}
 	}
-	return nil
+	return reloc{}, false
 }
 
 // dataOf returns the content of the canonical definition c.
@@ -173,7 +175,7 @@ func dataOf(c uint32) []byte {
 		return nil
 	}
 	o, j := objOf(c)
-	return o.r.Data(j)
+	return o.data(j)
 }
 
 // nameData decodes a type:.namedata symbol: a flag byte, a varint length, the name.
@@ -185,9 +187,9 @@ func nameData(d []byte) string {
 	return string(d[1+k : 1+k+int(n)])
 }
 
-func nameAt(o *object, relocs []goobj.Reloc, off int32) string {
-	rl := relocAt(relocs, off)
-	if rl == nil {
+func nameAt(o *object, relocs relocs, off int32) string {
+	rl, ok := relocAt(relocs, off)
+	if !ok {
 		return ""
 	}
 	return nameData(dataOf(canon[o.ref(rl.Sym())]))
@@ -197,8 +199,7 @@ func typeKind(p []byte) abi.Kind { return abi.Kind(p[23]) }
 
 func (w *floodWorker) process(c uint32) {
 	o, j := objOf(c)
-	r := o.r
-	s := r.Sym(j)
+	s := o.sym(j)
 	if s.ReflectMethod() {
 		w.reflect = true
 	}
@@ -210,18 +211,18 @@ func (w *floodWorker) process(c uint32) {
 			return
 		}
 	}
-	relocs := r.Relocs(j)
+	relocs := o.relocs(j)
 	w.tmp = w.tmp[:0]
-	for i := 0; i < len(relocs); i++ {
-		rl := &relocs[i]
+	for i := 0; i < relocs.Len(); i++ {
+		rl := relocs.At(i)
 		t := objabi.RelocType(rl.Type())
 		if t&objabi.R_WEAK != 0 {
 			continue
 		}
 		switch t {
 		case objabi.R_METHODOFF:
-			if i+2 >= len(relocs) {
-				fatalf("%s: expect three consecutive R_METHODOFF relocs", s.Name(r))
+			if i+2 >= relocs.Len() {
+				fatalf("%s: expect three consecutive R_METHODOFF relocs", o.name(j))
 			}
 			if uii {
 				w.tmp = append(w.tmp, uint32(i))
@@ -239,9 +240,9 @@ func (w *floodWorker) process(c uint32) {
 			if !isDef(rs) {
 				continue
 			}
-			if o2, j2 := objOf(rs); o2.r.Sym(j2).IsItab() { // "the type of that itab"
-				rl2 := relocAt(o2.r.Relocs(j2), 8)
-				if rl2 == nil {
+			if o2, j2 := objOf(rs); o2.sym(j2).IsItab() { // "the type of that itab"
+				rl2, ok := relocAt(o2.relocs(j2), 8)
+				if !ok {
 					continue
 				}
 				if rs = canon[o2.ref(rl2.Sym())]; !isDef(rs) {
@@ -253,10 +254,10 @@ func (w *floodWorker) process(c uint32) {
 		case objabi.R_USEIFACEMETHOD:
 			if rs := canon[o.ref(rl.Sym())]; isDef(rs) {
 				o2, j2 := objOf(rs)
-				rr := o2.r.Relocs(j2)
+				rr := o2.relocs(j2)
 				off := int32(rl.Add())
 				m := methodsig{name: nameAt(o2, rr, off)}
-				if rl2 := relocAt(rr, off+4); rl2 != nil {
+				if rl2, ok := relocAt(rr, off+4); ok {
 					m.typ = canon[o2.ref(rl2.Sym())]
 				}
 				w.ifaceM = append(w.ifaceM, m)
@@ -273,7 +274,7 @@ func (w *floodWorker) process(c uint32) {
 		rs = canon[rs]
 		if uii && isDef(rs) && atomic.LoadUint32(&state[rs])&stUsedInIface == 0 {
 			// a type reachable by reflection from one converted to an interface ([]T from T, ...)
-			if o2, j2 := objOf(rs); o2.r.Sym(j2).IsGoType() {
+			if o2, j2 := objOf(rs); o2.sym(j2).IsGoType() {
 				if old := atomic.OrUint32(&state[rs], stUsedInIface|stLive); old&stUsedInIface == 0 || old&stLive == 0 {
 					w.next = append(w.next, rs)
 				}
@@ -283,7 +284,7 @@ func (w *floodWorker) process(c uint32) {
 		w.mark(rs)
 	}
 	if objabi.SymKind(s.Type()).IsText() {
-		auxs := r.Auxs(j)
+		auxs := o.auxs(j)
 		ninl := uint32(0)
 		for i := range auxs {
 			if auxs[i].Type() == goobj.AuxFuncInfo {
@@ -325,25 +326,29 @@ func (w *floodWorker) process(c uint32) {
 	}
 	if len(w.tmp) != 0 {
 		// which methods does this type have? (name and function type of each, from its uncommon type)
-		p := r.Data(j)
+		p := o.data(j)
 		if p[abi.TFlagOff(8)]&byte(abi.TFlagUncommon) == 0 {
-			fatalf("%s: methods on a type with no uncommon type", s.Name(r))
+			fatalf("%s: methods on a type with no uncommon type", o.name(j))
 		}
 		off := abi.RTypeSize(typeKind(p), 8)
 		mcount := int(binary.LittleEndian.Uint16(p[off+4:]))
 		moff := int(binary.LittleEndian.Uint32(p[off+8:]))
 		if mcount != len(w.tmp) {
-			fatalf("%s: %d method relocations for %d methods", s.Name(r), len(w.tmp), mcount)
+			fatalf("%s: %d method relocations for %d methods", o.name(j), len(w.tmp), mcount)
 		}
 		for i, ri := range w.tmp {
 			at := int32(off + moff + 16*i)
-			var name string
-			if ri > 0 && relocs[ri-1].Off() == at {
-				name = nameData(dataOf(canon[o.ref(relocs[ri-1].Sym())]))
-			} else {
+			name := ""
+			if ri > 0 {
+				if prev := relocs.At(int(ri) - 1); prev.Off() == at {
+					name = nameData(dataOf(canon[o.ref(prev.Sym())]))
+				}
+			}
+			if name == "" {
 				name = nameAt(o, relocs, at)
 			}
-			w.methods = append(w.methods, methodref{methodsig{name, canon[o.ref(relocs[ri].Sym())]}, c, ri})
+			rm := relocs.At(int(ri))
+			w.methods = append(w.methods, methodref{methodsig{name, canon[o.ref(rm.Sym())]}, c, ri})
 		}
 	}
 }
@@ -378,7 +383,7 @@ func deadcode() {
 		for _, u := range units {
 			for j := u.lo; j < min(u.hi, u.o.nalldef); j++ {
 				if g := u.o.base + j; canon[g] == g {
-					if k := objabi.SymKind(u.o.r.Sym(j).Type()); k != objabi.Sxxx && k < objabi.SDWARFCUINFO {
+					if k := objabi.SymKind(u.o.sym(j).Type()); k != objabi.Sxxx && k < objabi.SDWARFCUINFO {
 						root(g)
 					}
 				}
@@ -430,9 +435,10 @@ func deadcode() {
 				m := &markable[k]
 				if reflectSeen && isExported(m.name) || ifaceMethod[m.methodsig] || genericIfaceMethod[m.name] || *flagNoDCE {
 					o, j := objOf(m.src)
-					relocs := o.r.Relocs(j)
+					relocs := o.relocs(j)
 					for d := uint32(0); d < 3; d++ {
-						if g := o.ref(relocs[m.r+d].Sym()); g != 0 {
+						rl := relocs.At(int(m.r + d))
+						if g := o.ref(rl.Sym()); g != 0 {
 							ws[w].mark(canon[g])
 						}
 					}

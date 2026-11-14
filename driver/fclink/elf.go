@@ -1,5 +1,5 @@
 // elf.go: the ELF header, program headers, the Go build id note and a minimal section table.
-package main
+package fclinklib
 
 import (
 	"bytes"

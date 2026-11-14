@@ -21,7 +21,9 @@
 //	finish    moduledata, findfunctab, GC programs, FIPS hash, ELF headers               (serial, small)
 //
 // A unit is an object or a slice of a big object's symbols, so one huge package does not bound the wall clock.
-// Built inside the Go tree's cmd directory (it uses cmd/internal/goobj): see driver/mkfclink.sh.
+// Built inside the Go tree's cmd directory (it uses cmd/internal/goobj) as the library cmd/internal/fclinklib,
+// which both the command (driver/fclink/cmd: `fclink`) and fc (`fc build -link`, in process) link: see
+// driver/mkfclink.sh and driver/mkfc.sh.
 //
 // # DESIGN: the in-process hand-off (M5, "no separate linker")
 //
@@ -76,7 +78,14 @@
 // LSym (P, R, Size, Type, Attribute, Func().Pcln, Gotype) with Ref = (package, LSym index). That removes
 // the write, the file reads, the hashing and the joins, and leaves the interning (2) as a later step that
 // fclink can stand in for by joining DUPOK LSyms by name exactly as it joins object symbols today.
-package main
+//
+// That step is built (unit.go, source.go): when a package's back end is done, fc calls NewUnit with its
+// obj.Link instead of writing an object, and at the end Link with every input (fc's units, the stock
+// archives, the assembler's objects) instead of running this command. An object is then either a
+// goobj.Reader over a mapped file or a Unit over fc's LSyms, and every phase reads both through one set of
+// accessors (source.go). Not built yet: agreements 1 and 2. References between fc's units still join by
+// name, and content-addressed symbols by a 128-bit hash NewUnit computes (maphash, not SHA-256).
+package fclinklib
 
 import (
 	"flag"
@@ -94,30 +103,35 @@ import (
 	"time"
 )
 
+// The flags have a set of their own: in fc's process they must not meet fc's.
+var flags = flag.NewFlagSet("fclink", flag.ExitOnError)
+
 var (
-	flagOut       = flag.String("o", "a.out", "output `file`")
-	flagImportcfg = flag.String("importcfg", "", "importcfg.link `file`")
-	flagBuildid   = flag.String("buildid", "", "Go build `id` to record")
-	flagStats     = flag.Bool("stats", false, "print a phase table")
-	flagJ         = flag.Int("j", 0, "threads (default: all)")
-	flagNoDCE     = flag.Bool("nodce", false, "keep every symbol (debugging)")
-	flagCPUProf   = flag.String("cpuprofile", "", "write a CPU profile")
-	flagDumpLive  = flag.String("dumplive", "", "write the names of the live symbols to `file` (debugging)")
-	flagEntry     = flag.String("E", "_rt0_amd64_linux", "entry `symbol`")
-	flagDetach    = flag.Bool("detach", false, "return when the output is complete, without waiting for the process that wrote it to exit")
+	flagOut       = flags.String("o", "a.out", "output `file`")
+	flagImportcfg = flags.String("importcfg", "", "importcfg.link `file`")
+	flagBuildid   = flags.String("buildid", "", "Go build `id` to record")
+	flagStats     = flags.Bool("stats", false, "print a phase table")
+	flagJ         = flags.Int("j", 0, "threads (default: all)")
+	flagNoDCE     = flags.Bool("nodce", false, "keep every symbol (debugging)")
+	flagCPUProf   = flags.String("cpuprofile", "", "write a CPU profile")
+	flagDumpLive  = flags.String("dumplive", "", "write the names of the live symbols to `file` (debugging)")
+	flagEntry     = flags.String("E", "_rt0_amd64_linux", "entry `symbol`")
+	flagDetach    = flags.Bool("detach", false, "return when the output is complete, without waiting for the process that wrote it to exit")
 	// as the stock linker's: without -s, an ELF symbol table of the functions (go tool objdump and nm need
 	// one; the go command leaves -s out only for the runtime's own tests and for go build)
-	flagStrip = flag.Bool("s", false, "omit the symbol table")
+	flagStrip = flags.Bool("s", false, "omit the symbol table")
 	// accepted for compatibility with the go command's link line
-	_         = flag.String("buildmode", "exe", "only exe")
-	_         = flag.Bool("w", true, "no DWARF (always)")
-	_         = flag.String("extld", "", "ignored")
-	_         = flag.String("installsuffix", "", "ignored")
-	_         = flag.String("linkmode", "internal", "only internal")
-	_         = flag.String("B", "", "ignored")
-	_         = flag.String("tmpdir", "", "ignored")
+	_         = flags.String("buildmode", "exe", "only exe")
+	_         = flags.Bool("w", true, "no DWARF (always)")
+	_         = flags.String("extld", "", "ignored")
+	_         = flags.String("installsuffix", "", "ignored")
+	_         = flags.String("linkmode", "internal", "only internal")
+	_         = flags.String("B", "", "ignored")
+	_         = flags.String("tmpdir", "", "ignored")
 	flagXDefs multiFlag
 )
+
+func init() { flags.Var(&flagXDefs, "X", "`importpath.name=value`: set a string variable") }
 
 type multiFlag []string
 
@@ -232,23 +246,62 @@ func lap(name string, format string, args ...any) {
 	phaseT0, phaseC0, phaseS0 = now, c, s
 }
 
-func main() {
+// Main is the fclink command; args are the arguments after the program's name.
+func Main(args []string) {
 	linkT0, linkCPU0 = time.Now(), cpuSeconds()
 	phaseT0, phaseC0 = linkT0, linkCPU0
-	flag.Var(&flagXDefs, "X", "`importpath.name=value`: set a string variable")
-	flag.Parse()
-	if flag.NArg() != 1 || *flagImportcfg == "" {
+	flags.Parse(args)
+	if flags.NArg() != 1 || *flagImportcfg == "" {
 		fatalf("usage: fclink -o out -importcfg importcfg.link [-buildid id] [-stats] main.o")
 	}
 	if *flagDetach && os.Getenv("FCLINK_CHILD") == "" {
 		detach()
 	}
+	link(func() { load(readImportcfg(*flagImportcfg, flags.Arg(0))) })
+	if os.Getenv("FCLINK_CHILD") != "" {
+		os.Stdout.Sync()
+		os.NewFile(3, "done").Write([]byte{'k'}) // the output is complete: the parent may return
+	}
+}
+
+// An Input is a package's part of the program for Link: an object or archive file (File), or one of fc's
+// units (Unit). A package may have several (fc's unit, then the assembler's objects); its first holds its
+// package-indexed symbols. The main package's Pkg is "main".
+type Input struct {
+	Pkg  string
+	File string
+	Unit *Unit
+}
+
+// Link links a program in this process (fc build -link). args are fclink's flags without -importcfg and
+// without the main object; inputs are what the importcfg and the main object would name, in that order
+// (the main package last). Errors exit the process, as they do the command's. Once per process.
+func Link(args []string, inputs []Input) {
+	linkT0, linkCPU0 = time.Now(), cpuSeconds()
+	phaseT0, phaseC0 = linkT0, linkCPU0
+	flags.Parse(args)
+	if flags.NArg() != 0 {
+		fatalf("Link: unexpected arguments %q", flags.Args())
+	}
+	libs := make([]lib, len(inputs))
+	for i, in := range inputs {
+		libs[i] = lib{in.Pkg, in.File, in.Unit}
+	}
+	link(func() { load(libs) })
+	// the output's shared writable mapping would make exec of it fail (ETXTBSY) for as long as this
+	// process lives; a command exits instead
+	syscall.Munmap(out)
+	out = nil
+}
+
+func link(loadInputs func()) {
 	nthreads = *flagJ
 	if nthreads <= 0 {
 		nthreads = runtime.GOMAXPROCS(0)
 	}
 	runtime.GOMAXPROCS(nthreads)
-	debug.SetGCPercent(-1) // one link, one heap
+	gc := debug.SetGCPercent(-1) // one link, one heap
+	defer debug.SetGCPercent(gc)
 	if *flagCPUProf != "" {
 		f, err := os.Create(*flagCPUProf)
 		if err != nil {
@@ -276,7 +329,7 @@ func main() {
 	} else {
 		go func() { os.Remove(*flagOut); close(removed) }()
 	}
-	load(*flagImportcfg, flag.Arg(0))
+	loadInputs()
 	exitIfErrors()
 	resolve()
 	exitIfErrors()
@@ -297,10 +350,6 @@ func main() {
 			fmt.Printf("%-10s %8.1f %8.1f  %s\n", p.name, p.wall, p.cpu, p.note)
 		}
 		fmt.Printf("%-10s %8.1f %8.1f  %d threads, output %.1f MB\n", "total", total, totalCPU, nthreads, float64(outSize)/1e6)
-	}
-	if os.Getenv("FCLINK_CHILD") != "" {
-		os.Stdout.Sync()
-		os.NewFile(3, "done").Write([]byte{'k'}) // the output is complete: the parent may return
 	}
 }
 
