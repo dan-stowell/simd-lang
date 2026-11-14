@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-14 00:40 UTC): M3 and M4 are logged; SCOREBOARD.md, MORNING.md and STATUS.md are current (idle machine,
+Now (2026-11-14 00:35 UTC): M3 and M4 are logged; SCOREBOARD.md, MORNING.md and STATUS.md are current (idle machine,
 00:26-00:34 UTC: MinIO cold 3.7-4.2 s / 21-24 core-s on 8 cores; exit test 3.3 s). The build is close to CPU-bound:
 what is left is core-seconds and three measured leaks. In order:
 (1) **Why core-seconds grow with cores** (MinIO 16.4 on 1 core, 17.7 on 2, 18.3 on 4, 22.8 on 8; lscpu says 8
@@ -144,7 +144,8 @@ through goobj.Reader in about 43 places: r.Sym 17, r.Relocs 8, r.Data 6, r.Auxs 
 and resolve (80 ms wall), and minio/cmd's 0.3 s serial object write at the tail.
 (3) Demand-driven compilation (IDEAS.md: 21% of fc's code is dead), per-function scratch reuse, frame-allocated
 defer closures. prometheus: its heap outgrows the 10 GB huge page pool (9.3 s, 50 core-s): try HUGEPAGES=8192.
-(4) Fire the background reviewers on the M3/M4 commit (LOOP.md) from /home/exedev/strand-w (git pull there first).
+(4) The background reviewers were fired at 00:35 UTC on commit 8a5824d (Codex skeptic, sol correctness; 40 min limit):
+triage reviews/inbox/20261114T0035-*.md into REVIEWS.md and move them to reviews/done/.
 Housekeeping: `df -h /` before long test runs (31 GB free at 00:26 after `GOCACHE=/home/exedev/targets/fc-gocache
 go clean -cache`); the builder's worktrees under .claude/worktrees are merged and can be removed
 (`git worktree remove`); branch worktree-agent-a937e32fdf2263d17's last two commits duplicate main and are not merged.
