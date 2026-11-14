@@ -6,7 +6,6 @@ package fclinklib
 
 import (
 	"cmd/internal/goobj"
-	"cmd/internal/obj"
 )
 
 // symv: a symbol's record (kind, flags, size, alignment), what goobj.Sym holds besides the name.
@@ -39,14 +38,14 @@ func (o *object) sym(j uint32) symv {
 
 func (o *object) name(j uint32) string {
 	if m := o.m; m != nil {
-		return m.syms[j].Name
+		return m.names[j]
 	}
 	return o.r.Sym(j).Name(o.r)
 }
 
 func (o *object) nameLen(j uint32) int {
 	if m := o.m; m != nil {
-		return len(m.syms[j].Name)
+		return len(m.names[j])
 	}
 	return o.r.Sym(j).NameLen(o.r)
 }
@@ -54,14 +53,14 @@ func (o *object) nameLen(j uint32) int {
 // data: the content of definition j (it may be shorter than the symbol: the rest is zeros).
 func (o *object) data(j uint32) []byte {
 	if m := o.m; m != nil {
-		return m.syms[j].P
+		return m.data[j]
 	}
 	return o.r.Data(j)
 }
 
 func (o *object) dataSize(j uint32) int {
 	if m := o.m; m != nil {
-		return len(m.syms[j].P)
+		return len(m.data[j])
 	}
 	return o.r.DataSize(j)
 }
@@ -69,7 +68,7 @@ func (o *object) dataSize(j uint32) int {
 // relocs: the relocations of definition j, in offset order.
 func (o *object) relocs(j uint32) relocs {
 	if m := o.m; m != nil {
-		return relocs{m: m.syms[j].R}
+		return relocs{m: m.rel[m.relOff[j]:m.relOff[j+1]]}
 	}
 	return relocs{g: o.r.Relocs(j)}
 }
@@ -152,18 +151,17 @@ func (r reloc) Type() uint16      { return r.typ }
 func (r reloc) Add() int64        { return r.add }
 func (r reloc) Sym() goobj.SymRef { return r.sym }
 
-// relocs: a symbol's relocations, in an object file (g) or in fc's memory (m).
+// relocs: a symbol's relocations, in an object file (g) or in a unit (m, laid out by NewUnit).
 type relocs struct {
 	g []goobj.Reloc
-	m []obj.Reloc
+	m []reloc
 }
 
 func (rs relocs) Len() int { return len(rs.g) + len(rs.m) }
 
 func (rs relocs) At(i int) reloc {
 	if rs.m != nil {
-		r := &rs.m[i]
-		return reloc{r.Add, symRef(r.Sym), r.Off, uint16(r.Type), r.Siz}
+		return rs.m[i]
 	}
 	r := &rs.g[i]
 	return reloc{r.Add(), r.Sym(), r.Off(), r.Type(), r.Siz()}

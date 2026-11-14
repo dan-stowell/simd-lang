@@ -44,6 +44,13 @@ type Unit struct {
 	auxOff                        []uint32    // per definition, and one more: its aux entries in auxs
 	auxs                          []goobj.Aux
 	files                         []string
+	// Per definition, the content and the relocations, laid out flat with each target as a SymRef: read in
+	// place through the LSyms, every relocation would be a cache miss on its target's LSym in fc's heap
+	// (measured: the link's write phase took 1.4x the CPU of the same link over object files).
+	names  []string // per slot
+	data   [][]byte
+	relOff []uint32 // per definition, and one more: its relocations in rel
+	rel    []reloc
 }
 
 var unitSeeds = [2]maphash.Seed{maphash.MakeSeed(), maphash.MakeSeed()}
@@ -181,18 +188,33 @@ func NewUnit(ctxt *obj.Link) *Unit {
 	}
 	pkgPrefix := ctxt.Pkgpath
 	u.info = make([]symv, n)
+	u.names = make([]string, n)
 	nalldef := n - len(refs)
 	u.auxOff = make([]uint32, nalldef+1)
+	u.relOff = make([]uint32, nalldef+1)
+	u.data = make([][]byte, nalldef)
+	nrel := 0
+	for _, s := range u.syms[:nalldef] {
+		nrel += len(s.R)
+	}
+	u.rel = make([]reloc, 0, nrel)
 	for j, s := range u.syms {
 		u.info[j] = symInfo(s, pkgPrefix)
+		u.names[j] = s.Name
 		if j >= nalldef {
 			continue
 		}
 		if len(s.R) > 1 && !slices.IsSortedFunc(s.R, relocByOff) {
 			slices.SortStableFunc(s.R, relocByOff)
 		}
+		u.data[j] = s.P
 		u.auxs = appendAux(u.auxs, s)
 		u.auxOff[j+1] = uint32(len(u.auxs))
+		for k := range s.R {
+			r := &s.R[k]
+			u.rel = append(u.rel, reloc{r.Add, symRef(r.Sym), r.Off, uint16(r.Type), r.Siz})
+		}
+		u.relOff[j+1] = uint32(len(u.rel))
 	}
 	u.h64 = make([]uint64, len(h64))
 	for i, s := range h64 {
