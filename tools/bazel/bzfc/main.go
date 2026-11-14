@@ -29,6 +29,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -248,9 +249,20 @@ func main() {
 	}
 	stage("generate: %d files, %d actions run, %.2f core-s", len(gen), nact, childCPU()-c0)
 	// the binary
+	// x_defs as rules_go's link does: {KEY} from the workspace status when the workspace stamps (its
+	// .bazelrc says --stamp), and an x_def that names a key there is no value for is dropped
+	stamp := stampValues()
 	var xdefs []string
 	for _, x := range link.args["-X"] {
-		if !regexp.MustCompile(`\{.+?\}`).MatchString(x) {
+		missing := false
+		x = regexp.MustCompile(`\{.+?\}`).ReplaceAllStringFunc(x, func(k string) string {
+			if v, ok := stamp[k[1:len(k)-1]]; ok {
+				return v
+			}
+			missing = true
+			return k
+		})
+		if !missing {
 			xdefs = append(xdefs, x)
 		}
 	}
@@ -349,7 +361,7 @@ func inputs(a *action) []string {
 
 // skipped: actions whose work fc does (or that only Bazel needs).
 var skipped = map[string]bool{
-	"GoCompilePkg": true, "GoStdlib": true, "GoStdlibList": true, "GoToolchainBinaryBuild": true,
+	"GoCompilePkg": true, "GoStdlibList": true, "GoToolchainBinaryBuild": true,
 	"RunfilesTree": true, "SymlinkTree": true, "SourceSymlinkManifest": true, "RepoMappingManifest": true,
 	"BazelWorkspaceStatusAction": true, "TranslateBuildInfo": true, "ProtocAuthenticityCheck": true,
 	"GoCover": true, "GoNogo": true, "ValidateNogo": true, "Middleman": true,
@@ -361,6 +373,8 @@ func producers(a *action) []*action {
 	var in []string
 	if a.Mnemonic == "GoLink" {
 		_, in = closure(a)
+	} else if isRender(a) {
+		return nil // (rendered here from source: render.go)
 	} else {
 		in = inputs(a)
 	}
@@ -490,6 +504,21 @@ func execute(a *action) error {
 	switch a.Mnemonic {
 	case "GoLink":
 		return fcBuild(a, abs(a.outs[0]), nil, "tool")
+	case "GoStdlib":
+		// a tool that wants a GOROOT (goimports, through GOROOT=<stdlib_>) gets fc's: the standard library is
+		// fc's work, from that GOROOT's sources, and nothing reads Bazel's compiled archives
+		d := filepath.Dir(abs(a.outs[0]))
+		os.MkdirAll(d, 0o777)
+		ents, err := os.ReadDir(goroot())
+		if err != nil {
+			return err
+		}
+		for _, e := range ents {
+			if err := os.Symlink(filepath.Join(goroot(), e.Name()), filepath.Join(d, e.Name())); err != nil && !os.IsExist(err) {
+				return err
+			}
+		}
+		return nil
 	case "FileWrite":
 		mode := os.FileMode(0o666)
 		if a.IsExecutable {
@@ -512,6 +541,9 @@ func execute(a *action) error {
 			return fmt.Errorf("%d inputs", len(in))
 		}
 		return os.Symlink(abs(in[0]), abs(a.outs[0]))
+	}
+	if isRender(a) {
+		return render(a)
 	}
 	if len(a.Arguments) == 0 {
 		return fmt.Errorf("no command line")
@@ -543,17 +575,43 @@ func execute(a *action) error {
 	return nil
 }
 
+type built struct {
+	done chan struct{}
+	bin  string
+	err  error
+}
+
+var (
+	builtMu sync.Mutex
+	builtBy = map[[32]byte]*built{} // plan content -> its build: the same tool in two configurations is built once
+)
+
 // fcBuild plans a GoLink action's closure and builds it with fc into bin.
 func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	root, _ := closure(link)
 	pkgs := allPkgs(root)
-	name := strings.NewReplacer("/", "%", ":", "%").Replace(link.label)
-	dir := filepath.Join(*flagWork, "fc", name+"."+what)
+	name := strings.NewReplacer("/", "%", ":", "%").Replace(link.outs[0])
+	dir := filepath.Join(*flagWork, "builds", name)
 	os.MkdirAll(dir, 0o777)
 	plan := filepath.Join(dir, "plan.json")
-	if err := writePlan(pkgs, plan, filepath.Join(dir, "farm")); err != nil {
+	b, err := writePlan(pkgs, plan, filepath.Join(*flagWork, "farm"))
+	if err != nil {
 		return err
 	}
+	key := sha256.Sum256(append(b, []byte(strings.Join(xdefs, "\n"))...))
+	builtMu.Lock()
+	if o := builtBy[key]; o != nil {
+		builtMu.Unlock()
+		<-o.done
+		if o.err != nil {
+			return o.err
+		}
+		return os.Symlink(o.bin, bin)
+	}
+	me := &built{done: make(chan struct{}), bin: bin}
+	builtBy[key] = me
+	builtMu.Unlock()
+	defer close(me.done)
 	args := []string{"build", "-j", strconv.Itoa(*flagJ), "-plan", plan, "-o", filepath.Join(dir, "objs"), "-link", bin}
 	for _, x := range xdefs {
 		args = append(args, "-X", x)
@@ -563,7 +621,8 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	out, err := cmd.CombinedOutput()
 	os.WriteFile(filepath.Join(dir, "build.log"), out, 0o666)
 	if err != nil {
-		return fmt.Errorf("fc build of %s: %v\n%s", link.label, err, tail(out, 20))
+		me.err = fmt.Errorf("fc build of %s: %v\n%s", link.label, err, tail(out, 20))
+		return me.err
 	}
 	if what == "main" {
 		os.Stdout.Write(out)
@@ -651,7 +710,7 @@ func files(a *action) (gofiles, sfiles, hfiles []string, cgo bool, err error) {
 	return
 }
 
-func writePlan(pkgs []*Pkg, plan, farm string) error {
+func writePlan(pkgs []*Pkg, plan, farm string) ([]byte, error) {
 	have := map[string]bool{}
 	for _, p := range pkgs {
 		have[p.ImportPath] = true
@@ -659,14 +718,14 @@ func writePlan(pkgs []*Pkg, plan, farm string) error {
 	var all []json.RawMessage
 	for _, p := range pkgs {
 		if err := fill(p, farm); err != nil {
-			return fmt.Errorf("%s: %v", p.ImportPath, err)
+			return nil, fmt.Errorf("%s: %v", p.ImportPath, err)
 		}
 		b, _ := json.Marshal(p)
 		all = append(all, b)
 	}
 	<-stdReady
 	if stdErr != nil {
-		return stdErr
+		return nil, stdErr
 	}
 	for _, s := range stdJSON {
 		var hdr struct{ ImportPath string }
@@ -676,7 +735,7 @@ func writePlan(pkgs []*Pkg, plan, farm string) error {
 		}
 	}
 	b, _ := json.Marshal(all)
-	return os.WriteFile(plan, b, 0o666)
+	return b, os.WriteFile(plan, b, 0o666)
 }
 
 var fillMu sync.Mutex
@@ -744,7 +803,7 @@ func fill(p *Pkg, farm string) error {
 		}
 	}
 	if needFarm {
-		dir = filepath.Join(farm, strings.ReplaceAll(p.ImportPath, "/", "%"))
+		dir = filepath.Join(farm, strings.ReplaceAll(first(a.args["-o"]), "/", "%")) // (one per compile action: a package may be in several configurations)
 		link := func(rel, target string) error {
 			dst := filepath.Join(dir, rel)
 			os.MkdirAll(filepath.Dir(dst), 0o777)
@@ -878,6 +937,59 @@ func first(s []string) string {
 	}
 	return s[0]
 }
+
+// stampValues: the workspace status (KEY value lines of --workspace_status_command) when the workspace's
+// .bazelrc turns stamping on for builds; nil otherwise (Bazel's default: no stamping).
+func stampValues() map[string]string {
+	b, err := os.ReadFile(filepath.Join(*flagWS, ".bazelrc"))
+	if err != nil {
+		return nil
+	}
+	stamp, cmdline := false, ""
+	for _, line := range strings.Split(string(b), "\n") {
+		f := strings.Fields(line)
+		if len(f) < 2 || (f[0] != "build" && f[0] != "common") {
+			continue // (configs such as build:release apply only when asked for)
+		}
+		for i := 1; i < len(f); i++ {
+			switch {
+			case f[i] == "--stamp":
+				stamp = true
+			case f[i] == "--nostamp":
+				stamp = false
+			case f[i] == "--workspace_status_command" && i+1 < len(f):
+				cmdline = f[i+1]
+				i++
+			case strings.HasPrefix(f[i], "--workspace_status_command="):
+				cmdline = strings.TrimPrefix(f[i], "--workspace_status_command=")
+			}
+		}
+	}
+	if !stamp {
+		return nil
+	}
+	m := map[string]string{}
+	if cmdline == "" {
+		return m
+	}
+	cmd := exec.Command("/bin/bash", "-c", cmdline)
+	cmd.Dir = *flagWS
+	out, err := cmd.Output()
+	if err != nil {
+		log.Printf("workspace status: %v", err)
+		return m
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		k, v, _ := strings.Cut(line, " ")
+		if k != "" {
+			m[k] = v
+		}
+	}
+	return m
+}
+
+// goroot: the GOROOT of -go.
+func goroot() string { return filepath.Dir(filepath.Dir(*flagGo)) }
 
 // usesCgo: does the file import "C"?
 func usesCgo(path string) bool {
