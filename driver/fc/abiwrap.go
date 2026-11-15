@@ -79,6 +79,7 @@ func sigTypes(sig *types.Signature) (in, out []types.Type) {
 
 // abiWrappers writes the wrappers the package's declarations need.
 func (c *compiler) abiWrappers(try func(string, func())) {
+	exported := c.cgoExported()
 	for _, fd := range c.funcDecls() {
 		fd := fd
 		fn, _ := defOf(fd.Name).(*types.Func)
@@ -155,6 +156,10 @@ func (c *compiler) abiWrappers(try func(string, func())) {
 		case fd.Body == nil && c.abis.defsInternal[name] && (c.abis.refs[name] || linknamed):
 			// assembly with the register ABI (memmove): assembly elsewhere may still call it with ABI0
 			try("ABI0 wrapper for "+name, func() { c.wrapFromABI0(fd, sig, sym) })
+		case fd.Body != nil && hasDirective(fd.Doc, "//go:cgo_unsafe_args"):
+			// (its ABI0 entry is the function itself, its ABIInternal one a wrapper: static.go)
+		case fd.Body != nil && exported[name]:
+			// exported to C (cgo.go): C gets the definition, no wrapper (ssagen/abi.go)
 		case fd.Body != nil && (c.abis.refs[name] || linknamed):
 			// Go: assembly callers (and whoever pulls the symbol by linkname) may come in with ABI0
 			try("ABI0 wrapper for "+name, func() { c.wrapFromABI0(fd, sig, sym) })

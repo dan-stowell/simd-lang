@@ -124,10 +124,34 @@ func (c *compiler) compilePackage() (errs []string) {
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
 				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
 				// the stock compiler verifies; nothing to generate for them)
-				for _, d := range []string{"//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {
+				for _, d := range []string{"//go:wasmimport", "//go:wasmexport"} {
 					if hasDirective(fd.Doc, d) {
 						giveUp("directive %s", d)
 					}
+				}
+				if hasDirective(fd.Doc, "//go:cgo_unsafe_args") {
+					// the body takes the address of a parameter as the address of the whole argument frame,
+					// results included (cgo's _Cfunc_ functions pass it to C): the stock compiler pins such a
+					// function to ABI0 (ssagen/abi.go), where every parameter and result is in the caller's
+					// frame in order. So does fc: the body is the ABI0 symbol, and Go callers come in through
+					// an ABIInternal wrapper, as for an assembly function.
+					if sig.Recv() != nil {
+						giveUp("//go:cgo_unsafe_args on a method")
+					}
+					in, out := sigTypes(sig)
+					g.abi = c.abi0Of(in, out)
+					g.abi0 = true
+					g.pinArgs = true
+					ast.Inspect(fd.Body, func(n ast.Node) bool {
+						if _, ok := n.(*ast.FuncLit); ok {
+							giveUp("//go:cgo_unsafe_args function with a closure")
+						}
+						return true
+					})
+					g.out.sym = c.lookup(sym.Name, obj.ABI0, sym.Pkg)
+					g.compileFunc(nil, fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
+					c.wrapToABI0(fd, sig, sym)
+					return
 				}
 				g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 			})

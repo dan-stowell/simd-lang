@@ -37,6 +37,11 @@ type Pkg struct {
 	Standard   bool
 	Module     *struct{ Path, Version, GoVersion string }
 
+	// cgo (cgo.go): what `go list -json` says with CGO_ENABLED=1
+	CgoFiles, CFiles, CXXFiles, MFiles, FFiles, HFiles, SwigFiles, SwigCXXFiles []string
+	CgoCFLAGS, CgoCPPFLAGS, CgoCXXFLAGS, CgoFFLAGS, CgoLDFLAGS, CgoPkgConfig    []string
+	cgo                                                                         *cgoRun
+
 	// functions by demand (demand.go)
 	eager    bool // every function is compiled, asked for or not
 	dmu      sync.Mutex
@@ -159,6 +164,7 @@ func (pr *Program) readPlan(path string) error {
 		}
 		for _, p := range ps {
 			p.listed = true
+			p.cgoImports()
 			pr.byPath[p.ImportPath] = p
 		}
 		return nil
@@ -172,6 +178,7 @@ func (pr *Program) readPlan(path string) error {
 			return err
 		}
 		p.listed = true
+		p.cgoImports()
 		pr.byPath[p.ImportPath] = p
 	}
 }
@@ -807,6 +814,10 @@ func (pr *Program) parse(p *Pkg) {
 	p.parseOnce.Do(func() {
 		pr.scan(p)
 		if p.err != nil {
+			return
+		}
+		if err := p.waitGen(); err != nil { // (cgo.go: cgo's Go output is among the files)
+			p.err = err
 			return
 		}
 		pr.sem.acquire(prioParse)

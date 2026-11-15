@@ -121,7 +121,7 @@ func buildMode(args []string) {
 	if *chdir != "" {
 	} else if fs.NArg() == 1 && fs.Arg(0) == "all" {
 		for _, p := range pr.byPath {
-			if !strings.Contains(p.ImportPath, " [") && len(p.GoFiles) > 0 {
+			if !strings.Contains(p.ImportPath, " [") && len(p.GoFiles)+len(p.CgoFiles) > 0 {
 				targets = append(targets, p)
 			}
 		}
@@ -211,14 +211,14 @@ func buildMode(args []string) {
 			}
 		}
 		for _, p := range closure {
-			if (p.ImportPath == "runtime" && !rtByFc) || len(p.GoFiles) == 0 || keepStock[p.ImportPath] {
+			if (p.ImportPath == "runtime" && !rtByFc) || len(p.GoFiles)+len(p.CgoFiles) == 0 || keepStock[p.ImportPath] {
 				markStock(p)
 			}
 		}
 		// FC_RT_FC="pkg pkg": bisecting the runtime's packages: these are compiled by fc although the runtime
 		// that imports them is the stock compiler's.
 		for _, name := range strings.Fields(os.Getenv("FC_RT_FC")) {
-			if p := pr.byPath[name]; p != nil && len(p.GoFiles) > 0 {
+			if p := pr.byPath[name]; p != nil && len(p.GoFiles)+len(p.CgoFiles) > 0 {
 				delete(stock, p)
 			}
 		}
@@ -260,6 +260,19 @@ func buildMode(args []string) {
 		}
 	}
 	sort.Slice(targets, func(i, k int) bool { return targets[i].ImportPath < targets[k].ImportPath })
+	if *link != "" {
+		// cgo packages (cgo.go): cgo's Go output before the front end reads them, the C compiled beside
+		ncgo := 0
+		for _, p := range targets {
+			if p.usesCgo() {
+				ncgo++
+			}
+		}
+		if ncgo > 0 && inProc {
+			log.Fatalf("fc build -link: %d cgo packages: they need the stock linker in external mode (FC_LINKER= FC_LINKFLAGS=-linkmode=external)", ncgo)
+		}
+		startCgo(targets, *out)
+	}
 	// front end: everything the targets depend on
 	var wg, wgF sync.WaitGroup
 	for _, need := range append([]*Pkg{pr.byPath["runtime"], pr.byPath["internal/runtime/maps"]}, targets...) {
@@ -474,7 +487,15 @@ func buildMode(args []string) {
 				if pr.stockArchives != nil {
 					c.indexRefsWith(stockIndexFn) // (writeITab: itabs merged by content with the stock ones)
 				}
-				if asmDir != "" {
+				cObjs, cerr := p.cgoObjects() // (cgo.go: gcc's objects go into the package's archive)
+				if cerr != nil {
+					errs = append(errs, "cgo: "+cerr.Error())
+				} else if asmDir == "" && len(cObjs) > 0 {
+					asmDir = filepath.Join(*out, "asm", strings.ReplaceAll(objabi.PathToPrefix(p.ImportPath), "/", "__"))
+					os.MkdirAll(asmDir, 0o777)
+				}
+				if len(errs) > 0 {
+				} else if asmDir != "" {
 					// the object and the assembler's objects go into one archive
 					goObj := filepath.Join(asmDir, "_go_.o")
 					c.writeObject(goObj)
@@ -489,7 +510,7 @@ func buildMode(args []string) {
 						members = append(members, o)
 					}
 					if len(errs) == 0 {
-						writePkgArchive(name, members)
+						writePkgArchive(name, append(members, cObjs...))
 					}
 				} else {
 					c.writeObject(name)
