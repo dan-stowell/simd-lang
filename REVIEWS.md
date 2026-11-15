@@ -319,3 +319,26 @@ One line per inbox item; raw files in `reviews/done/`.
      `bazel aquery` first, then bb-cli and bb-executor, with a count of what cgo and generated code block).
      The quoted retreat ("no time left in this session", 2026-11-12) predates the current LOOP.md rule.
 - `20261114T0035-sol.md` (sol, correctness): **stalled**: the file holds only the conversation id; dropped.
+
+## 2026-11-15 17:55 UTC: reviews of the 11-15 state (MinIO cold 2.4-2.7 s)
+
+- `20261115T1729-codex-skeptic.md` (Codex, skeptic):
+  1. *Cold Bazel analysis gates the Bazel rows (6.1 s of buildifier's 9.6, 22.1 s of runsc's 26.2) and is left as a
+     question to Dan instead of attacked.* **Accept, answered with work.** Bazel stays inside the timer (the
+     reviewer and CHARTER agree; STATUS's question to Dan is withdrawn). Next on the Bazel rows, after the
+     BuildBuddy builder reports: a profile of what those seconds are (server start, repository extraction,
+     loading, analysis), then a cold reader of the workspace for the rules_go subset (BUILD files parsed directly,
+     generators run from their declared commands) if the profile says flags cannot remove them. In PLAN's Now line.
+  2. *The trace's link floor (16 ms, bytes copied) is not a physical floor; the link is 280 ms of resolution, flood
+     and relocation.* **Accept.** The fc trace section owed in TRACE.md states the link's phases as measured
+     (resolve 51 ms, deadcode 61, layout 37, write 85) and calls the 16 ms what it is: a copy bound, not a floor.
+  3. *Compiler-only work is a dead end for the Bazel target.* **Accept**, same answer as 1.
+  4. *TRACE.md's materialization tax is the frozen stock path's; fc's is not isolated (assembler objects still
+     cross a file boundary).* **Accept, answered with a commit** (d397365): `fc build` prints its tax (process
+     starts, intermediate files, page faults); the 170 assembler processes MinIO started are gone (the assembler
+     runs in fc's process); 3.3 MB of assembler objects are still written and read back. TRACE.md's fc section is
+     owed at the next quiet window.
+  5. *Time-based retreats on 11-12, none since; the oracle moved.* Noted; no action.
+- `20261115T1729-sol.md` (sol, correctness): **stalled** (the file holds only the conversation id); dropped. The
+  std suite through the whole-program path did the job today: it found a miscompiled comparison (a string or
+  float against an interface value), two unsupported constructs and a plan bug (JOURNAL 11-15).
