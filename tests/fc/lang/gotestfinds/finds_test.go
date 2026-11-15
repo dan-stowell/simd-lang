@@ -446,3 +446,23 @@ func TestLiteralInResultWhenAnElementPanics(t *testing.T) {
 		t.Errorf("r = T{...}: %v", r)
 	}
 }
+
+type boolT bool
+
+// switch { case i: } with i an interface value compares it with true
+func TestTaglessSwitchInterfaceCase(t *testing.T) {
+	n := 0
+	for _, v := range []any{true, false, 1, "x", boolT(true), nil} {
+		switch i := v; {
+		case i:
+			n += 1
+		case false:
+			n += 10
+		default:
+			n += 100
+		}
+	}
+	if n != 501 {
+		t.Errorf("case i over [true false 1 \"x\" boolT(true) nil]: %d, want 501", n)
+	}
+}

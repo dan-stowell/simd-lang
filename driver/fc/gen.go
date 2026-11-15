@@ -145,25 +145,26 @@ type gen struct {
 	liveIdx       map[string]int
 	nDecl         int
 	esc           escResult // escape analysis of the package the body is in; nil: everything escapes
-	// uintptr(unsafe.Pointer(x)) among a call's arguments keeps x's object alive until the call returns
-	// (package unsafe's rule 4; //go:uintptrescapes, //go:uintptrkeepalive, the syscall functions): the
-	// pointer goes to a slot of its own that is cleared after the call. callDepth counts the calls,
-	// conversions and builtins being evaluated; keepPtrs are the slots filled and not yet cleared.
-	callDepth int
-	keepPtrs  []loc
-	bindKeep  []loc               // for the next bind: pointers a go or defer statement's wrapper must hold
-	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
-	capByVal  map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
-	outerRef  map[*types.Var]bool // in a literal: the variables it captured by reference
-	assigned  map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
-	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
-	convCall  *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
-	rf        *rfCtx              // set in the body of a range-over-func loop
-	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
-	sc        *genScratch         // this function's scratch buffers, if it has them (compileFunc)
-	root      *gen                // the function whose results a return there sets
-	abi0      bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
-	pinArgs   bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
+	// uintptr(unsafe.Pointer(x)) as an argument of a function without a body here (assembly: the syscall
+	// functions) or marked //go:uintptrescapes or //go:uintptrkeepalive keeps x's object alive until the
+	// call returns (package unsafe's rule 4; the stock compiler's rule, callee for callee): the pointer
+	// also goes to a slot of its own that is cleared after the call. keepOperand holds the operands x of
+	// the calls being prepared; keepPtrs the slots filled and not yet cleared.
+	keepOperand map[ast.Expr]bool
+	keepPtrs    []loc
+	bindKeep    []loc               // for the next bind: pointers a go or defer statement's wrapper must hold
+	addrVars    map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	capByVal    map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
+	outerRef    map[*types.Var]bool // in a literal: the variables it captured by reference
+	assigned    map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
+	convSite    ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	convCall    *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
+	rf          *rfCtx              // set in the body of a range-over-func loop
+	deferTok    *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	sc          *genScratch         // this function's scratch buffers, if it has them (compileFunc)
+	root        *gen                // the function whose results a return there sets
+	abi0        bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	pinArgs     bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -1042,6 +1043,22 @@ func (sc *genScratch) give(a *asm, slots []slotInfo, unsafe, lines, stackmap, sp
 	scratchPool.Put(sc)
 }
 
+// endsInReturn: the function body scan (a block or a function literal) ends in a return statement.
+func endsInReturn(scan ast.Node) bool {
+	var b *ast.BlockStmt
+	switch s := scan.(type) {
+	case *ast.BlockStmt:
+		b = s
+	case *ast.FuncLit:
+		b = s.Body
+	}
+	if b == nil || len(b.List) == 0 {
+		return false
+	}
+	_, ok := b.List[len(b.List)-1].(*ast.ReturnStmt)
+	return ok
+}
+
 func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, body func()) {
 	var sc *genScratch
 	if scratchOn {
@@ -1112,7 +1129,12 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 		g.hasDefer = true
 	}
 	body()
-	g.pos(end)
+	if !endsInReturn(scan) {
+		// The end of the body is reached: the epilogue is at the closing brace. After a final return it is
+		// reached only from returns, and stays at the last one's line, as the stock compiler's is (whose
+		// function has no code at its '}' then: $GOROOT/test/inline_literal.go).
+		g.pos(end)
+	}
 	g.epilogue()
 	if sc == nil {
 		g.finish(pos)
@@ -1387,7 +1409,7 @@ func (g *gen) finish(pos token.Pos) {
 		size := len(code)
 		out.pcsp, out.pcunsafe, out.pcstack = pctab(sp, size), pctab(unsafe, size), pctab(stackmap, size)
 		files, lns := sc.fFiles[:0], sc.fLn[:0]
-		var tf *token.File
+		var tf *token.File // the file of the last position, when it has no //line directive
 		var fidx int32
 		var ln int32
 		for _, l := range lines {
@@ -1396,7 +1418,9 @@ func (g *gen) finish(pos token.Pos) {
 				fidx, ln = g.c.fileLine(p)
 				tf = nil
 				if p.IsValid() {
-					tf = g.c.pr.fset.File(p) // (most of a function's lines are in one file: no lock for those)
+					if f := g.c.pr.fset.File(p); !g.c.hasLineDirs(f) {
+						tf = f // (most of a function's lines are in one file: no lock for those)
+					}
 				}
 				if !slices.Contains(out.usedFiles, fidx) {
 					out.usedFiles = append(out.usedFiles, fidx)

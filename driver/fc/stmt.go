@@ -649,7 +649,7 @@ func (g *gen) lvalueLate(e ast.Expr) func() loc {
 				it = types.Typ[types.Uint]
 			}
 		}
-		return func() loc { return g.indexAddr(xt, xl, il, it) }
+		return func() loc { return g.indexAddr(xt, xl, il, it, ix.Lbrack) }
 	}
 	l := g.pin(g.expr(e))
 	return func() loc { return l }
@@ -873,7 +873,16 @@ func (g *gen) switchStmt(s *ast.SwitchStmt, name string) {
 			m := g.mark()
 			g.pos(e.Pos())
 			next := g.newLabel()
-			if s.Tag == nil {
+			if et := g.typeOf(e); s.Tag == nil && isInterface(et) {
+				// switch { case i: } with i an interface value is true == i, not i taken as a condition
+				// (which tested a byte of the interface's type word: $GOROOT/test/switch.go passed or
+				// failed by where the linker had put bool's descriptor)
+				el := g.expr(e)
+				r := g.compareLocs(token.EQL, loc{kind: lImm, imm: 1}, types.Typ[types.Bool], el, et)
+				g.loadTo(AX, r, types.Typ[types.Bool])
+				g.a.testRR(1, AX, AX)
+				g.jcc(ccE, next)
+			} else if s.Tag == nil {
 				g.condJump(e, next)
 			} else {
 				et := g.typeOf(e)

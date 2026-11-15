@@ -1,9 +1,3 @@
-devirtualization_nil_panics.go
-inline_literal.go
-fixedbugs/bug347.go
-fixedbugs/issue18149.go
-fixedbugs/issue22662.go
-fixedbugs/issue29504.go
 typeparam/chans.go
 typeparam/issue48137.go
 typeparam/issue50193.go

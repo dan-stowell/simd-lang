@@ -149,24 +149,61 @@ func (g *gen) rtCall(name string, args ...loc) []loc {
 }
 
 func (g *gen) call(e *ast.CallExpr) []loc {
-	g.callDepth++
 	mark := len(g.keepPtrs)
+	g.markKeepArgs(e)
 	ai, args, c, rs, done := g.prepCall(e, true)
-	g.callDepth--
 	if done {
-		// (a conversion or a builtin: what it kept is for the call around it; around none, it stays
-		// until the function returns)
-		if g.callDepth == 0 {
-			g.keepPtrs = g.keepPtrs[:0]
-		}
 		return rs
 	}
+	// the call is at its '(' (the stock compiler's position of a call): a call split over lines, or a nil
+	// method value or interface that faults on the way in, is reported where the stock compiler reports it
+	g.pos(e.Lparen)
 	rs = g.emitCall(ai, args, c)
 	for _, k := range g.keepPtrs[mark:] {
 		g.a.storeImm(mb(BP, k.off), 0, 8)
 	}
 	g.keepPtrs = g.keepPtrs[:mark]
 	return rs
+}
+
+// markKeepArgs: if the call's callee is known and keeps its uintptr arguments alive (escSummary.UintptrKeep),
+// the operands of the arguments that are uintptr(x) with x an unsafe.Pointer are noted for convert.
+func (g *gen) markKeepArgs(e *ast.CallExpr) {
+	if escWhere == "0" || len(e.Args) == 0 {
+		return
+	}
+	var fn *types.Func
+	switch f := ast.Unparen(e.Fun).(type) {
+	case *ast.Ident:
+		fn, _ = useOf(f).(*types.Func)
+	case *ast.SelectorExpr:
+		if sel := selnOf(f); sel == nil {
+			fn, _ = useOf(f.Sel).(*types.Func)
+		} else if sel.Kind() == types.MethodVal {
+			fn, _ = sel.Obj().(*types.Func)
+		}
+	}
+	if fn == nil {
+		return
+	}
+	if s := g.c.pr.escSummaryOf(fn); s == nil || !s.UintptrKeep {
+		return
+	}
+	for _, a := range e.Args {
+		conv, ok := ast.Unparen(a).(*ast.CallExpr)
+		if !ok || len(conv.Args) != 1 || !tvOf(conv.Fun).IsType() {
+			continue
+		}
+		tb, _ := g.typeOf(conv).Underlying().(*types.Basic)
+		fb, _ := g.typeOf(conv.Args[0]).Underlying().(*types.Basic)
+		if tb == nil || fb == nil || tb.Kind() != types.Uintptr || fb.Kind() != types.UnsafePointer {
+			continue
+		}
+		if g.keepOperand == nil {
+			g.keepOperand = map[ast.Expr]bool{}
+		}
+		g.keepOperand[conv.Args[0]] = true
+	}
 }
 
 // keepPtr: the pointer at l (an unsafe.Pointer about to become a uintptr) is also stored in a slot of
@@ -467,8 +504,11 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 	fu, tu := from.Underlying(), to.Underlying()
 	fb, _ := fu.(*types.Basic)
 	tb, _ := tu.(*types.Basic)
-	if g.callDepth > 1 && fb != nil && tb != nil && fb.Kind() == types.UnsafePointer && tb.Kind() == types.Uintptr && l.kind != lZero && l.kind != lImm {
-		l = g.keepPtr(l)
+	if g.keepOperand[arg] {
+		delete(g.keepOperand, arg)
+		if l.kind != lZero && l.kind != lImm {
+			l = g.keepPtr(l)
+		}
 	}
 	isInt := func(b *types.Basic) bool { return b != nil && b.Info()&types.IsInteger != 0 }
 	isFlt := func(b *types.Basic) bool { return b != nil && b.Info()&types.IsFloat != 0 }

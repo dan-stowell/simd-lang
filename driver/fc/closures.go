@@ -376,10 +376,9 @@ func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 		}
 	}
 	// (pointers the arguments turn into uintptrs are held by the wrapper until the call has run)
-	g.callDepth++
 	mark := len(g.keepPtrs)
+	g.markKeepArgs(call)
 	ai, args, c, _, _ := g.prepCall(call, false)
-	g.callDepth--
 	keep := append([]loc(nil), g.keepPtrs[mark:]...)
 	g.keepPtrs = g.keepPtrs[:mark]
 	if c.kind == 2 {

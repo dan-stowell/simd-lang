@@ -147,6 +147,10 @@ type escSummary struct {
 	// UintptrEscapes: the function is marked //go:uintptrescapes: a pointer converted to uintptr in its
 	// argument list escapes.
 	UintptrEscapes bool
+	// UintptrKeep: a pointer converted to uintptr in the argument list of a call of the function is kept
+	// alive until the call returns: the function has no body here (assembly, or provided through a
+	// linkname) or is marked //go:uintptrkeepalive or //go:uintptrescapes (stock escape.go, call.go).
+	UintptrKeep bool
 }
 
 // escLeaks is where the value of one parameter flows. A count is the number of dereferences on the shortest
@@ -777,7 +781,7 @@ func (pk *escPkg) staticValue(v *types.Var, x ast.Expr) {
 func (pk *escPkg) bodyless(obj *types.Func, d *ast.FuncDecl) {
 	sig := obj.Type().(*types.Signature)
 	noescape, uintptrEsc := escPragmas(d)
-	s := &escSummary{UintptrEscapes: uintptrEsc}
+	s := &escSummary{UintptrEscapes: uintptrEsc, UintptrKeep: true}
 	add := func(v *types.Var) {
 		l := escLeaks{Heap: -1}
 		if !noescape && pk.hasPointers(v.Type()) {
@@ -1013,7 +1017,7 @@ func (b *escBatch) finish(units []*escUnit) {
 		}
 		fn := b.fns[u.obj]
 		_, uintptrEsc := escPragmas(u.decl)
-		s := &escSummary{UintptrEscapes: uintptrEsc}
+		s := &escSummary{UintptrEscapes: uintptrEsc, UintptrKeep: uintptrEsc || hasDirective(u.decl.Doc, "//go:uintptrkeepalive")}
 		for _, l := range fn.params {
 			lk := escLeaks{Heap: -1}
 			named := l.v.Name() != "" && l.v.Name() != "_"

@@ -35,6 +35,7 @@ type compiler struct {
 	trimpath string
 
 	fileIdx      map[*token.File]int32
+	lineFileIdx  map[string]int32 // the files //line directives name (fileLine)
 	mu           sync.Mutex
 	funcs        []*funcOut // finished functions, in the order they will be written
 	closures     map[string]int
@@ -280,6 +281,27 @@ func (c *compiler) fileLine(p token.Pos) (int32, int32) {
 		return 0, 1
 	}
 	tf := c.pr.fset.File(p)
+	if c.hasLineDirs(tf) {
+		// a //line directive may have moved p: the stock compiler's file and line are the adjusted ones
+		pos := tf.PositionFor(p, true)
+		if pos.Filename != tf.Name() {
+			c.mu.Lock()
+			idx, ok := c.lineFileIdx[pos.Filename]
+			if !ok {
+				// (go/scanner has made a relative name relative to the file's directory, as the stock
+				// compiler does since go.dev/issue/70478; no name at all is "??", as objabi.AbsFile makes it)
+				base := src.NewFileBase(pos.Filename, objabi.AbsFile("", pos.Filename, c.trimpath))
+				xp := c.ctxt.PosTable.XPos(src.MakePos(base, 1, 1))
+				idx = int32(c.ctxt.InnermostPos(xp).FileIndex())
+				if c.lineFileIdx == nil {
+					c.lineFileIdx = map[string]int32{}
+				}
+				c.lineFileIdx[pos.Filename] = idx
+			}
+			c.mu.Unlock()
+			return idx, int32(pos.Line)
+		}
+	}
 	c.mu.Lock()
 	idx, ok := c.fileIdx[tf]
 	if !ok {
@@ -291,7 +313,13 @@ func (c *compiler) fileLine(p token.Pos) (int32, int32) {
 		c.fileIdx[tf] = idx
 	}
 	c.mu.Unlock()
-	return idx, int32(tf.Line(p)) // TODO //line directives
+	return idx, int32(tf.Line(p)) // (the line a //line directive gives: Line is the adjusted line)
+}
+
+// hasLineDirs: tf may have //line directives (Program.lineDirs).
+func (c *compiler) hasLineDirs(tf *token.File) bool {
+	_, ok := c.pr.lineDirs.Load(tf)
+	return ok
 }
 
 // ---- functions
