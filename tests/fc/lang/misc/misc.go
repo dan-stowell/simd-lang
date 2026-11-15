@@ -651,3 +651,40 @@ func variadicRec(depth int, xs ...int) int {
 	return variadicRec(depth-1, append(xs, depth)...)
 }
 func VariadicRec(depth int) int { return variadicRec(depth) }
+
+// f(g()) where f is variadic and g has several results (golang.org/x/text/internal/colltab:
+// language.Raw.Compose(t.Raw()))
+func three(a int) (int, string, bool) { return a, "s", true }
+func twoR(a int) (string, int)        { return "t", a }
+func pair(a int) (int, int)           { return a, a * 10 }
+func only() string                    { return "only" }
+
+func describe(xs ...any) string {
+	s := itoa(len(xs)) + ":"
+	for _, x := range xs {
+		switch x := x.(type) {
+		case int:
+			s += itoa(x) + ","
+		case string:
+			s += x + ","
+		case bool:
+			s += "bool,"
+		}
+	}
+	return s
+}
+
+func fixedAndRest(p string, xs ...int) string {
+	s := p + itoa(len(xs))
+	if xs == nil {
+		s += "nil"
+	}
+	for _, x := range xs {
+		s += "," + itoa(x)
+	}
+	return s
+}
+
+func MultiToVariadic(a int) []string {
+	return []string{describe(three(a)), describe(twoR(a)), fixedAndRest(twoR(a)), fixedAndRest(only()), itoa(Sum(pair(a)))}
+}

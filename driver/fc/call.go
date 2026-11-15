@@ -316,7 +316,24 @@ func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 			// f(g()) with several results
 			rs := g.multi(e.Args[0])
 			if sig.Variadic() {
-				giveUp("multi-value call passed to a variadic function")
+				// f(g()) with f(a, b ...T): g's first results are the fixed parameters, the others the
+				// elements of a new slice (escape analysis: the call is its site, as for f(a, x, y))
+				nfixed := np - 1
+				for i := 0; i < nfixed; i++ {
+					pt := sig.Params().At(i).Type()
+					out = append(out, g.keep(g.convertImplicit(rs[i].l, rs[i].t, pt), pt))
+				}
+				st := sig.Params().At(np - 1).Type()
+				if tup.Len() == nfixed {
+					return append(out, loc{kind: lZero})
+				}
+				et := st.Underlying().(*types.Slice).Elem()
+				sl := g.newBacking(et, int64(tup.Len()-nfixed), st, e)
+				es := g.c.sizeof(et)
+				for i := nfixed; i < tup.Len(); i++ {
+					g.move(loc{kind: lInd, slot: sl.off, off: int64(i-nfixed) * es}, g.convertImplicit(rs[i].l, rs[i].t, et), et)
+				}
+				return append(out, sl)
 			}
 			for i := 0; i < tup.Len(); i++ {
 				pt := sig.Params().At(i).Type()

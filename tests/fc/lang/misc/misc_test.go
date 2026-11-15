@@ -229,6 +229,7 @@ func TestVariadic(t *testing.T) {
 	x, y := m.AppendForms([]int{1}, []int{2, 3}, "hi")
 	eq(t, "AppendForms", []any{x, y}, []any{[]int{1, 2, 3, 1, 2, 1, 2, 3, 1, 2}, []byte("<hi>")})
 	eq(t, "VariadicRec", []int{m.VariadicRec(0), m.VariadicRec(3), m.VariadicRec(100)}, []int{0, 3006, 100*1000 + 5050})
+	eq(t, "MultiToVariadic", m.MultiToVariadic(4), []string{"3:4,s,bool,", "2:t,4,", "t1,4", "only0nil", "44"})
 }
 
 func TestRangeFunc(t *testing.T) {

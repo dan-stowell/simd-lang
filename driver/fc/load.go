@@ -104,6 +104,13 @@ type Program struct {
 	quietOnce    sync.Once
 	idleJobs     chan chan func() // parked goroutines of runJob
 	stockPath    map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
+	// stockArchives: the stock linker links this build and these packages are the stock compiler's (by plain
+	// import path, its archive): an itab both sides can write is merged by content, as the stock compiler's
+	// are, so its references to their symbols are by index (writeITab, indexRefs)
+	stockArchives map[string]string // (the archives are known after the go command built them: stockPkgs)
+	stockPkgs     []*Pkg
+	stockIdxOnce  sync.Once
+	stockIdx      map[idxKey]idxRef
 	instOwner    sync.Map         // instance symbol name -> the *compiler that compiles it
 	rtWidth      sync.Map         // runtime function name -> the argument area of its real signature
 	rtcOnce      sync.Once
