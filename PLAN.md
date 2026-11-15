@@ -147,13 +147,12 @@ TestReadMetricsFinalizers (old log: /tmp/fcwpbatch.FkZJJe/runtime). Rerun alone
 (`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`), then each is a bug to fix or a skip line
 with the stock-at--l evidence (allocation counts, liveness waits are the two allowed classes; TestGCInfo and the hang
 are neither until shown).
-(2) **The soak** (scratch, gone with this session's scratchpad; to redo: build google.golang.org/protobuf's
-cmd/protoc-gen-go with `fc build -C <module dir in GOMODCACHE> -link`, feed it a CodeGeneratorRequest captured from
-protoc with a plugin that is `cat > req.bin`, run it 4 at once with GOGC=1 under load, compare sha1 of the output with
-the stock-built binary's, gdb/gcore anything older than 40 s): with the three fixes 3,200 runs were started at 18:58;
-0 bad of 1,600 with the first fix alone. **One segmentation fault (rc 139, nothing on stderr) in about 1,400 runs
-before the fixes is unexplained**: if the soak shows it again, the core is the evidence (ulimit -c unlimited). Worth
-making the soak a script in tools/fc (soak.sh) and running it on MinIO's server under load too.
+(2) **The soak** is `tools/fc/soak.sh [runs] [workers]` now (an fc-built protoc-gen-go against the stock-built one at
+GOGC=1; hangs get their stacks from a core by tools/fc/corebt). With the three fixes a scratch soak of 3,200 runs was
+started at 18:58 (not finished at 19:10: load 74); 0 bad of 1,600 with the first fix alone. **One segmentation fault
+(rc 139, nothing on stderr) in about 1,400 runs before the fixes is unexplained**: run `tools/fc/soak.sh 1500 4` when
+the pass is done; a bad run with rc 139 needs `ulimit -c unlimited` in the script and the core read with corebt. Also
+worth soaking MinIO's server under load the same way.
 (3) **Quiet pass** (nothing else running; `uptime` under 1): order-balanced A/B of MinIO, 4 pairs each, user+sys and
 wall: cold FC_NOZIP=1 against default (module sources from zips, JOURNAL 18:33); warm FC_LAZYFUNCS=1, FC_FUSE=1,
 FC_SCRATCH=0, FC_ASMPROC=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
