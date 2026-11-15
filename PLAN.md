@@ -136,7 +136,7 @@ never run before) found 30-odd differences from the stock compiler today, every 
 (JOURNAL 21:00, 21:20, 21:40 UTC: interface values of two named types, `for i, x[i] = range`, nil checks where nothing
 is loaded, uintptr arguments keeping their objects, recover through reflect, overlapping array assignment, blank
 fields, `switch { case i: }` with an interface value, line numbers, types local to generic functions, ...). HEAD:
-1,019 pass, 0 open, 13 skips with reasons (tests/fc/gotest-skips.txt), 17 excluded (stock does not pass them outside
+1,018 pass, 0 open, 13 skips with reasons (tests/fc/gotest-skips.txt), 17 excluded (stock does not pass them outside
 GOROOT/test). Compilers on disk: **build/fc = HEAD (5b23b5d, built 21:44)**; build/fcy = de605c5 (the sweep below
 runs on it: do not rebuild it); build/fcw, fcz, fcr (race detector), fcx: scratch, free to overwrite
 (`FC_TAG=w driver/mkfc.sh`; a build piped into tail needs `set -o pipefail`). In order:
@@ -146,7 +146,7 @@ safecheck, zipcheck, cgotest, gotest (as is, then 16 at once), lang three modes,
 packages, the corpus builds with their smoke tests, then gotest eight more rounds (binaries are not the same bytes
 from build to build, and a miscompile that depends on an address shows in some builds only: IDEAS "The same bytes").
 **While it runs do not rebuild build/fc and do not edit tools/fc/{wptest,wpbatch,lang,test,corpus,cgotest}.sh or
-gotest.py.** Expect: gotest PASS 1019 FAIL 0 NOFC 0 every time (a failing binary is kept under
+gotest.py.** Expect: gotest PASS 1018 FAIL 0 NOFC 0 every time (21:50: the first run is exactly that) (a failing binary is kept under
 fc-verify-1115e.gotest-keep*: disassemble it, do not rerun and shrug); lang 26 of 26; std 260 of 260 (TestStackGrowth
 is a skip line now); MinIO 45 of 46 (cmd: TestTrackingResponseWriter, as stock). Any other line is a bug, or a timeout
 to rerun alone. The pass before it (1115d, on 09e6304) ended as expected: std 259 of 260, MinIO 45 of 46.
