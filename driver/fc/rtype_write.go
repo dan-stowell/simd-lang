@@ -707,10 +707,39 @@ func (c *compiler) writeITab(t, iface types.Type) *obj.LSym {
 	// Stock itabs are merged by content, and the content hash covers how each method is addressed (by
 	// index in its own package's object, by name elsewhere unless the indexes are known: indexRefs). In a
 	// build of our own, objects cannot agree on that, so itabs are merged by name instead.
-	s.Set(obj.AttrContentAddressable, c.mixed)
+	// A build the stock linker links with stock packages (cgo programs: bzfc) is the same case for an itab
+	// the stock packages could also have written: type and interface of theirs (or predeclared).
+	s.Set(obj.AttrContentAddressable, c.mixed || c.pr.stockArchives != nil && c.stockDeclared(t) && c.stockDeclared(iface))
 	s.Align = 8
 	c.defData(s, objabi.SRODATA, 24+int64(len(entries))*8)
 	return s
+}
+
+// stockDeclared: is t (or what it points to) a predeclared type or one declared in a package of the stock
+// compiler's (pr.stockArchives)?
+func (c *compiler) stockDeclared(t types.Type) bool {
+	for {
+		p, ok := types.Unalias(t).(*types.Pointer)
+		if !ok {
+			break
+		}
+		t = p.Elem()
+	}
+	switch t := types.Unalias(t).(type) {
+	case *types.Basic:
+		return true
+	case *types.Named:
+		if t.TypeArgs().Len() > 0 {
+			return false
+		}
+		pkg := t.Obj().Pkg()
+		if pkg == nil {
+			return true
+		}
+		_, ok := c.pr.stockArchives[pkg.Path()]
+		return ok
+	}
+	return false
 }
 
 // isLocalInstance: a type made by Program.localInstance (a type declared inside a generic function, for one

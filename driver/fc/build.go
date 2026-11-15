@@ -172,6 +172,7 @@ func buildMode(args []string) {
 			}
 			alias(mainPkg)
 		}
+		pr.mainPath = plainPath(mainPkg.ImportPath)
 		seen := map[*Pkg]bool{}
 		var walk func(p *Pkg)
 		walk = func(p *Pkg) {
@@ -326,6 +327,26 @@ func buildMode(args []string) {
 			}
 		})
 	}
+	if *link != "" && !withFclink && len(stock) > 0 {
+		pr.stockArchives = map[string]string{}
+		for p := range stock {
+			pr.stockArchives[plainPath(p.ImportPath)] = ""
+			pr.stockPkgs = append(pr.stockPkgs, p)
+		}
+	}
+	stockIndexFn := func() map[idxKey]idxRef {
+		pr.stockIdxOnce.Do(func() {
+			waitStock()
+			arch := map[string]string{}
+			for _, p := range pr.stockPkgs {
+				if p.Export != "" {
+					arch[plainPath(p.ImportPath)] = p.Export
+				}
+			}
+			pr.stockIdx = stockIndex(arch)
+		})
+		return pr.stockIdx
+	}
 	if *link != "" && os.Getenv("FC_EAGERTYPES") == "" {
 		pr.lazyTypes = true
 		pr.stockPath = map[string]bool{}
@@ -371,8 +392,8 @@ func buildMode(args []string) {
 			t := time.Now()
 			results[i].startMS = float64(t.Sub(t0).Microseconds()) / 1e3
 			path := plainPath(p.ImportPath) // (a test variant, "P [P.test]", is package P to the code and the linker)
-			if p.Name == "main" {
-				path = "main"
+			if p.Name == "main" && (mainPkg == nil || p == mainPkg) {
+				path = "main" // (only the program's: Bazel's go_library of a main package is imported by its path)
 			}
 			c = newCompiler(pr, p, path, "")
 			c.fnSem = sem
@@ -449,6 +470,9 @@ func buildMode(args []string) {
 				results[i].unit = fclinklib.NewUnit(c.ctxt)
 			} else if len(errs) == 0 {
 				name := objPath(*out, p)
+				if pr.stockArchives != nil {
+					c.indexRefsWith(stockIndexFn) // (writeITab: itabs merged by content with the stock ones)
+				}
 				if asmDir != "" {
 					// the object and the assembler's objects go into one archive
 					goObj := filepath.Join(asmDir, "_go_.o")
@@ -586,7 +610,9 @@ func buildMode(args []string) {
 			}
 			cfgFile := filepath.Join(*out, "importcfg.link")
 			os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
-			cmd := exec.Command("go", append(append([]string{"tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w"}, xargs...), objPath(*out, mainPkg))...)
+			// FC_LINKFLAGS reach this linker too (a cgo program: -linkmode=external -extld=...)
+			stockArgs := append(append([]string{"tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w"}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+			cmd := exec.Command("go", append(stockArgs, objPath(*out, mainPkg))...)
 			linker := "stock linker"
 			if withFclink {
 				// the campaign's linker (driver/fclink) instead of the stock one
@@ -595,6 +621,11 @@ func buildMode(args []string) {
 				linker = "fclink"
 			}
 			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+			for _, kv := range os.Environ() {
+				if !strings.HasPrefix(kv, "SB_") { // (fc's heap settings, which goroot-sb's runtime reads too)
+					cmd.Env = append(cmd.Env, kv)
+				}
+			}
 			if err := cmd.Run(); err != nil {
 				log.Fatalf("fc build -link: link: %v", err)
 			}

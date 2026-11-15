@@ -488,27 +488,44 @@ func (c *compiler) stockParity(stock map[string]bool) {
 // merges by content (itabs): the content hash covers how each relocation's target is addressed, so an itab
 // written here merges with the stock one only if its method and type references are addressed alike.
 func (c *compiler) indexRefs(archives map[string]string) {
-	type ref struct {
-		pkg string
-		idx int32
-	}
-	type key struct {
-		name string
-		abi  uint16
-	}
-	var index map[key]ref
-	load := func() {
-		index = map[key]ref{}
-		for path, file := range archives {
-			_, defs := definedSymsOrder(file)
-			pp := objabi.PathToPrefix(path)
-			for i, d := range defs {
-				if d.name != "" {
-					index[key{d.name, d.abi}] = ref{pp, int32(i)}
-				}
+	var index map[idxKey]idxRef
+	c.indexRefsWith(func() map[idxKey]idxRef {
+		if index == nil {
+			index = stockIndex(archives)
+		}
+		return index
+	})
+}
+
+type idxRef struct {
+	pkg string
+	idx int32
+}
+
+type idxKey struct {
+	name string
+	abi  uint16
+}
+
+// stockIndex: the symbols the stock archives define by index, by name and ABI.
+func stockIndex(archives map[string]string) map[idxKey]idxRef {
+	index := map[idxKey]idxRef{}
+	for path, file := range archives {
+		_, defs := definedSymsOrder(file)
+		pp := objabi.PathToPrefix(path)
+		for i, d := range defs {
+			if d.name != "" {
+				index[idxKey{d.name, d.abi}] = idxRef{pp, int32(i)}
 			}
 		}
 	}
+	return index
+}
+
+func (c *compiler) indexRefsWith(get func() map[idxKey]idxRef) {
+	type key = idxKey
+	var index map[idxKey]idxRef
+	load := func() { index = get() }
 	seen := map[*obj.LSym]bool{}
 	var visit func(s *obj.LSym)
 	fix := func(rs *obj.LSym) {

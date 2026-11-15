@@ -202,8 +202,9 @@ func (c *compiler) pkgPrefix(p *types.Package) string {
 	if p == c.tpkg {
 		return objabi.PathToPrefix(c.path)
 	}
-	if p.Name() == "main" && p.Path() != "main" {
-		// a main package is "main" to the linker; only the package itself references its symbols
+	if p.Name() == "main" && p.Path() != "main" && (c.pr.mainPath == "" || c.pr.mainPath == p.Path()) {
+		// the program's main package is "main" to the linker; only the package itself references its
+		// symbols. (A Bazel build can import another main package, a go_library, by its path: pr.mainPath.)
 		return "main"
 	}
 	return objabi.PathToPrefix(p.Path())

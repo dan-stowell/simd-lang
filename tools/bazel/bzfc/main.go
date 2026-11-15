@@ -27,7 +27,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -42,6 +41,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -125,6 +126,7 @@ type Pkg struct {
 
 	a    *action
 	deps []*Pkg
+	cgo  bool // a cgo package, with cgo on: the go command's (cgo.go)
 }
 
 var (
@@ -138,6 +140,7 @@ var (
 	flagJ     = flag.Int("j", 8, "actions at once; fc's -j")
 	flagGo    = flag.String("go", "/home/exedev/targets/goroot-sb/bin/go", "the go command of the GOROOT fc is built with (the standard library)")
 	flagStats = flag.Bool("stats", false, "only print what the closure has: packages, generated files, cgo, assembly, embeds")
+	flagDump  = flag.String("dump", "", "only print the actions (mnemonic, label, outputs, argv) whose label or an output matches this regexp")
 )
 
 var (
@@ -160,12 +163,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := json.NewDecoder(bufio.NewReaderSize(f, 1<<20)).Decode(&aq); err != nil {
+	if err := readAquery(f); err != nil {
 		log.Fatal(err)
 	}
 	f.Close()
 	index()
+	// (what only reading the DAG needed: about half of the executor's 6 GB heap)
+	aq.PathFragments, aq.Artifacts, aq.DepSets = nil, nil, nil
+	runtime.GC()
+	debug.FreeOSMemory()
 	stage("read the DAG (%d actions)", len(aq.Actions))
+	if *flagDump != "" {
+		re := regexp.MustCompile(*flagDump)
+		for _, a := range aq.Actions {
+			if re.MatchString(a.label) || re.MatchString(strings.Join(a.outs, " ")) {
+				o, _ := json.Marshal(a.outs)
+				v, _ := json.Marshal(a.Arguments)
+				fmt.Printf("== %s %s tool=%v\nouts %s\nargv %s\nenv %v\n", a.Mnemonic, a.label, a.tool, o, v, a.Env)
+			}
+		}
+		return
+	}
 	label := trimRepo(*flagLabel)
 	var link *action
 	for _, a := range aq.Actions {
@@ -242,6 +260,9 @@ func main() {
 		}
 		run(w)
 	}
+	// the binary's cgo closure (the go command's) as soon as its own generated files are there, beside
+	// the rest of the generation (cgo.go: stockCgo is once per closure; fcBuild's call then waits for it)
+	go prestock(root)
 	wg.Wait()
 	if len(errs) > 0 {
 		for _, e := range errs {
@@ -326,7 +347,9 @@ func index() {
 	}
 	for _, a := range aq.Actions {
 		a.label, a.tool = labels[a.TargetID], tool[a.ConfigurationID]
-		a.args = parseArgs(a.Arguments)
+		if a.args == nil {
+			a.args = parseArgs(a.Arguments) // (GoCompilePkg's: as read, readAquery)
+		}
 		for _, o := range a.OutputIDs {
 			a.outs = append(a.outs, paths[o])
 			byOutput[paths[o]] = a
@@ -614,7 +637,7 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	dir := filepath.Join(*flagWork, "builds", name)
 	os.MkdirAll(dir, 0o777)
 	plan := filepath.Join(dir, "plan.json")
-	b, err := writePlan(pkgs, plan, filepath.Join(*flagWork, "farm"))
+	b, stock, err := writePlan(pkgs, plan, filepath.Join(*flagWork, "farm"))
 	if err != nil {
 		return err
 	}
@@ -638,6 +661,9 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	}
 	cmd := exec.Command(*flagFC, append(args, root.ImportPath)...)
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOTOOLCHAIN=local")
+	if stock != nil {
+		cmd.Env = append(cmd.Env, stock.env...) // (CGO_ENABLED=1 among them, later wins)
+	}
 	out, err := cmd.CombinedOutput()
 	os.WriteFile(filepath.Join(dir, "build.log"), out, 0o666)
 	if err != nil {
@@ -694,9 +720,23 @@ func ctxtFor(a *action, cgo bool) build.Context {
 }
 
 // files: an action's sources split as fc takes them, with CGO_ENABLED=0. cgo: the package has cgo code in a
-// cgo configuration.
+// cgo configuration. A cgo package in a configuration with cgo on (the action's CGO_ENABLED=1: rules_go's
+// pure=off with a C toolchain) is split in that configuration instead: its Go files, cgo ones included (the
+// package is the go command's: cgo.go).
 func files(a *action) (gofiles, sfiles, hfiles []string, cgo bool, err error) {
 	ctxt, cgoCtxt := ctxtFor(a, false), ctxtFor(a, true)
+	for _, s := range a.args["-src"] {
+		x := abs(s)
+		switch ext := filepath.Ext(s); ext {
+		case ".c", ".cc", ".cpp", ".cxx", ".m", ".S", ".go":
+			if okc, _ := cgoCtxt.MatchFile(filepath.Dir(x), filepath.Base(x)); okc && (ext != ".go" || usesCgo(x)) {
+				cgo = true
+			}
+		}
+	}
+	if cgo && cgoOn(a) {
+		ctxt = cgoCtxt
+	}
 	for _, s := range a.args["-src"] {
 		x := abs(s)
 		ext := filepath.Ext(s)
@@ -712,9 +752,6 @@ func files(a *action) (gofiles, sfiles, hfiles []string, cgo bool, err error) {
 		if err != nil {
 			return nil, nil, nil, false, err
 		}
-		if okc, _ := cgoCtxt.MatchFile(filepath.Dir(x), filepath.Base(x)); okc && (ext != ".go" && ext != ".s" || ext == ".go" && usesCgo(x)) {
-			cgo = true
-		}
 		if !ok {
 			continue
 		}
@@ -724,38 +761,79 @@ func files(a *action) (gofiles, sfiles, hfiles []string, cgo bool, err error) {
 		case ".s":
 			sfiles = append(sfiles, x)
 		default:
-			return nil, nil, nil, cgo, fmt.Errorf("%s needs cgo", s)
+			if !ctxt.CgoEnabled {
+				return nil, nil, nil, cgo, fmt.Errorf("%s needs cgo", s)
+			}
 		}
 	}
 	return
 }
 
-func writePlan(pkgs []*Pkg, plan, farm string) ([]byte, error) {
+// cgoOn: does the action compile in a configuration with cgo on?
+func cgoOn(a *action) bool {
+	for _, kv := range a.Env {
+		if kv.Key == "CGO_ENABLED" {
+			return kv.Value == "1"
+		}
+	}
+	return false
+}
+
+// writePlan: fc's plan of a closure; with cgo packages in it, also the go command's part (cgo.go) and the
+// environment fc needs for it.
+func writePlan(pkgs []*Pkg, plan, farm string) ([]byte, *stockSet, error) {
 	have := map[string]bool{}
 	for _, p := range pkgs {
 		have[p.ImportPath] = true
 	}
-	var all []json.RawMessage
 	for _, p := range pkgs {
 		if err := fill(p, farm); err != nil {
-			return nil, fmt.Errorf("%s: %v", p.ImportPath, err)
+			return nil, nil, fmt.Errorf("%s: %v", p.ImportPath, err)
+		}
+	}
+	stock, err := stockCgo(pkgs)
+	if err != nil {
+		return nil, nil, err
+	}
+	var all []json.RawMessage
+	for _, p := range pkgs {
+		if stock != nil && stock.entries[p.ImportPath] != nil {
+			all = append(all, stock.entries[p.ImportPath])
+			continue
 		}
 		b, _ := json.Marshal(p)
 		all = append(all, b)
 	}
 	<-stdReady
 	if stdErr != nil {
-		return nil, stdErr
+		return nil, nil, stdErr
 	}
 	for _, s := range stdJSON {
 		var hdr struct{ ImportPath string }
 		json.Unmarshal(s, &hdr)
-		if !have[hdr.ImportPath] {
-			all = append(all, s)
+		if have[hdr.ImportPath] {
+			continue
+		}
+		have[hdr.ImportPath] = true
+		if stock != nil && stock.entries[hdr.ImportPath] != nil {
+			s = stock.entries[hdr.ImportPath]
+		}
+		all = append(all, s)
+	}
+	if stock != nil {
+		var extra []string
+		for ip := range stock.entries {
+			if !have[ip] {
+				extra = append(extra, ip)
+			}
+		}
+		sort.Strings(extra)
+		for _, ip := range extra {
+			all = append(all, stock.entries[ip])
 		}
 	}
 	b, _ := json.Marshal(all)
-	return b, os.WriteFile(plan, b, 0o666)
+	return b, stock, os.WriteFile(plan, b, 0o666)
 }
 
 var fillMu sync.Mutex
@@ -768,12 +846,16 @@ func fill(p *Pkg, farm string) error {
 		return nil
 	}
 	a := p.a
-	gofiles, sfiles, hfiles, _, err := files(a)
+	gofiles, sfiles, hfiles, cgo, err := files(a)
 	if err != nil {
 		return err
 	}
+	p.cgo = cgo && cgoOn(a)
+	if p.cgo {
+		sfiles, hfiles = nil, nil // (the go command builds this package from its directory: cgo.go)
+	}
 	for _, g := range gofiles {
-		if usesCgo(g) {
+		if !p.cgo && usesCgo(g) {
 			return fmt.Errorf("%s imports \"C\" with CGO_ENABLED=0", g)
 		}
 	}
@@ -923,6 +1005,39 @@ func stats(link *action) {
 	var x []string
 	x = append(x, link.args["-X"]...)
 	fmt.Printf("x_defs %d %v\n", len(x), x)
+	// what Bazel itself would run for the binary: every action its GoLink depends on, by mnemonic and
+	// configuration (target or tool)
+	seenA := map[*action]bool{}
+	var walkA func(a *action)
+	walkA = func(a *action) {
+		if seenA[a] {
+			return
+		}
+		seenA[a] = true
+		for _, in := range inputs(a) {
+			if p := byOutput[in]; p != nil {
+				walkA(p)
+			}
+		}
+	}
+	walkA(link)
+	byMnCfg := map[string]int{}
+	for a := range seenA {
+		c := "target"
+		if a.tool {
+			c = "tool"
+		}
+		byMnCfg[a.Mnemonic+" "+c]++
+	}
+	var keys []string
+	for k := range byMnCfg {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	fmt.Printf("bazel_actions %d\n", len(seenA))
+	for _, k := range keys {
+		fmt.Printf("bazel_action %s %d\n", k, byMnCfg[k])
+	}
 }
 
 func hasFlag(args []string, f string) bool {

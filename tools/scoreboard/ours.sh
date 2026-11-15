@@ -8,7 +8,9 @@ here=$(cd "$(dirname "$0")/../.." && pwd); T=/home/exedev/targets
 SB_OUT=${SB_OUT:-$T/scoreboard}; export FC_COLD=$T/fc-cold
 re=${1:-.}; shift; cores=${*:-8 4 2 1}
 # the Bazel rows fc builds from the DAG so far (the others stay "stock fallback"; tools/bazel/bzfc -stats says why)
-BAZEL_OURS=${BAZEL_OURS:-buildifier runsc}
+BAZEL_OURS=${BAZEL_OURS:-buildifier runsc bb-cli bb-executor}
+# bb_out <binary> <args...>: its output and exit code, run in an empty directory (bb runs bazelisk: no workspace)
+bb_out() { local d; d=$(mktemp -d); (cd "$d" && timeout 60 "$@" 2>&1; echo "exit $?"); rm -rf "$d"; }
 check() { # check <name> <binary>
   case $1 in
     minio) "$here/tests/minio_smoke.sh" "$2" 19300 >/dev/null 2>&1 ;;
@@ -18,6 +20,17 @@ check() { # check <name> <binary>
       local ref=$T/bz-ref/buildifier
       [ -x "$ref" ] || ref=$2
       "$here/tools/bazel/buildifier_smoke.sh" "$2" "$ref" $(find $T/corpus/buildtools -path '*/bazel-*' -prune -o \( -name BUILD.bazel -o -name '*.bzl' \) -type f -print) >/dev/null 2>&1 ;;
+    bazel:bb-cli) # `bb version` and `bb --help` print what the Bazel-built bb prints
+      local ref=$T/bz-ref/bb
+      bb_out "$2" --help | grep -q '^bb commands:' || return 1
+      [ -x "$ref" ] || return 0
+      [ "$(bb_out "$2" version)" = "$(bb_out "$ref" version)" ] && [ "$(bb_out "$2" --help)" = "$(bb_out "$ref" --help)" ] ;;
+    bazel:bb-executor) # `executor --help`: the Bazel-built executor's exit code and flag list
+      local ref=$T/bz-ref/executor
+      flags() { bb_out "$1" --help | grep -E '^  -|^exit '; }
+      flags "$2" | grep -q -- '-executor.app_target' || return 1
+      [ -x "$ref" ] || return 0
+      [ "$(flags "$2")" = "$(flags "$ref")" ] ;;
     *) timeout 30 "$2" --version >/dev/null 2>&1 ;;
   esac
 }
