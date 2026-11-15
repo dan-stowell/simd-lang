@@ -149,8 +149,10 @@ tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8` + tests/mini
 (driver/fc/demand.go) if by demand wins on wall. Then TRACE.md: an fc section is owed (the summary lines of
 `fc build` have the phases, the link's phase table and the tax line: 0 processes, 170 small files).
 (3) **Bazel rows.** buildifier and runsc build from Bazel's DAG (9.6 s and 26 s cold; Bazel's own start and analysis
-6 and 22 s; fc 0.4-0.6 s). A builder (Opus, worktree) has bb-cli and bb-executor: a bb-cli binary existed at
-/home/exedev/targets/fc-cold/bb-cli/bazel-p8/bin at 18:07; merge when its report gives rc 0 and a passing check. Then
+6 and 22 s; fc 0.4-0.6 s). A builder (Opus; branch worktree-agent-ad71418d1c58c5309 in .claude/worktrees/agent-ad71418d1c58c5309) has bb-cli
+and bb-executor: at 18:25 its branch had both building (cgo packages by the go command, the stock linker in external
+mode for the CLI); merge it (`git merge worktree-agent-ad71418d1c58c5309`, then `tools/bazel/cold.sh bb-cli 8` and
+`bb-executor 8` must give rc 0 with the binary's check passing) when it reports, or when the branch is idle. Then
 the review's point (REVIEWS 11-15): the cold cost is Bazel. First `--profile` of the cold aquery (what are the 6-22 s:
 server start, repository extraction, loading, analysis); try `--vendor_dir` (extracted repositories kept like
 GOMODCACHE: report both numbers, it is Dan's call whether that is cold); then a reader of our own for the rules_go
