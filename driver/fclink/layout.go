@@ -22,8 +22,10 @@ import (
 	"cmd/internal/goobj"
 	"cmd/internal/objabi"
 	"encoding/binary"
+	"fmt"
 	"internal/abi"
 	"math/bits"
+	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -546,9 +548,29 @@ func layout() {
 			}
 		}
 	})
+	if *flagDumpMap != "" {
+		dumpMap(*flagDumpMap)
+	}
 	lap("layout", "%d functions, text %.1f MB, rodata %.1f, pclntab %.1f, types %.1f (%d sorted), data %.1f, bss %.1f",
 		lay.nfunc, mb(lay.etext-lay.text), mb(lay.erodata-lay.rodata), mb(lay.epclntab-lay.pclntab), mb(lay.etypes-lay.types), len(tls),
 		mb(lay.edata-lay.noptrdata), mb(lay.end-lay.edata))
+}
+
+// dumpMap (-dumpmap): one line per live definition in slot order.
+func dumpMap(file string) {
+	var b []byte
+	for _, u := range units {
+		o := u.o
+		for j := u.lo; j < min(u.hi, o.nalldef); j++ {
+			gid := o.base + j
+			st := state[gid]
+			if st&stLive == 0 || canon[gid] != gid {
+				continue
+			}
+			b = fmt.Appendf(b, "%08x %6d b%-2d %s %s\n", addr[gid], o.sym(j).Siz(), st>>stBucketShift&31, o.pkg, o.name(j))
+		}
+	}
+	os.WriteFile(file, b, 0o644)
 }
 
 func mb(n uint32) float64 { return float64(n) / (1 << 20) }

@@ -36,11 +36,12 @@ type compiler struct {
 
 	fileIdx      map[*token.File]int32
 	lineFileIdx  map[string]int32 // the files //line directives name (fileLine)
+	nOwnFiles    int              // the package's own files are the first of the file table (canonFiles)
 	mu           sync.Mutex
 	funcs        []*funcOut // finished functions, in the order they will be written
 	closures     map[string]int
 	strSyms      map[string]*obj.LSym
-	tmpN         int
+	tmpN         map[string]int // per kind of static symbol: how many (staticSym)
 	runtime      map[string]*obj.LSym
 	initCode     []func(g *gen) // dynamic initialization of package-level variables, in order
 	strHdrs      map[string]*obj.LSym
@@ -77,7 +78,7 @@ func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
 	ctxt.DiagFunc = func(format string, args ...any) { log.Fatalf("fc: "+format, args...) }
 	ctxt.Std = p.Standard
 	c := &compiler{pr: pr, pkg: p, info: p.info, tpkg: p.tpkg, ctxt: ctxt, path: path, trimpath: trimpath,
-		fileIdx: map[*token.File]int32{}, closures: map[string]int{}, strSyms: map[string]*obj.LSym{},
+		fileIdx: map[*token.File]int32{}, closures: map[string]int{}, strSyms: map[string]*obj.LSym{}, tmpN: map[string]int{},
 		runtime: map[string]*obj.LSym{}, strHdrs: map[string]*obj.LSym{}, instances: map[string]bool{}}
 	return c
 }
@@ -274,6 +275,100 @@ func (c *compiler) registerFiles() {
 		xp := c.ctxt.PosTable.XPos(src.MakePos(base, 1, 1))
 		c.fileIdx[tf] = int32(c.ctxt.InnermostPos(xp).FileIndex())
 	}
+	c.nOwnFiles = len(c.ctxt.PosTable.FileTable())
+}
+
+// canonFiles gives the files of other packages (the bodies of generic functions instantiated here, the
+// names //line directives give) their numbers in the object's file table by name: they were numbered as
+// the threads compiling functions met them, and the numbers are in the pc-file tables and in the order
+// of the file table (the same sources must give the same bytes). Single-threaded, before installFunc.
+func (c *compiler) canonFiles() {
+	names := c.ctxt.PosTable.FileTable()
+	n := c.nOwnFiles
+	if len(names) < n+2 {
+		return
+	}
+	order := make([]int32, 0, len(names)-n)
+	for i := n; i < len(names); i++ {
+		order = append(order, int32(i))
+	}
+	sort.Slice(order, func(i, j int) bool { return names[order[i]] < names[order[j]] })
+	remap := make([]int32, len(names))
+	same := true
+	for i := 0; i < n; i++ {
+		remap[i] = int32(i)
+	}
+	for k, old := range order {
+		remap[old] = int32(n + k)
+		same = same && int(old) == n+k
+	}
+	if same {
+		return
+	}
+	var nt src.PosTable
+	reg := func(name string, want int) {
+		xp := nt.XPos(src.MakePos(src.NewFileBase(name, name), 1, 1))
+		if got := int(nt.Pos(xp).Base().FileIndex()); got != want {
+			log.Fatalf("fc: %s: file table: %s is file %d, not %d", c.path, name, got, want)
+		}
+	}
+	for i := 0; i < n; i++ {
+		reg(names[i], i)
+	}
+	for k, old := range order {
+		reg(names[old], n+k)
+	}
+	c.ctxt.PosTable = nt
+	for tf, i := range c.fileIdx {
+		c.fileIdx[tf] = remap[i]
+	}
+	for name, i := range c.lineFileIdx {
+		c.lineFileIdx[name] = remap[i]
+	}
+	for _, f := range c.funcs {
+		if !f.encoded {
+			continue
+		}
+		moved := false
+		for k, fi := range f.usedFiles {
+			moved = moved || remap[fi] != fi
+			f.usedFiles[k] = remap[fi]
+		}
+		if moved {
+			f.pcfile = remapPctab(f.pcfile, remap)
+		}
+	}
+}
+
+// remapPctab rewrites a pc-value table with every value v replaced by remap[v] (remap is one to one).
+func remapPctab(tab []byte, remap []int32) []byte {
+	dst := make([]byte, 0, len(tab)+8)
+	val, nval := int32(-1), int32(-1)
+	for first := true; len(tab) > 0; first = false {
+		dv, k := binary.Varint(tab)
+		if k <= 0 {
+			log.Fatalf("fc: remapPctab: bad table")
+		}
+		tab = tab[k:]
+		if dv == 0 && !first {
+			dst = append(dst, 0)
+			break
+		}
+		val += int32(dv)
+		m := val
+		if val >= 0 {
+			m = remap[val]
+		}
+		dst = binary.AppendVarint(dst, int64(m-nval))
+		nval = m
+		dpc, k := binary.Uvarint(tab)
+		if k <= 0 {
+			log.Fatalf("fc: remapPctab: bad table")
+		}
+		tab = tab[k:]
+		dst = binary.AppendUvarint(dst, dpc)
+	}
+	return dst
 }
 
 func (c *compiler) fileLine(p token.Pos) (int32, int32) {
@@ -433,10 +528,18 @@ func (c *compiler) placeholderFunc(s *obj.LSym) {
 
 // installFuncs installs every finished function as a text symbol. Called once, single-threaded.
 func (c *compiler) installFuncs() {
-	sort.SliceStable(c.funcs, func(i, j int) bool { return c.funcs[i].pos < c.funcs[j].pos })
+	// (by position, then by name: instances and wrappers share a position, and the threads that compiled
+	// them finished in any order; the same sources give the same bytes)
+	sort.SliceStable(c.funcs, func(i, j int) bool {
+		if c.funcs[i].pos != c.funcs[j].pos {
+			return c.funcs[i].pos < c.funcs[j].pos
+		}
+		return c.funcs[i].sym.Name < c.funcs[j].sym.Name
+	})
 	if wbCheck {
 		c.wbCheck()
 	}
+	c.canonFiles()
 	for _, f := range c.funcs {
 		c.installFunc(f)
 	}

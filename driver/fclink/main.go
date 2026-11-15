@@ -84,7 +84,7 @@
 // archives, the assembler's objects) instead of running this command. An object is then either a
 // goobj.Reader over a mapped file or a Unit over fc's LSyms, and every phase reads both through one set of
 // accessors (source.go). Not built yet: agreements 1 and 2. References between fc's units still join by
-// name, and content-addressed symbols by a 128-bit hash NewUnit computes (maphash, not SHA-256).
+// name, and content-addressed symbols by a 128-bit hash NewUnit computes (hash2, not SHA-256).
 package fclinklib
 
 import (
@@ -115,6 +115,7 @@ var (
 	flagNoDCE     = flags.Bool("nodce", false, "keep every symbol (debugging)")
 	flagCPUProf   = flags.String("cpuprofile", "", "write a CPU profile")
 	flagDumpLive  = flags.String("dumplive", "", "write the names of the live symbols to `file` (debugging)")
+	flagDumpMap   = flags.String("dumpmap", "", "write address, size, bucket, package and name of every live symbol to `file` (debugging: what moved between two links)")
 	flagEntry     = flags.String("E", "_rt0_amd64_linux", "entry `symbol`")
 	flagDetach    = flags.Bool("detach", false, "return when the output is complete, without waiting for the process that wrote it to exit")
 	// as the stock linker's: without -s, an ELF symbol table of the functions (go tool objdump and nm need

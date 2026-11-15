@@ -12,8 +12,11 @@
 //     out anew (9 bytes per entry);
 //   - content keys: a short content-addressed symbol (8 bytes or less, no relocations) is keyed by its bytes,
 //     as in an object file; a long one by a 128-bit hash of its size, section, bytes and relocations (two
-//     maphash sums with fixed per-process seeds: equal content gives equal keys within the process, and fc's
-//     units are the only ones that use them) instead of the object file's SHA-256;
+//     sums with fixed seeds, hash2: equal content gives equal keys, in every process, and fc's units are the
+//     only ones that use them) instead of the object file's SHA-256;
+//   - one order of the slots whatever order the package's threads made the symbols in (the linker gives
+//     addresses in slot order, and the same sources must give the same bytes): functions as fc lists them,
+//     named data by name, content-addressed symbols by their keys;
 //   - the relocations sorted by offset, as the object writer leaves them (only where they are not already).
 //
 // What it does not do, compared with writing an object: no string table, no serialisation, no file, no
@@ -23,11 +26,12 @@ package fclinklib
 
 import (
 	"bytes"
+	"cmp"
 	"cmd/internal/goobj"
 	"cmd/internal/obj"
 	"cmd/internal/objabi"
 	"encoding/binary"
-	"hash/maphash"
+	"math/bits"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -53,7 +57,35 @@ type Unit struct {
 	rel    []reloc
 }
 
-var unitSeeds = [2]maphash.Seed{maphash.MakeSeed(), maphash.MakeSeed()}
+// hash2: two 64-bit sums of b (a multiply and fold per word, two streams with constants of their own).
+// Not seeded per process: the keys order the content-addressed slots, and that order must be the same in
+// every build.
+func hash2(b []byte) [2]uint64 {
+	const k1, k2, k3, k4 = 0x9E3779B97F4A7C15, 0xD6E8FEB86659FD93, 0xA0761D6478BD642F, 0xE7037ED1A0B428DB
+	h1, h2 := uint64(len(b))*k3+k1, uint64(len(b))*k1+k4
+	for len(b) >= 8 {
+		v := binary.LittleEndian.Uint64(b)
+		hi, lo := bits.Mul64(h1^v, k2)
+		h1 = hi ^ lo + k1
+		hi, lo = bits.Mul64(h2^v^k3, k4)
+		h2 = hi ^ lo + k2
+		b = b[8:]
+	}
+	if len(b) > 0 {
+		var t [8]byte
+		copy(t[:], b)
+		v := binary.LittleEndian.Uint64(t[:])
+		hi, lo := bits.Mul64(h1^v, k2)
+		h1 = hi ^ lo + k1
+		hi, lo = bits.Mul64(h2^v^k3, k4)
+		h2 = hi ^ lo + k2
+	}
+	hi, lo := bits.Mul64(h1^k3, k4)
+	h1 = hi ^ lo
+	hi, lo = bits.Mul64(h2^k1, k2)
+	h2 = hi ^ lo
+	return [2]uint64{h1, h2}
+}
 
 // NewUnit numbers ctxt's symbols and returns the package's unit. ctxt must not be written to afterwards.
 func NewUnit(ctxt *obj.Link) *Unit {
@@ -80,8 +112,26 @@ func NewUnit(ctxt *obj.Link) *Unit {
 			defs = append(defs, s)
 		}
 	}
+	// Data in one order: the symbols with a name of their own by name (fc's threads append to ctxt.Data as
+	// they compile), then the content-addressed ones as they came (put in order by key below).
+	data := make([]*obj.LSym, 0, len(ctxt.Data))
+	var cas []*obj.LSym
+	for _, s := range ctxt.Data {
+		if s.ContentAddressable() {
+			cas = append(cas, s)
+		} else {
+			data = append(data, s)
+		}
+	}
+	slices.SortStableFunc(data, func(a, b *obj.LSym) int {
+		if c := strings.Compare(a.Name, b.Name); c != 0 {
+			return c
+		}
+		return int(a.ABI()) - int(b.ABI())
+	})
+	data = append(data, cas...)
 	nfunc := 0
-	for _, list := range [][]*obj.LSym{ctxt.Text, ctxt.Data} {
+	for _, list := range [][]*obj.LSym{ctxt.Text, data} {
 		for _, s := range list {
 			def(s)
 			if !s.Type.IsText() {
@@ -162,7 +212,7 @@ func NewUnit(ctxt *obj.Link) *Unit {
 			}
 		}
 	}
-	for _, list := range [][]*obj.LSym{ctxt.Text, ctxt.Data} {
+	for _, list := range [][]*obj.LSym{ctxt.Text, data} {
 		for _, s := range list {
 			refsOf(s)
 		}
@@ -178,6 +228,60 @@ func NewUnit(ctxt *obj.Link) *Unit {
 		for _, s := range batch {
 			refsOf(s)
 		}
+	}
+
+	// The content-addressed definitions by key (then size and alignment: equal keys with equal both are one
+	// symbol to the linker), and the named ones that may be duplicated by name.
+	u.h = make([][2]uint64, len(hd))
+	hs := hasher{u: u, state: make([]uint8, len(hd))}
+	for _, s := range hd {
+		hs.hash(s)
+	}
+	ord := make([]int32, len(hd))
+	for i := range ord {
+		ord[i] = int32(i)
+	}
+	slices.SortFunc(ord, func(a, b int32) int {
+		ha, hb := &u.h[a], &u.h[b]
+		switch {
+		case ha[0] != hb[0]:
+			return cmp.Compare(ha[0], hb[0])
+		case ha[1] != hb[1]:
+			return cmp.Compare(ha[1], hb[1])
+		}
+		return cmp.Compare(hd[a].Align, hd[b].Align)
+	})
+	hd2, h2 := make([]*obj.LSym, len(hd)), make([][2]uint64, len(hd))
+	for i, k := range ord {
+		hd2[i], h2[i] = hd[k], u.h[k]
+		hd2[i].SymIdx = int32(i)
+	}
+	hd, u.h = hd2, h2
+	key64 := func(s *obj.LSym) uint64 {
+		var b [8]byte
+		copy(b[:], s.P)
+		return binary.LittleEndian.Uint64(b[:])
+	}
+	slices.SortFunc(h64, func(a, b *obj.LSym) int {
+		if c := cmp.Compare(key64(a), key64(b)); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(a.Size, b.Size); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.Align, b.Align)
+	})
+	for i, s := range h64 {
+		s.SymIdx = int32(i)
+	}
+	slices.SortStableFunc(nonpkg, func(a, b *obj.LSym) int {
+		if c := strings.Compare(a.Name, b.Name); c != 0 {
+			return c
+		}
+		return int(a.ABI()) - int(b.ABI())
+	})
+	for i, s := range nonpkg {
+		s.SymIdx = int32(i)
 	}
 
 	u.ndef, u.nh64, u.nh, u.nnonpkg, u.nref = uint32(len(defs)), uint32(len(h64)), uint32(len(hd)), uint32(len(nonpkg)), uint32(len(refs))
@@ -218,14 +322,7 @@ func NewUnit(ctxt *obj.Link) *Unit {
 	}
 	u.h64 = make([]uint64, len(h64))
 	for i, s := range h64 {
-		var b [8]byte
-		copy(b[:], s.P)
-		u.h64[i] = binary.LittleEndian.Uint64(b[:])
-	}
-	u.h = make([][2]uint64, len(hd))
-	hs := hasher{u: u, state: make([]uint8, len(hd))}
-	for _, s := range hd {
-		hs.hash(s)
+		u.h64[i] = key64(s)
 	}
 	for _, f := range ctxt.PosTable.FileTable() {
 		u.files = append(u.files, filepath.ToSlash(f))
@@ -356,7 +453,7 @@ func contentHashSection(s *obj.LSym) byte {
 	return 0
 }
 
-// hasher computes the keys of a unit's long content-addressed symbols: obj's contentHash with maphash for
+// hasher computes the keys of a unit's long content-addressed symbols: obj's contentHash with hash2 for
 // SHA-256 and with names for package-indexed targets (as SB_EARLY_EXPORT's sbHashByName has it).
 type hasher struct {
 	u     *Unit
@@ -420,7 +517,7 @@ func (hs *hasher) hash(s *obj.LSym) [2]uint64 {
 			b = binary.LittleEndian.AppendUint16(b, uint16(rs.ABI()))
 		}
 	}
-	h := [2]uint64{maphash.Bytes(unitSeeds[0], b), maphash.Bytes(unitSeeds[1], b)}
+	h := hash2(b)
 	hs.buf = b
 	hs.u.h[i] = h
 	hs.state[i] = 2

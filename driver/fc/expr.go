@@ -1163,7 +1163,7 @@ func (c *compiler) stringHeader(s string) *obj.LSym {
 		return h
 	}
 	data := c.stringSym(s)
-	h := c.staticSym("strhdr")
+	h := c.constSym("strhdr", 8)
 	h.WriteAddr(c.ctxt, 0, 8, data, 0)
 	h.WriteInt(c.ctxt, 8, 8, int64(len(s)))
 	c.defData(h, objabi.SRODATA, 16)
@@ -1172,8 +1172,9 @@ func (c *compiler) stringHeader(s string) *obj.LSym {
 }
 
 func (c *compiler) complexSym(re, im float64, c64 bool) *obj.LSym {
-	s := c.staticSym("complex")
+	s := c.constSym("complex", 16)
 	if c64 {
+		s.Align = 8
 		s.WriteFloat32(c.ctxt, 0, float32(re))
 		s.WriteFloat32(c.ctxt, 4, float32(im))
 		c.defData(s, objabi.SRODATA, 8)

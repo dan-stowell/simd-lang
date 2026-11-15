@@ -221,11 +221,15 @@ func (c *compiler) zeroSym(size int64) *obj.LSym {
 	s := c.zeroSyms[size]
 	c.mu.Unlock()
 	if s == nil {
-		s = c.staticSym("zero")
-		c.defData(s, objabi.SNOPTRBSS, size)
+		s = c.namedStaticSym("zero", itoa(int(size)))
 		c.mu.Lock()
-		c.zeroSyms[size] = s
-		c.mu.Unlock()
+		if c.zeroSyms[size] == nil {
+			c.zeroSyms[size] = s
+			c.mu.Unlock()
+			c.defData(s, objabi.SNOPTRBSS, size)
+		} else {
+			c.mu.Unlock()
+		}
 	}
 	return s
 }

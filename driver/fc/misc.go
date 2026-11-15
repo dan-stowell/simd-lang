@@ -61,12 +61,33 @@ func (c *compiler) rtFunc(name string) *types.Func {
 	return fn
 }
 
+// staticSym makes a static symbol of the package, numbered within its kind. The number must not depend on
+// which thread came first (the linker lays named data out by name, and the same sources must give the same
+// bytes): the kinds made while functions compile in parallel are content-addressed instead (constSym) or
+// named by what they are (zeroSym).
 func (c *compiler) staticSym(kind string) *obj.LSym {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.tmpN++
+	c.tmpN[kind]++
 	// (obj's table of static symbols has no lock of its own)
-	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(c.tmpN))
+	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + itoa(c.tmpN[kind]))
+}
+
+// namedStaticSym is the package's static symbol of that kind and name.
+func (c *compiler) namedStaticSym(kind, name string) *obj.LSym {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.ctxt.LookupStatic(objabi.PathToPrefix(c.path) + "..fc" + kind + "." + name)
+}
+
+// constSym makes a read-only symbol known by its content alone (the linker merges equal ones and orders
+// them by content): the caller writes it and then defines it with defData.
+func (c *compiler) constSym(kind string, align int16) *obj.LSym {
+	s := &obj.LSym{Name: "go:" + kind + ".fc", Align: align}
+	s.Set(obj.AttrContentAddressable, true)
+	s.Set(obj.AttrDuplicateOK, true)
+	s.Set(obj.AttrLocal, true)
+	return s
 }
 
 func itoa(n int) string {
