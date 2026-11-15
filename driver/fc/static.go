@@ -122,6 +122,11 @@ func (c *compiler) compilePackage() (errs []string) {
 				g.out.sym = sym
 				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd, fn, c.info))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
+				if hasDirective(fd.Doc, "//go:nowritebarrierrec") {
+					g.out.wbRec = 1
+				} else if hasDirective(fd.Doc, "//go:yeswritebarrierrec") {
+					g.out.wbRec = 2
+				}
 				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
 				// the stock compiler verifies; nothing to generate for them)
 				for _, d := range []string{"//go:cgo_unsafe_args", "//go:wasmimport", "//go:wasmexport"} {

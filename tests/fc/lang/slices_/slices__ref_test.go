@@ -476,3 +476,55 @@ func Sieve(n int) (primes []int) {
 	}
 	return
 }
+
+// ---- a slicing assigned back to its source (only the length, or the length and capacity, are written),
+// a store through a pointer to a local, a local array of pointers filled by index
+
+type reBox struct {
+	s    []int
+	strs [3][]string
+	name string
+}
+
+var reGlobal = []int{1, 2, 3, 4, 5, 6, 7, 8}
+
+func ResliceSelf(n, m int) (int, int, int, int, string, int, int) {
+	b := &reBox{s: make([]int, 4, 16), name: "abcdefgh"}
+	b.s = b.s[:n]
+	b.s = b.s[0:n:m]
+	p := &b.s
+	*p = (*p)[:n-1]
+	b.strs[1] = make([]string, 2, 8)
+	i := 1
+	b.strs[i] = b.strs[i][:n]
+	b.name = b.name[:n]
+	reGlobal = reGlobal[:8]
+	reGlobal = reGlobal[:n]
+	b.s = b.s[:]
+	return len(b.s), cap(b.s), len(b.strs[1]), cap(b.strs[1]), b.name, len(reGlobal), cap(reGlobal)
+}
+
+type ptrHdr struct {
+	p *int
+	n int
+	q []*int
+}
+
+func StoreViaLocalPtr(x int) (int, int, int) {
+	var h ptrHdr
+	hp := &h
+	v := x
+	hp.p = &v
+	hp.n = x * 2
+	hp.q = []*int{&v, &v}
+	var arr [9]*int
+	for i := 0; i < len(arr); i++ {
+		w := x + i
+		arr[i] = &w
+	}
+	sum := 0
+	for i := range arr {
+		sum += *arr[i] * (i + 1)
+	}
+	return *h.p + h.n, sum, len(h.q) + *h.q[1]
+}

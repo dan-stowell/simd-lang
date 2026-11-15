@@ -322,6 +322,10 @@ type funcOut struct {
 	encoded                                 bool
 	pcsp, pcfile, pcline, pcunsafe, pcstack []byte
 	usedFiles                               []int32
+	// FC_WBCHECK (wbcheck.go): where write barriers were emitted; the declaration's //go:nowritebarrierrec (1)
+	// or //go:yeswritebarrierrec (2)
+	wbPos []token.Pos
+	wbRec int8
 }
 
 // pctab encodes a pc-value table (see cmd/internal/obj.funcpctab) from events sorted by pc.
@@ -402,6 +406,9 @@ func (c *compiler) placeholderFunc(s *obj.LSym) {
 // installFuncs installs every finished function as a text symbol. Called once, single-threaded.
 func (c *compiler) installFuncs() {
 	sort.SliceStable(c.funcs, func(i, j int) bool { return c.funcs[i].pos < c.funcs[j].pos })
+	if wbCheck {
+		c.wbCheck()
+	}
 	for _, f := range c.funcs {
 		c.installFunc(f)
 	}

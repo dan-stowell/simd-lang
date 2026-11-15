@@ -30,13 +30,17 @@ if [ "${HUGEPAGES:-0}" != 0 ]; then
   sudo sysctl -q -w vm.nr_hugepages=$HUGEPAGES; trap 'sudo sysctl -q -w vm.nr_hugepages=$hp0' EXIT
   export SB_HUGE=1; mem=16G
 fi
+# The DAG without the C compiles: bzfc never runs them (C is gcc's or absent), and with --include_param_files each
+# carries its header list (BuildBuddy's executor: 3,745 CppCompile actions were 1.47 GB of the 1.56 GB of JSON, 48 s
+# of Bazel writing it and 8-30 s of bzfc reading it). AQ_ALL=1: everything, as before.
+expr="mnemonic(\"^(?!CppCompile\$).*\", deps($target))"; [ -z "${AQ_ALL:-}" ] || expr="deps($target)"
 cd "$T/$dir" || exit 2
 sync; [ -n "${WARM:-}" ] || echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
 cat > "$out/run.sh" <<IN
 #!/usr/bin/env bash
 cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup)
 t0=\$(date +%s.%N)
-taskset -c 0-$((P-1)) $BAZEL --output_base=$ob aquery $flags --experimental_output_paths=off --include_file_write_contents --include_param_files --output=jsonproto 'deps($target)' > "$work/aq.json" 2> "$out/aquery.log"; rc=\$?
+taskset -c 0-$((P-1)) $BAZEL --output_base=$ob aquery $flags --experimental_output_paths=off --include_file_write_contents --include_param_files --output=jsonproto '$expr' > "$work/aq.json" 2> "$out/aquery.log"; rc=\$?
 t1=\$(date +%s.%N); c1=\$(awk '\$1=="usage_usec"{print \$2/1e6}' \$cg/cpu.stat)
 if [ \$rc = 0 ]; then
   GOMAXPROCS=$P taskset -c 0-$((P-1)) "$BZFC" -aquery "$work/aq.json" -ob $ob -ws "$T/$dir" -label "$target" -work "$work/w" -fc "$FC_BIN" -bin "$out/bin" -j $P > "$out/build.log" 2>&1; rc=\$?
