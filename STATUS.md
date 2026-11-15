@@ -8,4 +8,4 @@ Bazel rows: buildifier 9.6 s and runsc 26 s cold from Bazel's DAG (stock Bazel: 
 ## Decisions for Dan
 
 1. Bazel rows: Bazel's own cold analysis is now the whole cost. I keep it inside the timer as CHARTER says. Would extracted external repositories kept between runs (`--vendor_dir`, the analogue of GOMODCACHE) count as cold? I will report both numbers.
-2. Huge pages (10 GB pool during the build), skipped tests (now 63 lines: allocation counts and liveness waits only), the race detector's stack guard in an fc-built runtime: unchanged.
+2. Huge pages (10 GB pool during the build), skipped tests (62 lines in tests/fc/skips.txt: allocation counts and liveness waits, plus one environment skip), the race detector's stack guard in an fc-built runtime: unchanged.
