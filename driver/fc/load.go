@@ -59,6 +59,15 @@ type Pkg struct {
 	bodyInfo map[*ast.BlockStmt]*types.Info
 	derr     error
 	depOnce  sync.Once
+
+	// fused check (fuseCheck): a function's body is checked when its code is about to be generated
+	fuse     bool
+	bodyIdx  map[*ast.BlockStmt]int // a declared function's body -> its index in bodies
+	bodyDecl []*ast.FuncDecl        // by body index
+	bodyOnce []sync.Once            // by body index: the check of that body
+	fnInfo   []*types.Info          // by body index, valid once bodyOnce[i] is done
+	finOnce  sync.Once              // every body checked and the initialization order computed
+	errMu    sync.Mutex
 	depErr   error
 
 	parseOnce sync.Once
@@ -222,8 +231,96 @@ func newInfo(n int) *types.Info {
 // analysis or the runtime's rules (the runtime's closure, FC_ESC=1), which look at a package as a whole.
 var fnInfos = os.Getenv("FC_FNINFO") != "0"
 
+// fuseCheck (FC_FUSE=1): the check of a function body is fused with its code generation. check() checks
+// only what belongs to the package level (function literals in initializers); the body of a declared
+// function is checked by whoever first asks for its Info (infoFor), which is the thread about to
+// generate its code: the nodes the checker has just annotated are the nodes the generator reads next.
+// The initialization order, which depends on every body, is computed when the functions are done
+// (finishBodies). Only for packages whose functions have Infos of their own (perFn).
+var fuseCheck = os.Getenv("FC_FUSE") == "1"
+
+func (p *Pkg) onBodyErr(err error) {
+	p.errMu.Lock()
+	if p.err == nil {
+		p.err = err
+	}
+	p.errMu.Unlock()
+}
+
+// bodyErr is the first error of p's check so far.
+func (p *Pkg) bodyErr() error {
+	p.errMu.Lock()
+	defer p.errMu.Unlock()
+	return p.err
+}
+
+// fuseBodies is checkBodies for a fused check: the package-level bodies now, the rest by demand.
+func (p *Pkg) fuseBodies() {
+	b := p.bodies
+	n := b.Len()
+	decls := make(map[*ast.BlockStmt]*ast.FuncDecl, n)
+	for _, f := range p.files {
+		for _, d := range f.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok && fd.Body != nil {
+				decls[fd.Body] = fd
+			}
+		}
+	}
+	p.bodyIdx = make(map[*ast.BlockStmt]int, n)
+	p.bodyDecl = make([]*ast.FuncDecl, n)
+	p.bodyOnce = make([]sync.Once, n)
+	p.fnInfo = make([]*types.Info, n)
+	var first []int
+	for i := 0; i < n; i++ {
+		body := b.Body(i)
+		if fd := decls[body]; fd != nil && !b.IsLit(i) {
+			p.bodyIdx[body] = i
+			p.bodyDecl[i] = fd
+		} else {
+			first = append(first, i)
+		}
+	}
+	b.Check(0, first, func(int) *types.Info { return p.dinfo }, p.onBodyErr)
+	p.fuse = true
+}
+
+// ensureBody checks body i if nobody has.
+func (p *Pkg) ensureBody(i int) {
+	p.bodyOnce[i].Do(func() {
+		in := newInfo(0)
+		copySig(in, p.dinfo, p.bodyDecl[i])
+		p.fnInfo[i] = in
+		p.bodies.Check(i+1, []int{i}, func(int) *types.Info { return in }, p.onBodyErr)
+	})
+}
+
+// finishBodies: every body of p is checked and p.info.InitOrder is there. For a package without a fused
+// check that was so when check() returned.
+func (p *Pkg) finishBodies() {
+	if !p.fuse {
+		return
+	}
+	p.finOnce.Do(func() {
+		for i := range p.bodyOnce {
+			if p.bodyDecl[i] != nil {
+				p.ensureBody(i)
+			}
+		}
+		p.bodies.InitOrder(p.dinfo, p.onBodyErr)
+	})
+}
+
 // infoFor: the Info that knows about fd's body and signature.
 func (p *Pkg) infoFor(fd *ast.FuncDecl) *types.Info {
+	if p.fuse {
+		if fd != nil && fd.Body != nil {
+			if i, ok := p.bodyIdx[fd.Body]; ok {
+				p.ensureBody(i)
+				return p.fnInfo[i]
+			}
+		}
+		return p.info
+	}
 	if fd != nil && fd.Body != nil {
 		if in := p.bodyInfo[fd.Body]; in != nil {
 			return in
@@ -236,6 +333,15 @@ func (p *Pkg) infoFor(fd *ast.FuncDecl) *types.Info {
 func (p *Pkg) infos() []*types.Info {
 	out := make([]*types.Info, 0, 1+len(p.bodyInfo))
 	out = append(out, p.info)
+	if p.fuse {
+		p.finishBodies()
+		for _, in := range p.fnInfo {
+			if in != nil {
+				out = append(out, in)
+			}
+		}
+		return out
+	}
 	for _, f := range p.files {
 		for _, d := range f.Decls {
 			if fd, ok := d.(*ast.FuncDecl); ok && fd.Body != nil {
@@ -292,6 +398,10 @@ func (pr *Program) checkBodies(p *Pkg) {
 	}
 	if declOnly {
 		n = 0
+	}
+	if p.perFn && fuseCheck && !declOnly {
+		p.fuseBodies()
+		return
 	}
 	// function literals outside functions to shard 0 (they share their variable's declaration, and are
 	// recorded with the package level); the functions biggest first, each to the lightest shard; a shard

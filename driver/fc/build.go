@@ -581,6 +581,7 @@ func (c *compiler) needsInit() bool {
 			return true
 		}
 	}
+	c.pkg.finishBodies()
 	for _, in := range c.info.InitOrder {
 		if len(in.Lhs) != 1 || !c.isStatic(in.Rhs, in.Lhs[0].Type()) {
 			return true

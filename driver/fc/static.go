@@ -68,27 +68,32 @@ func (c *compiler) compilePackage() (errs []string) {
 		in *types.Initializer
 	}
 	var dyns []*types.Initializer
-	for _, in := range c.info.InitOrder {
-		in := in
-		static := false
-		if len(in.Lhs) == 1 && in.Lhs[0].Name() == "_" {
-			try("var _", func() { static = c.isStatic(in.Rhs, in.Lhs[0].Type()) })
-		}
-		if len(in.Lhs) == 1 && in.Lhs[0].Name() != "_" {
-			try("var "+in.Lhs[0].Name(), func() {
-				v := in.Lhs[0]
-				if c.isStatic(in.Rhs, v.Type()) {
-					c.writeStatic(c.globalSym(v), 0, in.Rhs, v.Type())
-					static = true
+	initializers := func() {
+		for _, in := range c.info.InitOrder {
+			in := in
+			static := false
+			if len(in.Lhs) == 1 && in.Lhs[0].Name() == "_" {
+				try("var _", func() { static = c.isStatic(in.Rhs, in.Lhs[0].Type()) })
+			}
+			if len(in.Lhs) == 1 && in.Lhs[0].Name() != "_" {
+				try("var "+in.Lhs[0].Name(), func() {
+					v := in.Lhs[0]
+					if c.isStatic(in.Rhs, v.Type()) {
+						c.writeStatic(c.globalSym(v), 0, in.Rhs, v.Type())
+						static = true
+					}
+				})
+			}
+			if !static {
+				dyns = append(dyns, in)
+				if len(in.Lhs) > 0 {
+					c.dynInits = append(c.dynInits, in.Lhs[0].Name())
 				}
-			})
-		}
-		if !static {
-			dyns = append(dyns, in)
-			if len(in.Lhs) > 0 {
-				c.dynInits = append(c.dynInits, in.Lhs[0].Name())
 			}
 		}
+	}
+	if !c.pkg.fuse {
+		initializers()
 	}
 	// functions: each is independent of the others; they are compiled on whatever cores are free
 	par := &parallel{pool: c.fnSem, prio: c.pkg.srcBytes + 1, helpers: c.fnHelpers}
@@ -106,7 +111,13 @@ func (c *compiler) compilePackage() (errs []string) {
 				if sym == nil {
 					sym = c.funcSym(fn)
 				}
-				g := c.newGen(sym.Name, sig, c.pkg.infoFor(fd), nil)
+				info := c.pkg.infoFor(fd)
+				if c.pkg.fuse {
+					if err := c.pkg.bodyErr(); err != nil {
+						giveUp("%v", err)
+					}
+				}
+				g := c.newGen(sym.Name, sig, info, nil)
 				g.out.sym = sym
 				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd, fn, c.info))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
@@ -153,6 +164,14 @@ func (c *compiler) compilePackage() (errs []string) {
 		compileDecl(fd, fn, initSym, par)
 	}
 	par.wait()
+	if c.pkg.fuse {
+		// (a fused check knows the initialization order only now: load.go, fuseCheck)
+		c.pkg.finishBodies()
+		if err := c.pkg.bodyErr(); err != nil {
+			try("check", func() { giveUp("%v", err) })
+		}
+		initializers()
+	}
 	c.abiWrappers(try)
 	// the init function: the dynamic initializers, in order
 	pp := objabi.PathToPrefix(c.path)
