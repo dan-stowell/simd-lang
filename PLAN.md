@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 21:45 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 21:58 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon.** No quiet numbers since, and those are numbers of a compiler that has changed:
 **the Go distribution's own compiler tests (`tools/fc/gotest.py`: $GOROOT/test's 1,048 single-file `// run` programs,
 never run before) found 30-odd differences from the stock compiler today, every one in every earlier fc binary**
@@ -150,17 +150,22 @@ gotest.py.** Expect: gotest PASS 1018 FAIL 0 NOFC 0 every time (21:50: the first
 fc-verify-1115e.gotest-keep*: disassemble it, do not rerun and shrug); lang 26 of 26; std 260 of 260 (TestStackGrowth
 is a skip line now); MinIO 45 of 46 (cmd: TestTrackingResponseWriter, as stock). Any other line is a bug, or a timeout
 to rerun alone. The pass before it (1115d, on 09e6304) ended as expected: std 259 of 260, MinIO 45 of 46.
-**Not pushed yet: b57259f..5b23b5d** (the fixes and the two builder merges) wait for the first lines of that log
-(checks, gotest, lang); push when they are clean. When the whole pass is clean: the M-log line (std, MinIO, gotest
-counts) and tests/fc/passing.txt's header.
+**Pushed at 21:56** after its first lines were clean (checks PASS, gotest 1,018 / 0 / 0, lang 26 of 26 in three
+modes). The 16-at-once run had one timeout, abi/uglyfib.go: 94 s by fc against 0.64 s by stock (two heap allocations
+per call: no escape analysis outside the runtime's packages; JOURNAL 21:56; gotest's timeout is 600 s since, so the
+eight rounds should show 0 failures). When the whole pass is clean: the M-log line (std, MinIO, gotest counts) and
+tests/fc/passing.txt's header.
 (b) Running since 20:47 on build/fcy: /home/exedev/targets/fc-sweep-1115.sh (log fc-sweep-1115.log): the free-slot
 diagnostic (`WPTEST_FREECHECK=1`, tools/fc/freecheck.py) over the runtime's suite and MinIO's packages; its last lines
 list any report file. Its first step (the runtime's suite plain) failed on TestStackGrowth alone: a liveness wait
 (the skip line of 21:20), 34 minutes in chan receive; the freecheck run of the runtime will time out on it too (rerun
 that one alone afterwards: `WPTEST_FREECHECK=1 GOGC=25 tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`).
-(c) Owed by today's findings: **gotest covers only `// run` with no flags** (1,048 of 3,405 files). Next kinds, in
-order of yield: `// rundir` (116 directories of several packages), `// runoutput` (17), `// run` with flags, `// build`.
-`// compile`/`// errorcheck` are the front end's (go/types): not ours. Also worth one builder: the same harness over
+(c) **gotest covers only `// run` with no flags** (1,048 of 3,405 files). **An Opus builder (launched 21:58, its own
+worktree under .claude/worktrees, compiler tag rd) is extending it** to `// rundir` (116 directories of several
+packages), `// runoutput` (17), `// run` with flags, `// build*`, and fixing or listing what they find; its report
+arrives as a task notification (if none came: `git worktree list`, the newest branch's commits). Merge it like the
+others: build a scratch compiler from the merged tree, gotest + lang rt, then push. `// compile`/`// errorcheck` are
+the front end's (go/types): not ours. Also worth one builder: the same harness over
 the test directories of older Go releases' regression programs that this GOROOT dropped, and a random-program
 differential (csmith-style) only if those dry up.
 (d) The corpus case of each finding is tests/fc/lang/gotestfinds (mine), lines, generics/consts+locals, localtarg (the
@@ -169,6 +174,14 @@ builders'). FC_ESC=1 (escape analysis in every package) is not part of any pass 
 **Liveness skips are 30-odd tests and some depend on what ran before** (the pinner tests, TestStackGrowth). FC_TIDY=all
 (slots die with their statement or block in every package, as in the runtime's) makes most pass but is killed by its
 counts (IDEAS: code +33%, binary +55%, build memory +18%).
+(e) **Mine, next (nothing else needs the main thread while the passes run): the same bytes from the same sources**
+(IDEAS, last entry; STATUS decision 2). In driver/fclink: lay out content-addressed and named data symbols by
+(package rank, name or content hash) instead of the order threads made them; in driver/fc: numbered names given by
+declaration order. Oracle: two builds of tests/fc/lang's programs and of MinIO are `cmp`-equal (today: 31,645 of
+1.18 MB of .text bytes differ in a small program, all of them relocation targets); kill test: more than 10 ms in the
+link's layout row on MinIO (then a FCLINK_SORT=1 mode for the passes only). Build with `FC_TAG=w driver/mkfc.sh`.
+Then, second: escape analysis where it pays (uglyfib: 150x; ask it only for functions that take addresses?), counted
+on MinIO's build CPU.
 (2) **The soak** is `tools/fc/soak.sh [runs] [workers]` (an fc-built protoc-gen-go against the stock-built one at
 GOGC=1; hangs get their stacks from a core by tools/fc/corebt): 0 bad of 6,000 on de605c5. Run `tools/fc/soak.sh 1500 4`
 on HEAD after the pass (today's fixes add stores and nil checks everywhere). Also worth soaking MinIO's server under
