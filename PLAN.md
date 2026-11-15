@@ -129,27 +129,27 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 19:58 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
-warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification, a soak and a builder.
-**Two runtime bugs of every earlier fc binary are fixed in the source; build/fc still has only the first** (7259dfb:
-write barriers where the runtime forbids them; 3ef1d06: asynchronous preemption inside what the stock compiler
-inlines, "found pointer to free object", JOURNAL 19:40). build/fcx (`FC_TAG=x driver/mkfc.sh`) is HEAD's compiler.
-In order:
-(1) **Correctness on HEAD.** The pass on 7259dfb (/home/exedev/targets/fc-verify-1115c.log; do not rebuild build/fc
-before `done` is in it) finished std: 255 of 260; the five: edwards25519 (the bug fixed at 3ef1d06), runtime
-(TestCleanupUnreachableClosure, fixed at 3ef1d06 by by-value capture), index/suffixarray and sync/atomic (10-minute
-timeouts at load 30-45: rerun alone), testing/fstest (wptest.sh was edited under it). MinIO's packages are running.
-When it is done: `driver/mkfc.sh` (build/fc at HEAD), then the pass again as fc-verify-1115d (copy the script; change
-the log names), which must give std 260 of 260 and MinIO 45 of 46. Running now on build/fcx:
-(a) `WPTEST_FREECHECK=1 GOGC=10 ... wpbatch.sh` over tests/fc/passing.txt (the diagnostic runtime of
-tools/fc/freecheck.py: the collector names whoever shows it a pointer to a free slot), log
-<scratchpad>/freecheck-std.log, per-package logs in the /tmp/fcwpbatch.* directory its last line names:
-`grep -l freecheck: <that dir>/*` is the list of bugs (each names a frame, pc and slot); FAIL lines without one are
-timeouts and allocation counts disturbed by GOGC=10 (bytes TestGrow). Rerun it from the repo if the scratchpad is gone:
-`WPTEST_FREECHECK=1 GOGC=10 FC_TIMEOUT=1200 tools/fc/wpbatch.sh -j 3 -C /home/exedev/targets/goroot-slots/src < tests/fc/passing.txt`.
-Then the same over MinIO's packages. (b) the runtime's own suite alone
-(`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`): its 13 whole-program failures are
-sorted (one fixed, twelve skip lines with evidence in tests/fc/skips.txt, the two pinner tests added after).
+Now (2026-11-15 20:16 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification and a builder.
+**Two runtime bugs of every earlier fc binary are fixed** (7259dfb: write barriers where the runtime forbids them;
+3ef1d06 + 09e6304: a stop inside what the stock compiler inlines into nosplit runtime code, "found pointer to free
+object"; JOURNAL 19:40, 20:12), each with a check that redoes the stock build's guarantee: tools/fc/wbcheck.sh,
+tools/fc/safecheck.sh. build/fc was rebuilt at 09e6304 (20:14). In order:
+(1) **Correctness on HEAD.** Running since 20:15: /home/exedev/targets/fc-verify-1115d.sh (log fc-verify-1115d.log
+there; wbcheck, safecheck, zipcheck, lang three modes, std 260 through wpbatch, MinIO's packages; about 70 minutes
+idle, more at load). **While it runs do not rebuild build/fc and do not edit tools/fc/wptest.sh, wpbatch.sh, lang.sh,
+test.sh** (bash reads a script while it runs it: an edit under the last pass cost a package). Scratch compilers:
+`FC_TAG=x driver/mkfc.sh` -> build/fcx. When `done` is in the log: std must be 260 of 260 and MinIO 45 of 46 (cmd:
+TestTrackingResponseWriter, as stock); every other line is a bug, or a timeout to rerun alone; then update
+tests/fc/passing.txt's header and append the M-log line. The pass before it (7259dfb): std 255 of 260, all five
+explained (JOURNAL 20:12).
+Also running, on build/fcx (the compiler of 3ef1d06, same code generation for this purpose):
+`WPTEST_FREECHECK=1 GOGC=10 FC_TIMEOUT=1200 tools/fc/wpbatch.sh -j 3 -C /home/exedev/targets/goroot-slots/src < tests/fc/passing.txt`
+(the diagnostic runtime of tools/fc/freecheck.py: the collector names whoever shows it a pointer to a free slot); its
+per-package logs are in the newest /tmp/fcwpbatch.* directory with 250-odd files: `grep -l freecheck: <dir>/*` is the
+list of bugs (each names a frame, pc and slot; none in the first 94 packages); FAIL lines without one are timeouts and
+allocation counts disturbed by GOGC=10 (bytes TestGrow). Then the same over MinIO's packages, and once over the
+runtime's own suite. The runtime's 13 whole-program failures are sorted (one fixed, the rest skip lines with evidence).
 **Liveness skips are 20-odd tests and some depend on what ran before** (the pinner tests). FC_TIDY=all (slots die
 with their statement or block in every package, as in the runtime's) makes most pass but is killed by its counts
 (IDEAS: code +33%, binary +55%, build memory +18%).
