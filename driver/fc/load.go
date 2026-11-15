@@ -37,6 +37,7 @@ type Pkg struct {
 	Export     string // the stock-compiled archive (go list -export)
 	Standard   bool
 	Module     *struct{ Path, Version, GoVersion string }
+	linkPath   string // what the code and the linker call it, when that is not ImportPath ("main": build.go)
 
 	// cgo (cgo.go): what `go list -json` says with CGO_ENABLED=1
 	CgoFiles, CFiles, CXXFiles, MFiles, FFiles, HFiles, SwigFiles, SwigCXXFiles []string

@@ -409,6 +409,7 @@ func buildMode(args []string) {
 			if p.Name == "main" && (mainPkg == nil || p == mainPkg) {
 				path = "main" // (only the program's: Bazel's go_library of a main package is imported by its path)
 			}
+			p.linkPath = path // (its assembly too: `TEXT ·f` in the program's main package is main.f)
 			c = newCompiler(pr, p, path, "")
 			c.fnSem = sem
 			if p.srcBytes >= 64<<10 {
@@ -762,8 +763,16 @@ func stockFingerprint(path string) goobj.FingerprintType {
 	return fp
 }
 
+// asmPkgpath: the package path the assembler gives the symbols of p's assembly (`·f` is <path>.f).
+func asmPkgpath(p *Pkg) string {
+	if p.linkPath != "" {
+		return p.linkPath
+	}
+	return plainPath(p.ImportPath)
+}
+
 func asmArgs(p *Pkg, dir string) []string {
-	args := []string{"-p", plainPath(p.ImportPath), "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
+	args := []string{"-p", asmPkgpath(p), "-I", dir, "-I", filepath.Join(runtime.GOROOT(), "pkg/include"),
 		"-D", "GOOS_linux", "-D", "GOARCH_amd64", "-D", "GOAMD64_v1"}
 	if p.Standard {
 		args = append(args, "-std")
