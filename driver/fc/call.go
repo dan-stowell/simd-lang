@@ -167,10 +167,33 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 	return rs
 }
 
-// markKeepArgs: if the call's callee is known and keeps its uintptr arguments alive (escSummary.UintptrKeep),
-// the operands of the arguments that are uintptr(x) with x an unsafe.Pointer are noted for convert.
+// uintptrKeep: is a pointer converted to uintptr in the argument list of a call of fn kept alive until the
+// call returns? The stock compiler's rule (escape.go, call.go): fn has no body here (assembly, or provided
+// through a linkname) or is marked //go:uintptrkeepalive or //go:uintptrescapes.
+func (p *Pkg) uintptrKeep(fn *types.Func) bool {
+	p.keepOnce.Do(func() {
+		p.keepFns = map[*types.Func]bool{}
+		for _, f := range p.files {
+			for _, d := range f.Decls {
+				fd, ok := d.(*ast.FuncDecl)
+				if !ok {
+					continue
+				}
+				if fd.Body == nil || hasDirective(fd.Doc, "//go:uintptrescapes") || hasDirective(fd.Doc, "//go:uintptrkeepalive") {
+					if o, ok := defOf(fd.Name).(*types.Func); ok {
+						p.keepFns[o] = true
+					}
+				}
+			}
+		}
+	})
+	return p.keepFns[fn.Origin()]
+}
+
+// markKeepArgs: if the call's callee is known and keeps its uintptr arguments alive (uintptrKeep), the
+// operands of the arguments that are uintptr(x) with x an unsafe.Pointer are noted for convert.
 func (g *gen) markKeepArgs(e *ast.CallExpr) {
-	if escWhere == "0" || len(e.Args) == 0 {
+	if len(e.Args) == 0 {
 		return
 	}
 	var fn *types.Func
@@ -184,10 +207,10 @@ func (g *gen) markKeepArgs(e *ast.CallExpr) {
 			fn, _ = sel.Obj().(*types.Func)
 		}
 	}
-	if fn == nil {
+	if fn == nil || fn.Pkg() == nil {
 		return
 	}
-	if s := g.c.pr.escSummaryOf(fn); s == nil || !s.UintptrKeep {
+	if p := g.c.pr.byTypes(fn.Pkg()); p == nil || !p.uintptrKeep(fn) {
 		return
 	}
 	for _, a := range e.Args {

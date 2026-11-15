@@ -50,12 +50,14 @@ type Pkg struct {
 	dch      chan struct{} // a token when dq grows
 	drainers atomic.Int64  // threads compiling from dq (serveDemands)
 
-	files []*ast.File
-	tpkg  *types.Package
-	info  *types.Info
-	deps  []*Pkg
-	once  sync.Once
-	err   error
+	files    []*ast.File
+	keepOnce sync.Once
+	keepFns  map[*types.Func]bool // functions whose uintptr arguments keep their pointers alive (call.go: uintptrKeep)
+	tpkg     *types.Package
+	info     *types.Info
+	deps     []*Pkg
+	once     sync.Once
+	err      error
 
 	// two-pass front end: the package as its importers see it (declarations only)
 	dpkg     *types.Package
@@ -141,7 +143,8 @@ type Program struct {
 	localMu       sync.Mutex
 	localInst     map[*types.TypeName][]*localInst // a type declared in a generic function -> its instances
 	localOf       map[*types.Named]*localInst      // and back, from an instance
-	rtDecls       *types.Package // the runtime functions the stock compiler knows, for their signatures
+	localBuildMu  sync.Mutex                       // held while one such instance is built (generics.go: localInstance)
+	rtDecls       *types.Package                   // the runtime functions the stock compiler knows, for their signatures
 }
 
 func newProgram() *Program {

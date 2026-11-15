@@ -150,3 +150,16 @@ stack map per distinct live set. A cheaper form, if liveness is wanted later: li
 pass over the statements (no clearing: a slot is in the map only between its first store and its last load), which
 needs the generator to know a slot's last use before it emits the calls in between: a second pass or a patch-up of
 the maps after the body.
+
+## The same bytes from the same sources (2026-11-15)
+Two builds of one program by fc differ: 31,645 of the 1.18 MB of .text bytes of a small program (relocation
+targets), every data section in order. Functions are the same size; what moves is the layout of data symbols,
+which fclink takes in the order the compile threads made them, and the per-package numbering of some names.
+Why it matters here: `switch { case i: }` was miscompiled into a test of one byte of a descriptor's address and
+passed or failed by layout (JOURNAL 2026-11-15); a wrong read that depends on an address is found on the first run
+when the address is the same every time, or never, instead of once in a few runs. It is also what a remote cache
+keys on (the demo's audience). What it takes: fclink sorting content-addressed and named data symbols by (package
+rank, name or content hash) instead of arrival, which it already does for types; the numbered names (closures made
+by demand, the typeOwner choice) given by declaration order. Kill test: the cost of the sort in the link's layout
+row on MinIO (1.2 million content-hashed slots): drop it if it is more than 10 ms of the link's 250, and settle for
+a FCLINK_SORT=1 mode that the verification passes use. Status: not started.

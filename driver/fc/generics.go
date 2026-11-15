@@ -4,6 +4,7 @@ package main
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 	"sort"
 	"strings"
@@ -350,6 +351,11 @@ func mentionsTypeParam(t types.Type) bool {
 			for i := 0; i < t.TypeArgs().Len(); i++ {
 				walk(t.TypeArgs().At(i), depth+1)
 			}
+			// a type declared inside a function may mention that function's type parameters in its
+			// definition (a few levels of such types at most: the walk has no memory)
+			if o := t.Obj(); o != nil && o.Pkg() != nil && o.Parent() != nil && o.Parent() != o.Pkg().Scope() {
+				walk(t.Underlying(), depth+6)
+			}
 		case *types.Pointer:
 			walk(t.Elem(), depth+1)
 		case *types.Slice:
@@ -488,6 +494,16 @@ func (pr *Program) localInstance(env map[*types.TypeParam]types.Type, t *types.N
 		}
 		return true
 	}
+	// One instance is built at a time (localBuildMu), by the thread that asked first, and nobody else sees
+	// it before its definition is in place: the definition may mention the type itself, or another local
+	// type that mentions it, so the instance is registered before it is complete, and a second thread
+	// that found it there used a type without an underlying type. The requests the build makes itself
+	// carry localBuilding in their environment: they take what is registered, complete or not.
+	_, nested := env[localBuilding]
+	if !nested {
+		pr.localBuildMu.Lock()
+		defer pr.localBuildMu.Unlock()
+	}
 	pr.localMu.Lock()
 	for _, x := range pr.localInst[o] {
 		if same(x.outer, li.outer) && same(x.own, li.own) {
@@ -521,9 +537,20 @@ func (pr *Program) localInstance(env map[*types.TypeParam]types.Type, t *types.N
 	pr.localInst[o] = append(pr.localInst[o], li) // before the definition is substituted: it may mention itself
 	pr.localOf[li.n] = li
 	pr.localMu.Unlock()
+	if !nested {
+		env3 := make(map[*types.TypeParam]types.Type, len(env2)+1)
+		for k, v := range env2 {
+			env3[k] = v
+		}
+		env3[localBuilding] = types.Typ[types.Invalid]
+		env2 = env3
+	}
 	li.n.SetUnderlying(substType(pr, env2, t.Origin().Underlying()))
 	return li.n
 }
+
+// localBuilding marks the environment of the substitutions made while an instance of a local type is built.
+var localBuilding = types.NewTypeParam(types.NewTypeName(token.NoPos, nil, ".building", nil), nil)
 
 // localInst is one instance of a type declared in a generic function: the function's type arguments, and
 // the type's own.
