@@ -109,7 +109,8 @@ func (s *stockSet) listCgo(roots []*Pkg, tag string) error {
 		return fmt.Errorf("go list: no runtime/cgo")
 	}
 	s.env = []string{path, "GO111MODULE=off", "CGO_ENABLED=1", "GOFLAGS=-tags=netgo,osusergo", gocache, "GOTOOLCHAIN=local",
-		"CGO_CFLAGS=-O0", "GOOS=linux", "GOARCH=amd64", "FC_LINKER=", "FC_LINKFLAGS=-linkmode=external"}
+		"CGO_CFLAGS=-O0", "GOOS=linux", "GOARCH=amd64", "FC_LINKER=", "FC_LINKFLAGS=-linkmode=external",
+		"FC_RUNTIME=1"} // (the runtime is fc's too: driver/fc/build.go links it with the race build's stack guard)
 	fmt.Fprintf(os.Stderr, "bzfc: cgo: %d packages (%s) for fc's cgo step, listed in %.0f ms\n", len(roots), strings.Join(names, " "), ms(time.Since(t0)))
 	return nil
 }

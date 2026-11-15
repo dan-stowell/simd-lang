@@ -5,6 +5,7 @@ package cg
 
 /*
 #cgo CFLAGS: -DCG_BIAS=3
+#cgo LDFLAGS: -lpthread
 #include <stdlib.h>
 #include <string.h>
 #include "cg.h"
@@ -111,6 +112,9 @@ func Parallel(workers, n int) int64 {
 	}
 	return t
 }
+
+// FromThreads: threads C creates call into Go.
+func FromThreads(threads, n int) int64 { return int64(C.from_threads(C.int(threads), C.int(n))) }
 
 // Upper: a Go string through C and back.
 func Upper(s string) string {

@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include "cg.h"
@@ -51,5 +52,28 @@ char *join(const char *a, const char *b) {
 	memcpy(s, a, n);
 	s[n] = '+';
 	memcpy(s + n + 1, b, m + 1);
+	return s;
+}
+
+// a thread C made calling into Go (the runtime's extra M: needm)
+struct thread_arg { int n; long long sum; };
+static void *thread_main(void *v) {
+	struct thread_arg *a = v;
+	a->sum = sum_via_callback(a->n);
+	return 0;
+}
+long long from_threads(int nthreads, int n) {
+	pthread_t t[16];
+	struct thread_arg a[16];
+	long long s = 0;
+	if (nthreads > 16) nthreads = 16;
+	for (int i = 0; i < nthreads; i++) {
+		a[i].n = n + i;
+		pthread_create(&t[i], 0, thread_main, &a[i]);
+	}
+	for (int i = 0; i < nthreads; i++) {
+		pthread_join(t[i], 0);
+		s += a[i].sum;
+	}
 	return s;
 }

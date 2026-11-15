@@ -4,9 +4,9 @@
 // By default fc compiles the cgo packages too (driver/fc/cgo.go): their plan entries carry what `go list` says
 // of them in a cgo configuration (CgoFiles, CFiles, HFiles, the #cgo flags), over a farm of symlinks to the
 // package's directory (a GOPATH; the go command lists, it compiles nothing), and fc runs cgo and gcc itself;
-// runtime/cgo's entry is the standard library's in a cgo configuration. The stock linker links in external
-// mode (C objects, libc). fc prints how many packages the go command still compiled (`stock packages:`: the
-// runtime and what it imports when the runtime is not fc's) and bzfc's summary repeats it.
+// runtime/cgo's entry is the standard library's in a cgo configuration; the runtime is fc's too (FC_RUNTIME=1).
+// The stock linker links in external mode (C objects, libc). fc prints how many packages it had the go
+// command compile (`stock packages:`, none here) and bzfc's summary repeats it (`bzfc: stock compiler:`).
 //
 // BZFC_STOCKCGO=1, the earlier way (the fallback): the cgo packages and everything they import (the runtime
 // included) are the stock compiler's, built by the go command of -go's GOROOT (GOPATH mode, over the farm);

@@ -719,6 +719,15 @@ func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 	if fd.Body == nil || hasDirective(fd.Doc, "//go:noinline") || hasDirective(fd.Doc, "//go:systemstack") {
 		return false
 	}
+	// what the stock compiler never inlines (inline/inl.go: InlineImpossible, and the calls its visitor
+	// refuses): such a function has its own stack check there, so here too. Among them the bounds and
+	// division panics (goPanicIndex and its kind are //go:yeswritebarrierrec and ask for the caller's PC),
+	// which the stock linker's nosplit check would otherwise follow from every nosplit function that indexes.
+	for _, d := range []string{"//go:yeswritebarrierrec", "//go:uintptrescapes", "//go:uintptrkeepalive", "//go:cgo_unsafe_args"} {
+		if hasDirective(fd.Doc, d) {
+			return false
+		}
+	}
 	n, ok := 0, true
 	ast.Inspect(fd.Body, func(x ast.Node) bool {
 		switch x.(type) {
@@ -736,6 +745,18 @@ func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 			}
 			if id != nil && useOf(id) == fn {
 				ok = false
+			}
+			if id != nil {
+				if f, _ := useOf(id).(*types.Func); f != nil && f.Pkg() != nil {
+					switch {
+					case f.Pkg().Path() == "internal/runtime/sys" && (f.Name() == "GetCallerPC" || f.Name() == "GetCallerSP"),
+						f.Pkg().Path() == "runtime" && (f.Name() == "getcallerpc" || f.Name() == "getcallersp"):
+						ok = false // (the caller's PC is the logical caller's only in a frame of its own)
+					}
+				}
+				if b, _ := useOf(id).(*types.Builtin); b != nil && b.Name() == "recover" {
+					ok = false
+				}
 			}
 		}
 		n++

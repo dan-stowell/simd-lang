@@ -20,3 +20,4 @@ char *join(const char *a, const char *b);
 extern const char *greeting;
 extern int shared_global;
 int read_global(void);
+long long from_threads(int nthreads, int n);

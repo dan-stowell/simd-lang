@@ -34,6 +34,7 @@ func main() {
 	fmt.Println("callback", cg.SumSquares(10), cg.Calls())
 	fmt.Println("pair", cg.PairDiff(3, 4))
 	fmt.Println("parallel", cg.Parallel(8, 2000))
+	fmt.Println("threads", cg.FromThreads(6, 20))
 	runtime.GC()
 	fmt.Println("calls", cg.Calls())
 }

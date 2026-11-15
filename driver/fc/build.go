@@ -634,6 +634,13 @@ func buildMode(args []string) {
 			os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
 			// FC_LINKFLAGS reach this linker too (a cgo program: -linkmode=external -extld=...)
 			stockArgs := append(append([]string{"tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w"}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+			if rtByFc && !withFclink {
+				// An fc-built runtime has the race build's stack guard (load.go: consts_race.go; fc's frames are
+				// larger), and the stock linker checks the nosplit call chains against the guard: -race tells it
+				// which one. On linux that is all -race does to the linker but for looking for a runtime/race
+				// to load (none is in the importcfg: it says "loadinternal: cannot find runtime/race").
+				stockArgs = append(stockArgs, "-race")
+			}
 			cmd := exec.Command("go", append(stockArgs, objPath(*out, mainPkg))...)
 			linker := "stock linker"
 			if withFclink {
