@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # tools/fc/wptest.sh over many packages, a few at a time; one line each: PASS, FAIL, NOFC <first reason>, NOTEST.
 #   tools/fc/wpbatch.sh [-j N] [-C dir] <import paths...>      (or paths on stdin if none are given)
-# FC_TIMEOUT: seconds per package (default 300; the runtime's own suite gets 1500). Logs: the directory printed last.
+# FC_TIMEOUT: seconds per package (default 300; the runtime's own suite gets 2700 and a test timeout of 40m). Logs: the directory printed last.
 here=$(cd "$(dirname "$0")/../.." && pwd)
 j=2; dir=.
 while :; do case "$1" in -j) j=$2; shift 2;; -C) dir=$2; shift 2;; *) break;; esac; done
 out=$(mktemp -d /tmp/fcwpbatch.XXXXXX)
 one() {
   pkg=$1; f=$out/$(echo "$pkg" | tr '/ ' '__')
-  t=${FC_TIMEOUT:-300}; [ "$pkg" = runtime ] && t=1500
-  timeout -k 10 "$t" "$here/tools/fc/wptest.sh" -C "$dir" "$pkg" -count=1 > "$f" 2>&1; rc=$?
+  t=${FC_TIMEOUT:-300}; wt=${WPTEST_TIMEOUT:-10m}
+  [ "$pkg" = runtime ] && { t=2700; wt=40m; }   # (284 s on an idle machine, past 10 minutes at load 30)
+  WPTEST_TIMEOUT=$wt timeout -k 10 "$t" "$here/tools/fc/wptest.sh" -C "$dir" "$pkg" -count=1 > "$f" 2>&1; rc=$?
   case $rc in
     0) echo "PASS   $pkg";;
     3) echo "NOFC   $pkg   $(grep -m1 '^fc: ' "$f" | cut -c1-140)";;

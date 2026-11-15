@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"go/types"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -304,6 +305,16 @@ func (g *gen) findHeapVars(body ast.Node) {
 			if id, ok := n.(*ast.Ident); ok {
 				if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
 					if v.Pos() < lit.Pos() || v.Pos() >= lit.End() {
+						if g.capByVal[v] {
+							return true
+						}
+						if g.byValCapture(v, body) {
+							if g.capByVal == nil {
+								g.capByVal = map[*types.Var]bool{}
+							}
+							g.capByVal[v] = true
+							return true
+						}
 						mark(v)
 					}
 				}
@@ -311,6 +322,56 @@ func (g *gen) findHeapVars(body ast.Node) {
 			return true
 		})
 	}
+}
+
+// capByValOff (FC_CAPREF=1): every capture by reference, as before 2026-11-15.
+var capByValOff = os.Getenv("FC_CAPREF") != ""
+
+// byValCapture: may function literals hold a copy of the captured variable v instead of its address? The
+// stock compiler's rule, for the values a closure object can hold (it is an array of pointer words): v is
+// one pointer word, is a variable of this function (not one this function itself captured by reference),
+// is never assigned after its declaration and never has its address taken. Then v stays an ordinary
+// variable of the frame: no heap box, and the collector and runtime.AddCleanup see what the closure holds.
+// Only without the escape analysis (the runtime's packages keep its verdicts, made for captures by reference).
+func (g *gen) byValCapture(v *types.Var, body ast.Node) bool {
+	if capByValOff || g.esc != nil || g.addrVars[v] || g.outerRef[v] || v.Pkg() == nil || v.Parent() == v.Pkg().Scope() ||
+		!isPtrWord(g.vt(v)) {
+		return false
+	}
+	for i := 0; i < g.sig.Results().Len(); i++ {
+		if g.sig.Results().At(i) == v {
+			return false // (a return statement assigns it)
+		}
+	}
+	if g.assigned == nil {
+		g.assigned = map[*types.Var]bool{}
+		mark := func(e ast.Expr) {
+			if id, ok := ast.Unparen(e).(*ast.Ident); ok {
+				if v, ok := useOf(id).(*types.Var); ok {
+					g.assigned[v] = true
+				}
+			}
+		}
+		ast.Inspect(body, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.AssignStmt:
+				for _, l := range n.Lhs {
+					mark(l) // (a new variable of := is a definition, not a use: not marked)
+				}
+			case *ast.IncDecStmt:
+				mark(n.X)
+			case *ast.RangeStmt:
+				if n.Key != nil {
+					mark(n.Key)
+				}
+				if n.Value != nil {
+					mark(n.Value)
+				}
+			}
+			return true
+		})
+	}
+	return !g.assigned[v]
 }
 
 // linknames of a package: local name -> symbol name, from its //go:linkname directives.

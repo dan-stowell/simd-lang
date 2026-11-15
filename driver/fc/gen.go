@@ -46,6 +46,7 @@ const (
 
 type loc struct {
 	kind locKind
+	stk  bool // memory reached through a pointer or an index that is known to lie in this function's frame (noBarrier)
 	off  int64
 	slot int64
 	sym  *obj.LSym
@@ -70,6 +71,12 @@ func (l loc) isMem() bool {
 
 // inFrame: a store here needs no write barrier
 func (l loc) inFrame() bool { return l.kind == lFrame || l.kind == lOut }
+
+// noBarrier: a pointer stored here needs no write barrier: the frame, addressed directly or (stk) through a
+// pointer or an index the generator knows stays in it. The stock compiler proves the same from its SSA form
+// (a store to an address derived from SP), and the runtime depends on it where write barriers are forbidden:
+// recordspan and bytes write through (*slice)(unsafe.Pointer(&local)), runqputslow fills a local array.
+func (l loc) noBarrier() bool { return l.inFrame() || l.stk }
 
 type slotInfo struct {
 	off  int64 // the slot is [BP-off, BP-off+size)
@@ -106,41 +113,49 @@ type gen struct {
 	locals   int64
 	maxarg   int64
 
-	resHome   []loc
-	resVars   []*types.Var
-	ret       *label
-	scopes    []scope
-	labels    map[*types.Label]*label
-	lblScope  map[*types.Label]*scope
-	hasDefer  bool
-	ngen      [4]int // closures named so far: function literals, range-over-func bodies, go/defer wrappers, others
-	isLit     bool   // a function literal or range-over-func body (its literals are named outer.N)
-	lastPos   token.Pos
-	ctxSlot   loc // the closure object, in a closure
-	nosplit   bool
-	fallthru  *label
-	entry     func()
-	bpFix     []int     // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	lastPlace int       // the address of the label placed last (another label may already name the current address)
-	declSlots []int     // the slots of the variables declared in the blocks being compiled
-	tidy      bool      // tidy frames (see slotBorn)
-	noWBDecl  bool      // the declaration says //go:nowritebarrier[rec]
-	curPos    token.Pos // the position of the statement being compiled
-	liveSlot  []bool    // by slot: allocated now
-	dirty     []int     // slots released in the statement being compiled: still live until it ends
-	liveSets  []string  // the distinct sets of live slots at calls (bit sets by slot index)
-	liveIdx   map[string]int
-	nDecl     int
-	esc       escResult           // escape analysis of the package the body is in; nil: everything escapes
-	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
-	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
-	convCall  *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
-	rf        *rfCtx              // set in the body of a range-over-func loop
-	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
-	sc        *genScratch         // this function's scratch buffers, if it has them (compileFunc)
-	root      *gen                // the function whose results a return there sets
-	abi0      bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
-	pinArgs   bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
+	resHome       []loc
+	resVars       []*types.Var
+	ret           *label
+	scopes        []scope
+	labels        map[*types.Label]*label
+	lblScope      map[*types.Label]*scope
+	hasDefer      bool
+	ngen          [4]int // closures named so far: function literals, range-over-func bodies, go/defer wrappers, others
+	isLit         bool   // a function literal or range-over-func body (its literals are named outer.N)
+	lastPos       token.Pos
+	ctxSlot       loc // the closure object, in a closure
+	nosplit       bool
+	pragmaNosplit bool // declared //go:nosplit
+	noAsync       bool // no instruction is a safe point for asynchronous preemption: declared //go:nosplit (the stock compiler's rule), or without a stack check because the stock compiler inlines it
+	fallthru      *label
+	entry         func()
+	bpFix         []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace     int                 // the address of the label placed last (another label may already name the current address)
+	declSlots     []int               // the slots of the variables declared in the blocks being compiled
+	tidy          bool                // tidy frames (see slotBorn)
+	noWBDecl      bool                // the declaration says //go:nowritebarrier[rec]
+	fnBody        ast.Node            // the function's body (stackPtr's scan)
+	stkPtr        map[*types.Var]bool // pointer variables that only ever point into this frame (stackptr.go)
+	reassigned    map[*types.Var]bool // variables assigned after their declaration or whose address is taken
+	curPos        token.Pos           // the position of the statement being compiled
+	liveSlot      []bool              // by slot: allocated now
+	dirty         []int               // slots released in the statement being compiled: still live until it ends
+	liveSets      []string            // the distinct sets of live slots at calls (bit sets by slot index)
+	liveIdx       map[string]int
+	nDecl         int
+	esc           escResult           // escape analysis of the package the body is in; nil: everything escapes
+	addrVars      map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	capByVal      map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
+	outerRef      map[*types.Var]bool // in a literal: the variables it captured by reference
+	assigned      map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
+	convSite      ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	convCall      *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
+	rf            *rfCtx              // set in the body of a range-over-func loop
+	deferTok      *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	sc            *genScratch         // this function's scratch buffers, if it has them (compileFunc)
+	root          *gen                // the function whose results a return there sets
+	abi0          bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	pinArgs       bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -598,7 +613,7 @@ func (g *gen) storeReg(l loc, reg int, t types.Type) {
 		return
 	}
 	m := g.m(l, R13)
-	if isPtrWord(t) && !l.inFrame() {
+	if isPtrWord(t) && !l.noBarrier() {
 		g.storePtr(m, reg)
 		return
 	}
@@ -614,6 +629,7 @@ func (g *gen) storePtr(m mem, reg int) {
 	if g.noWBDecl && wbWarn {
 		fmt.Fprintf(os.Stderr, "wb: %s (marked nowritebarrier) at %v\n", g.name, g.c.pr.fset.Position(g.curPos))
 	}
+	g.noteWB()
 	g.unsafeBegin()
 	g.a.aluMI(aCMP, 4, msym(g.c.rtVar("writeBarrier"), 0), 0)
 	skip := g.a.jcc(ccE)
@@ -646,7 +662,7 @@ func (g *gen) stash(l loc, t types.Type) loc {
 		// the address survives in a pointer temporary
 		tmp := g.ptrTemp()
 		g.a.store(g.m(tmp, R13), l.reg, 8)
-		return loc{kind: lInd, slot: tmp.off, off: l.off}
+		return loc{kind: lInd, slot: tmp.off, off: l.off, stk: l.stk}
 	}
 	return l
 }
@@ -695,7 +711,10 @@ func (g *gen) move(dst, src loc, t types.Type) {
 	if !src.isMem() {
 		panic(fmt.Sprintf("move: %v from a value of kind %d", t, src.kind))
 	}
-	barrier := !dst.inFrame() && g.c.hasPointers(t) && !g.c.noWB
+	barrier := !dst.noBarrier() && g.c.hasPointers(t) && !g.c.noWB
+	if barrier {
+		g.noteWB()
+	}
 	if size > 128 {
 		g.addrTo(SI, src)
 		g.addrTo(DI, dst)
@@ -752,7 +771,10 @@ func (g *gen) zero(dst loc, t types.Type) {
 	if size == 0 {
 		return
 	}
-	barrier := !dst.inFrame() && g.c.hasPointers(t) && !g.c.noWB
+	barrier := !dst.noBarrier() && g.c.hasPointers(t) && !g.c.noWB
+	if barrier {
+		g.noteWB()
+	}
 	if isWord(t) || isFloat(t) {
 		if barrier {
 			g.a.movImm(R8, 0)
@@ -963,6 +985,7 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 	if scan != nil {
 		g.findHeapVars(scan)
 	}
+	g.fnBody = scan
 	sig := g.sig
 	if g.pinArgs {
 		// (//go:cgo_unsafe_args: the address of a parameter is the address of the argument frame; without
@@ -1203,12 +1226,15 @@ func (g *gen) finish(pos token.Pos) {
 		stackmap = make([]pcval, 0, len(out.stackmap)+3)
 		lines = make([]pcval, 0, len(out.lines)+2)
 	}
-	unsafe = append(unsafe, pcval{0, -2}, pcval{plen, -1})
+	unsafe = append(unsafe, pcval{0, -2})
 	stackmap = append(stackmap, pcval{0, -1}, pcval{plen, 1})
 	out.poss = append(out.poss, pos)
 	lines = append(lines, pcval{0, int32(len(out.poss) - 1)})
-	for _, e := range out.unsafe {
-		unsafe = append(unsafe, pcval{e.pc + plen, e.val})
+	if !g.noAsync {
+		unsafe = append(unsafe, pcval{plen, -1})
+		for _, e := range out.unsafe {
+			unsafe = append(unsafe, pcval{e.pc + plen, e.val})
+		}
 	}
 	for _, e := range out.lines {
 		lines = append(lines, pcval{e.pc + plen, e.val})
@@ -1273,7 +1299,8 @@ func (g *gen) finish(pos token.Pos) {
 	}
 	if callGraph != nil {
 		var b strings.Builder
-		fmt.Fprintf(&b, "%s\t%v", g.out.sym.Name, g.nosplit)
+		// name, no stack check, declared //go:nosplit, no safe point for a signal, callees
+		fmt.Fprintf(&b, "%s\t%v\t%v\t%v\t%d", g.out.sym.Name, g.nosplit, g.pragmaNosplit, g.noAsync, n)
 		seen := map[string]bool{}
 		for _, r := range relocs {
 			if r.Type == objabiRCall && r.Sym != nil && !seen[r.Sym.Name] {
@@ -1514,11 +1541,19 @@ func (c *compiler) rtRealWidth(name string) int64 {
 	return w
 }
 
+// noteWB: a write barrier is being emitted here (FC_WBCHECK: wbcheck.go).
+func (g *gen) noteWB() {
+	if wbCheck && g.out != nil {
+		g.out.wbPos = append(g.out.wbPos, g.curPos)
+	}
+}
+
 // wbWarn (FC_WBWARN=1): report write barriers emitted in functions the source marks //go:nowritebarrier or
 // //go:nowritebarrierrec (the stock compiler proves there are none).
 var wbWarn = os.Getenv("FC_WBWARN") != ""
 
-// callGraph (FC_CALLGRAPH=<file>): a line per function: name, nosplit, the symbols it calls.
+// callGraph (FC_CALLGRAPH=<file>): a line per function: name, has no stack check, is declared //go:nosplit, has no
+// safe point for asynchronous preemption, its frame size, then the symbols it calls (tools/fc/safecheck.sh reads it).
 var callGraph = func() *os.File {
 	if name := os.Getenv("FC_CALLGRAPH"); name != "" {
 		f, _ := os.Create(name)

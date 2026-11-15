@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -120,8 +121,29 @@ func (c *compiler) compilePackage() (errs []string) {
 				}
 				g := c.newGen(sym.Name, sig, info, nil)
 				g.out.sym = sym
-				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd, fn, c.info))
+				g.pragmaNosplit = hasDirective(fd.Doc, "//go:nosplit")
+				inferred := false
+				if !g.pragmaNosplit && !intrinsicPkg[c.path] && c.pr.inRuntime(c.pkg) {
+					if yes, known := stockInlines(c.path, fd); known {
+						inferred = yes && fd.Body != nil
+					} else {
+						inferred = inlinable(fd, fn, c.info)
+					}
+				}
+				g.nosplit = g.pragmaNosplit || intrinsicPkg[c.path] || inferred
+				// (what has no stack check because the stock compiler inlines it or makes it instructions is no
+				// safe point for a signal either: runtime.reflectcallmove, nosplit, with a pointer one past the
+				// end of the argument frame in its arguments, calls internal/abi's IntArgRegBitmap.Get, and a
+				// preemption there showed the collector that pointer: "found pointer to free object")
+				// (a helper of a package that is not the runtime's own keeps its safe points if it loops: its
+				// other callers are user code, and tools/fc/safecheck.sh says if a nosplit function reaches one)
+				g.noAsync = g.nosplit && !(inferred && !runtimeNamed(c.path) && hasLoop(fd))
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
+				if hasDirective(fd.Doc, "//go:nowritebarrierrec") {
+					g.out.wbRec = 1
+				} else if hasDirective(fd.Doc, "//go:yeswritebarrierrec") {
+					g.out.wbRec = 2
+				}
 				// (//go:systemstack, //go:nowritebarrier and its relatives are promises the source makes and
 				// the stock compiler verifies; nothing to generate for them)
 				for _, d := range []string{"//go:wasmimport", "//go:wasmexport"} {
@@ -709,7 +731,13 @@ func (c *compiler) writeConst(s *obj.LSym, off int64, v constant.Value, t types.
 // not be a preemption point, so these functions have no stack check.
 var intrinsicPkg = map[string]bool{"internal/runtime/sys": true, "internal/runtime/math": true, "math/bits": true}
 
-// inlinable: would the stock compiler plausibly inline fd (a small body without loops, defers or
+// runtimeNamed: packages in whose functions the runtime's signal handler never preempts (isAsyncSafePoint).
+func runtimeNamed(path string) bool {
+	path = plainPath(path)
+	return path == "runtime" || path == "reflect" || strings.HasPrefix(path, "internal/runtime/")
+}
+
+// inlinable (the guess used when fc has no table of the stock compiler's decisions, inltab.go): would the stock compiler plausibly inline fd (a small body without loops, defers or
 // closures, not marked //go:noinline)? The runtime calls such helpers ((*mspan).base, markBits.setMarked,
 // (*Type).Pointers) from regions that must not be preempted and counts on their having no stack check,
 // which inlining gives the stock compiler. fc does not inline: in the runtime's packages it compiles them

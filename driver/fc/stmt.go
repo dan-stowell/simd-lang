@@ -342,6 +342,108 @@ func (g *gen) isMapIndex(e ast.Expr) bool {
 	return false
 }
 
+// selfReslice: x = x[:j] or x = x[:j:k], a slicing assigned back to its source, where x is not in the frame.
+// Only the words that change are written (the length; the capacity with k): the pointer is the one already
+// there, so it is not stored and there is no write barrier. This is the stock compiler's rule (ssagen: "We're
+// assigning a slicing operation back to its source. Don't write back fields we aren't changing", issue 14855),
+// and the runtime counts on it: recordspan does h.allspans = h.allspans[:len(h.allspans)+1] holding the heap
+// lock, where a write barrier that has to flush its buffer allocates a span and takes the heap lock again (an
+// fc-built protoc-gen-go hung that way about once in 150 runs at GOGC=1; 2026-11-15).
+func (g *gen) selfReslice(lhs, rhs ast.Expr, t types.Type) bool {
+	se, ok := ast.Unparen(rhs).(*ast.SliceExpr)
+	if !ok || g.c.noWB {
+		return false
+	}
+	isSlice := false
+	switch u := t.Underlying().(type) {
+	case *types.Slice:
+		isSlice = true
+	case *types.Basic:
+		if u.Info()&types.IsString == 0 {
+			return false
+		}
+	default:
+		return false
+	}
+	if !types.Identical(g.typeOf(se.X), t) { // (x[:j] of an array or a pointer to one is another operation)
+		return false
+	}
+	if se.Low != nil {
+		if tv := tvOf(se.Low); tv.Value == nil || tv.Value.Kind() != constant.Int || constant.Sign(tv.Value) != 0 {
+			return false
+		}
+	}
+	if !sameSafeExpr(lhs, se.X) {
+		return false
+	}
+	dst := g.lvalue(lhs)
+	if dst.inFrame() || !dst.isMem() {
+		g.move(dst, g.exprAs(rhs, t), t)
+		return true
+	}
+	val := g.exprAs(rhs, t)
+	if !val.isMem() {
+		g.move(dst, val, t)
+		return true
+	}
+	intT := types.Typ[types.Int]
+	if se.High != nil {
+		g.move(dst.plus(8), val.plus(8), intT)
+	}
+	if isSlice && se.Max != nil {
+		g.move(dst.plus(16), val.plus(16), intT)
+	}
+	return true
+}
+
+// sameSafeExpr: a and b are the same variable, field of it or thing it points to, written the same way and
+// without calls or indexing (the stock compiler's ir.SameSafeExpr, for the forms that matter here).
+func sameSafeExpr(a, b ast.Expr) bool {
+	a, b = ast.Unparen(a), ast.Unparen(b)
+	switch a := a.(type) {
+	case *ast.Ident:
+		b, ok := b.(*ast.Ident)
+		if !ok {
+			return false
+		}
+		v, isVar := useOf(a).(*types.Var)
+		return isVar && useOf(b) == types.Object(v)
+	case *ast.SelectorExpr:
+		b, ok := b.(*ast.SelectorExpr)
+		if !ok {
+			return false
+		}
+		v, isVar := useOf(a.Sel).(*types.Var)
+		if !isVar || useOf(b.Sel) != types.Object(v) {
+			return false
+		}
+		sa, sb := selnOf(a), selnOf(b)
+		if sa == nil && sb == nil {
+			return true // pkg.Var
+		}
+		return sa != nil && sb != nil && sameSafeExpr(a.X, b.X)
+	case *ast.StarExpr:
+		b, ok := b.(*ast.StarExpr)
+		return ok && sameSafeExpr(a.X, b.X)
+	case *ast.IndexExpr:
+		// x[i] of an array or a slice (not a map: its index is a call), the index a variable or a constant
+		b, ok := b.(*ast.IndexExpr)
+		if !ok {
+			return false
+		}
+		switch tvOf(a.X).Type.Underlying().(type) {
+		case *types.Array, *types.Slice:
+		default:
+			return false
+		}
+		return sameSafeExpr(a.X, b.X) && sameSafeExpr(a.Index, b.Index)
+	case *ast.BasicLit:
+		va, vb := tvOf(a).Value, tvOf(b).Value
+		return va != nil && vb != nil && constant.Compare(va, token.EQL, vb)
+	}
+	return false
+}
+
 func (g *gen) assign(s *ast.AssignStmt) {
 	switch s.Tok {
 	case token.ASSIGN, token.DEFINE:
@@ -406,6 +508,10 @@ func (g *gen) assign(s *ast.AssignStmt) {
 		}
 		if v := isNew(lhs); v != nil {
 			g.declareVarLate(v, rhs, t)
+			g.noteStackPtr(v, rhs)
+			return
+		}
+		if g.selfReslice(lhs, rhs, t) {
 			return
 		}
 		if id, ok := ast.Unparen(lhs).(*ast.Ident); ok {

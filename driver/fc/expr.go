@@ -271,6 +271,9 @@ func (g *gen) selector(e *ast.SelectorExpr) loc {
 	case types.FieldVal:
 		l := g.expr(e.X)
 		l, _ = g.fieldPath(l, g.typeOf(e.X), sel.Index())
+		if len(sel.Index()) == 1 && l.isMem() && g.isStackPtr(e.X) {
+			l.stk = true // p.f with p a pointer into this frame (stackptr.go)
+		}
 		return l
 	case types.MethodVal:
 		return g.methodValue(e, sel)
@@ -389,8 +392,14 @@ func (g *gen) index(e *ast.IndexExpr) loc {
 			return xl.plus(i * g.c.sizeof(u.Elem()))
 		}
 	}
+	_, isArray := xt.Underlying().(*types.Array)
+	inFrame := isArray && xl.noBarrier()
 	xl = g.stash(xl, xt)
-	return g.indexAddr(xt, xl, g.expr(e.Index), it)
+	el := g.indexAddr(xt, xl, g.expr(e.Index), it)
+	if inFrame && el.isMem() {
+		el.stk = true // an element of an array that is in this frame
+	}
+	return el
 }
 
 // indexBase evaluates the operand of an index expression: a slice or string value, a pointer to an array,

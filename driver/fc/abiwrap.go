@@ -172,6 +172,7 @@ func (c *compiler) wrapToABI0(fd *ast.FuncDecl, sig *types.Signature, sym *obj.L
 	g := c.newGen(sym.Name, sig, c.info, nil)
 	g.out.sym = sym
 	g.nosplit = true
+	g.noAsync = true // (a few instructions around one call)
 	g.out.flags |= obj.DUPOK | obj.ABIWRAPPER
 	in, out := sigTypes(sig)
 	ai0 := c.abi0Of(in, out)
@@ -193,6 +194,7 @@ func (c *compiler) wrapFromABI0(fd *ast.FuncDecl, sig *types.Signature, sym *obj
 	g := c.newGen(sym.Name, sig, c.info, nil)
 	g.out.sym = c.lookup(sym.Name, obj.ABI0, sym.Pkg)
 	g.nosplit = true
+	g.noAsync = true // (a few instructions around one call)
 	g.abi0 = true
 	g.out.flags |= obj.DUPOK | obj.ABIWRAPPER
 	in, out := sigTypes(sig)

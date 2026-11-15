@@ -7,7 +7,8 @@
 # Exit: 0 the tests pass; 1 they fail (or crash, or time out); 3 fc did not compile a package (first "fc: <pkg>: "
 # line on stderr); 4 the package has no tests; 2 anything else. Skips: tests/fc/skips.txt, as tools/fc/test.sh.
 # Environment: FC_BIN (default build/fc), FC_GOCACHE, WPTEST_TIMEOUT (the binary's -test.timeout, default 10m),
-# WPTEST_KEEP=<dir> keeps the plan, the build log and the binary there; FC_LINKFLAGS reaches fclink.
+# WPTEST_KEEP=<dir> keeps the plan, the build log and the binary there; FC_LINKFLAGS reaches fclink;
+# WPTEST_FREECHECK=1 runs the tests on the diagnostic runtime of tools/fc/freecheck.py.
 here=$(cd "$(dirname "$0")/../.." && pwd)
 dir=.
 if [ "$1" = -C ]; then dir=$2; shift 2; fi
@@ -33,6 +34,13 @@ while True:
 print(main or "-", pdir or "-")
 PY
 )
+# WPTEST_FREECHECK=1: against a copy of the runtime whose collector names the holder of a pointer to a free slot
+# (tools/fc/freecheck.py)
+if [ -n "$WPTEST_FREECHECK" ]; then
+  rsrc=$(go env GOROOT)/src/runtime
+  python3 "$here/tools/fc/freecheck.py" "$rsrc" "$work/runtime" || exit 2
+  sed -i "s#\"$rsrc\"#\"$work/runtime\"#; s#$rsrc/\\([a-z0-9_]*\\.\\(go\\|s\\|h\\)\\)#$work/runtime/\\1#g" "$work/plan.json"
+fi
 # (-X testing.testBinary=1: what go test passes its linker; testing.Testing() and crypto's test hooks read it)
 if [ "$main" = - ]; then echo "?   	$pkg	[no test files]"; exit 4; fi
 "$fc" build -X testing.testBinary=1 -plan "$work/plan.json" -o "$work/objs" -link "$work/test.bin" "$main" > "$work/build.log" 2>&1; rc=$?
