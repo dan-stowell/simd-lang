@@ -99,7 +99,7 @@ func goTemplate(l string, c *qcfg, from string) string {
 	if t, ok := templateMemo[k]; ok {
 		return t
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	t := outPath(c, r.Name, labelName(r.Name)+"_template.go")
 	srcs := srcFiles(r, c, "srcs")
 	tool := exe(r.Attrs["$tool"].Str, cfgExec, r.Name)
@@ -154,7 +154,7 @@ func archGenrule(r *qRule, c *qcfg) []string {
 	if o, ok := archMemo[k]; ok {
 		return o
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	if ta := c.resolve(r, "target_arch").Str; ta != "amd64" {
 		qfail("%s: target_arch %q: only amd64 is handled", r.Name, ta)
 	}
@@ -181,7 +181,7 @@ func inPlatform(c *qcfg, l, from string) *qcfg {
 // directoryPath: skylib's DirectoryInfo.path of a directory or subdirectory rule.
 func directoryPath(l string, c *qcfg, from string) string {
 	r := follow(l, c, from)
-	qKinds[r.Class]++
+	seeRule(r)
 	switch r.Class {
 	case "directory":
 		repo, pkg, _ := splitLabel(r.Name)
@@ -213,7 +213,7 @@ func ccCompilation(l string, c *qcfg, from string) *ccCtx {
 	if x := ccMemo[k]; x != nil {
 		return x
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	if len(c.resolve(r, "srcs").List) > 0 {
 		qfail("%s: cc_library with srcs is not handled", r.Name)
 	}

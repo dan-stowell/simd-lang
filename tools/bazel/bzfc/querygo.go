@@ -173,7 +173,7 @@ func goInfoOf(l string, c *qcfg, from string) *goInfo {
 	default:
 		qfail("%s: %s is a %s, not a Go library", from, r.Name, r.Class)
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	infoMemo[k] = info
 	return info
 }
@@ -344,7 +344,7 @@ func goBinary(r *qRule, c *qcfg) *action {
 	if a := binMemo[k]; a != nil {
 		return a
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	set := map[string]string{}
 	tern := func(attr string) string {
 		v := c.resolve(r, attr).Str

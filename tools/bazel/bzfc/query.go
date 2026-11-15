@@ -36,15 +36,23 @@ var (
 
 var (
 	qTargets []*qTarget
-	qRules   = map[string]*qRule{} // canonical label -> rule
-	qSrc     = map[string]bool{}   // source files
-	qGen     = map[string]string{} // generated file -> its rule
-	qKinds   = map[string]int{}    // rule kinds handled (rules visited, per configuration)
-	rulesGo  string                // rules_go's canonical repository name
-	artIDs   = map[string]int{}    // (synthesized artifacts for inputs())
+	qRules   = map[string]*qRule{}          // canonical label -> rule
+	qSrc     = map[string]bool{}            // source files
+	qGen     = map[string]string{}          // generated file -> its rule
+	qKinds   = map[string]map[string]bool{} // rule kinds handled: the rules of each
+	rulesGo  string                         // rules_go's canonical repository name
+	artIDs   = map[string]int{}             // (synthesized artifacts for inputs())
 )
 
 func qfail(format string, a ...any) { log.Fatalf("query: "+format, a...) }
+
+// seeRule: r's kind is handled (the count per kind in readQuery's line is of rules, whatever their configurations).
+func seeRule(r *qRule) {
+	if qKinds[r.Class] == nil {
+		qKinds[r.Class] = map[string]bool{}
+	}
+	qKinds[r.Class][r.Name] = true
+}
 
 func loadQuery() {
 	f, err := os.Open(*flagQuery)
@@ -144,7 +152,7 @@ func readQuery() {
 	sort.Strings(ks)
 	var b strings.Builder
 	for _, k := range ks {
-		fmt.Fprintf(&b, " %s=%d", k, qKinds[k])
+		fmt.Fprintf(&b, " %s=%d", k, len(qKinds[k]))
 	}
 	stage("query: %d targets, %d rules; actions derived from:%s", len(qTargets), len(qRules), b.String())
 }
@@ -233,7 +241,7 @@ func qfiles(l string, c *qcfg, from string) []string {
 		out = archGenrule(r, c)
 	default:
 		if r.Attrs["exports"] != nil && r.Attrs["with_cfg_platforms"] != nil { // (with_cfg.bzl's alias with a platform)
-			qKinds[r.Class]++
+			seeRule(r)
 			for n := range r.Attrs {
 				if strings.HasPrefix(n, "with_cfg_") && n != "with_cfg_platforms" {
 					qfail("%s: with_cfg setting %s is not handled", l, n)
@@ -300,7 +308,7 @@ func ensureRule(l string, c *qcfg) {
 	}
 	ensured[k] = true
 	r := rule(l, "generated file")
-	qKinds[r.Class]++
+	seeRule(r)
 	switch r.Class {
 	case "genrule":
 		genrule(r, c)
@@ -338,7 +346,7 @@ func goResetTarget(r *qRule, c *qcfg) string {
 	if o, ok := resetMemo[k]; ok {
 		return o
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	dep := exe(c.resolve(r, "dep").Str, c.root(), r.Name)
 	out := outPath(c, r.Name, path.Join(labelName(r.Name), path.Base(dep)))
 	newAction("ExecutableSymlink", r.Name, c, []string{out}, []string{dep})

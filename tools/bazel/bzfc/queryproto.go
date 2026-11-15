@@ -71,7 +71,7 @@ func protoInfo(r *qRule, c *qcfg) *protoInfoT {
 	if p := protoMemo[k]; p != nil {
 		return p
 	}
-	qKinds[r.Class]++
+	seeRule(r)
 	repo, pkg, name := splitLabel(r.Name)
 	pflag := func(attr string) string { // (protobuf's flags, as the rule names them)
 		if a := r.Attrs[attr]; a != nil && a.Str != "" {
@@ -347,7 +347,7 @@ func protocPath(from string) string {
 	if len(tc) != 1 {
 		qfail("%s needs protoc: the query has %d proto_toolchain rules, one expected (add the toolchain's target to the query expression)", from, len(tc))
 	}
-	qKinds["proto_toolchain"]++
+	seeRule(tc[0])
 	protocMemo = exe(cfgExec.resolve(tc[0], "proto_compiler").Str, cfgExec, tc[0].Name)
 	return protocMemo
 }
@@ -423,7 +423,7 @@ func goProtoLibrary(r *qRule, c *qcfg) *goInfo {
 		if comp.Class != "_go_proto_compiler" {
 			qfail("%s: compiler %s is a %s", r.Name, comp.Name, comp.Class)
 		}
-		qKinds[comp.Class]++
+		seeRule(comp)
 		if b := c.resolve(comp, "valid_archive"); b.Int != 0 || b.Str == "true" {
 			protoValidArchive[memoKey{r.Name, c}] = true
 		}
