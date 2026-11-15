@@ -129,27 +129,34 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 17:30 UTC): **MinIO cold 2.4-2.7 s / 13.7-15.5 core-s on 8 cores, idle machine, smoke passing**
-(exit test: 3.3 s); corpus cold at 8 cores: buildifier 0.5 s, runsc 0.6, tailscaled 1.25, caddy 1.6, kube-apiserver 2.8,
-prometheus 4.9. What moved it since the last scoreboard (3.9 s): checker results in the syntax nodes, the descriptor
-cuts, the in-process link (M5's first step), and the bump allocator (JOURNAL 11-15 17:17). Left for the exit test:
-(1) **MinIO's own tests on this fc**: running through the whole-program path
-(`FC_TIMEOUT=2400 tools/fc/wpbatch.sh -j 2 -C /home/exedev/targets/minio <packages with tests>` ->
-/home/exedev/targets/fc-minio-wp1.log; 45 internal packages pass, cmd was still running at 17:26). When done: log it,
-then std the same way (`tools/fc/wpbatch.sh` over tests/fc/passing.txt) since the bump allocator, slots and the
-in-process link have not been through the std suite.
-(2) **The Bazel rows**: buildifier and runsc build from Bazel's DAG (tools/bazel/cold.sh; 9.6 s and 26 s cold, of which
-fc is 0.4-0.6 s and Bazel's own analysis 6 and 22 s). A builder (Opus, worktree, FC_TAG=bb) has bb-cli and bb-executor;
-merge when `tools/bazel/cold.sh <row> 8` gives rc 0 and the binary's check passes. Then the question the Bazel rows
-raise: the cold cost is Bazel's analysis, so read the DAG cheaper (what does aquery need that a cold server makes slow?).
-(3) **On a quiet machine** (nothing else running; check `uptime`): regenerate SCOREBOARD.md
-(`tools/scoreboard/ours.sh . 8 4 2 1`, then mkscoreboard.py) and TRACE.md; then verdicts owed, order-balanced:
-FC_FUSE=1 (fused check) and FC_LAZYFUNCS=1 (by demand) against the default (scratch: 6 pairs, user+sys and wall, MinIO
-warm). Under load neither showed a gain; by demand compiles 13% fewer functions and is not cheaper, cause unknown
-(profile both on a quiet machine before any more work on it).
-(4) Then toward 2.0 s: the profile is flat (code generation 40%, bodies check 15%, descriptors 12%, declarations 9%,
-parse 9%, link 6%); candidates with a mechanism: per-function scratch reuse (growslice+memmove 1.3 s of 14),
-demand()'s sync.Map load per reference (0.5 s), ast.Walk passes per function (0.9 s: findHeapVars and friends in one
-walk), NewUnit (0.6 s). tools/fc/timeline.py for where cores idle (the link is 280 ms).
-Housekeeping: `df -h /` before long test runs (13 GB free at 17:20); nr_hugepages was found at 4090 (a killed run) and
-set back to 0.
+Now (2026-11-15 18:20 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+warm 1.77-1.92 s this afternoon** after the assembler moved in process, scratch buffers and pc tables on the compiling
+thread (machine not quiet: cold not retaken yet). MinIO's own tests through the whole-program path: 45 of 46, cmd as
+stock (before the afternoon's fixes; rerun owed). The std suite through the whole-program path (test packages by fc
+too) found two ABI/comparison bugs and three unsupported constructs, all fixed with corpus cases (JOURNAL 11-15).
+In order:
+(1) **Correctness on HEAD** (build/fc must be rebuilt first: `driver/mkfc.sh`; FC_TAG builds are scratch):
+`tools/fc/wpbatch.sh -j 3 -C /home/exedev/targets/goroot-slots/src < tests/fc/passing.txt` (std, 260 packages; expect
+all PASS with tests/fc/skips.txt; `runtime` and `weak` were rerunning at 18:20), then MinIO's
+(`FC_TIMEOUT=2400 tools/fc/wpbatch.sh -j 2 -C /home/exedev/targets/minio <packages with tests>`), language corpus
+(`tools/fc/lang.sh`, `FC_ALL=rt tools/fc/lang.sh`, wpbatch over tests/fc/lang). Then update tests/fc/passing.txt's
+header and the M-log line.
+(2) **Quiet pass** (nothing else running; `uptime` under 1): the scratch script of this session is gone with it, so:
+order-balanced A/B of MinIO warm (4 pairs each, user+sys and wall) for FC_LAZYFUNCS=1 (by demand, now drained per
+package: first numbers say 0.3 s of CPU less), FC_FUSE=1, FC_SCRATCH=0, FC_ASMPROC=1; `FC_LINKFLAGS=-stats`;
+tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8` + tests/minio_smoke.sh);
+`tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`. Flip `lazyFuncsDefault`
+(driver/fc/demand.go) if by demand wins on wall. Then TRACE.md: an fc section is owed (the summary lines of
+`fc build` have the phases, the link's phase table and the tax line: 0 processes, 170 small files).
+(3) **Bazel rows.** buildifier and runsc build from Bazel's DAG (9.6 s and 26 s cold; Bazel's own start and analysis
+6 and 22 s; fc 0.4-0.6 s). A builder (Opus, worktree) has bb-cli and bb-executor: a bb-cli binary existed at
+/home/exedev/targets/fc-cold/bb-cli/bazel-p8/bin at 18:07; merge when its report gives rc 0 and a passing check. Then
+the review's point (REVIEWS 11-15): the cold cost is Bazel. First `--profile` of the cold aquery (what are the 6-22 s:
+server start, repository extraction, loading, analysis); try `--vendor_dir` (extracted repositories kept like
+GOMODCACHE: report both numbers, it is Dan's call whether that is cold); then a reader of our own for the rules_go
+subset if flags cannot remove it.
+(4) Toward 2.0 s cold: the profile is flat; what has a mechanism: allocation volume (5.9 GB mapped per MinIO build,
+was 6.6: every byte is fresh memory; `-memprofile` lists sites, none above 6%), one assembler pass per package
+(IDEAS), functions by demand plus bodies checked only when compiled (FC_FUSE=1 exists; the initialization order needs
+the bodies its initializers reach), the link (280 ms at 2.4 cores: resolve 51, deadcode 61, layout 37, write 85).
+Housekeeping: `df -h /` before long runs; nr_hugepages must be 0 between runs (a killed build leaves it set).
