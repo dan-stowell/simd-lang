@@ -31,6 +31,7 @@ type qcfg struct {
 	set  map[string]string // Starlark settings set by go_transition (canonical label -> value)
 	base *qcfg             // the configuration before the last go_transition (rules_go's non_go_transition)
 	kids map[string]*qcfg  // go_transition results, by their settings
+	platform map[string]bool // its target platform's constraint values (nil: the host's; platformHas)
 }
 
 var (
@@ -39,7 +40,6 @@ var (
 	rcNative           = map[string]string{} // .bazelrc: native options
 	rcDefines          = map[string]string{}
 	rcUnmapped         = map[string]string{} // .bazelrc flags of repositories not mapped: //pkg:name -> as written
-	platformCons       = map[string]bool{"@@platforms//os:linux": true, "@@platforms//cpu:x86_64": true}
 )
 
 func newCfgs() {
@@ -78,7 +78,7 @@ func (c *qcfg) transition(set map[string]string) *qcfg {
 	if k := c.kids[id]; k != nil {
 		return k
 	}
-	n := &qcfg{dir: fmt.Sprintf("%s-ST-q%d", c.dir, len(c.kids)+1), exec: c.exec, mode: c.mode, set: map[string]string{}, base: c}
+	n := &qcfg{dir: fmt.Sprintf("%s-ST-q%d", c.dir, len(c.kids)+1), exec: c.exec, mode: c.mode, set: map[string]string{}, base: c, platform: c.platform}
 	for k, v := range c.set {
 		n.set[k] = v
 	}
@@ -187,7 +187,7 @@ func (c *qcfg) matches(l string, from string) (ok bool, cond []string) {
 	case "alias":
 		return c.matches(c.resolve(r, "actual").Str, from)
 	case "constraint_value":
-		return platformHas(l), []string{"constraint " + l}
+		return c.platformHas(l), []string{"constraint " + l}
 	case "config_setting":
 	default:
 		qfail("%s: select condition %s is a %s", from, l, r.Class)
@@ -235,7 +235,7 @@ func (c *qcfg) matches(l string, from string) (ok bool, cond []string) {
 	if a := r.Attrs["constraint_values"]; a != nil {
 		for _, cv := range a.List {
 			cond = append(cond, "constraint "+canon(cv))
-			if !platformHas(canon(cv)) {
+			if !c.platformHas(canon(cv)) {
 				ok = false
 			}
 		}
@@ -243,11 +243,34 @@ func (c *qcfg) matches(l string, from string) (ok bool, cond []string) {
 	return ok, cond
 }
 
-var platformDefaults map[string]bool
+// platformOf: a configuration's target platform as the set of its constraint values: the explicit ones (the host
+// platform's linux and x86_64, or those of a platform a transition named), and for every other constraint_setting of
+// the graph its default_constraint_value.
+func platformOf(explicit []string) map[string]bool {
+	setOf := map[string]string{}
+	for l, r := range qRules {
+		if r.Class == "constraint_value" {
+			setOf[l] = canon(r.Attrs["constraint_setting"].Str)
+		}
+	}
+	p := map[string]bool{}
+	has := map[string]bool{}
+	for _, v := range explicit {
+		v = followConstraint(v)
+		p[v] = true
+		has[setOf[v]] = true
+	}
+	for l, r := range qRules {
+		if r.Class == "constraint_setting" && !has[l] {
+			if d := r.Attrs["default_constraint_value"]; d != nil && d.Str != "" {
+				p[canon(d.Str)] = true
+			}
+		}
+	}
+	return p
+}
 
-// platformHas: the target platform (= the exec platform) has the constraint value: linux/x86_64 explicitly, else the
-// default value of its constraint_setting.
-func platformHas(cv string) bool {
+func followConstraint(cv string) string {
 	cv = canon(cv)
 	for i := 0; i < 20; i++ { // (aliases of constraint values: rules_go's //go/toolchain:linux)
 		r := qRules[cv]
@@ -256,30 +279,56 @@ func platformHas(cv string) bool {
 		}
 		cv = canon(cfgTarget.resolve(r, "actual").Str)
 	}
-	if platformCons[cv] {
-		return true
+	return cv
+}
+
+// platformHas: c's target platform (= its exec platform) has the constraint value.
+func (c *qcfg) platformHas(cv string) bool {
+	if c.platform == nil {
+		c.platform = platformOf(hostConstraints)
 	}
-	if platformDefaults == nil {
-		platformDefaults = map[string]bool{}
-		setOf := map[string]string{}
-		for l, r := range qRules {
-			if r.Class == "constraint_value" {
-				setOf[l] = canon(r.Attrs["constraint_setting"].Str)
-			}
-		}
-		explicit := map[string]bool{}
-		for v := range platformCons {
-			explicit[setOf[v]] = true
-		}
-		for l, r := range qRules {
-			if r.Class == "constraint_setting" && !explicit[l] {
-				if d := r.Attrs["default_constraint_value"]; d != nil && d.Str != "" {
-					platformDefaults[canon(d.Str)] = true
-				}
-			}
+	return c.platform[followConstraint(cv)]
+}
+
+var hostConstraints = []string{"@@platforms//os:linux", "@@platforms//cpu:x86_64"}
+
+// withPlatform: c with --platforms=l (a with_cfg or similar transition); a platform with the host's constraints
+// only is c itself.
+func (c *qcfg) withPlatform(l, from string) *qcfg {
+	r := follow(l, c, from)
+	if r.Class != "platform" {
+		qfail("%s: platform %s is a %s", from, r.Name, r.Class)
+	}
+	if len(c.resolve(r, "parents").List) > 0 || len(c.resolve(r, "flags").List) > 0 {
+		qfail("%s: platform %s has parents or flags: not handled", from, r.Name)
+	}
+	cons := c.resolve(r, "constraint_values").List
+	p := platformOf(cons)
+	if !p["@@platforms//os:linux"] || !p["@@platforms//cpu:x86_64"] {
+		qfail("%s: platform %s is not linux/x86_64", from, r.Name)
+	}
+	if c.platform == nil {
+		c.platform = platformOf(hostConstraints)
+	}
+	same := len(p) == len(c.platform)
+	for k := range p {
+		if !c.platform[k] {
+			same = false
 		}
 	}
-	return platformDefaults[cv]
+	if same {
+		return c
+	}
+	id := "platform=" + r.Name
+	if c.kids == nil {
+		c.kids = map[string]*qcfg{}
+	}
+	if k := c.kids[id]; k != nil {
+		return k
+	}
+	n := &qcfg{dir: fmt.Sprintf("%s-ST-q%d", c.dir, len(c.kids)+1), exec: c.exec, mode: c.mode, set: c.set, base: c.base, platform: p}
+	c.kids[id] = n
+	return n
 }
 
 func isDefaultCond(l string) bool { return strings.HasSuffix(l, "//conditions:default") }
@@ -355,9 +404,16 @@ func superset(a, b []string) bool {
 	return true
 }
 
-// readBazelrc: the workspace .bazelrc's unconditional build/common options (try-import and import followed).
+// readBazelrc: the workspace .bazelrc's build/common options as Bazel applies them to a build with no --config on the
+// command line: the unconditional lines in order (import and try-import followed), each --config=X expanded in place
+// (the lines common:X and build:X), and with --enable_platform_specific_config the config linux after them.
 func readBazelrc(ws string) {
 	repo := moduleRepoMapping(ws)
+	type rcLine struct {
+		cfg  string
+		args []string
+	}
+	var lines []rcLine
 	var read func(path string, must bool)
 	read = func(path string, must bool) {
 		b, err := os.ReadFile(path)
@@ -369,8 +425,8 @@ func readBazelrc(ws string) {
 		}
 		for _, line := range strings.Split(string(b), "\n") {
 			line = strings.TrimSpace(line)
-			if i := strings.Index(line, "#"); i >= 0 {
-				line = strings.TrimSpace(line[:i])
+			if strings.HasPrefix(line, "#") {
+				continue
 			}
 			f := strings.Fields(line)
 			if len(f) == 0 {
@@ -382,54 +438,77 @@ func readBazelrc(ws string) {
 				}
 				continue
 			}
-			if f[0] != "build" && f[0] != "common" {
+			cmd, cfg, _ := strings.Cut(f[0], ":")
+			if cmd != "build" && cmd != "common" {
 				continue
 			}
-			for i := 1; i < len(f); i++ {
-				o := f[i]
-				if !strings.HasPrefix(o, "-") {
-					continue
-				}
-				o = strings.TrimLeft(o, "-")
-				k, v, hasV := strings.Cut(o, "=")
-				if !hasV && i+1 < len(f) && !strings.HasPrefix(f[i+1], "-") && !strings.HasPrefix(k, "@") && !strings.HasPrefix(k, "//") && k != "stamp" && k != "nostamp" {
-					v = f[i+1]
-					i++
-					hasV = true
-				}
-				switch {
-				case strings.HasPrefix(k, "@") || strings.HasPrefix(k, "//"):
-					if !hasV {
-						v = "true"
-						if strings.HasPrefix(k, "no") {
-							v = "false"
-						}
+			lines = append(lines, rcLine{cfg, f[1:]})
+		}
+	}
+	read(filepath.Join(ws, ".bazelrc"), false)
+	expanding := map[string]bool{}
+	var apply func(args []string)
+	expand := func(cfg string) {
+		if expanding[cfg] {
+			qfail(".bazelrc: --config=%s expands itself", cfg)
+		}
+		expanding[cfg] = true
+		for _, l := range lines {
+			if l.cfg == cfg {
+				apply(l.args)
+			}
+		}
+		expanding[cfg] = false
+	}
+	apply = func(f []string) {
+		for i := 0; i < len(f); i++ {
+			o := f[i]
+			if !strings.HasPrefix(o, "-") {
+				continue
+			}
+			o = strings.TrimLeft(o, "-")
+			k, v, hasV := strings.Cut(o, "=")
+			starlark := strings.HasPrefix(k, "@") || strings.HasPrefix(k, "//") || strings.HasPrefix(k, "no@") || strings.HasPrefix(k, "no//")
+			if !hasV && !starlark && i+1 < len(f) && !strings.HasPrefix(f[i+1], "-") && k != "stamp" && k != "nostamp" {
+				v = f[i+1]
+				i++
+				hasV = true
+			}
+			switch {
+			case starlark:
+				if !hasV {
+					v = "true"
+					if strings.HasPrefix(k, "no") {
+						k, v = k[2:], "false"
 					}
-					if cl := canonRepo(k, repo); cl != "" {
-						rcFlags[cl] = v
-					}
-				case k == "define":
-					dk, dv, _ := strings.Cut(v, "=")
-					rcDefines[dk] = dv
-				case k == "c":
-					rcNative["compilation_mode"] = v
-				case k == "stamp" || k == "nostamp":
-					rcNative["stamp"] = fmt.Sprint(k == "stamp")
-				case k == "platforms" || k == "host_platform":
+				}
+				if cl := canonRepo(k, repo); cl != "" {
+					rcFlags[cl] = v
+				}
+			case k == "config":
+				expand(v)
+			case k == "define":
+				dk, dv, _ := strings.Cut(v, "=")
+				rcDefines[dk] = dv
+			case k == "c":
+				rcNative["compilation_mode"] = v
+			case k == "stamp" || k == "nostamp":
+				rcNative["stamp"] = fmt.Sprint(k == "stamp")
+			default:
+				if hasV {
 					rcNative[k] = v
-				default:
-					if hasV {
-						rcNative[k] = v
-					} else if strings.HasPrefix(k, "no") {
-						rcNative[k[2:]] = "false"
-					} else {
-						rcNative[k] = "true"
-					}
+				} else if strings.HasPrefix(k, "no") {
+					rcNative[k[2:]] = "false"
+				} else {
+					rcNative[k] = "true"
 				}
 			}
 		}
 	}
-	read(filepath.Join(ws, ".bazelrc"), false)
+	expand("")
+	if boolStr(rcNative["enable_platform_specific_config"]) == "true" {
+		expand("linux")
+	}
 	if p := rcNative["platforms"]; p != "" {
 		qfail(".bazelrc sets --platforms=%s: only the host platform (linux/x86_64) is handled", p)
 	}

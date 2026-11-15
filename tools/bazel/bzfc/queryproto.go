@@ -87,9 +87,7 @@ func protoInfo(r *qRule, c *qcfg) *protoInfoT {
 	for _, d := range c.resolve(r, "option_deps").List {
 		optDeps = append(optDeps, protoInfo(protoRule(d, c, r.Name), c))
 	}
-	if len(c.resolve(r, "exports").List) > 0 {
-		qfail("%s: proto_library exports are not handled", r.Name)
-	}
+	// (exports: read by the descriptor set's action only under strict_public_imports, which must be off: below)
 	importPrefix := c.resolve(r, "import_prefix").Str
 	strip := c.resolve(r, "strip_import_prefix").Str
 	if strings.HasPrefix(strip, "/") {

@@ -232,6 +232,20 @@ func qfiles(l string, c *qcfg, from string) []string {
 	case "_arch_genrule":
 		out = archGenrule(r, c)
 	default:
+		if r.Attrs["exports"] != nil && r.Attrs["with_cfg_platforms"] != nil { // (with_cfg.bzl's alias with a platform)
+			qKinds[r.Class]++
+			for n := range r.Attrs {
+				if strings.HasPrefix(n, "with_cfg_") && n != "with_cfg_platforms" {
+					qfail("%s: with_cfg setting %s is not handled", l, n)
+				}
+			}
+			wc := c
+			for _, p := range c.resolve(r, "with_cfg_platforms").List {
+				wc = wc.withPlatform(p, l)
+			}
+			out = qfiles(c.resolve(r, "exports").Str, wc, l)
+			break
+		}
 		ensureRule(l, c)
 		for _, o := range r.Outputs {
 			out = append(out, outPath(c, o, labelName(o)))
@@ -308,6 +322,10 @@ func ensureRule(l string, c *qcfg) {
 		bpfProgram(r, c)
 	case "_run_generator":
 		runGenerator(r, c)
+	case "std_package_list":
+		stdPackageList(r, c)
+	case "known_imports":
+		knownImports(r, c)
 	default:
 		qfail("rule kind %s (%s) is not handled by the query front end", r.Class, l)
 	}

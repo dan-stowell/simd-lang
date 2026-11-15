@@ -69,7 +69,7 @@ func rulesGoLabel(rel string) string { return "@@" + rulesGo + "//" + rel }
 
 // pure: rules_go's mode.pure in c (the pure flag, or a platform with cgo_off; a C toolchain is assumed).
 func pure(c *qcfg) bool {
-	return c.flag(rulesGoLabel("go/config:pure")) == "true" || platformHas(rulesGoLabel("go/toolchain:cgo_off"))
+	return c.flag(rulesGoLabel("go/config:pure")) == "true" || c.platformHas(rulesGoLabel("go/toolchain:cgo_off"))
 }
 
 func goTags(c *qcfg) []string {

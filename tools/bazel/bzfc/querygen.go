@@ -4,7 +4,9 @@
 package main
 
 import (
+	"fmt"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -47,6 +49,64 @@ func generateTables(r *qRule, c *qcfg) {
 	out := outOf(r, c, "out")
 	a := newAction("Action", r.Name, c, []string{out}, []string{tool, src})
 	a.setArgv([]string{tool, "-input", src, "-output", out}, nil)
+}
+
+// std_package_list: gazelle's language/go/def.bzl (its input: sdkPackageList).
+func stdPackageList(r *qRule, c *qcfg) {
+	tool := exe(r.Attrs["$gen_std_package_list"].Str, cfgExec, r.Name)
+	out := outOf(r, c, "out")
+	pl := sdkPackageList()
+	a := newAction("GoStdPackageList", r.Name, c, []string{out}, []string{tool, pl})
+	a.setArgv([]string{tool, pl, out}, nil)
+}
+
+var sdkPackages string
+
+// sdkPackageList: the Go SDK's packages.txt as rules_go's _build_package_list writes it: every directory under the
+// SDK's src/ that holds a file of its :srcs filegroup (glob src/**, STDLIB_SRCS_EXCLUDE applied by the BUILD file,
+// so by the query). The SDK's repository is not in deps(LABEL) (toolchain resolution): cold.sh adds its :srcs to the
+// query expression; exactly one such filegroup must be in the graph.
+func sdkPackageList() string {
+	if sdkPackages != "" {
+		return sdkPackages
+	}
+	var srcs []string
+	for l, r := range qRules {
+		repo, pkg, name := splitLabel(l)
+		if r.Class == "filegroup" && pkg == "" && name == "srcs" && strings.Contains(repo, "go_sdk") {
+			srcs = append(srcs, l)
+		}
+	}
+	if len(srcs) != 1 {
+		qfail("the Go SDK's package list: %d go_sdk //:srcs filegroups in the query's graph %v, one expected (add the SDK's //:srcs to the query expression)", len(srcs), srcs)
+	}
+	repo, _, _ := splitLabel(srcs[0])
+	srcDir := "external/" + repo + "/src/"
+	pkgs := map[string]bool{}
+	for _, f := range qfiles(srcs[0], cfgExec, "the Go SDK") {
+		if d := path.Dir(f); strings.HasPrefix(d, srcDir) { // (src.dirname: a file directly in src/ is no package)
+			pkgs[d[len(srcDir):]] = true
+		}
+	}
+	var list []string
+	for p := range pkgs {
+		list = append(list, p)
+	}
+	sort.Strings(list)
+	sdkPackages = path.Join(cfgExec.bin(), "external", repo, "packages.txt")
+	a := newAction("FileWrite", "@@"+repo+"//:package_list", cfgExec, []string{sdkPackages}, nil)
+	a.FileContents = strings.Join(list, "\n") + "\n"
+	return sdkPackages
+}
+
+// known_imports: gazelle's language/proto/gen/def.bzl.
+func knownImports(r *qRule, c *qcfg) {
+	tool := exe(r.Attrs["$bin"].Str, cfgExec, r.Name)
+	src := file1(c.resolve(r, "src").Str, c, r.Name)
+	out := outOf(r, c, "out")
+	a := newAction("KnownImports", r.Name, c, []string{out}, []string{tool, src})
+	a.setArgv([]string{tool, "-proto_csv", src, "-known_imports", out, "-package", c.resolve(r, "package").Str, "-var", c.resolve(r, "var").Str,
+		"-key", fmt.Sprint(c.resolve(r, "key").Int), "-value", fmt.Sprint(c.resolve(r, "value").Int)}, nil)
 }
 
 // genrule: Bazel's (GenRuleBase): cmd_bash or cmd, $(location)-style and make variables expanded, run by

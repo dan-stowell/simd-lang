@@ -41,11 +41,12 @@ bzcmd="aquery $flags --experimental_output_paths=off --include_file_write_conten
 fe="-aquery $work/aq.json"
 # BZ_QUERY=1: the loading phase only (bazel query: the target graph; no configured targets, no toolchain resolution, no
 # actions) and bzfc's query front end (tools/bazel/bzfc/query.go), which derives the actions from the rules. A query
-# resolves no toolchain, so the proto toolchain's target is named in the expression (BZ_QTOOLCHAINS: the one protobuf's
-# resolution picks on linux_x86_64): its repository is then fetched, and bzfc finds protoc in the graph.
+# resolves no toolchain, so what bzfc needs of the toolchains is named in the expression (BZ_QTOOLCHAINS): the proto
+# toolchain protobuf's resolution picks on linux_x86_64 (protoc), and the Go SDK's //:srcs (its package list, which
+# gazelle's std_package_list reads). Their repositories are then fetched, as the aquery fetches them.
 if [ -n "${BZ_QUERY:-}" ]; then
-  qtc=${BZ_QTOOLCHAINS-@@protobuf++protoc+prebuilt_protoc.linux_x86_64//:prebuilt_protoc_toolchain}
-  qexpr="deps($target)"; [ -z "$qtc" ] || qexpr="$qexpr + deps($qtc)"
+  qtc=${BZ_QTOOLCHAINS-@@protobuf++protoc+prebuilt_protoc.linux_x86_64//:prebuilt_protoc_toolchain @@rules_go++go_sdk+main___download_0_linux_amd64//:srcs}
+  qexpr="deps($target)"; for t in $qtc; do qexpr="$qexpr + deps($t)"; done
   qflags="--repository_cache=$T/bazel-repocache --disk_cache= --remote_cache= --remote_executor= --bes_backend= --bes_results_url= --noshow_progress"
   bzcmd="query $qflags --consistent_labels --noproto:flatten_selects --output=streamed_proto '$qexpr' > $work/q.pb"
   fe="-query $work/q.pb"

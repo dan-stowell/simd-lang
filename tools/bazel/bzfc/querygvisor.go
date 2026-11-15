@@ -161,8 +161,7 @@ func archGenrule(r *qRule, c *qcfg) []string {
 	if v, err := c.flagValue("@@//tools:export_go_sources"); err == nil && v == "true" {
 		qfail("%s: //tools:export_go_sources is on: every architecture's copy is not handled", r.Name)
 	}
-	checkPlatform("@@//tools/bazeldefs:linux_amd64", r.Name)
-	src := file1(c.resolve(r, "src").Str, c, r.Name)
+	src := file1(c.resolve(r, "src").Str, inPlatform(c, "@@//tools/bazeldefs:linux_amd64", r.Name), r.Name)
 	out := outPath(c, r.Name, strings.Replace(c.resolve(r, "template").Str, "%s", "amd64", 1))
 	a := newAction("CopyFile", r.Name, c, []string{out}, []string{src})
 	a.setArgv([]string{"cp", src, out}, nil)
@@ -170,18 +169,13 @@ func archGenrule(r *qRule, c *qcfg) []string {
 	return archMemo[k]
 }
 
-// checkPlatform: a platform a transition names, where bzfc builds in its own configuration: its constraints must be
-// linux and x86_64 (when the platform is in the query's graph; otherwise nothing can be checked and nothing is said).
-func checkPlatform(l, from string) {
-	r := qRules[l]
-	if r == nil {
-		return
+// inPlatform: c with the platform a transition names (when the platform is in the query's graph; otherwise nothing
+// can be known of it: c itself).
+func inPlatform(c *qcfg, l, from string) *qcfg {
+	if qRules[l] == nil {
+		return c
 	}
-	for _, cv := range cfgTarget.resolve(r, "constraint_values").List {
-		if !platformCons[canon(cv)] {
-			qfail("%s: platform %s has constraint %s: only linux/x86_64 is handled", from, l, cv)
-		}
-	}
+	return c.withPlatform(l, from)
 }
 
 // directoryPath: skylib's DirectoryInfo.path of a directory or subdirectory rule.
