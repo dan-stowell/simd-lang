@@ -113,47 +113,48 @@ type gen struct {
 	locals   int64
 	maxarg   int64
 
-	resHome    []loc
-	resVars    []*types.Var
-	ret        *label
-	scopes     []scope
-	labels     map[*types.Label]*label
-	lblScope   map[*types.Label]*scope
-	hasDefer   bool
-	ngen       [4]int // closures named so far: function literals, range-over-func bodies, go/defer wrappers, others
-	isLit      bool   // a function literal or range-over-func body (its literals are named outer.N)
-	lastPos    token.Pos
-	ctxSlot    loc // the closure object, in a closure
-	nosplit    bool
-	noAsync    bool // no instruction is a safe point for asynchronous preemption: declared //go:nosplit (the stock compiler's rule), or without a stack check because the stock compiler inlines it
-	fallthru   *label
-	entry      func()
-	bpFix      []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
-	lastPlace  int                 // the address of the label placed last (another label may already name the current address)
-	declSlots  []int               // the slots of the variables declared in the blocks being compiled
-	tidy       bool                // tidy frames (see slotBorn)
-	noWBDecl   bool                // the declaration says //go:nowritebarrier[rec]
-	fnBody     ast.Node            // the function's body (stackPtr's scan)
-	stkPtr     map[*types.Var]bool // pointer variables that only ever point into this frame (stackptr.go)
-	reassigned map[*types.Var]bool // variables assigned after their declaration or whose address is taken
-	curPos     token.Pos           // the position of the statement being compiled
-	liveSlot   []bool              // by slot: allocated now
-	dirty      []int               // slots released in the statement being compiled: still live until it ends
-	liveSets   []string            // the distinct sets of live slots at calls (bit sets by slot index)
-	liveIdx    map[string]int
-	nDecl      int
-	esc        escResult           // escape analysis of the package the body is in; nil: everything escapes
-	addrVars   map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
-	capByVal   map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
-	outerRef   map[*types.Var]bool // in a literal: the variables it captured by reference
-	assigned   map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
-	convSite   ast.Node            // the expression being converted to an interface (for the analysis's verdict)
-	convCall   *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
-	rf         *rfCtx              // set in the body of a range-over-func loop
-	deferTok   *types.Var          // the runtime's token for defers made in range-over-func loop bodies
-	sc         *genScratch         // this function's scratch buffers, if it has them (compileFunc)
-	root       *gen                // the function whose results a return there sets
-	abi0       bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	resHome       []loc
+	resVars       []*types.Var
+	ret           *label
+	scopes        []scope
+	labels        map[*types.Label]*label
+	lblScope      map[*types.Label]*scope
+	hasDefer      bool
+	ngen          [4]int // closures named so far: function literals, range-over-func bodies, go/defer wrappers, others
+	isLit         bool   // a function literal or range-over-func body (its literals are named outer.N)
+	lastPos       token.Pos
+	ctxSlot       loc // the closure object, in a closure
+	nosplit       bool
+	pragmaNosplit bool // declared //go:nosplit
+	noAsync       bool // no instruction is a safe point for asynchronous preemption: declared //go:nosplit (the stock compiler's rule), or without a stack check because the stock compiler inlines it
+	fallthru      *label
+	entry         func()
+	bpFix         []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
+	lastPlace     int                 // the address of the label placed last (another label may already name the current address)
+	declSlots     []int               // the slots of the variables declared in the blocks being compiled
+	tidy          bool                // tidy frames (see slotBorn)
+	noWBDecl      bool                // the declaration says //go:nowritebarrier[rec]
+	fnBody        ast.Node            // the function's body (stackPtr's scan)
+	stkPtr        map[*types.Var]bool // pointer variables that only ever point into this frame (stackptr.go)
+	reassigned    map[*types.Var]bool // variables assigned after their declaration or whose address is taken
+	curPos        token.Pos           // the position of the statement being compiled
+	liveSlot      []bool              // by slot: allocated now
+	dirty         []int               // slots released in the statement being compiled: still live until it ends
+	liveSets      []string            // the distinct sets of live slots at calls (bit sets by slot index)
+	liveIdx       map[string]int
+	nDecl         int
+	esc           escResult           // escape analysis of the package the body is in; nil: everything escapes
+	addrVars      map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	capByVal      map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
+	outerRef      map[*types.Var]bool // in a literal: the variables it captured by reference
+	assigned      map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
+	convSite      ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	convCall      *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
+	rf            *rfCtx              // set in the body of a range-over-func loop
+	deferTok      *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	sc            *genScratch         // this function's scratch buffers, if it has them (compileFunc)
+	root          *gen                // the function whose results a return there sets
+	abi0          bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -1288,7 +1289,8 @@ func (g *gen) finish(pos token.Pos) {
 	}
 	if callGraph != nil {
 		var b strings.Builder
-		fmt.Fprintf(&b, "%s\t%v", g.out.sym.Name, g.nosplit)
+		// name, no stack check, declared //go:nosplit, no safe point for a signal, callees
+		fmt.Fprintf(&b, "%s\t%v\t%v\t%v\t%d", g.out.sym.Name, g.nosplit, g.pragmaNosplit, g.noAsync, n)
 		seen := map[string]bool{}
 		for _, r := range relocs {
 			if r.Type == objabiRCall && r.Sym != nil && !seen[r.Sym.Name] {
@@ -1540,7 +1542,8 @@ func (g *gen) noteWB() {
 // //go:nowritebarrierrec (the stock compiler proves there are none).
 var wbWarn = os.Getenv("FC_WBWARN") != ""
 
-// callGraph (FC_CALLGRAPH=<file>): a line per function: name, nosplit, the symbols it calls.
+// callGraph (FC_CALLGRAPH=<file>): a line per function: name, has no stack check, is declared //go:nosplit, has no
+// safe point for asynchronous preemption, its frame size, then the symbols it calls (tools/fc/safecheck.sh reads it).
 var callGraph = func() *os.File {
 	if name := os.Getenv("FC_CALLGRAPH"); name != "" {
 		f, _ := os.Create(name)

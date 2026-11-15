@@ -415,8 +415,16 @@ func (c *compiler) compileInstance(in *instance) {
 	g := c.newGen(in.sym.Name, sig, p.infoFor(fd), in.env)
 	g.out.sym = in.sym
 	g.out.flags |= obj.DUPOK
-	g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || (in.fn.Pkg() != nil && intrinsicPkg[in.fn.Pkg().Path()])
+	g.pragmaNosplit = hasDirective(fd.Doc, "//go:nosplit")
+	g.nosplit = g.pragmaNosplit || (in.fn.Pkg() != nil && intrinsicPkg[in.fn.Pkg().Path()])
 	g.noAsync = g.nosplit
+	if !g.nosplit && c.pr.inRuntime(p) {
+		// an instance of a generic function of the runtime's packages that the stock compiler inlines (inltab.go)
+		if yes, _ := stockInlines(p.ImportPath, fd); yes {
+			g.nosplit = true
+			g.noAsync = runtimeNamed(p.ImportPath) || !hasLoop(fd)
+		}
+	}
 	g.compileFunc(sig.Recv(), fd.Pos(), fd.Body.Rbrace, fd.Body, func() { g.block(fd.Body.List) })
 }
 
