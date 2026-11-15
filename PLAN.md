@@ -129,26 +129,27 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-14 01:25 UTC): MinIO cold 3.7-4.2 s / 21-24 core-s on 8 cores at 00:26-00:34 (idle); exit test 3.3 s.
-Since then, all committed (JOURNAL 00:55, 01:15): the scaling question is answered (memory hierarchy, not locks);
-type descriptors by demand (on in `fc build -link`); **functions by demand** (driver/fc/demand.go, `FC_LAZYFUNCS=1`,
-off by default): MinIO 158,189 -> 137,624 functions, same linked program; rtMu replaced by per-symbol claims.
-In order:
-(1) **Time functions by demand on a quiet machine and flip the default** (`lazyFuncsDefault` in demand.go) if wall
-is not worse: order-balanced pairs of `FC_LAZYFUNCS=1` vs unset, cold and warm (`tools/fc/cold.sh minio 8`;
-scratch script: 4 pairs, user+sys and wall). If cores idle (tools/fc/timeline.py; goroutine census by
-`kill -QUIT` at 2.5 s with GOTRACEBACK=all), look at who holds slots. Then the corpus (`tools/scoreboard/ours.sh . 8`
-with FC_LAZYFUNCS=1 exported) and the live-set differential on kube-apiserver as was done for MinIO.
-(2) Next cuts of dead work, by the same instrument (`FC_DEMANDSTAT=1` prints who asks): globals by demand (every
-global is defined and its type's methods asked for: ~10,000 requests on MinIO); the linker's rule for methods
-(only types converted to interfaces keep their methods: 132,136 -> 126,622 functions); bodies checked by demand
-(go/types Bodies per function: the check is 3.3 core-s, 13% of it for functions never compiled); `demand()`'s
-sync.Map load per reference (0.3 s in the profile: cache per gen).
-(3) **Builders running in worktrees** (wait for their notifications; do not redo their work): M5, objects handed to
-fclink in process (Opus, since 00:44; FC_TAG=m5; brief: design in driver/fclink/main.go's header); fc from the
-Bazel DAG (Opus, since 01:22; FC_TAG=bz; buildifier, runsc, then bb-cli and bb-executor with a measured blocker
-list). Merge each when its oracle holds (lang 23/23 both modes, MinIO smoke, corpus checks); M5 touches
-build.go/obj.go where demand.go's hooks are (serveDemands returns before installFuncs: hand-off goes after it).
-(4) After M5 merges: per-function scratch reuse, frame-allocated defer closures, prometheus with HUGEPAGES=8192.
-Housekeeping: `df -h /` before long test runs; old worktrees under .claude/worktrees (agent-a43..., a4799..., a4da...,
-a937...) are merged and can be removed with `git worktree remove`; reviews are triaged (REVIEWS.md 01:20).
+Now (2026-11-15 17:30 UTC): **MinIO cold 2.4-2.7 s / 13.7-15.5 core-s on 8 cores, idle machine, smoke passing**
+(exit test: 3.3 s); corpus cold at 8 cores: buildifier 0.5 s, runsc 0.6, tailscaled 1.25, caddy 1.6, kube-apiserver 2.8,
+prometheus 4.9. What moved it since the last scoreboard (3.9 s): checker results in the syntax nodes, the descriptor
+cuts, the in-process link (M5's first step), and the bump allocator (JOURNAL 11-15 17:17). Left for the exit test:
+(1) **MinIO's own tests on this fc**: running through the whole-program path
+(`FC_TIMEOUT=2400 tools/fc/wpbatch.sh -j 2 -C /home/exedev/targets/minio <packages with tests>` ->
+/home/exedev/targets/fc-minio-wp1.log; 45 internal packages pass, cmd was still running at 17:26). When done: log it,
+then std the same way (`tools/fc/wpbatch.sh` over tests/fc/passing.txt) since the bump allocator, slots and the
+in-process link have not been through the std suite.
+(2) **The Bazel rows**: buildifier and runsc build from Bazel's DAG (tools/bazel/cold.sh; 9.6 s and 26 s cold, of which
+fc is 0.4-0.6 s and Bazel's own analysis 6 and 22 s). A builder (Opus, worktree, FC_TAG=bb) has bb-cli and bb-executor;
+merge when `tools/bazel/cold.sh <row> 8` gives rc 0 and the binary's check passes. Then the question the Bazel rows
+raise: the cold cost is Bazel's analysis, so read the DAG cheaper (what does aquery need that a cold server makes slow?).
+(3) **On a quiet machine** (nothing else running; check `uptime`): regenerate SCOREBOARD.md
+(`tools/scoreboard/ours.sh . 8 4 2 1`, then mkscoreboard.py) and TRACE.md; then verdicts owed, order-balanced:
+FC_FUSE=1 (fused check) and FC_LAZYFUNCS=1 (by demand) against the default (scratch: 6 pairs, user+sys and wall, MinIO
+warm). Under load neither showed a gain; by demand compiles 13% fewer functions and is not cheaper, cause unknown
+(profile both on a quiet machine before any more work on it).
+(4) Then toward 2.0 s: the profile is flat (code generation 40%, bodies check 15%, descriptors 12%, declarations 9%,
+parse 9%, link 6%); candidates with a mechanism: per-function scratch reuse (growslice+memmove 1.3 s of 14),
+demand()'s sync.Map load per reference (0.5 s), ast.Walk passes per function (0.9 s: findHeapVars and friends in one
+walk), NewUnit (0.6 s). tools/fc/timeline.py for where cores idle (the link is 280 ms).
+Housekeeping: `df -h /` before long test runs (13 GB free at 17:20); nr_hugepages was found at 4090 (a killed run) and
+set back to 0.
