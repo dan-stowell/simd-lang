@@ -33,8 +33,9 @@ while True:
 print(main or "-", pdir or "-")
 PY
 )
+# (-X testing.testBinary=1: what go test passes its linker; testing.Testing() and crypto's test hooks read it)
 if [ "$main" = - ]; then echo "?   	$pkg	[no test files]"; exit 4; fi
-"$fc" build -plan "$work/plan.json" -o "$work/objs" -link "$work/test.bin" "$main" > "$work/build.log" 2>&1; rc=$?
+"$fc" build -X testing.testBinary=1 -plan "$work/plan.json" -o "$work/objs" -link "$work/test.bin" "$main" > "$work/build.log" 2>&1; rc=$?
 rm -rf "$work/objs"
 if [ $rc != 0 ]; then
   grep -m1 '^fc: ' "$work/build.log" >&2 || tail -5 "$work/build.log" >&2
