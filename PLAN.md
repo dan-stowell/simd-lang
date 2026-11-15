@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 21:58 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 22:13 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon.** No quiet numbers since, and those are numbers of a compiler that has changed:
 **the Go distribution's own compiler tests (`tools/fc/gotest.py`: $GOROOT/test's 1,048 single-file `// run` programs,
 never run before) found 30-odd differences from the stock compiler today, every one in every earlier fc binary**
@@ -174,12 +174,18 @@ builders'). FC_ESC=1 (escape analysis in every package) is not part of any pass 
 **Liveness skips are 30-odd tests and some depend on what ran before** (the pinner tests, TestStackGrowth). FC_TIDY=all
 (slots die with their statement or block in every package, as in the runtime's) makes most pass but is killed by its
 counts (IDEAS: code +33%, binary +55%, build memory +18%).
-(e) **Mine, next (nothing else needs the main thread while the passes run): the same bytes from the same sources**
-(IDEAS, last entry; STATUS decision 2). In driver/fclink: lay out content-addressed and named data symbols by
-(package rank, name or content hash) instead of the order threads made them; in driver/fc: numbered names given by
-declaration order. Oracle: two builds of tests/fc/lang's programs and of MinIO are `cmp`-equal (today: 31,645 of
-1.18 MB of .text bytes differ in a small program, all of them relocation targets); kill test: more than 10 ms in the
-link's layout row on MinIO (then a FCLINK_SORT=1 mode for the passes only). Build with `FC_TAG=w driver/mkfc.sh`.
+(e) **The same bytes from the same sources** (IDEAS, last entry; STATUS decision 2). **Part one is on main, local
+commits 9c9c81d + 6bd2555, NOT pushed yet**: one order inside a package (JOURNAL 22:10). Its tests were started at
+22:07 on build/fcw (= those commits): `FC_ALL=rt tools/fc/lang.sh`, `tools/fc/lang.sh`, `python3 tools/fc/gotest.py`,
+all with FC_BIN=$PWD/build/fcw; if no result is at hand, rerun them (expect 26/26 twice and PASS 1018 FAIL 0 NOFC 0;
+the first try said NOFC "content-addressable but alignment is not set", fixed before the commit), then `git push`.
+**Part two is with an Opus builder (launched 22:12, its own worktree, compiler tag sb)**: shard compilers for the
+shared instances, wrappers and descriptors; its report arrives as a task notification (if none: `git worktree list`,
+the newest branch). Oracle: `tools/fc/samebytes.sh <dir> [target] [n]` exits 0 (today: 134 of 14,043 symbols change
+package in a hello program, 1,910 of 41,088 in buildifier). Merge it like the others (scratch compiler from the
+merged tree, gotest + lang rt + samebytes, then push). Never `pkill -f` (it killed my own test run at 22:06).
+For the quiet pass: before build/fc is rebuilt, `cp build/fc build/fc-5b23b5d`, and A/B user+sys of MinIO against
+the new one (the sorts in NewUnit and the fixed-seed hash are the cost of part one; not measured yet).
 Then, second: escape analysis where it pays (uglyfib: 150x; ask it only for functions that take addresses?), counted
 on MinIO's build CPU.
 (2) **The soak** is `tools/fc/soak.sh [runs] [workers]` (an fc-built protoc-gen-go against the stock-built one at
@@ -215,7 +221,6 @@ MinIO build; no site above 5%: NewUnit 6.6% cumulative, newGen 5.8%), type descr
 (2.0 of 18 s of samples in a profile under load: writeCommon, writeUncommon, the names), one assembler pass per
 package (IDEAS), functions and bodies by demand (FC_FUSE=1 FC_LAZYBODIES=1), the link (250 ms: resolve 51, deadcode
 80, layout 27, write 71).
-Housekeeping: `df -h /` before long runs (14 GB free at 21:00 after removing 7 GB of reviewers' scratch from /tmp;
-/home/exedev/targets/bz-scratch/q is 865 MB of the query builder's outputs, removable); nr_hugepages must be 0 between
-runs (a killed build leaves it set); the four worktrees under .claude/worktrees are merged and can go (`git worktree
-remove`); reviews: the by-value capture hunt came back with 34 cases and no counterexample (REVIEWS.md).
+Housekeeping: `df -h /` before long runs (9.5 GB free at 22:10); nr_hugepages must be 0 between
+runs (a killed build leaves it set); the four merged worktrees are gone; two builders' worktrees are live (rundir, same bytes);
+reviews: the by-value capture hunt came back with 34 cases and no counterexample (REVIEWS.md).

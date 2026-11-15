@@ -162,4 +162,8 @@ keys on (the demo's audience). What it takes: fclink sorting content-addressed a
 rank, name or content hash) instead of arrival, which it already does for types; the numbered names (closures made
 by demand, the typeOwner choice) given by declaration order. Kill test: the cost of the sort in the link's layout
 row on MinIO (1.2 million content-hashed slots): drop it if it is more than 10 ms of the link's 250, and settle for
-a FCLINK_SORT=1 mode that the verification passes use. Status: not started.
+a FCLINK_SORT=1 mode that the verification passes use. Status (22:10 UTC): the order inside a package is done
+(NewUnit, canonFiles, content-addressed string headers: JOURNAL); what is left is which package holds the shared
+instances, wrappers and descriptors (a builder: shard compilers chosen by the symbol's name). The sort is not in
+the link at all (per package, on its own thread), so the kill test's row is not the one to read: user+sys of the
+whole build is, on a quiet machine.
