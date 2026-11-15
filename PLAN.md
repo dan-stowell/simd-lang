@@ -170,7 +170,8 @@ the test directories of older Go releases' regression programs that this GOROOT 
 differential (csmith-style) only if those dry up.
 (d) The corpus case of each finding is tests/fc/lang/gotestfinds (mine), lines, generics/consts+locals, localtarg (the
 builders'). FC_ESC=1 (escape analysis in every package) is not part of any pass and crashed on a corpus package until
-21:42: add `FC_ESC=1 FC_ALL=rt tools/fc/lang.sh` to the next verify script.
+21:42: the next verify script is written with it and with samebytes on three
+projects: /home/exedev/targets/fc-verify-1115f.sh (run it on build/fc after 1115e ends and the builders are merged).
 **Liveness skips are 30-odd tests and some depend on what ran before** (the pinner tests, TestStackGrowth). FC_TIDY=all
 (slots die with their statement or block in every package, as in the runtime's) makes most pass but is killed by its
 counts (IDEAS: code +33%, binary +55%, build memory +18%).
