@@ -453,7 +453,28 @@ func (c *compiler) namedSymName(u *types.Named, mode fmtMode) string {
 	if u.TypeParams().Len() > 0 && u.TypeArgs().Len() == 0 {
 		giveUp("type descriptor for the generic type %v", u)
 	}
-	if n := u.TypeArgs().Len(); n > 0 {
+	if outer, own, ok := c.pr.localArgs(u); ok {
+		// a type declared in a generic function: T[<the function's type arguments>;<its own>]
+		var b strings.Builder
+		b.WriteString(name[:strings.IndexByte(name, '[')])
+		b.WriteByte('[')
+		for i, a := range outer {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			c.tconv(&b, a, fmtID, false)
+		}
+		for i, a := range own {
+			if i == 0 {
+				b.WriteByte(';')
+			} else {
+				b.WriteByte(',')
+			}
+			c.tconv(&b, a, fmtID, false)
+		}
+		b.WriteByte(']')
+		name = b.String()
+	} else if n := u.TypeArgs().Len(); n > 0 {
 		var b strings.Builder
 		b.WriteString(name)
 		b.WriteByte('[')

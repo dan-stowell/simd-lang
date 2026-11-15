@@ -39,11 +39,13 @@ func substType(pr *Program, env map[*types.TypeParam]types.Type, t types.Type) t
 	case *types.Alias:
 		return sub(types.Unalias(t))
 	case *types.Named:
+		if o := t.Origin().Obj(); o.Pkg() != nil && o.Parent() != o.Pkg().Scope() && o.Parent() != nil {
+			if n := pr.localInstance(env, t); n != nil {
+				return n // a type declared inside the generic function
+			}
+		}
 		targs := t.TypeArgs()
 		if targs.Len() == 0 {
-			if o := t.Obj(); o.Pkg() != nil && o.Parent() != o.Pkg().Scope() && o.Parent() != nil {
-				return pr.localInstance(env, t) // a type declared inside a (perhaps generic) function
-			}
 			return t
 		}
 		changed := false
@@ -434,105 +436,109 @@ func (g *gen) funcRefIsGeneric(fn *types.Func) (*types.Signature, bool) {
 	return osig, osig.TypeParams().Len() > 0 || osig.RecvTypeParams().Len() > 0
 }
 
-// localInstance: a type declared inside a generic function, for one set of type arguments. If its
-// definition mentions the function's type parameters, each instantiation of the function has its own type.
-func (pr *Program) localInstance(env map[*types.TypeParam]types.Type, t *types.Named) types.Type {
-	uses, ok := pr.localGeneric.Load(t)
-	if !ok {
-		uses = usesTypeParam(t.Underlying(), map[types.Type]bool{t: true})
-		pr.localGeneric.Store(t, uses)
-	}
-	if !uses.(bool) {
-		return t
-	}
-	// the key: the type and the arguments, in the order of the parameters
-	type kv struct {
-		tp *types.TypeParam
-		t  types.Type
-	}
-	var kvs []kv
-	for tp, a := range env {
-		kvs = append(kvs, kv{tp, a})
-	}
-	sort.Slice(kvs, func(i, j int) bool {
-		if kvs[i].tp.Index() != kvs[j].tp.Index() {
-			return kvs[i].tp.Index() < kvs[j].tp.Index()
+// localInstance: a type declared inside a generic function, for one instantiation of the function (and for
+// one list of its own type arguments, if it is generic itself). As in the stock compiler, the function's type
+// parameters are implicit parameters of every type declared in it, used or not: each instantiation of the
+// function has its own types, named T[<the function's type arguments>;<the type's own>] (namedSymName).
+// t is not such a type (nil is returned) when env has none of the type parameters of a function around it.
+func (pr *Program) localInstance(env map[*types.TypeParam]types.Type, t *types.Named) *types.Named {
+	o := t.Origin().Obj()
+	var outer []*types.TypeParam
+	for tp := range env {
+		for s := o.Parent(); s != nil; s = s.Parent() {
+			if s == tp.Obj().Parent() {
+				outer = append(outer, tp)
+				break
+			}
 		}
-		return kvs[i].tp.Obj().Pos() < kvs[j].tp.Obj().Pos()
+	}
+	if len(outer) == 0 {
+		return nil
+	}
+	sort.Slice(outer, func(i, j int) bool {
+		if outer[i].Index() != outer[j].Index() {
+			return outer[i].Index() < outer[j].Index()
+		}
+		return outer[i].Obj().Pos() < outer[j].Obj().Pos()
 	})
-	var args []string
-	for _, e := range kvs {
-		args = append(args, types.TypeString(e.t, nil))
+	li := &localInst{}
+	for _, tp := range outer {
+		li.outer = append(li.outer, env[tp])
 	}
-	name := t.Obj().Name() + "[" + strings.Join(args, ",") + "]"
-	key := localKey{t, name}
-	pr.localMu.Lock()
-	if n := pr.localInst[key]; n != nil {
-		pr.localMu.Unlock()
-		return n
-	}
-	n := types.NewNamed(types.NewTypeName(t.Obj().Pos(), t.Obj().Pkg(), name, nil), nil, nil)
-	if pr.localInst == nil {
-		pr.localInst = map[localKey]*types.Named{}
-	}
-	pr.localInst[key] = n // before the definition is substituted: it may mention itself
-	pr.localMu.Unlock()
-	n.SetUnderlying(substType(pr, env, t.Underlying()))
-	return n
-}
-
-type localKey struct {
-	t    *types.Named
-	args string
-}
-
-// usesTypeParam: does t mention a type parameter anywhere, looking into the definitions of local types?
-func usesTypeParam(t types.Type, seen map[types.Type]bool) bool {
-	switch t := t.(type) {
-	case *types.TypeParam:
-		return true
-	case *types.Alias:
-		return usesTypeParam(types.Unalias(t), seen)
-	case *types.Named:
+	env2 := env
+	if tps := t.Origin().TypeParams(); tps.Len() > 0 {
+		env2 = make(map[*types.TypeParam]types.Type, len(env)+tps.Len())
+		for k, v := range env {
+			env2[k] = v
+		}
 		for i := 0; i < t.TypeArgs().Len(); i++ {
-			if usesTypeParam(t.TypeArgs().At(i), seen) {
-				return true
-			}
-		}
-		if o := t.Obj(); o.Pkg() != nil && o.Parent() != nil && o.Parent() != o.Pkg().Scope() && !seen[t] {
-			seen[t] = true
-			return usesTypeParam(t.Underlying(), seen)
-		}
-	case *types.Pointer:
-		return usesTypeParam(t.Elem(), seen)
-	case *types.Slice:
-		return usesTypeParam(t.Elem(), seen)
-	case *types.Array:
-		return usesTypeParam(t.Elem(), seen)
-	case *types.Chan:
-		return usesTypeParam(t.Elem(), seen)
-	case *types.Map:
-		return usesTypeParam(t.Key(), seen) || usesTypeParam(t.Elem(), seen)
-	case *types.Struct:
-		for i := 0; i < t.NumFields(); i++ {
-			if usesTypeParam(t.Field(i).Type(), seen) {
-				return true
-			}
-		}
-	case *types.Tuple:
-		for i := 0; i < t.Len(); i++ {
-			if usesTypeParam(t.At(i).Type(), seen) {
-				return true
-			}
-		}
-	case *types.Signature:
-		return usesTypeParam(t.Params(), seen) || usesTypeParam(t.Results(), seen)
-	case *types.Interface:
-		for i := 0; i < t.NumMethods(); i++ {
-			if usesTypeParam(t.Method(i).Type(), seen) {
-				return true
-			}
+			a := substType(pr, env, t.TypeArgs().At(i))
+			li.own = append(li.own, a)
+			env2[tps.At(i)] = a
 		}
 	}
-	return false
+	same := func(x, y []types.Type) bool {
+		if len(x) != len(y) {
+			return false
+		}
+		for i := range x {
+			if !types.Identical(x[i], y[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	pr.localMu.Lock()
+	for _, x := range pr.localInst[o] {
+		if same(x.outer, li.outer) && same(x.own, li.own) {
+			pr.localMu.Unlock()
+			return x.n
+		}
+	}
+	// (this name is for messages and isLocalInstance; descriptors are named by namedSymName, from li)
+	var b strings.Builder
+	b.WriteString(o.Name() + "[")
+	for i, a := range li.outer {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(types.TypeString(a, nil))
+	}
+	for i, a := range li.own {
+		if i == 0 {
+			b.WriteByte(';')
+		} else {
+			b.WriteByte(',')
+		}
+		b.WriteString(types.TypeString(a, nil))
+	}
+	b.WriteByte(']')
+	li.n = types.NewNamed(types.NewTypeName(o.Pos(), o.Pkg(), b.String(), nil), nil, nil)
+	if pr.localInst == nil {
+		pr.localInst = map[*types.TypeName][]*localInst{}
+		pr.localOf = map[*types.Named]*localInst{}
+	}
+	pr.localInst[o] = append(pr.localInst[o], li) // before the definition is substituted: it may mention itself
+	pr.localOf[li.n] = li
+	pr.localMu.Unlock()
+	li.n.SetUnderlying(substType(pr, env2, t.Origin().Underlying()))
+	return li.n
+}
+
+// localInst is one instance of a type declared in a generic function: the function's type arguments, and
+// the type's own.
+type localInst struct {
+	n          *types.Named
+	outer, own []types.Type
+}
+
+// localArgs: the type arguments of a type made by localInstance (ok false for any other type).
+func (pr *Program) localArgs(n *types.Named) (outer, own []types.Type, ok bool) {
+	pr.localMu.Lock()
+	li := pr.localOf[n]
+	pr.localMu.Unlock()
+	if li == nil {
+		return nil, nil, false
+	}
+	return li.outer, li.own, true
 }
