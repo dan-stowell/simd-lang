@@ -84,6 +84,10 @@ func buildMode(args []string) {
 		debug.SetMemoryLimit(20 << 30)
 		if v, err := strconv.Atoi(os.Getenv("FC_GOGC")); err == nil {
 			debug.SetGCPercent(v) // (an experiment: the collector on)
+		} else if os.Getenv("FC_NOBUMP") == "" && *memprof == "" {
+			// With no collector to serve, the allocator's bookkeeping is the cost of allocating: from here
+			// on memory comes from a pointer that only moves forward (bump.go; driver/rtbump).
+			sbBumpEnable(26 << 30)
 		}
 	}
 	// fclink: in this process, the packages handed over in memory (fclinklib.NewUnit) instead of objects;
