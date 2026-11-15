@@ -112,12 +112,19 @@ func (pr *Program) demand(fn *types.Func) {
 	pr.pending.Add(1)
 	p.dmu.Lock()
 	p.dq = append(p.dq, fn)
+	n := len(p.dq)
 	p.dmu.Unlock()
+	if p.drainers.Load() > 0 && n < drainMore {
+		return // (a thread is in this package's queue already and will find it; it wakes the package when it leaves)
+	}
 	select {
 	case p.dch <- struct{}{}:
 	default:
 	}
 }
+
+// drainMore: a queue this long gets one more thread; drainChunk: how many requests a thread takes at once.
+const drainMore, drainChunk = 48, 8
 
 // demandName asks for the function a //go:linkname directive names: pkg.Name, pkg.Type.Method or
 // pkg.(*Type).Method, the package path escaped as in symbol names.
@@ -167,25 +174,33 @@ func (pr *Program) settle(n int64) {
 
 // serveDemands is the open state of a package compiled by demand: after the first pass (the caller holds
 // a slot of the pool and one count of pending) it compiles what other packages ask for until the program
-// is quiet. Every function takes a slot of its own for as long as it compiles and no longer: a package
-// that waits (for requests, or for its last function before the type code) holds none, so the cores go
-// to whoever has work, and a request is started when it arrives, not when the ones before it are done.
-// Instances and the code for descriptors are compiled when no function of the package is being compiled
-// (they share queues with the functions). It returns holding a slot.
+// is quiet. A package that waits (for requests, or for its last function before the type code) holds no
+// slot, so the cores go to whoever has work. Requests are compiled by a thread that stays in the package's
+// queue while there is anything in it (a second and further threads when the queue is long): a function
+// per job, each taking a slot and landing on whatever thread was free, interleaved the packages and cost
+// more than the functions it saved (JOURNAL 2026-11-15: one package's functions one after another find its
+// types and symbols in the cache). Instances and the code for descriptors are compiled when no function of
+// the package is being compiled (they share queues with the functions). It returns holding a slot.
 func (c *compiler) serveDemands(compile func(fd *ast.FuncDecl, fn *types.Func, par *parallel), fixpoint func()) {
 	p := c.pkg
 	prio := p.srcBytes + 1
 	c.fnSem.release()
 	owed := int64(1)
-	var inflight atomic.Int64
+	var taken atomic.Int64
 	inline := &parallel{} // (runs the job in the calling goroutine)
-	for {
-		p.dmu.Lock()
-		batch := p.dq
-		p.dq = nil
-		p.dmu.Unlock()
-		if len(batch) > 0 {
-			owed += int64(len(batch))
+	maxDrainers := int64(c.fnHelpers + 1)
+	drain := func() {
+		c.fnSem.acquire(prio)
+		for {
+			p.dmu.Lock()
+			n := min(len(p.dq), drainChunk)
+			batch := p.dq[:n:n]
+			p.dq = p.dq[n:]
+			p.dmu.Unlock()
+			if n == 0 {
+				break
+			}
+			taken.Add(int64(n))
 			for _, fn := range batch {
 				_, fd := c.pr.declOf(fn)
 				if fd == nil || fd.Body == nil || fd.Name.Name == "_" {
@@ -194,25 +209,34 @@ func (c *compiler) serveDemands(compile func(fd *ast.FuncDecl, fn *types.Func, p
 				if sig := fn.Type().(*types.Signature); sig.TypeParams().Len() > 0 || sig.RecvTypeParams().Len() > 0 {
 					continue
 				}
-				inflight.Add(1)
-				c.pr.runJob(func() {
-					c.fnSem.acquire(prio)
-					compile(fd, fn, inline)
-					c.fnSem.release()
-					if inflight.Add(-1) == 0 {
-						select {
-						case p.dch <- struct{}{}:
-						default:
-						}
-					}
-				})
+				compile(fd, fn, inline)
 			}
+		}
+		c.fnSem.release()
+		p.drainers.Add(-1)
+		select {
+		case p.dch <- struct{}{}: // (the package looks at its queue again: a request may have come since)
+		default:
+		}
+	}
+	for {
+		p.dmu.Lock()
+		n := len(p.dq)
+		p.dmu.Unlock()
+		if n > 0 {
+			want := min(int64(1+n/drainMore), maxDrainers)
+			for p.drainers.Load() < want {
+				p.drainers.Add(1)
+				c.pr.runJob(drain)
+			}
+			<-p.dch // a long queue, or a thread left
 			continue
 		}
-		if inflight.Load() > 0 {
-			<-p.dch // a request, or the last function finished
+		if p.drainers.Load() > 0 {
+			<-p.dch
 			continue
 		}
+		owed += taken.Swap(0)
 		c.fnSem.acquire(prio)
 		fixpoint()
 		c.fnSem.release()

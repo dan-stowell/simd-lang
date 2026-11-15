@@ -38,10 +38,11 @@ type Pkg struct {
 	Module     *struct{ Path, Version, GoVersion string }
 
 	// functions by demand (demand.go)
-	eager bool // every function is compiled, asked for or not
-	dmu   sync.Mutex
-	dq    []*types.Func // asked for by compiled code, not compiled yet
-	dch   chan struct{} // a token when dq grows
+	eager    bool // every function is compiled, asked for or not
+	dmu      sync.Mutex
+	dq       []*types.Func // asked for by compiled code, not compiled yet
+	dch      chan struct{} // a token when dq grows
+	drainers atomic.Int64  // threads compiling from dq (serveDemands)
 
 	files []*ast.File
 	tpkg  *types.Package
