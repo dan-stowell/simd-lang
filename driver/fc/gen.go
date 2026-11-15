@@ -155,6 +155,7 @@ type gen struct {
 	sc            *genScratch         // this function's scratch buffers, if it has them (compileFunc)
 	root          *gen                // the function whose results a return there sets
 	abi0          bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	pinArgs       bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -986,6 +987,15 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 	}
 	g.fnBody = scan
 	sig := g.sig
+	if g.pinArgs {
+		// (//go:cgo_unsafe_args: the address of a parameter is the address of the argument frame; without
+		// the escape analysis every variable whose address is taken would move to the heap)
+		for _, t := range []*types.Tuple{sig.Params(), sig.Results()} {
+			for i := 0; i < t.Len(); i++ {
+				delete(g.heapVars, t.At(i))
+			}
+		}
+	}
 	var params []*types.Var
 	if recv != nil {
 		params = append(params, recv)

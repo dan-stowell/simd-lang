@@ -481,6 +481,12 @@ func (c *compiler) writeObject(path string) {
 	if c.path == "main" {
 		fmt.Fprintf(out, "main\n") // the linker looks for this line
 	}
+	if b := cgoBlock(c.cgoPragmas()); b != nil {
+		// the //go:cgo_* directives, for the linker (cgo.go), after the blank line that ends the header
+		out.WriteString("\n")
+		out.Write(b)
+		out.WriteString("\n")
+	}
 	fmt.Fprintf(out, "!\n")
 	obj.WriteObjFile(c.ctxt, out)
 	// The stock reader takes the address of the first byte after the relocation block even when a symbol
