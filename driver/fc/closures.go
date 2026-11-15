@@ -120,6 +120,9 @@ func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *
 	}
 	for _, v := range free {
 		l := g.vars[v]
+		if g.capByVal[v] {
+			continue // the closure holds a copy
+		}
 		if l.kind == lFrame && g.addrVars[v] {
 			continue // captured in the frame: the closure does not outlive this activation
 		}
@@ -131,6 +134,19 @@ func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *
 	cg := g.child(g.childName(kind), sig)
 	cg.isLit = true
 	if len(free) > 0 {
+		for _, v := range free {
+			if g.capByVal[v] {
+				if cg.capByVal == nil {
+					cg.capByVal = map[*types.Var]bool{}
+				}
+				cg.capByVal[v] = true
+			} else {
+				if cg.outerRef == nil {
+					cg.outerRef = map[*types.Var]bool{}
+				}
+				cg.outerRef[v] = true
+			}
+		}
 		cg.entry = func() {
 			cg.saveCtx()
 			for i, v := range free {
@@ -138,7 +154,11 @@ func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *
 				slot := -cg.slots[j].off
 				cg.a.load(R8, mb(DX, int64(8*(i+1))), 8, false)
 				cg.a.store(mb(BP, slot), R8, 8)
-				cg.vars[v] = loc{kind: lInd, slot: slot}
+				if g.capByVal[v] {
+					cg.vars[v] = loc{kind: lFrame, off: slot} // the value itself
+				} else {
+					cg.vars[v] = loc{kind: lInd, slot: slot}
+				}
 			}
 		}
 	}
@@ -158,7 +178,9 @@ func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *
 		g.a.lea(R8, msym(cg.out.sym, 0))
 		g.a.store(mb(BP, obj.off), R8, 8)
 		for i, v := range free {
-			if l := g.vars[v]; l.kind == lFrame {
+			if l := g.vars[v]; g.capByVal[v] {
+				g.loadTo(R8, l, unsafePtr)
+			} else if l.kind == lFrame {
 				g.a.lea(R8, mb(BP, l.off))
 			} else {
 				g.a.load(R8, mb(BP, l.slot), 8, false)
@@ -170,7 +192,9 @@ func (g *gen) closure(kind string, sig *types.Signature, lit ast.Node, litBody *
 	p := g.newClosure(cg.out.sym, len(free))
 	for i, v := range free {
 		src := loc{kind: lFrame, off: g.vars[v].slot}
-		if l := g.vars[v]; l.kind == lFrame {
+		if l := g.vars[v]; g.capByVal[v] {
+			src = l
+		} else if l.kind == lFrame {
 			src = g.frameAddr(l) // (the analysis kept the variable in the frame but not the closure)
 		}
 		g.move(loc{kind: lInd, slot: p.off, off: int64(8 * (i + 1))}, src, unsafePtr)

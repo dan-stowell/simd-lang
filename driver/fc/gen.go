@@ -125,6 +125,7 @@ type gen struct {
 	lastPos    token.Pos
 	ctxSlot    loc // the closure object, in a closure
 	nosplit    bool
+	noAsync    bool // no instruction is a safe point for asynchronous preemption: declared //go:nosplit (the stock compiler's rule), or without a stack check because the stock compiler inlines it
 	fallthru   *label
 	entry      func()
 	bpFix      []int               // offsets in the body of frame sizes to fill in (LEAQ n(SP), BP)
@@ -143,6 +144,9 @@ type gen struct {
 	nDecl      int
 	esc        escResult           // escape analysis of the package the body is in; nil: everything escapes
 	addrVars   map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	capByVal   map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
+	outerRef   map[*types.Var]bool // in a literal: the variables it captured by reference
+	assigned   map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
 	convSite   ast.Node            // the expression being converted to an interface (for the analysis's verdict)
 	convCall   *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
 	rf         *rfCtx              // set in the body of a range-over-func loop
@@ -1211,12 +1215,15 @@ func (g *gen) finish(pos token.Pos) {
 		stackmap = make([]pcval, 0, len(out.stackmap)+3)
 		lines = make([]pcval, 0, len(out.lines)+2)
 	}
-	unsafe = append(unsafe, pcval{0, -2}, pcval{plen, -1})
+	unsafe = append(unsafe, pcval{0, -2})
 	stackmap = append(stackmap, pcval{0, -1}, pcval{plen, 1})
 	out.poss = append(out.poss, pos)
 	lines = append(lines, pcval{0, int32(len(out.poss) - 1)})
-	for _, e := range out.unsafe {
-		unsafe = append(unsafe, pcval{e.pc + plen, e.val})
+	if !g.noAsync {
+		unsafe = append(unsafe, pcval{plen, -1})
+		for _, e := range out.unsafe {
+			unsafe = append(unsafe, pcval{e.pc + plen, e.val})
+		}
 	}
 	for _, e := range out.lines {
 		lines = append(lines, pcval{e.pc + plen, e.val})

@@ -121,6 +121,11 @@ func (c *compiler) compilePackage() (errs []string) {
 				g := c.newGen(sym.Name, sig, info, nil)
 				g.out.sym = sym
 				g.nosplit = hasDirective(fd.Doc, "//go:nosplit") || intrinsicPkg[c.path] || (c.pr.inRuntime(c.pkg) && inlinable(fd, fn, c.info))
+				// (what has no stack check because the stock compiler inlines it or makes it instructions is no
+				// safe point for a signal either: runtime.reflectcallmove, nosplit, with a pointer one past the
+				// end of the argument frame in its arguments, calls internal/abi's IntArgRegBitmap.Get, and a
+				// preemption there showed the collector that pointer: "found pointer to free object")
+				g.noAsync = g.nosplit
 				g.noWBDecl = hasDirective(fd.Doc, "//go:nowritebarrier") || hasDirective(fd.Doc, "//go:nowritebarrierrec")
 				if hasDirective(fd.Doc, "//go:nowritebarrierrec") {
 					g.out.wbRec = 1
