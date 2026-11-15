@@ -169,16 +169,15 @@ on wall. Then TRACE.md: an fc section is owed (`fc build`'s summary lines: phase
 none of it fc's own time (fc: 9.4 s for the executor's 1,065 packages). Two builders, each in its own worktree under
 .claude/worktrees (reports arrive as task notifications even after a fresh context; if none came, `git worktree list`
 and the newest commits of each branch):
-(a) **cgo packages by fc** (Opus, launched 18:36; its branch says "0 stock packages for bb-cli and bb-executor" at
-19:30 and it is finishing the nosplit rule for the stock linker; told at 20:16 that main replaced that rule with the
-stock compiler's inlining table, 09e6304). The cgo closure through the go command was 923 of the executor's 1,990
-packages and most of the 129 core-s its "generate" stage is charged. Merge when it reports: rebuild build/fc only when
-no pass is running; lang both modes, wbcheck, safecheck, tools/fc/cgotest.sh, `tools/bazel/cold.sh bb-cli 8` and
-`bb-executor 8` rc 0 with checks.
+(a) **cgo packages by fc: merged (d6ee59c, 20:24).** bb-cli and bb-executor build with 0 packages from the stock
+compiler (75 and 924 before; BZFC_STOCKCGO=1 is the old path): fc runs cgo and gcc for the C, the stock linker links
+in external mode, the runtime and runtime/cgo are fc's. Verified on merged main with a scratch compiler: lang both
+modes, wbcheck, safecheck, tools/fc/cgotest.sh; the rows once each by the builder (rc 0, checks equal). Owed on a
+quiet machine: `tools/bazel/cold.sh bb-cli 8` and `bb-executor 8` with build/fc rebuilt (not while a pass runs).
 (b) **The DAG from `bazel query` (loading only) instead of `aquery`** (Opus, launched 20:22; JOURNAL 20:18: cold query
 13-28 s against aquery 56-124 s at the same load; the executor's graph is 2,449 go_library, ~220 proto rules, 14
 genrules). Oracle in its brief: the plan handed to fc equal package by package to the aquery path's, generated files
-byte for byte, the four rows' binary checks with `BZ_QUERY=1 tools/bazel/cold.sh`. Merge after (a).
+byte for byte, the four rows' binary checks with `BZ_QUERY=1 tools/bazel/cold.sh`. Its worktree was branched before (a)'s merge: merge main into its branch first.
 Then on a quiet machine: both rows cold with HUGEPAGES on, the stages (Bazel, read, generate, fc), and what is left.
 Smaller, if Bazel's part still matters after (b): `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never
 warms up), A/B on buildifier first.
