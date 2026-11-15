@@ -87,33 +87,81 @@ func (s *stockSet) build(order []*Pkg, roots []string, tag string) error {
 	t0 := time.Now()
 	gopath := filepath.Join(*flagWork, "gopath."+tag)
 	src := filepath.Join(gopath, "src")
-	// the farm: GOPATH/src/<import path> -> the package's directory (a package under another's directory
-	// is reached through it)
-	sort.Slice(order, func(i, k int) bool { return order[i].ImportPath < order[k].ImportPath })
-	linked := map[string]string{}
+	// the farm: GOPATH/src/<import path>/ holds symlinks to the files of the package's directory (nested
+	// import paths are often separate Bazel repositories: cloud.google.com/go/auth and .../auth/oauth2adapt)
+	// A subdirectory no package of the set is in or under is linked whole (headers: tree_sitter/parser.h).
+	under := map[string]bool{}
+	for _, p := range order {
+		for d := p.ImportPath; d != "." && d != "/"; d = filepath.Dir(d) {
+			under[d] = true
+		}
+	}
 	for _, p := range order {
 		if ip := first(p.a.args["-importpath"]); ip != "" && ip != p.ImportPath {
 			return fmt.Errorf("cgo closure: %s has importmap %s (not handled)", ip, p.ImportPath)
 		}
-		var anc string
-		for d := filepath.Dir(p.ImportPath); d != "." && d != "/"; d = filepath.Dir(d) {
-			if _, ok := linked[d]; ok {
-				anc = d
+		dst := filepath.Join(src, p.ImportPath)
+		if err := os.MkdirAll(dst, 0o777); err != nil {
+			return err
+		}
+		// Bazel's sources of the package (generated ones included), at their place under the package's source
+		// directory, else by name
+		srcDir := ""
+		for _, s := range p.a.args["-src"] {
+			if !strings.HasPrefix(s, "bazel-out/") {
+				srcDir = filepath.Dir(abs(s))
 				break
 			}
 		}
-		if anc != "" {
-			if want := filepath.Join(linked[anc], strings.TrimPrefix(p.ImportPath, anc+"/")); want != p.Dir {
-				return fmt.Errorf("cgo closure: %s is in %s, not under %s's directory", p.ImportPath, p.Dir, anc)
+		have := map[string]bool{}
+		place := func(rel, target string, cp bool) error {
+			if have[rel] {
+				return nil
 			}
-			continue
+			have[rel] = true
+			have[strings.SplitN(rel, "/", 2)[0]] = true
+			d := filepath.Join(dst, rel)
+			os.MkdirAll(filepath.Dir(d), 0o777)
+			if !cp {
+				return os.Symlink(target, d)
+			}
+			b, err := os.ReadFile(target) // (the go command embeds no symlinks)
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(d, b, 0o666)
 		}
-		dst := filepath.Join(src, p.ImportPath)
-		os.MkdirAll(filepath.Dir(dst), 0o777)
-		if err := os.Symlink(p.Dir, dst); err != nil {
-			return err
+		for _, s := range p.a.args["-src"] {
+			x := abs(s)
+			rel := filepath.Base(x)
+			if srcDir != "" && strings.HasPrefix(x, srcDir+"/") {
+				rel = strings.TrimPrefix(x, srcDir+"/")
+			}
+			if err := place(rel, x, false); err != nil {
+				return err
+			}
 		}
-		linked[p.ImportPath] = p.Dir
+		for _, rel := range p.EmbedFiles {
+			if err := place(rel, filepath.Join(p.Dir, rel), true); err != nil {
+				return err
+			}
+		}
+		// the other files of the source directory but Go files (C a go_library has from a cc_library in cdeps:
+		// go-tree-sitter's alloc.c), and its subdirectories no package of the set is in or under, whole
+		// (headers: go-tree-sitter/golang's tree_sitter/parser.h)
+		if srcDir != "" {
+			ents, _ := os.ReadDir(srcDir)
+			for _, e := range ents {
+				n := e.Name()
+				st, err := os.Stat(filepath.Join(srcDir, n))
+				if err != nil || have[n] || st.IsDir() && under[p.ImportPath+"/"+n] || !st.IsDir() && strings.HasSuffix(n, ".go") {
+					continue
+				}
+				if err := place(n, filepath.Join(srcDir, n), false); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	gobin := filepath.Dir(*flagGo)
 	s.env = []string{"PATH=" + gobin + ":" + os.Getenv("PATH"), "GOPATH=" + gopath, "GO111MODULE=off", "CGO_ENABLED=1",
@@ -127,7 +175,19 @@ func (s *stockSet) build(order []*Pkg, roots []string, tag string) error {
 	cmd.Stderr = &stderr
 	outb, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("go list -export (cgo closure): %v\n%s", err, tail(stderr.Bytes(), 30))
+		// (C compilers warn a lot: the lines that are not warnings, and all of it in a file)
+		log := filepath.Join(gopath, "go-list.err")
+		os.WriteFile(log, stderr.Bytes(), 0o666)
+		var errs []string
+		for _, l := range strings.Split(stderr.String(), "\n") {
+			if strings.Contains(l, "error") || strings.HasPrefix(l, "#") || strings.Contains(l, "cannot") || strings.Contains(l, "undefined") {
+				errs = append(errs, l)
+			}
+		}
+		if len(errs) > 30 {
+			errs = errs[:30]
+		}
+		return fmt.Errorf("go list -export (cgo closure: %s): %v (%s)\n%s", strings.Join(roots, " "), err, log, strings.Join(errs, "\n"))
 	}
 	s.entries = map[string]json.RawMessage{}
 	dec := json.NewDecoder(bytes.NewReader(outb))

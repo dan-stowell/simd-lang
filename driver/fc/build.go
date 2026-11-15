@@ -145,6 +145,7 @@ func buildMode(args []string) {
 			log.Fatal("fc build -link: one main package")
 		}
 		mainPkg = targets[0]
+		pr.mainPath = plainPath(mainPkg.ImportPath)
 		seen := map[*Pkg]bool{}
 		var walk func(p *Pkg)
 		walk = func(p *Pkg) {
@@ -363,8 +364,8 @@ func buildMode(args []string) {
 			t := time.Now()
 			results[i].startMS = float64(t.Sub(t0).Microseconds()) / 1e3
 			path := plainPath(p.ImportPath) // (a test variant, "P [P.test]", is package P to the code and the linker)
-			if p.Name == "main" {
-				path = "main"
+			if p.Name == "main" && (mainPkg == nil || p == mainPkg) {
+				path = "main" // (only the program's: Bazel's go_library of a main package is imported by its path)
 			}
 			c = newCompiler(pr, p, path, "")
 			c.fnSem = sem

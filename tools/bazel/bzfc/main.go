@@ -27,7 +27,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -42,6 +41,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
@@ -162,11 +163,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := json.NewDecoder(bufio.NewReaderSize(f, 1<<20)).Decode(&aq); err != nil {
+	if err := readAquery(f); err != nil {
 		log.Fatal(err)
 	}
 	f.Close()
 	index()
+	// (what only reading the DAG needed: about half of the executor's 6 GB heap)
+	aq.PathFragments, aq.Artifacts, aq.DepSets = nil, nil, nil
+	runtime.GC()
+	debug.FreeOSMemory()
 	stage("read the DAG (%d actions)", len(aq.Actions))
 	if *flagDump != "" {
 		re := regexp.MustCompile(*flagDump)
@@ -339,7 +344,9 @@ func index() {
 	}
 	for _, a := range aq.Actions {
 		a.label, a.tool = labels[a.TargetID], tool[a.ConfigurationID]
-		a.args = parseArgs(a.Arguments)
+		if a.args == nil {
+			a.args = parseArgs(a.Arguments) // (GoCompilePkg's: as read, readAquery)
+		}
 		for _, o := range a.OutputIDs {
 			a.outs = append(a.outs, paths[o])
 			byOutput[paths[o]] = a

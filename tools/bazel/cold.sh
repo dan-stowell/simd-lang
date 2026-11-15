@@ -8,6 +8,9 @@
 #   1. bazel aquery 'deps(<target>)' (server start, repository extraction, loading and analysis; nothing built)
 #   2. bzfc: the generated sources (protoc, genrules) by running their actions, the Go tools they need built
 #      by fc; then the binary by fc and fclink, the standard library and runtime included.
+# --experimental_output_paths=off: BuildBuddy's .bazelrc sets =strip (path mapping: command lines name
+# bazel-out/cfg/... instead of the configuration's directory, for cache hits across configurations); the actions
+# and what they compile are the same, only the paths in their command lines differ, and bzfc reads real paths.
 # Core-seconds from the cgroup of the scope everything runs in, Bazel's server included (read after it shut down,
 # as bazel1.sh does). HUGEPAGES as tools/fc/cold.sh (fc's heap; machine configuration, not a cache).
 here=$(cd "$(dirname "$0")/../.." && pwd); T=/home/exedev/targets
@@ -33,7 +36,7 @@ cat > "$out/run.sh" <<IN
 #!/usr/bin/env bash
 cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup)
 t0=\$(date +%s.%N)
-taskset -c 0-$((P-1)) $BAZEL --output_base=$ob aquery $flags --include_file_write_contents --include_param_files --output=jsonproto 'deps($target)' > "$work/aq.json" 2> "$out/aquery.log"; rc=\$?
+taskset -c 0-$((P-1)) $BAZEL --output_base=$ob aquery $flags --experimental_output_paths=off --include_file_write_contents --include_param_files --output=jsonproto 'deps($target)' > "$work/aq.json" 2> "$out/aquery.log"; rc=\$?
 t1=\$(date +%s.%N); c1=\$(awk '\$1=="usage_usec"{print \$2/1e6}' \$cg/cpu.stat)
 if [ \$rc = 0 ]; then
   GOMAXPROCS=$P taskset -c 0-$((P-1)) "$BZFC" -aquery "$work/aq.json" -ob $ob -ws "$T/$dir" -label "$target" -work "$work/w" -fc "$FC_BIN" -bin "$out/bin" -j $P > "$out/build.log" 2>&1; rc=\$?

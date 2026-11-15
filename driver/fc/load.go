@@ -109,6 +109,7 @@ type Program struct {
 	// are, so its references to their symbols are by index (writeITab, indexRefs)
 	stockArchives map[string]string // (the archives are known after the go command built them: stockPkgs)
 	stockPkgs     []*Pkg
+	mainPath      string // fc build -link: the program's main package (the only "main" to the linker)
 	stockIdxOnce  sync.Once
 	stockIdx      map[idxKey]idxRef
 	instOwner    sync.Map         // instance symbol name -> the *compiler that compiles it
