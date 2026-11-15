@@ -26,10 +26,10 @@ package fclinklib
 
 import (
 	"bytes"
-	"cmp"
 	"cmd/internal/goobj"
 	"cmd/internal/obj"
 	"cmd/internal/objabi"
+	"cmp"
 	"encoding/binary"
 	"math/bits"
 	"path/filepath"
