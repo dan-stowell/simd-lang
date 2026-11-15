@@ -176,10 +176,12 @@ projects: /home/exedev/targets/fc-verify-1115f.sh (run it on build/fc after 1115
 (slots die with their statement or block in every package, as in the runtime's) makes most pass but is killed by its
 counts (IDEAS: code +33%, binary +55%, build memory +18%).
 (e) **The same bytes from the same sources** (IDEAS, last entry; STATUS decision 2). **Part one is on main, local
-commits 9c9c81d + 6bd2555, NOT pushed yet**: one order inside a package (JOURNAL 22:10). Its tests were started at
-22:07 on build/fcw (= those commits): `FC_ALL=rt tools/fc/lang.sh`, `tools/fc/lang.sh`, `python3 tools/fc/gotest.py`,
+commits 9c9c81d + 6bd2555, NOT pushed yet**: one order inside a package (JOURNAL 22:10). Its tests: lang 26/26 in both modes (22:25); gotest was started at
+22:07 on build/fcw and was still running at 22:35 (background task of the session before a fresh context: its
+result arrives as a notification, or look for a running gotest.py with FC_BIN=build/fcw; else rerun)
+(the three commands, on build/fcw (= those commits): `FC_ALL=rt tools/fc/lang.sh`, `tools/fc/lang.sh`, `python3 tools/fc/gotest.py`,
 all with FC_BIN=$PWD/build/fcw; if no result is at hand, rerun them (expect 26/26 twice and PASS 1018 FAIL 0 NOFC 0;
-the first try said NOFC "content-addressable but alignment is not set", fixed before the commit), then `git push`.
+the first try said NOFC "content-addressable but alignment is not set", fixed before the commit), then `git push`).
 **Part two is with an Opus builder (launched 22:12, its own worktree, compiler tag sb)**: shard compilers for the
 shared instances, wrappers and descriptors; its report arrives as a task notification (if none: `git worktree list`,
 the newest branch). Oracle: `tools/fc/samebytes.sh <dir> [target] [n]` exits 0 (today: 134 of 14,043 symbols change
