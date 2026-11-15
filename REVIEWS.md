@@ -342,3 +342,8 @@ One line per inbox item; raw files in `reviews/done/`.
 - `20261115T1729-sol.md` (sol, correctness): **stalled** (the file holds only the conversation id); dropped. The
   std suite through the whole-program path did the job today: it found a miscompiled comparison (a string or
   float against an interface value), two unsupported constructs and a plan bug (JOURNAL 11-15).
+- `20261115T1427-codex-byval.md` (Codex, counterexamples to by-value capture, 3ef1d06): **ran nothing** (its sandbox was
+  read-only, so no program was built); by reading it found no miss in six of the suggested cases (mixed `:=`, select
+  receives, nested literals, named results, pointer-receiver calls and method values, range-over-func bodies). Not
+  evidence either way. Fired again at 20:50 UTC with a writable scratch directory
+  (/home/exedev/targets/byval-review; `20261115T2050-codex-byval2.md`).
