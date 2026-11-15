@@ -129,24 +129,31 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 19:03 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 20:00 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification, a soak and a builder.
-**A correctness bug of every earlier fc binary was fixed at 7259dfb** (write barriers where the runtime forbids them: a
-deadlock on the heap lock about once in 400 runs of a small tool at GOGC=1; JOURNAL 19:01). In order:
-(1) **Correctness on HEAD** (build/fc was rebuilt at 7259dfb at 19:01; **do not rebuild it while the pass runs**;
-scratch builds: `FC_TAG=x driver/mkfc.sh` -> build/fcx, FC_BIN=). Running since 19:01:
-/home/exedev/targets/fc-verify-1115c.sh, logs /home/exedev/targets/fc-verify-1115c.*.log (wbcheck, zipcheck, lang three
-modes, std 260 through wpbatch, MinIO's packages). When `done` is in fc-verify-1115c.log every non-PASS line is a bug
-or a skip to justify; then update tests/fc/passing.txt's header and append the M-log line. Known before it starts:
-the pass on the binary before the fix had std 259 of 260, **runtime failing through the whole-program path** (its test
-package compiled by fc): TestEmptySlice hung 5m42s (maybe the deadlock just fixed), TestGCInfo (stack bitmaps lose
-their trailing zeros), TestFinalizerRegisterABI, TestUserArenaLiveness, TestUserArenaClearsPointerBits,
-TestDebugCallUnsafePoint (fc marks whole bodies unsafe), TestZeroConvT2x, TestStringConcatenationAllocs,
-TestMapStringBytesLookup, TestNonEscapingMap, TestCleanupUnreachableClosure, TestReadMetricsCleanups,
-TestReadMetricsFinalizers (old log: /tmp/fcwpbatch.FkZJJe/runtime). Rerun alone
-(`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`), then each is a bug to fix or a skip line
-with the stock-at--l evidence (allocation counts, liveness waits are the two allowed classes; TestGCInfo and the hang
-are neither until shown).
+**Two runtime bugs of every earlier fc binary are fixed in the source; build/fc still has only the first** (7259dfb:
+write barriers where the runtime forbids them; 3ef1d06: asynchronous preemption inside what the stock compiler
+inlines, "found pointer to free object", JOURNAL 19:40). build/fcx (`FC_TAG=x driver/mkfc.sh`) is HEAD's compiler.
+In order:
+(1) **Correctness on HEAD.** The pass on 7259dfb (/home/exedev/targets/fc-verify-1115c.log; do not rebuild build/fc
+before `done` is in it) finished std: 255 of 260; the five: edwards25519 (the bug fixed at 3ef1d06), runtime
+(TestCleanupUnreachableClosure, fixed at 3ef1d06 by by-value capture), index/suffixarray and sync/atomic (10-minute
+timeouts at load 30-45: rerun alone), testing/fstest (wptest.sh was edited under it). MinIO's packages are running.
+When it is done: `driver/mkfc.sh` (build/fc at HEAD), then the pass again as fc-verify-1115d (copy the script; change
+the log names), which must give std 260 of 260 and MinIO 45 of 46. Running now on build/fcx:
+(a) `WPTEST_FREECHECK=1 GOGC=10 ... wpbatch.sh` over tests/fc/passing.txt (the diagnostic runtime of
+tools/fc/freecheck.py: the collector names whoever shows it a pointer to a free slot), log
+<scratchpad>/freecheck-std.log, per-package logs in the /tmp/fcwpbatch.* directory its last line names:
+`grep -l freecheck: <that dir>/*` is the list of bugs (each names a frame, pc and slot); FAIL lines without one are
+timeouts and allocation counts disturbed by GOGC=10 (bytes TestGrow). Rerun it from the repo if the scratchpad is gone:
+`WPTEST_FREECHECK=1 GOGC=10 FC_TIMEOUT=1200 tools/fc/wpbatch.sh -j 3 -C /home/exedev/targets/goroot-slots/src < tests/fc/passing.txt`.
+Then the same over MinIO's packages. (b) the runtime's own suite alone
+(`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`): its 13 whole-program failures are
+sorted (one fixed, twelve skip lines with evidence in tests/fc/skips.txt, the two pinner tests added after).
+**Liveness skips are now 20-odd tests and depend on what ran before**; FC_TIDY=all (slots die with their statement
+or block in every package, as in the runtime's) makes most pass: measure its cost in the quiet pass (3) and turn it
+on if it is under about 2% of the build's CPU (drop `tidyKnob != "all"` from d.perFn in load.go first: the
+per-function infos do not need it off).
 (2) **The soak** is `tools/fc/soak.sh [runs] [workers]` now (an fc-built protoc-gen-go against the stock-built one at
 GOGC=1; hangs get their stacks from a core by tools/fc/corebt). With the three fixes a scratch soak of 3,200 runs was
 started at 18:58 (not finished at 19:10: load 74); 0 bad of 1,600 with the first fix alone. **One segmentation fault
@@ -155,7 +162,7 @@ the pass is done; a bad run with rc 139 needs `ulimit -c unlimited` in the scrip
 worth soaking MinIO's server under load the same way.
 (3) **Quiet pass** (nothing else running; `uptime` under 1): order-balanced A/B of MinIO, 4 pairs each, user+sys and
 wall: cold FC_NOZIP=1 against default (module sources from zips, JOURNAL 18:33); warm FC_LAZYFUNCS=1, FC_FUSE=1,
-FC_SCRATCH=0, FC_ASMPROC=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
+FC_SCRATCH=0, FC_ASMPROC=1, FC_TIDY=all, FC_CAPREF=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
 + tests/minio_smoke.sh); `tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`
 (the Bazel rows of ours are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins
 on wall. Then TRACE.md: an fc section is owed (`fc build`'s summary lines: phases, read:, the link's table, tax).
