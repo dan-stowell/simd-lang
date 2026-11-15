@@ -49,6 +49,7 @@ type shardState struct {
 	busy  bool // a drain job is running (or about to)
 	again bool // work was queued while it ran: it looks again
 	errs  []string
+	algs  map[string]*algPend // under the compiler's rtSm
 }
 
 // shardPrio: a drain job's priority for a slot (sched.go): that of a package of about a megabyte.
@@ -121,21 +122,7 @@ func (c *compiler) kick() {
 // drainShard compiles what is queued on the shard until nothing is.
 func (c *compiler) drainShard() {
 	sh := c.shard
-	try := func(what string, f func()) {
-		defer func() {
-			if r := recover(); r != nil {
-				if b, ok := r.(bail); ok {
-					sh.mu.Lock()
-					sh.errs = append(sh.errs, what+": "+string(b))
-					sh.mu.Unlock()
-					return
-				}
-				fmt.Fprintf(os.Stderr, "fc: internal error in %s (%s)\n", what, c.path)
-				panic(r)
-			}
-		}()
-		f()
-	}
+	try := c.shardTry
 	c.fnSem.acquire(shardPrio)
 	for {
 		sh.mu.Lock()
@@ -201,30 +188,97 @@ func (c *compiler) addWrapper(r wrapperReq) {
 	}
 }
 
-// addAlg queues an equality or hash function (type:.eq.<sig>, type:.hash.<sig>) on the shard c, once.
+// algPend is an equality or hash function asked of a shard: the code is generated from one type of the
+// signature, and which types ask first depends on timing (the code does differ: a struct of two int32
+// fields and an [8]byte share M8), so it is the type with the least link name of all that asked, and the
+// function is compiled when all have (finishShards). The code calls the runtime only: it asks for nothing.
+type algPend struct {
+	req  algReq
+	hash bool
+	name string // req.typ's link name
+}
+
+// addAlg asks the shard c for an equality or hash function (type:.eq.<sig>, type:.hash.<sig>) for t.
 func (c *compiler) addAlg(name, sig string, t types.Type, hash bool) {
-	f := c.lookup(name, obj.ABIInternal, "")
+	tn := c.typeLinkName(t)
 	c.rtInit()
 	c.rtSm.Lock()
-	seen := c.rtAlg[name]
-	c.rtAlg[name] = true
-	if !seen {
-		if hash {
-			c.needHash = append(c.needHash, algReq{sig, f, t})
-		} else {
-			c.needEq = append(c.needEq, algReq{sig, f, t})
+	defer c.rtSm.Unlock()
+	if p := c.shard.algs[name]; p != nil {
+		if tn < p.name {
+			p.req.typ, p.name = t, tn
 		}
+		return
 	}
+	if c.shard.algs == nil {
+		c.shard.algs = map[string]*algPend{}
+	}
+	c.shard.algs[name] = &algPend{req: algReq{sig, c.lookup(name, obj.ABIInternal, ""), t}, hash: hash, name: tn}
+}
+
+// compileAlgs compiles the equality and hash functions asked of the shard c so far, by name.
+func (c *compiler) compileAlgs() {
+	c.rtSm.Lock()
+	algs := c.shard.algs
+	c.shard.algs = nil
 	c.rtSm.Unlock()
-	if !seen {
-		c.kick()
+	names := make([]string, 0, len(algs))
+	for name := range algs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		p := algs[name]
+		c.shardTry(name, func() {
+			if p.hash {
+				c.genHash(p.req)
+			} else {
+				c.genEq(p.req)
+			}
+		})
 	}
 }
 
+// shardTry runs f, recording a function the compiler does not handle as the shard's error.
+func (c *compiler) shardTry(what string, f func()) {
+	sh := c.shard
+	defer func() {
+		if r := recover(); r != nil {
+			if b, ok := r.(bail); ok {
+				sh.mu.Lock()
+				sh.errs = append(sh.errs, what+": "+string(b))
+				sh.mu.Unlock()
+				return
+			}
+			fmt.Fprintf(os.Stderr, "fc: internal error in %s (%s)\n", what, c.path)
+			panic(r)
+		}
+	}()
+	f()
+}
+
 // finishShards waits for the shards' queues to be empty (every package's back end is done: only shards
-// can still queue work) and makes their units, in shard order. It returns the errors, by shard.
+// can still queue work), compiles their equality and hash functions, and makes their units, in shard
+// order. It returns the errors, by shard.
 func (pr *Program) finishShards() ([]*fclinklib.Unit, []string) {
-	pr.shardWG.Wait()
+	for {
+		pr.shardWG.Wait()
+		n := 0
+		for _, c := range pr.shards {
+			c.rtSm.Lock()
+			n += len(c.shard.algs)
+			c.rtSm.Unlock()
+		}
+		if n == 0 {
+			break
+		}
+		var wg sync.WaitGroup
+		for _, c := range pr.shards {
+			wg.Add(1)
+			go func() { defer wg.Done(); c.compileAlgs() }()
+		}
+		wg.Wait()
+	}
 	units := make([]*fclinklib.Unit, len(pr.shards))
 	var errs []string
 	var wg sync.WaitGroup

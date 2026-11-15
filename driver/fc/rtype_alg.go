@@ -410,8 +410,12 @@ func (c *compiler) algClosure(t types.Type, sig string, hash bool) *obj.LSym {
 		}
 	}
 	f := c.lookup("type:"+fn+sig, obj.ABIInternal, "")
-	if sh := c.route(f.Name); sh != nil {
-		sh.addAlg(f.Name, sig, t, hash) // (compiled by the shard of its name: shard.go)
+	if c.pr.shards != nil && !c.mixed {
+		sh := c.route(f.Name) // (compiled by the shard of its name: shard.go)
+		if sh == nil {
+			sh = c
+		}
+		sh.addAlg(f.Name, sig, t, hash)
 	} else {
 		c.rtSm.Lock()
 		queued := !c.rtAlg[f.Name]
