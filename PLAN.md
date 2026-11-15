@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 18:20 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 18:15 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon** after the assembler moved in process, scratch buffers and pc tables on the compiling
 thread (machine not quiet: cold not retaken yet). MinIO's own tests through the whole-program path: 45 of 46, cmd as
 stock (before the afternoon's fixes; rerun owed). The std suite through the whole-program path (test packages by fc
@@ -137,7 +137,7 @@ too) found two ABI/comparison bugs and three unsupported constructs, all fixed w
 In order:
 (1) **Correctness on HEAD** (build/fc must be rebuilt first: `driver/mkfc.sh`; FC_TAG builds are scratch):
 `tools/fc/wpbatch.sh -j 3 -C /home/exedev/targets/goroot-slots/src < tests/fc/passing.txt` (std, 260 packages; expect
-all PASS with tests/fc/skips.txt; `runtime` and `weak` were rerunning at 18:20), then MinIO's
+all PASS with tests/fc/skips.txt; the full pass was started at 18:15: /home/exedev/targets/fc-verify-1115.sh, logs fc-verify-1115.*.log there), then MinIO's
 (`FC_TIMEOUT=2400 tools/fc/wpbatch.sh -j 2 -C /home/exedev/targets/minio <packages with tests>`), language corpus
 (`tools/fc/lang.sh`, `FC_ALL=rt tools/fc/lang.sh`, wpbatch over tests/fc/lang). Then update tests/fc/passing.txt's
 header and the M-log line.
@@ -150,7 +150,7 @@ tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8` + tests/mini
 `fc build` have the phases, the link's phase table and the tax line: 0 processes, 170 small files).
 (3) **Bazel rows.** buildifier and runsc build from Bazel's DAG (9.6 s and 26 s cold; Bazel's own start and analysis
 6 and 22 s; fc 0.4-0.6 s). A builder (Opus; branch worktree-agent-ad71418d1c58c5309 in .claude/worktrees/agent-ad71418d1c58c5309) has bb-cli
-and bb-executor: at 18:25 its branch had both building (cgo packages by the go command, the stock linker in external
+and bb-executor: at 18:10 its branch had both building (cgo packages by the go command, the stock linker in external
 mode for the CLI); merge it (`git merge worktree-agent-ad71418d1c58c5309`, then `tools/bazel/cold.sh bb-cli 8` and
 `bb-executor 8` must give rc 0 with the binary's check passing) when it reports, or when the branch is idle. Then
 the review's point (REVIEWS 11-15): the cold cost is Bazel. First `--profile` of the cold aquery (what are the 6-22 s:
