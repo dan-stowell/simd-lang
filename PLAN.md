@@ -129,39 +129,54 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 18:45 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
-warm 1.77-1.92 s this afternoon.** The machine has been busy since (verification, builders): no quiet numbers after
-the morning's. In order:
-(1) **Correctness on the merged fc** (e304b77: the BuildBuddy builder's branch is merged): the full pass was restarted
-at 18:25: /home/exedev/targets/fc-verify-1115.sh, logs /home/exedev/targets/fc-verify-1115b.*.log (lang three modes,
-std 260 through wpbatch, MinIO's packages). When `done` is in fc-verify-1115b.log: every non-PASS line is a bug or a
-skip to justify; then update tests/fc/passing.txt's header and append the M-log line. **build/fc is the binary under
-test: do not rebuild it before the pass ends** (scratch builds: `FC_TAG=x driver/mkfc.sh` -> build/fcx, FC_BIN=).
-After the pass: `driver/mkfc.sh` (HEAD has modzip.go, which the pass does not exercise: wpbatch plans come from go
-list), then `tools/fc/zipcheck.sh` and `tools/fc/lang.sh`.
-(2) **Quiet pass** (nothing else running; `uptime` under 1): order-balanced A/B of MinIO, 4 pairs each, user+sys and
-wall: cold FC_NOZIP=1 against default (module sources from zips, JOURNAL 18:33: the graph is known 135 ms earlier under
-load; the wall verdict is owed); warm FC_LAZYFUNCS=1, FC_FUSE=1, FC_SCRATCH=0, FC_ASMPROC=1; `FC_LINKFLAGS=-stats`;
-tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8` + tests/minio_smoke.sh);
-`tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md` (the Bazel rows of ours
-are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins on wall. Then TRACE.md:
-an fc section is owed (the summary lines of `fc build`: phases, the read: line, the link's table, the tax line).
-(3) **The demo rows (BuildBuddy) are only 3x under stock** (executor 111-141 s against 335; bb-cli 38-52 against 124),
-and none of that is fc's own time: (a) the cgo packages' closure goes through the stock go command (923 of the
-executor's 1,990 packages): **a builder (Opus, worktree, launched 18:40) is teaching fc to compile cgo packages**
-(cgo tool + gcc for C only, stock external link; oracles in its brief: a cgo language case equal to stock, lang 23/23,
-both rows with 0 stock-compiled packages and their checks passing). Merge its branch when it reports (rebuild, lang
-both modes, `tools/bazel/cold.sh bb-cli 8` and `bb-executor 8` rc 0 with checks). (b) Bazel's own cold start and
-analysis: 6 s buildifier, 22 s runsc, 45-54 s executor. Profiles (`--profile`) taken 18:35-18:45, see JOURNAL: launch
-2.6 s, module resolution 2.2, analysis with cc_configure 1.7, aquery's jsonproto output 3.3 of buildifier's 12.8 s
-under load. Extracted repositories already survive between runs (Bazel 9's repository contents cache inside
---repository_cache: the output base is 12 MB), so STATUS's --vendor_dir question is moot. To try, A/B on buildifier
-then the executor: `--output=streamed_proto` read from a pipe by bzfc while Bazel writes (bzfc's JSON read alone is
-8-10 s on the executor), `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never warms up), an aquery
-expression without the actions bzfc drops (nogo). Then a reader of our own for the rules_go subset only if those do
-not get Bazel's part under a few seconds. (c) the fc-built protoc-gen-go that died with signal 11 once (load 39).
-(4) Toward 2.0 s cold: what is left of cold reading after the zips (2,495 files from directories: the standard
+Now (2026-11-15 19:03 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification, a soak and a builder.
+**A correctness bug of every earlier fc binary was fixed at 7259dfb** (write barriers where the runtime forbids them: a
+deadlock on the heap lock about once in 400 runs of a small tool at GOGC=1; JOURNAL 19:01). In order:
+(1) **Correctness on HEAD** (build/fc was rebuilt at 7259dfb at 19:01; **do not rebuild it while the pass runs**;
+scratch builds: `FC_TAG=x driver/mkfc.sh` -> build/fcx, FC_BIN=). Running since 19:01:
+/home/exedev/targets/fc-verify-1115c.sh, logs /home/exedev/targets/fc-verify-1115c.*.log (wbcheck, zipcheck, lang three
+modes, std 260 through wpbatch, MinIO's packages). When `done` is in fc-verify-1115c.log every non-PASS line is a bug
+or a skip to justify; then update tests/fc/passing.txt's header and append the M-log line. Known before it starts:
+the pass on the binary before the fix had std 259 of 260, **runtime failing through the whole-program path** (its test
+package compiled by fc): TestEmptySlice hung 5m42s (maybe the deadlock just fixed), TestGCInfo (stack bitmaps lose
+their trailing zeros), TestFinalizerRegisterABI, TestUserArenaLiveness, TestUserArenaClearsPointerBits,
+TestDebugCallUnsafePoint (fc marks whole bodies unsafe), TestZeroConvT2x, TestStringConcatenationAllocs,
+TestMapStringBytesLookup, TestNonEscapingMap, TestCleanupUnreachableClosure, TestReadMetricsCleanups,
+TestReadMetricsFinalizers (old log: /tmp/fcwpbatch.FkZJJe/runtime). Rerun alone
+(`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`), then each is a bug to fix or a skip line
+with the stock-at--l evidence (allocation counts, liveness waits are the two allowed classes; TestGCInfo and the hang
+are neither until shown).
+(2) **The soak** (scratch, gone with this session's scratchpad; to redo: build google.golang.org/protobuf's
+cmd/protoc-gen-go with `fc build -C <module dir in GOMODCACHE> -link`, feed it a CodeGeneratorRequest captured from
+protoc with a plugin that is `cat > req.bin`, run it 4 at once with GOGC=1 under load, compare sha1 of the output with
+the stock-built binary's, gdb/gcore anything older than 40 s): with the three fixes 3,200 runs were started at 18:58;
+0 bad of 1,600 with the first fix alone. **One segmentation fault (rc 139, nothing on stderr) in about 1,400 runs
+before the fixes is unexplained**: if the soak shows it again, the core is the evidence (ulimit -c unlimited). Worth
+making the soak a script in tools/fc (soak.sh) and running it on MinIO's server under load too.
+(3) **Quiet pass** (nothing else running; `uptime` under 1): order-balanced A/B of MinIO, 4 pairs each, user+sys and
+wall: cold FC_NOZIP=1 against default (module sources from zips, JOURNAL 18:33); warm FC_LAZYFUNCS=1, FC_FUSE=1,
+FC_SCRATCH=0, FC_ASMPROC=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
++ tests/minio_smoke.sh); `tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`
+(the Bazel rows of ours are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins
+on wall. Then TRACE.md: an fc section is owed (`fc build`'s summary lines: phases, read:, the link's table, tax).
+(4) **The demo rows (BuildBuddy) are only 3x under stock** (executor 111-141 s against 335; bb-cli 38-52 against 124),
+none of it fc's own time. (a) The cgo packages' closure goes through the stock go command (923 of the executor's 1,990
+packages): **a builder (Opus, its own worktree under .claude/worktrees, launched 18:36) is teaching fc to compile cgo
+packages** (cgo tool + gcc for C only, stock external link; oracles in its brief: a cgo case equal to stock, lang
+23/23, both rows with 0 stock-compiled packages and their checks passing). Its report arrives as a task notification
+even after a fresh context; if none came, look at `git worktree list` and the newest branch's log. Merge when it
+reports (rebuild build/fc only when no pass is running; lang both modes, wbcheck, `tools/bazel/cold.sh bb-cli 8` and
+`bb-executor 8` rc 0 with checks). (b) Bazel's own part: the aquery without CppCompile is in cold.sh (JOURNAL 19:01:
+85 -> 49.5 s under load for the executor; build/bzfc must be rebuilt from tools/bazel/bzfc after a merge: cold.sh only
+builds it when missing, and a stale one failed a run at 18:45). The executor's first full run with it was still going
+at 19:03 (/home/exedev/targets/fc-cold/bb-executor/bazel-p8-warm/meta.txt: rc must be 0 and `bin --help` must have the
+reference's 415 flag lines). Next there: `--output=streamed_proto` read from a pipe while Bazel writes (the output
+handler is still 13 s for 74 MB of JSON), `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never warms
+up), A/B on buildifier first; analysis itself is 24 s for the executor. Then a reader of our own for the rules_go
+subset only if Bazel's part stays above a few seconds.
+(5) Toward 2.0 s cold: what is left of cold reading after the zips (2,495 files from directories: the standard
 library and the main module; 241 .mod files), allocation volume (5.9 GB mapped per MinIO build; `-memprofile`: no site
-above 5%), one assembler pass per package (IDEAS), functions by demand plus bodies by demand (FC_FUSE=1
-FC_LAZYBODIES=1), the link (280 ms at 2.4 cores).
+above 5%), one assembler pass per package (IDEAS), functions and bodies by demand (FC_FUSE=1 FC_LAZYBODIES=1), the
+link (280 ms at 2.4 cores).
 Housekeeping: `df -h /` before long runs; nr_hugepages must be 0 between runs (a killed build leaves it set).
