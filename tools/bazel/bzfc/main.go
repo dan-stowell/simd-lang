@@ -124,6 +124,10 @@ type Pkg struct {
 	ImportMap  map[string]string `json:",omitempty"`
 	EmbedFiles []string          `json:",omitempty"`
 
+	// a cgo package fc compiles (cgo.go): go list's view of its files and #cgo flags
+	CgoFiles, CFiles, CXXFiles, MFiles, FFiles, HFiles, SwigFiles, SwigCXXFiles []string `json:",omitempty"`
+	CgoCFLAGS, CgoCPPFLAGS, CgoCXXFLAGS, CgoFFLAGS, CgoLDFLAGS, CgoPkgConfig    []string `json:",omitempty"`
+
 	a    *action
 	deps []*Pkg
 	cgo  bool // a cgo package, with cgo on: the go command's (cgo.go)
@@ -681,6 +685,14 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	}
 	if what == "main" {
 		os.Stdout.Write(out)
+		mode := "fc compiles the cgo packages"
+		if stockCgoMode {
+			mode = "BZFC_STOCKCGO=1: the cgo closure by the go command"
+		}
+		if stock == nil {
+			mode = "no cgo packages"
+		}
+		fmt.Printf("bzfc: stock compiler: %d packages (%s)\n", stockCount(stock, out), mode)
 	}
 	os.RemoveAll(filepath.Join(dir, "objs"))
 	return nil

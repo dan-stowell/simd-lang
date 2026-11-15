@@ -15,7 +15,7 @@ FC_LINKER=${FC_LINKER-$here/build/fclink} "${FC_BIN:-$here/build/fc}" build -C "
 (cd "$here/tools/fc/corebt" && go build -o "$d/corebt" .) || exit 2
 req=$here/tests/fc/soak/protoc-gen-go.req.bin
 want=$(./pgg-stock < "$req" | sha1sum | cut -d' ' -f1)
-rm -f bad.* hang.*; ulimit -c 0
+rm -f bad.* hang.*; ulimit -S -c 0   # (the workers allow cores for their own runs)
 ( while sleep 5; do   # the watcher: hangs
     for pid in $(pgrep -x pgg-fc); do
       age=$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')
@@ -28,9 +28,15 @@ rm -f bad.* hang.*; ulimit -c 0
 for i in $(seq "$w"); do
   ( bad=0
     for j in $(seq "$n"); do
-      GOGC=1 GOTRACEBACK=all ./pgg-fc < "$req" > "out.$i.tmp" 2> "err.$i.tmp"; rc=$?
+      # (run in a directory of its own with core dumps allowed: a death by signal that the runtime's handler
+      # did not report, rc 139 with nothing on stderr, leaves its core there)
+      mkdir -p "w$i"
+      ( cd "w$i" && ulimit -c unlimited && GOGC=1 GOTRACEBACK=all exec ../pgg-fc < "$req" > "../out.$i.tmp" 2> "../err.$i.tmp" ); rc=$?
       if [ $rc != 0 ] || [ "$(sha1sum < "out.$i.tmp" | cut -d' ' -f1)" != "$want" ]; then
         bad=$((bad+1)); cp "err.$i.tmp" "bad.$i.$j.err"; echo "run $i.$j: rc $rc"
+        for c in "w$i"/core*; do
+          [ -f "$c" ] && { ./corebt pgg-fc "$c" > "bad.$i.$j.stacks.txt" 2>&1; mv "$c" "bad.$i.$j.core"; }
+        done
       fi
     done
     echo "worker $i: $bad bad of $n" ) &

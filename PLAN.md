@@ -166,18 +166,21 @@ FC_SCRATCH=0, FC_ASMPROC=1, FC_CAPREF=1; `FC_LINKFLAGS=-stats`; tools/fc/timelin
 (the Bazel rows of ours are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins
 on wall. Then TRACE.md: an fc section is owed (`fc build`'s summary lines: phases, read:, the link's table, tax).
 (4) **The demo rows (BuildBuddy) are only 3x under stock** (executor 111-141 s against 335; bb-cli 38-52 against 124),
-none of it fc's own time. (a) The cgo packages' closure goes through the stock go command (923 of the executor's 1,990
-packages): **a builder (Opus, its own worktree under .claude/worktrees, launched 18:36) is teaching fc to compile cgo
-packages** (cgo tool + gcc for C only, stock external link; oracles in its brief: a cgo case equal to stock, lang
-23/23, both rows with 0 stock-compiled packages and their checks passing). Its report arrives as a task notification
-even after a fresh context; if none came, look at `git worktree list` and the newest branch's log. Merge when it
-reports (rebuild build/fc only when no pass is running; lang both modes, wbcheck, `tools/bazel/cold.sh bb-cli 8` and
-`bb-executor 8` rc 0 with checks). (b) Bazel's own part: the aquery without CppCompile is in cold.sh (JOURNAL 19:01:
-85 -> 49.5 s under load for the executor; build/bzfc must be rebuilt from tools/bazel/bzfc after a merge: cold.sh only
-builds it when missing, and a stale one failed a run at 18:45). The executor built that way with the fixed fc at 19:06 (rc 0, the reference's 415 flag lines, no retries). Next there: `--output=streamed_proto` read from a pipe while Bazel writes (the output
-handler is still 13 s for 74 MB of JSON), `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never warms
-up), A/B on buildifier first; analysis itself is 24 s for the executor. Then a reader of our own for the rules_go
-subset only if Bazel's part stays above a few seconds.
+none of it fc's own time (fc: 9.4 s for the executor's 1,065 packages). Two builders, each in its own worktree under
+.claude/worktrees (reports arrive as task notifications even after a fresh context; if none came, `git worktree list`
+and the newest commits of each branch):
+(a) **cgo packages by fc: merged (d6ee59c, 20:24).** bb-cli and bb-executor build with 0 packages from the stock
+compiler (75 and 924 before; BZFC_STOCKCGO=1 is the old path): fc runs cgo and gcc for the C, the stock linker links
+in external mode, the runtime and runtime/cgo are fc's. Verified on merged main with a scratch compiler: lang both
+modes, wbcheck, safecheck, tools/fc/cgotest.sh; the rows once each by the builder (rc 0, checks equal). Owed on a
+quiet machine: `tools/bazel/cold.sh bb-cli 8` and `bb-executor 8` with build/fc rebuilt (not while a pass runs).
+(b) **The DAG from `bazel query` (loading only) instead of `aquery`** (Opus, launched 20:22; JOURNAL 20:18: cold query
+13-28 s against aquery 56-124 s at the same load; the executor's graph is 2,449 go_library, ~220 proto rules, 14
+genrules). Oracle in its brief: the plan handed to fc equal package by package to the aquery path's, generated files
+byte for byte, the four rows' binary checks with `BZ_QUERY=1 tools/bazel/cold.sh`. Its worktree was branched before (a)'s merge: merge main into its branch first.
+Then on a quiet machine: both rows cold with HUGEPAGES on, the stages (Bazel, read, generate, fc), and what is left.
+Smaller, if Bazel's part still matters after (b): `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never
+warms up), A/B on buildifier first.
 (5) Toward 2.0 s cold: what is left of cold reading after the zips (2,495 files from directories: the standard
 library and the main module; 241 .mod files), allocation volume (5.9 GB mapped per MinIO build; `-memprofile`: no site
 above 5%), one assembler pass per package (IDEAS), functions and bodies by demand (FC_FUSE=1 FC_LAZYBODIES=1), the
