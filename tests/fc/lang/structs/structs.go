@@ -406,3 +406,43 @@ func ListNth(l *List, n int) int {
 	}
 	return l.Val
 }
+
+// ---- zero-sized fields and the register ABI: an array of two or more elements sends the whole value to
+// the stack even when its elements have no size (reflect's Struct14 and Struct15); an empty struct or an
+// array of length zero does not.
+
+type ZArr struct {
+	A uintptr
+	X [3]struct{}
+	B float64
+}
+
+type ZNest struct {
+	A uintptr
+	X struct{ Y [3]struct{} }
+	B float64
+}
+
+type ZEmpty struct {
+	A uintptr
+	X struct{}
+	Y [0]int
+	B float64
+}
+
+//go:noinline
+func PassZArr(a ZArr, k uintptr) ZArr { a.A += k; a.B *= 2; return a }
+
+//go:noinline
+func PassZNest(k uintptr, a ZNest) ZNest { a.A += k; a.B *= 2; return a }
+
+//go:noinline
+func PassZEmpty(a ZEmpty, k uintptr) ZEmpty { a.A += k; a.B *= 2; return a }
+
+// CallZ calls the three from code compiled the same way as they are.
+func CallZ(a uintptr, b float64) (uintptr, float64) {
+	x := PassZArr(ZArr{A: a, B: b}, 1)
+	y := PassZNest(2, ZNest{A: x.A, B: x.B})
+	z := PassZEmpty(ZEmpty{A: y.A, B: y.B}, 3)
+	return z.A, z.B
+}

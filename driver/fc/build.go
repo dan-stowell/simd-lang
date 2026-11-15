@@ -524,6 +524,11 @@ func buildMode(args []string) {
 		waitStock()
 		tl := time.Now()
 		var xargs []string // -X definitions, for whichever linker
+		if rt := pr.byPath["runtime"]; rt != nil && rt.Dir != "" {
+			// runtime.GOROOT() without $GOROOT: the tree the standard library was compiled from, as a
+			// stock build without -trimpath records it (the file names in the binary are that tree's)
+			xargs = append(xargs, "-X", "runtime.defaultGOROOT="+filepath.Dir(filepath.Dir(rt.Dir)))
+		}
 		for _, x := range xdefs {
 			xargs = append(xargs, "-X", x)
 		}

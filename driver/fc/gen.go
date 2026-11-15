@@ -23,6 +23,7 @@ import (
 	"go/token"
 	"go/types"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 
@@ -136,6 +137,7 @@ type gen struct {
 	convCall  *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
 	rf        *rfCtx              // set in the body of a range-over-func loop
 	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	sc        *genScratch         // this function's scratch buffers, if it has them (compileFunc)
 	root      *gen                // the function whose results a return there sets
 	abi0      bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
 }
@@ -926,6 +928,8 @@ type genScratch struct {
 	relocs                      []obj.Reloc
 	unsafe, lines, stackmap, sp []pcval
 	slots                       []slotInfo
+	// finish's own: the tables at their final pcs, before they are encoded
+	fUnsafe, fLines, fStackmap, fSP, fFiles, fLn []pcval
 }
 
 var scratchPool = sync.Pool{New: func() any { return new(genScratch) }}
@@ -953,6 +957,7 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 	var sc *genScratch
 	if scratchOn {
 		sc = g.takeScratch()
+		g.sc = sc
 	}
 	if scan != nil {
 		g.findHeapVars(scan)
@@ -1111,7 +1116,12 @@ func (g *gen) finish(pos token.Pos) {
 		p.xorps(X15, X15)
 		p.loadG()
 	}
-	sp := make([]pcval, 0, len(g.out.sp)+5)
+	var sp []pcval
+	if g.sc == nil {
+		sp = make([]pcval, 0, len(g.out.sp)+5)
+	} else {
+		sp = g.sc.fSP[:0]
+	}
 	sp = append(sp, pcval{0, 0})
 	spAt := p.pc()
 	p.push(BP)
@@ -1174,9 +1184,15 @@ func (g *gen) finish(pos token.Pos) {
 	code = append(append(code, p.b...), body.b...)
 	out := g.out
 	// tables: the prologue is one unsafe region at the function's first line
-	unsafe := make([]pcval, 0, len(out.unsafe)+3)
-	stackmap := make([]pcval, 0, len(out.stackmap)+3)
-	lines := make([]pcval, 0, len(out.lines)+2)
+	var unsafe, stackmap, lines []pcval
+	if sc := g.sc; sc != nil {
+		// (encoded below, so these too are scratch)
+		unsafe, stackmap, lines = sc.fUnsafe[:0], sc.fStackmap[:0], sc.fLines[:0]
+	} else {
+		unsafe = make([]pcval, 0, len(out.unsafe)+3)
+		stackmap = make([]pcval, 0, len(out.stackmap)+3)
+		lines = make([]pcval, 0, len(out.lines)+2)
+	}
 	unsafe = append(unsafe, pcval{0, -2}, pcval{plen, -1})
 	stackmap = append(stackmap, pcval{0, -1}, pcval{plen, 1})
 	out.poss = append(out.poss, pos)
@@ -1262,6 +1278,37 @@ func (g *gen) finish(pos token.Pos) {
 	}
 	out.code = code
 	out.relocs = relocs
+	if sc := g.sc; sc != nil {
+		// The pc tables in their final form now, on this thread, with the events still in the cache:
+		// installFuncs, which is one thread per package, only makes the symbols.
+		size := len(code)
+		out.pcsp, out.pcunsafe, out.pcstack = pctab(sp, size), pctab(unsafe, size), pctab(stackmap, size)
+		files, lns := sc.fFiles[:0], sc.fLn[:0]
+		var tf *token.File
+		var fidx int32
+		var ln int32
+		for _, l := range lines {
+			p := out.poss[l.val]
+			if tf == nil || !p.IsValid() || int(p) < tf.Base() || int(p) > tf.Base()+tf.Size() {
+				fidx, ln = g.c.fileLine(p)
+				tf = nil
+				if p.IsValid() {
+					tf = g.c.pr.fset.File(p) // (most of a function's lines are in one file: no lock for those)
+				}
+				if !slices.Contains(out.usedFiles, fidx) {
+					out.usedFiles = append(out.usedFiles, fidx)
+				}
+			} else {
+				ln = int32(tf.Line(p))
+			}
+			files, lns = append(files, pcval{l.pc, fidx}), append(lns, pcval{l.pc, ln})
+		}
+		out.pcfile, out.pcline = pctab(files, size), pctab(lns, size)
+		out.encoded = true
+		sc.fUnsafe, sc.fStackmap, sc.fLines, sc.fSP, sc.fFiles, sc.fLn = unsafe[:0], stackmap[:0], lines[:0], sp[:0], files[:0], lns[:0]
+		out.poss = nil
+		sp, unsafe, stackmap, lines = nil, nil, nil, nil
+	}
 	out.sp = sp
 	out.unsafe = unsafe
 	out.stackmap = stackmap

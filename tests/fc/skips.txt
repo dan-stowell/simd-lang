@@ -57,3 +57,12 @@ runtime/pprof ^TestGoroutineProfileConcurrency$ waits for a finalizer (subtest f
 runtime/pprof ^TestGenericsHashKeyInPprofBuilder$ asserts in-use counts after runtime.GC (fc's frame keeps genericAllocFunc's last result alive: [1 128 1 128] against [1 128 0 0]); also names instances by GC shape (genericAllocFunc[go.shape.uint64]) where fc stencils per type argument (genericAllocFunc[uint64])
 runtime/pprof ^TestGenericsInlineLocations$ asserts inlining (a location with 3 inlined functions): fails with the stock compiler too at -gcflags=all=-l
 runtime ^(TestStringIndexHaystack|TestStringIndexNeedle)$ asserts zero allocations for string(bytes) passed to strings.Index: needs the callee's parameters known not to escape (the harness gives fc-compiled packages export data in which every pointer parameter escapes; passes when the stock export data is used)
+# 2026-11-15: found when the external test packages were compiled by fc too (tools/fc/wpbatch.sh); each passes with the stock compiler at -l
+slices ^(TestInsert|TestGrow|TestConcat)$ assert allocation counts (testing.AllocsPerRun around closures and slices in the test package): need escape analysis
+internal/runtime/maps ^TestTombstoneGrow$ asserts an allocation count over 100,000 iterations of test code: needs escape analysis
+reflect ^TestTypeAssertAllocs$ asserts allocation counts that need escape analysis
+reflect ^TestCallReturnsEmpty$ waits on object liveness (a cleanup must run while the function that made the object is still running)
+runtime/debug ^TestFreeOSMemory$ waits on object liveness (a 32 MB slice must be freed while its function is still running)
+sync ^(TestOnceXGC|TestPoolGC)$ wait on object liveness (objects the collector must free while their function is still running)
+internal/poll ^TestSplicePipePool$ waits on object liveness (pipes closed by finalizers; 539 s before it gives up)
+weak ^(TestPointer|TestPointerEquality|TestPointerFinalizer)$ wait on object liveness (a weak pointer must go nil while the function that held the strong pointer is still running)

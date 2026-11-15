@@ -132,3 +132,18 @@ func TestByHand(t *testing.T) {
 		t.Error("list")
 	}
 }
+
+func TestZeroSizedFieldsABI(t *testing.T) {
+	if got := structs.PassZArr(structs.ZArr{A: 41, B: 2.5}, 1); got.A != 42 || got.B != 5 {
+		t.Errorf("PassZArr = %+v, want A 42 B 5", got)
+	}
+	if got := structs.PassZNest(2, structs.ZNest{A: 40, B: 1.25}); got.A != 42 || got.B != 2.5 {
+		t.Errorf("PassZNest = %+v, want A 42 B 2.5", got)
+	}
+	if got := structs.PassZEmpty(structs.ZEmpty{A: 39, B: 0.5}, 3); got.A != 42 || got.B != 1 {
+		t.Errorf("PassZEmpty = %+v, want A 42 B 1", got)
+	}
+	if a, b := structs.CallZ(36, 1); a != 42 || b != 8 {
+		t.Errorf("CallZ = %d %v, want 42 8", a, b)
+	}
+}

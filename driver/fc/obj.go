@@ -317,6 +317,10 @@ type funcOut struct {
 	argsMap   *obj.LSym
 	localsMap *obj.LSym
 	funcFlag  abi.FuncFlag
+	// encoded: finish already made the pc tables (gen.go: a function compiled with scratch buffers)
+	encoded                                 bool
+	pcsp, pcfile, pcline, pcunsafe, pcstack []byte
+	usedFiles                               []int32
 }
 
 // pctab encodes a pc-value table (see cmd/internal/obj.funcpctab) from events sorted by pc.
@@ -423,6 +427,19 @@ func (c *compiler) installFunc(f *funcOut) {
 		s.R = f.relocs
 		size := len(f.code)
 		pc := &fn.Pcln
+		if f.encoded {
+			pc.Pcsp = pcSym(f.pcsp)
+			pc.UsedFiles = make(map[goobjCUFileIndex]struct{}, len(f.usedFiles))
+			for _, fi := range f.usedFiles {
+				pc.UsedFiles[goobjCUFileIndex(fi)] = struct{}{}
+			}
+			pc.Pcfile, pc.Pcline, pc.Pcinline = pcSym(f.pcfile), pcSym(f.pcline), pcSym(nil)
+			pc.Pcdata = []*obj.LSym{pcSym(f.pcunsafe), pcSym(f.pcstack)}
+			if f.argsMap != nil {
+				pc.Funcdata = []*obj.LSym{f.argsMap, f.localsMap}
+			}
+			return
+		}
 		pc.Pcsp = pcSym(pctab(f.sp, size))
 		pc.UsedFiles = map[goobjCUFileIndex]struct{}{}
 		var files, lines []pcval

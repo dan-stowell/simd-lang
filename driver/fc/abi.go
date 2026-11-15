@@ -58,9 +58,8 @@ func (c *compiler) flatten(t types.Type, off int64, ps []part) ([]part, bool) {
 		offs := c.fieldOffsets(u)
 		ok := true
 		for i := 0; i < u.NumFields() && ok; i++ {
-			if c.sizeof(u.Field(i).Type()) == 0 {
-				continue
-			}
+			// (a field of size zero is asked too: [3]struct{} takes no register and still sends the
+			// whole value to the stack, as any array of two or more elements does)
 			ps, ok = c.flatten(u.Field(i).Type(), off+offs[i], ps)
 		}
 		return ps, ok
