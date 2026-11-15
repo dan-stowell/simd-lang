@@ -65,4 +65,4 @@ reflect ^TestCallReturnsEmpty$ waits on object liveness (a cleanup must run whil
 runtime/debug ^TestFreeOSMemory$ waits on object liveness (a 32 MB slice must be freed while its function is still running)
 sync ^(TestOnceXGC|TestPoolGC)$ wait on object liveness (objects the collector must free while their function is still running)
 internal/poll ^TestSplicePipePool$ waits on object liveness (pipes closed by finalizers; 539 s before it gives up)
-weak ^(TestPointer|TestPointerEquality|TestPointerFinalizer)$ wait on object liveness (a weak pointer must go nil while the function that held the strong pointer is still running)
+weak ^(TestPointer|TestPointerEquality|TestPointerFinalizer|TestPointerCleanup)$ wait on object liveness (a weak pointer must go nil while the function that held the strong pointer is still running)

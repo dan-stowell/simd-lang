@@ -294,7 +294,12 @@ func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Si
 
 // methodValue: x.M as a function value with x bound.
 func (g *gen) methodValue(e *ast.SelectorExpr, sel *types.Selection) loc {
-	sig := g.typeOf(e).(*types.Signature)
+	return g.methodValueAs(e, sel, g.typeOf(e).(*types.Signature))
+}
+
+// methodValueAs is methodValue with the value's signature given: x.M[int] is x.M with the signature of the
+// instantiation, which is the type of the index expression around the selector.
+func (g *gen) methodValueAs(e *ast.SelectorExpr, sel *types.Selection, sig *types.Signature) loc {
 	c, ai, recv := g.method(e, sel, sig)
 	if c.kind == 2 {
 		// a method value of a nil interface panics here, not when it is called

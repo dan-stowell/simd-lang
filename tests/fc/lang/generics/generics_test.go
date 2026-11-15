@@ -371,3 +371,10 @@ func TestCrossInstantiation(t *testing.T) {
 	p := g.MakePair("k", 2.5)
 	eq(t, "EqualPair cross", g.EqualPair(p, g.Pair[string, float64]{"k", 2.5}), true)
 }
+
+func TestGenericMethodsOfGenericTypes(t *testing.T) {
+	s, x, y, f, n := g.GenericMethods()
+	if s != "7!" || x != 7 || y != "k" || f != 3.5 || n != 112 {
+		t.Errorf("GenericMethods = %q %d %q %v %d, want 7! 7 k 3.5 112", s, x, y, f, n)
+	}
+}

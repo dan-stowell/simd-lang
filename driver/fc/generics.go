@@ -183,6 +183,31 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 		for i := range targs {
 			targs[i] = g.subst(inst.TypeArgs.At(i))
 		}
+		if osig.RecvTypeParams().Len() > 0 {
+			// a generic method of a generic type: the receiver's type arguments and the method's own
+			rt := sig.Recv().Type()
+			if p, ok := rt.(*types.Pointer); ok {
+				rt = p.Elem()
+			}
+			named := types.Unalias(rt).(*types.Named)
+			rargs := make([]types.Type, named.TypeArgs().Len())
+			for i := range rargs {
+				rargs[i] = g.subst(named.TypeArgs().At(i))
+			}
+			if len(rargs) == 0 {
+				giveUp("generic method %s of an uninstantiated generic type", fn.Name())
+			}
+			rn, err := types.Instantiate(g.c.pr.tctx, named.Origin(), rargs, false)
+			if err != nil {
+				giveUp("instantiate %v: %v", named, err)
+			}
+			var recv types.Type = rn
+			if _, ok := sig.Recv().Type().(*types.Pointer); ok {
+				recv = types.NewPointer(rn)
+			}
+			rsig := types.NewSignatureType(types.NewParam(0, nil, "", recv), nil, nil, sig.Params(), sig.Results(), sig.Variadic())
+			return g.c.instantiateM(origin, osig.RecvTypeParams(), rargs, rn.(*types.Named), osig.TypeParams(), targs), rsig
+		}
 		return g.c.instantiate(origin, osig.TypeParams(), targs, nil), sig
 	case osig.RecvTypeParams().Len() > 0:
 		// a method of a generic type: the type arguments are the receiver's
@@ -215,20 +240,29 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 
 // instantiate returns the symbol of an instance, queueing its compilation the first time.
 func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList, targs []types.Type, recv *types.Named) *obj.LSym {
+	return c.instantiateM(origin, tparams, targs, recv, nil, nil)
+}
+
+// instantiateM is instantiate for a generic method of a generic type as well: recv's type arguments
+// (tparams, targs) and the method's own (mtparams, margs; nil otherwise).
+func (c *compiler) instantiateM(origin *types.Func, tparams *types.TypeParamList, targs []types.Type, recv *types.Named, mtparams *types.TypeParamList, margs []types.Type) *obj.LSym {
 	if f := c.pr.full(origin); f != origin {
 		// the body is compiled with the full pass's objects: its type parameters are the ones to bind
 		fsig := f.Type().(*types.Signature)
 		if recv != nil {
 			tparams = fsig.RecvTypeParams()
+			if margs != nil {
+				mtparams = fsig.TypeParams()
+			}
 		} else {
 			tparams = fsig.TypeParams()
 		}
 		origin = f
 	}
-	if tparams.Len() != len(targs) {
-		giveUp("instantiation of %s with %d type arguments", origin.Name(), len(targs))
+	if tparams.Len() != len(targs) || (margs != nil && mtparams.Len() != len(margs)) {
+		giveUp("instantiation of %s with %d type arguments", origin.Name(), len(targs)+len(margs))
 	}
-	for _, t := range targs {
+	for _, t := range append(append([]types.Type(nil), targs...), margs...) {
 		if mentionsTypeParam(t) {
 			giveUp("instantiation of %s with an open type argument", origin.Name())
 		}
@@ -247,6 +281,13 @@ func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList,
 			name = pp + ".(*" + base + ")." + origin.Name()
 		} else {
 			name = pp + "." + base + "." + origin.Name()
+		}
+		if margs != nil {
+			var mnames []string
+			for _, t := range margs {
+				mnames = append(mnames, c.typeLinkName(t))
+			}
+			name += "[" + strings.Join(mnames, ",") + "]"
 		}
 	} else if r := origin.Type().(*types.Signature).Recv(); r != nil {
 		// a generic method of an ordinary type
@@ -282,6 +323,9 @@ func (c *compiler) instantiate(origin *types.Func, tparams *types.TypeParamList,
 		env := map[*types.TypeParam]types.Type{}
 		for i, t := range targs {
 			env[tparams.At(i)] = t
+		}
+		for i, t := range margs {
+			env[mtparams.At(i)] = t
 		}
 		c.instQueue = append(c.instQueue, &instance{fn: origin, env: env, sym: sym})
 	}

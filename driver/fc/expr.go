@@ -158,6 +158,9 @@ func (g *gen) expr(e ast.Expr) loc {
 	case *ast.IndexExpr:
 		return g.index(e)
 	case *ast.IndexListExpr:
+		if l, ok := g.genericMethodValue(e.X, e); ok {
+			return l
+		}
 		if id := identOf(e.X); id != nil {
 			if fn, ok := useOf(id).(*types.Func); ok {
 				return g.funcValue(fn, id)
@@ -341,7 +344,30 @@ func (g *gen) scaleAdd(size int64) {
 	}
 }
 
+// genericMethodValue: x.M[T] not called, inst being the index expression around the selector x.
+func (g *gen) genericMethodValue(x ast.Expr, inst ast.Expr) (loc, bool) {
+	se, ok := ast.Unparen(x).(*ast.SelectorExpr)
+	if !ok {
+		return loc{}, false
+	}
+	sel := selnOf(se)
+	if sel == nil || sel.Kind() != types.MethodVal {
+		return loc{}, false
+	}
+	if _, ok := g.info.Instances[se.Sel]; !ok {
+		return loc{}, false
+	}
+	sig, ok := g.typeOf(inst).(*types.Signature)
+	if !ok {
+		return loc{}, false
+	}
+	return g.methodValueAs(se, sel, sig), true
+}
+
 func (g *gen) index(e *ast.IndexExpr) loc {
+	if l, ok := g.genericMethodValue(e.X, e); ok {
+		return l
+	}
 	if id := identOf(e.X); id != nil {
 		if _, ok := g.info.Instances[id]; ok {
 			// F[int] as a value

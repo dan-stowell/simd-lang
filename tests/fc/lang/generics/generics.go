@@ -492,3 +492,32 @@ func (o Opt[T]) Or(d T) T {
 	}
 	return d
 }
+
+// ---- generic methods of generic types: the receiver's type arguments and the method's own
+
+type GBox[T any] struct{ V T }
+
+type GPair[A, B any] struct {
+	A A
+	B B
+}
+
+func (b GBox[T]) Conv[U any](f func(T) U) U     { return f(b.V) }
+func (b *GBox[T]) Pair[U any](u U) (T, U)       { return b.V, u }
+func (b GBox[T]) With[U any](u U) GPair[T, U]   { return GPair[T, U]{b.V, u} }
+func (p GPair[A, B]) Swap[C any](c C) (B, A, C) { return p.B, p.A, c }
+
+// GenericMethods calls them directly, through a method value, and from generic code.
+func GenericMethods() (string, int, string, float64, int) {
+	b := GBox[int]{7}
+	s := b.Conv[string](func(i int) string { return Itoa(i) + "!" })
+	x, y := (&b).Pair("k")
+	f := b.Conv[float64]
+	w := b.With(int8(3))
+	p, q, r := w.Swap("zz")
+	return s, x, y, f(func(i int) float64 { return float64(i) / 2 }), int(p) + q + len(r) + viaGeneric(GBox[string]{"abc"})
+}
+
+func viaGeneric[T any](b GBox[T]) int {
+	return b.Conv[int](func(T) int { return 100 })
+}
