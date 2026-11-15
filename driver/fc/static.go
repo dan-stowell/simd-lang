@@ -125,7 +125,9 @@ func (c *compiler) compilePackage() (errs []string) {
 				inferred := false
 				if !g.pragmaNosplit && !intrinsicPkg[c.path] && c.pr.inRuntime(c.pkg) {
 					if yes, known := stockInlines(c.path, fd); known {
-						inferred = yes && fd.Body != nil
+						// (a function that calls itself keeps its stack check: it is what stops the recursion,
+						// and a nosplit cycle is what the stock linker's check refuses: runtime._System)
+						inferred = yes && fd.Body != nil && !callsItself(fd, fn)
 					} else {
 						inferred = inlinable(fd, fn, c.info)
 					}
@@ -743,6 +745,27 @@ func runtimeNamed(path string) bool {
 // which inlining gives the stock compiler. fc does not inline: in the runtime's packages it compiles them
 // without a stack check instead. A function that calls itself the stock compiler never inlines, and its
 // stack check is what stops the recursion (the runtime's TestG0StackOverflow counts on it).
+// callsItself: does fd's body call fn directly?
+func callsItself(fd *ast.FuncDecl, fn *types.Func) bool {
+	found := false
+	ast.Inspect(fd.Body, func(x ast.Node) bool {
+		if ce, ok := x.(*ast.CallExpr); ok {
+			var id *ast.Ident
+			switch f := ast.Unparen(ce.Fun).(type) {
+			case *ast.Ident:
+				id = f
+			case *ast.SelectorExpr:
+				id = f.Sel
+			}
+			if id != nil && useOf(id) == fn {
+				found = true
+			}
+		}
+		return !found
+	})
+	return found
+}
+
 func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 	if fd.Body == nil || hasDirective(fd.Doc, "//go:noinline") || hasDirective(fd.Doc, "//go:systemstack") {
 		return false
