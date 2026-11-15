@@ -167,3 +167,15 @@ a FCLINK_SORT=1 mode that the verification passes use. Status (22:10 UTC): the o
 instances, wrappers and descriptors (a builder: shard compilers chosen by the symbol's name). The sort is not in
 the link at all (per package, on its own thread), so the kill test's row is not the one to read: user+sys of the
 whole build is, on a quiet machine.
+
+## Escape analysis where it is asked for (2026-11-15)
+Outside the runtime's packages every address taken, closure and composite literal whose address is used goes to the
+heap. The build does not care, the built program does: abi/uglyfib.go of the Go test directory runs 94 s by fc against
+0.64 s by stock (two allocations per call), and every test suite run under fc pays some of that. The analysis in every
+package (FC_ESC=1) costs 1.1 core-s of MinIO's 18 and the code is no smaller (JOURNAL 2026-11-15, the entry timed
+22:20). A cheaper form: run it only for the functions that contain a site it could answer (an `&x` of a local, a
+function literal, `&T{}`, `new`, a slice literal or make of constant size), and treat every callee outside that set as
+"arguments escape" unless its summary is already there; most functions have no such site and are never visited.
+Kill test: user+sys of a MinIO build, quiet machine, against default: drop it if it costs more than 0.3 core-s, or if
+MinIO's package tests (wpbatch, wall of the 46) do not get at least 10% faster. Status: not started; it is not on the
+path to the exit test (which does not time the built program), so it waits behind (1)-(3) of PLAN's Now.
