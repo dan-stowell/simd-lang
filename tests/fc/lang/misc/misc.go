@@ -651,3 +651,53 @@ func variadicRec(depth int, xs ...int) int {
 	return variadicRec(depth-1, append(xs, depth)...)
 }
 func VariadicRec(depth int) int { return variadicRec(depth) }
+
+// ---- a call with several results as the arguments of a variadic function
+
+func vmThree() (int, string, float64) { return 7, "seven", 7.5 }
+func vmTwo() (string, int)            { return "k", 2 }
+func vmInts() (int, int, int)         { return 1, 2, 3 }
+
+func catAny(xs ...any) string {
+	s := ""
+	for _, x := range xs {
+		switch x := x.(type) {
+		case int:
+			s += "i" + itoa(x)
+		case string:
+			s += "s" + x
+		case float64:
+			s += "f" + itoa(int(x*10))
+		}
+		s += ";"
+	}
+	return s
+}
+
+func prefixed(p string, xs ...any) string { return p + ":" + catAny(xs...) }
+func sumFrom(base int, xs ...int) int {
+	for _, x := range xs {
+		base += x
+	}
+	return base
+}
+func exactly(a string, b int, xs ...int) int { return len(a) + b + len(xs)*100 }
+
+// VariadicMulti: f(g()) where f is variadic: all results into the slice; the first into fixed parameters
+// and the rest into the slice; exactly the fixed parameters (an empty slice).
+func VariadicMulti() (string, string, int, int) {
+	return catAny(vmThree()), prefixed(vmTwo()), sumFrom(vmInts()), exactly(vmTwo())
+}
+
+// ---- a concrete value compared with an interface value
+
+type pt struct{ X, Y int }
+
+func EqStringAny(s string, v any) (bool, bool) { return s == v, s != v }
+func EqAnyString(v any, s string) (bool, bool) { return v == s, v != s }
+func EqIntAny(i int, v any) (bool, bool)       { return i == v, v != i }
+func EqStructAny(x, y int, v any) bool         { return pt{x, y} == v }
+func MkPt(x, y int) any                        { return pt{x, y} }
+func EqErr(e error, v any) bool                { return e == v }
+func EqFloatAny(f float64, v any) (bool, bool) { return f == v, v != f }
+func EqBoolAny(b bool, v any) bool             { return b == v }

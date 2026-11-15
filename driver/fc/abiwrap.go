@@ -31,6 +31,14 @@ func (c *compiler) readSymABIs(file string) {
 	if err != nil {
 		log.Fatalf("fc: -symabis: %v", err)
 	}
+	c.parseSymABIs(data)
+}
+
+// parseSymABIs is readSymABIs for a listing in memory (the assembler ran in this process: asmlib.go).
+func (c *compiler) parseSymABIs(data []byte) {
+	if c.abis == nil {
+		c.abis = &symABIs{defs: map[string]bool{}, refs: map[string]bool{}, defsInternal: map[string]bool{}}
+	}
 	prefix := objabi.PathToPrefix(c.path)
 	for _, line := range strings.Split(string(data), "\n") {
 		parts := strings.Fields(line)

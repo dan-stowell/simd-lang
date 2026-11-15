@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -145,6 +146,32 @@ func buildMode(args []string) {
 			log.Fatal("fc build -link: one main package")
 		}
 		mainPkg = targets[0]
+		if *plan != "" {
+			// A test binary's plan (go list -deps -test) lists a package twice when the package under test
+			// is below it: "runtime" and "runtime [internal/abi.test]", the second recompiled against the
+			// package with its test files. The binary has the variant only: the plain path names it, for
+			// everything that finds a package by name (the runtime, its closure).
+			seenV := map[*Pkg]bool{}
+			var alias func(p *Pkg)
+			alias = func(p *Pkg) {
+				if seenV[p] {
+					return
+				}
+				seenV[p] = true
+				if pp := plainPath(p.ImportPath); pp != p.ImportPath && p != mainPkg {
+					pr.byPath[pp] = p
+				}
+				for _, ip := range p.Imports {
+					if m, ok := p.ImportMap[ip]; ok {
+						ip = m
+					}
+					if d := pr.byPath[ip]; d != nil {
+						alias(d)
+					}
+				}
+			}
+			alias(mainPkg)
+		}
 		seen := map[*Pkg]bool{}
 		var walk func(p *Pkg)
 		walk = func(p *Pkg) {
@@ -357,11 +384,24 @@ func buildMode(args []string) {
 				asmDir = filepath.Join(*out, "asm", strings.ReplaceAll(objabi.PathToPrefix(p.ImportPath), "/", "__"))
 				os.MkdirAll(asmDir, 0o777)
 				os.WriteFile(filepath.Join(asmDir, "go_asm.h"), nil, 0o666)
-				if err := runAsm(p, asmDir, "-gensymabis", "-o", filepath.Join(asmDir, "symabis")); err != nil {
-					results[i].errs = []string{"assembler (symabis): " + err.Error()}
-					return
+				if asmInProc {
+					var sfiles []string
+					for _, sf := range p.SFiles {
+						sfiles = append(sfiles, filepath.Join(p.Dir, sf))
+					}
+					abis, err := assemble(p, asmDir, sfiles, "", true)
+					if err != nil {
+						results[i].errs = []string{"assembler (symabis): " + err.Error()}
+						return
+					}
+					c.parseSymABIs(abis)
+				} else {
+					if err := runAsm(p, asmDir, "-gensymabis", "-o", filepath.Join(asmDir, "symabis")); err != nil {
+						results[i].errs = []string{"assembler (symabis): " + err.Error()}
+						return
+					}
+					c.readSymABIs(filepath.Join(asmDir, "symabis"))
 				}
-				c.readSymABIs(filepath.Join(asmDir, "symabis"))
 			} else {
 				c.readSymABIs("")
 			}
@@ -571,6 +611,24 @@ func buildMode(args []string) {
 	var ru syscall.Rusage
 	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
 	fmt.Printf("total: %.0f ms wall, %.2f core-s (with the assembler and the linker), peak memory %.1f GB + %.1f GB mapped by the bump allocator\n", float64(time.Since(t0).Milliseconds()), total, float64(ru.Maxrss)/1e6, float64(sbBumpMapped())/1e9)
+	// the materialization tax (CHARTER.md): what still crosses a process or file boundary
+	var ruc syscall.Rusage
+	syscall.Getrusage(syscall.RUSAGE_CHILDREN, &ruc)
+	var interBytes, interFiles int64
+	filepath.WalkDir(*out, func(_ string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			if fi, err := d.Info(); err == nil {
+				interBytes += fi.Size()
+				interFiles++
+			}
+		}
+		return nil
+	})
+	if asmRuns > 0 {
+		fmt.Printf("assembler in process: %d runs, %.0f ms assembling, %.0f ms waiting for one another\n", asmRuns, float64(asmNS)/1e6, float64(asmWaitNS)/1e6)
+	}
+	fmt.Printf("tax: %d processes started (assembler; %.2f core-s), %d intermediate files written and read back (%.1f MB: assembler objects, symabis, headers), page faults %d here + %d in children\n",
+		toolStarts, float64(ruc.Utime.Sec)+float64(ruc.Utime.Usec)/1e6+float64(ruc.Stime.Sec)+float64(ruc.Stime.Usec)/1e6, interFiles, float64(interBytes)/1e6, ru.Minflt+ru.Majflt, ruc.Minflt+ruc.Majflt)
 }
 
 // needsInit: does the package have initialization to run (an init function, or a variable whose value is
@@ -642,12 +700,20 @@ func runAsm(p *Pkg, dir string, extra ...string) error {
 }
 
 func runAsmFile(p *Pkg, dir, sf, out string) error {
+	if asmInProc {
+		_, err := assemble(p, dir, []string{filepath.Join(p.Dir, sf)}, out, false)
+		return err
+	}
 	args := append(asmArgs(p, dir), "-o", out, filepath.Join(p.Dir, sf))
 	return runTool(p.Dir, args)
 }
 
+// toolStarts: processes started (the assembler).
+var toolStarts int64
+
 func runTool(dir string, args []string) error {
 	// the assembler itself, not through the go command (whose start costs as much as a small file)
+	atomic.AddInt64(&toolStarts, 1)
 	cmd := exec.Command(filepath.Join(runtime.GOROOT(), "pkg/tool/linux_amd64/asm"), args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local")

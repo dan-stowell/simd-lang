@@ -14,6 +14,7 @@ dst=${SB_GOROOT:-/home/exedev/targets/goroot-slots}
 python3 driver/gotypes/patch.py "$(GOTOOLCHAIN=local go env GOROOT)/src/go/types" "$dst/src/go/types"   # CheckDecls + Bodies (sbbodies.go)
 python3 driver/rtbump/patch.py "$dst/src/runtime"   # the bump allocator (sbbump.go)
 SB_GOROOT="$dst" driver/mkfclinklib.sh
+SB_GOROOT="$dst" driver/mkfcasmlib.sh   # the stock assembler as a library (driver/fc/asmlib.go)
 d="$dst/src/cmd/fc${FC_TAG:-}"
 mkdir -p "$d" build
 find "$d" -maxdepth 1 -name '*.go' -delete

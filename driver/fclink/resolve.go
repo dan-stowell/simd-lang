@@ -98,8 +98,9 @@ func mkNameRec(name string, abi uint16, gid, rank uint32) nameRec {
 	return nameRec{nameKey(name, abi), unsafe.StringData(name), uint32(len(name)), gid, rank, abi}
 }
 
+// (the flood sets other bits of the word with atomic ORs while this reads: an atomic load, the same instruction on amd64)
 // isDef: is canonical id c a definition in some object?
-func isDef(c uint32) bool { return c != 0 && c <= nslots && state[c]&stUndef == 0 }
+func isDef(c uint32) bool { return c != 0 && c <= nslots && atomic.LoadUint32(&state[c])&stUndef == 0 }
 
 // lookupName finds the canonical symbol of a name: a definition, or the reference that stands for an
 // undefined symbol; 0 if no object mentions the name. Names that only package-indexed definitions carry

@@ -542,3 +542,10 @@ func DeferPrint() int {
 	defer println()
 	return 1
 }
+
+// PanicNilLiteral panics with the literal nil (a constant operand, where RecoverValue(nil) panics with a
+// nil interface variable) and returns what recover gives.
+func PanicNilLiteral() (r any) {
+	defer func() { r = recover() }()
+	panic(nil)
+}

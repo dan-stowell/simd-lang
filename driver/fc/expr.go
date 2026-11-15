@@ -853,6 +853,11 @@ func (g *gen) comparison(e *ast.BinaryExpr) loc {
 	if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
 		t = types.Default(t)
 	}
+	if isInterface(xt) != isInterface(yt) {
+		// a concrete value compared with an interface value: never by the concrete type's rule below
+		// (s == v with s a string and v an any compared v's words as a string's)
+		return g.equality(e, xt, yt)
+	}
 	switch {
 	case isFloat(t):
 		g.operands(e.X, e.Y, t, t, X0, X1)

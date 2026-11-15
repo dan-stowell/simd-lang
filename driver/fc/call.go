@@ -312,7 +312,25 @@ func (g *gen) args(e *ast.CallExpr, sig *types.Signature) []loc {
 			// f(g()) with several results
 			rs := g.multi(e.Args[0])
 			if sig.Variadic() {
-				giveUp("multi-value call passed to a variadic function")
+				// f(g()) with f variadic: the first results are the fixed parameters, the rest the slice
+				nfixed := np - 1
+				for i := 0; i < nfixed; i++ {
+					pt := sig.Params().At(i).Type()
+					out = append(out, g.keep(g.convertImplicit(rs[i].l, rs[i].t, pt), pt))
+				}
+				st := sig.Params().At(np - 1).Type()
+				n := tup.Len() - nfixed
+				if n == 0 {
+					return append(out, loc{kind: lZero})
+				}
+				et := st.Underlying().(*types.Slice).Elem()
+				sl := g.newBacking(et, int64(n), st, e)
+				es := g.c.sizeof(et)
+				for i := 0; i < n; i++ {
+					r := rs[nfixed+i]
+					g.move(loc{kind: lInd, slot: sl.off, off: int64(i) * es}, g.convertImplicit(r.l, r.t, et), et)
+				}
+				return append(out, sl)
 			}
 			for i := 0; i < tup.Len(); i++ {
 				pt := sig.Params().At(i).Type()
@@ -663,7 +681,7 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		return one(loc{kind: lReg, reg: AX})
 	case "panic":
 		l := g.exprAs(e.Args[0], g.c.anyType())
-		l = g.stash(l, g.c.anyType())
+		l = g.inMem(l, g.c.anyType()) // (panic(nil): a zero value has no address until it is put somewhere)
 		m := g.m(l, R13)
 		g.a.load(AX, m, 8, false)
 		g.a.load(BX, m.plus(8), 8, false)

@@ -47,6 +47,7 @@ for a in "$@"; do case "$a" in -test.*) args+=("$a");; -*) args+=("-test.${a#-}"
 skip=$(awk -v p="$pkg" '$1==p{printf "%s%s", sep, $2; sep="|"}' "$here/tests/fc/skips.txt" 2>/dev/null)
 [ -z "$skip" ] || args=(-test.skip "$skip" "${args[@]}")
 cd "$pdir" || exit 2
-"$work/test.bin" -test.paniconexit0 -test.timeout="${WPTEST_TIMEOUT:-10m}" "${args[@]}"; rc=$?
+# (go test runs a test with GOROOT set to its own tree: tests that read the standard library's source count on it)
+GOROOT=$(go env GOROOT) "$work/test.bin" -test.paniconexit0 -test.timeout="${WPTEST_TIMEOUT:-10m}" "${args[@]}"; rc=$?
 if [ $rc = 0 ]; then echo "ok  	$pkg	(whole program)"; exit 0; fi
 echo "FAIL	$pkg	(whole program)"; exit 1

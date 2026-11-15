@@ -324,3 +324,57 @@ func bad(n int) func(func(int) bool) {
 		}
 	}
 }
+
+func TestVariadicMulti(t *testing.T) {
+	a, b, c, d := m.VariadicMulti()
+	if got, want := fmt.Sprint(a, "|", b, "|", c, "|", d), "i7;sseven;f75;|k:i2;|6|3"; got != want {
+		t.Errorf("VariadicMulti: %s, want %s", got, want)
+	}
+}
+
+func TestMixedInterfaceCompare(t *testing.T) {
+	check := func(name string, got, want bool) {
+		t.Helper()
+		if got != want {
+			t.Errorf("%s = %v, want %v", name, got, want)
+		}
+	}
+	eq, ne := m.EqStringAny("application/gzip", any("application/"+fmt.Sprint("gzip")))
+	check("string == any (equal)", eq, true)
+	check("string != any (equal)", ne, false)
+	eq, ne = m.EqStringAny("a", any("b"))
+	check("string == any (different)", eq, false)
+	check("string != any (different)", ne, true)
+	eq, ne = m.EqStringAny("a", nil)
+	check("string == nil any", eq, false)
+	check("string != nil any", ne, true)
+	eq, ne = m.EqStringAny("1", 1)
+	check("string == any(int)", eq, false)
+	check("string != any(int)", ne, true)
+	eq, ne = m.EqAnyString(any("x"+fmt.Sprint(1)), "x1")
+	check("any == string (equal)", eq, true)
+	check("any != string (equal)", ne, false)
+	eq, ne = m.EqIntAny(5, 5)
+	check("int == any (equal)", eq, true)
+	check("any != int (equal)", ne, false)
+	eq, ne = m.EqIntAny(5, int64(5))
+	check("int == any(int64)", eq, false)
+	check("any(int64) != int", ne, true)
+	check("struct == any (equal)", m.EqStructAny(1, 2, m.MkPt(1, 2)), true)
+	check("struct == any (different)", m.EqStructAny(1, 2, m.MkPt(1, 3)), false)
+	check("struct == any(other type)", m.EqStructAny(1, 2, [2]int{1, 2}), false)
+	eq, ne = m.EqFloatAny(1.5, 1.5)
+	check("float == any (equal)", eq, true)
+	check("any != float (equal)", ne, false)
+	eq, ne = m.EqFloatAny(1.5, float32(1.5))
+	check("float == any(float32)", eq, false)
+	check("any(float32) != float", ne, true)
+	eq, _ = m.EqFloatAny(math.NaN(), math.NaN())
+	check("NaN == any(NaN)", eq, false)
+	check("bool == any (equal)", m.EqBoolAny(true, true), true)
+	check("bool == any (different)", m.EqBoolAny(true, false), false)
+	check("bool == any(int)", m.EqBoolAny(true, 1), false)
+	e := fmt.Errorf("e")
+	check("error == any (same)", m.EqErr(e, e), true)
+	check("error == any (other)", m.EqErr(e, fmt.Errorf("e")), false)
+}

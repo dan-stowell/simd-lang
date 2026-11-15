@@ -165,6 +165,7 @@ func TestRecover(t *testing.T) {
 	gotNil := defers.RecoverValue(nil)
 	eq(t, "panic(nil) type", fmt.Sprintf("%T", gotNil), "*runtime.PanicNilError")
 	eq(t, "panic(nil) text", fmt.Sprint(gotNil), fmt.Sprint(stockNil))
+	eq(t, "panic(nil) literal", fmt.Sprintf("%T", defers.PanicNilLiteral()), "*runtime.PanicNilError")
 
 	r, ran := defers.NoPanicRecover()
 	eq(t, "NoPanicRecover", fmt.Sprint(r, ran), "<nil> true")
