@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 	"unicode"
 )
 
@@ -26,6 +28,9 @@ type modInfo struct {
 	goVersionKnown     bool
 	once               sync.Once
 	modFile            string // where the go directive is read from (lazily)
+	zipPath, zipPrefix string // the module cache's download of it and the prefix of the names in it (modzip.go)
+	zipOnce            sync.Once
+	z                  *zipMod
 }
 
 type selfPlan struct {
@@ -37,6 +42,7 @@ type selfPlan struct {
 	ctxt             build.Context
 	mu               sync.Mutex
 	mem              map[string][]byte // path -> bytes read by go/build's MatchFile
+	zsrc             map[string]zipSrc // path -> the file in its module's zip, while its directory is being loaded
 	stdDir           map[string]bool
 }
 
@@ -114,7 +120,7 @@ func escapePath(p string) string {
 }
 
 func newSelfPlan(srcdir string) (*selfPlan, error) {
-	sp := &selfPlan{mem: map[string][]byte{}, stdDir: map[string]bool{}}
+	sp := &selfPlan{mem: map[string][]byte{}, zsrc: map[string]zipSrc{}, stdDir: map[string]bool{}}
 	sp.goroot, sp.modcache = os.Getenv("FC_GOROOT"), os.Getenv("GOMODCACHE")
 	// Without asking the go command (a process start, and 10-20 ms): GOROOT from the environment or from
 	// where the go on PATH lives, the module cache from GOPATH or the home directory. Anything set in the go
@@ -258,10 +264,12 @@ func newSelfPlan(srcdir string) (*selfPlan, error) {
 				} else {
 					mi.Dir = filepath.Join(sp.modcache, escapePath(rp[0])+"@"+rp[1])
 					mi.modFile = filepath.Join(sp.modcache, "cache", "download", escapePath(rp[0]), "@v", rp[1]+".mod")
+					mi.zipPath, mi.zipPrefix = strings.TrimSuffix(mi.modFile, ".mod")+".zip", rp[0]+"@"+rp[1]+"/"
 				}
 			} else {
 				mi.Dir = filepath.Join(sp.modcache, escapePath(path)+"@"+ver)
 				mi.modFile = filepath.Join(sp.modcache, "cache", "download", escapePath(path), "@v", ver+".mod")
+				mi.zipPath, mi.zipPrefix = strings.TrimSuffix(mi.modFile, ".mod")+".zip", path+"@"+ver+"/"
 			}
 			sp.deps = append(sp.deps, mi)
 		}
@@ -328,6 +336,13 @@ func (sp *selfPlan) resolve(path string, fromStd bool) (real, dir string, mi *mo
 	for _, m := range sp.deps {
 		if hasPrefixPath(path, m.Path) {
 			d := filepath.Join(m.Dir, strings.TrimPrefix(path, m.Path))
+			if z := m.zip(); z != nil {
+				// (the zip's directory of contents answers without asking the disk)
+				if z.hasDir(strings.TrimPrefix(strings.TrimPrefix(path, m.Path), "/")) {
+					return path, d, m, false, nil
+				}
+				continue
+			}
 			if fi, err := os.Stat(d); err == nil && fi.IsDir() {
 				return path, d, m, false, nil
 			}
@@ -341,9 +356,28 @@ type memFile struct{ *bytes.Reader }
 func (memFile) Close() error { return nil }
 
 func (sp *selfPlan) openFile(path string) (io.ReadCloser, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+	sp.mu.Lock()
+	zs, inZip := sp.zsrc[path]
+	sp.mu.Unlock()
+	var b []byte
+	var err error
+	if inZip {
+		if b, err = zs.bytes(); err != nil {
+			zipStat.fallbacks.Add(1)
+			inZip = false
+		} else if zipCheck {
+			if d, err := os.ReadFile(path); err != nil || !bytes.Equal(d, b) {
+				fmt.Fprintf(os.Stderr, "fc: FC_ZIPCHECK: %s differs from its module's zip (%v)\n", path, err)
+				os.Exit(1)
+			}
+		}
+	}
+	if !inZip {
+		if b, err = os.ReadFile(path); err != nil {
+			return nil, err
+		}
+		ioStat.files.Add(1)
+		ioStat.bytes.Add(int64(len(b)))
 	}
 	sp.mu.Lock()
 	sp.mem[path] = b
@@ -353,48 +387,163 @@ func (sp *selfPlan) openFile(path string) (io.ReadCloser, error) {
 
 // loadDir reads a package directory: the Go and assembly files that match the build. The bytes of the Go
 // files stay in p.src for the parser.
+//
+// The files of one directory are read at once (fileIO wide over the whole program), not one after another:
+// on a cold page cache a read is a wait of 0.1-0.5 ms for the disk, the graph is only known package by
+// package (a package's imports come from its files' heads), and a directory read serially puts the sum
+// of its files' waits on the path to everything below it (MinIO's cmd: 400 files before the second level
+// of the graph is known). FC_DIRSERIAL=1: one after another, as before.
 func (sp *selfPlan) loadDir(p *Pkg) error {
-	ents, err := os.ReadDir(p.Dir)
-	if err != nil {
-		return err
+	t0 := time.Now()
+	defer func() {
+		ioStat.dirNS.Add(int64(time.Since(t0)))
+		ioStat.dirs.Add(1)
+		ioStat.last.Store(int64(time.Since(ioStat.start)))
+	}()
+	type cand struct {
+		name string
+		isGo bool
+		ok   bool
+		b    []byte
+		err  error
 	}
-	p.src = map[string][]byte{}
-	for _, e := range ents {
-		name := e.Name()
-		if e.IsDir() || name[0] == '_' || name[0] == '.' {
-			continue
+	var cs []cand
+	wanted := func(name string) (isGo, ok bool) {
+		if name[0] == '_' || name[0] == '.' {
+			return false, false
 		}
-		isGo := strings.HasSuffix(name, ".go")
-		if !isGo && !strings.HasSuffix(name, ".s") || strings.HasSuffix(name, "_test.go") {
-			continue
-		}
-		full := filepath.Join(p.Dir, name)
-		if !e.Type().IsRegular() {
-			if fi, err := os.Stat(full); err != nil || !fi.Mode().IsRegular() {
-				continue
+		isGo = strings.HasSuffix(name, ".go")
+		return isGo, (isGo || strings.HasSuffix(name, ".s")) && !strings.HasSuffix(name, "_test.go")
+	}
+	var zfiles []string // the paths this call put in sp.zsrc
+	if z := p.mod.zip(); z != nil && (p.Dir == p.mod.Dir || strings.HasPrefix(p.Dir, p.mod.Dir+string(filepath.Separator))) {
+		// the directory's files from the module's zip: one read for the lot where they are neighbours
+		rel := filepath.ToSlash(strings.TrimPrefix(strings.TrimPrefix(p.Dir, p.mod.Dir), string(filepath.Separator)))
+		ents := z.dirs[rel]
+		var want []*zipEnt
+		for i := range ents {
+			if _, ok := wanted(ents[i].name); ok && ents[i].method != 0xffff {
+				want = append(want, &ents[i])
 			}
 		}
+		srcs, err := z.read(want)
+		if err != nil {
+			zipStat.fallbacks.Add(1)
+			srcs = nil
+		}
+		sp.mu.Lock()
+		for i := range ents {
+			e := &ents[i]
+			isGo, ok := wanted(e.name)
+			if !ok {
+				continue
+			}
+			if s, ok := srcs[e]; ok {
+				full := filepath.Join(p.Dir, e.name)
+				sp.zsrc[full] = s
+				zfiles = append(zfiles, full)
+			}
+			cs = append(cs, cand{name: e.name, isGo: isGo})
+		}
+		sp.mu.Unlock()
+		sort.Slice(cs, func(i, j int) bool { return cs[i].name < cs[j].name }) // (as os.ReadDir orders them)
+	} else {
+		ents, err := os.ReadDir(p.Dir)
+		if err != nil {
+			return err
+		}
+		for _, e := range ents {
+			name := e.Name()
+			isGo, ok := wanted(name)
+			if e.IsDir() || !ok {
+				continue
+			}
+			if !e.Type().IsRegular() {
+				if fi, err := os.Stat(filepath.Join(p.Dir, name)); err != nil || !fi.Mode().IsRegular() {
+					continue
+				}
+			}
+			cs = append(cs, cand{name: name, isGo: isGo})
+		}
+	}
+	defer func() {
+		sp.mu.Lock()
+		for _, f := range zfiles {
+			delete(sp.zsrc, f)
+		}
+		sp.mu.Unlock()
+	}()
+	one := func(c *cand) {
+		full := filepath.Join(p.Dir, c.name)
 		// MatchFile checks the name first (x_windows.go is never opened), then reads the head of the file
 		// through openFile, which reads the whole file once and keeps the bytes.
-		ok, err := sp.ctxt.MatchFile(p.Dir, name)
+		ok, err := sp.ctxt.MatchFile(p.Dir, c.name)
 		sp.mu.Lock()
 		b, read := sp.mem[full]
 		delete(sp.mem, full)
 		sp.mu.Unlock()
 		if err != nil {
-			return fmt.Errorf("%s: %v", full, err)
+			c.err = fmt.Errorf("%s: %v", full, err)
+			return
 		}
-		if !ok || !read {
+		c.ok, c.b = ok && read, b
+	}
+	if dirSerial || len(cs) < 2 {
+		for i := range cs {
+			if one(&cs[i]); cs[i].err != nil {
+				return cs[i].err
+			}
+		}
+	} else {
+		var wg sync.WaitGroup
+		for i := range cs {
+			wg.Add(1)
+			go func(c *cand) {
+				defer wg.Done()
+				fileIO <- struct{}{}
+				one(c)
+				<-fileIO
+			}(&cs[i])
+		}
+		wg.Wait()
+	}
+	p.src = map[string][]byte{}
+	for i := range cs {
+		c := &cs[i]
+		if c.err != nil {
+			return c.err
+		}
+		if !c.ok {
 			continue
 		}
-		if isGo {
-			p.GoFiles = append(p.GoFiles, name)
-			p.src[name] = b
+		if c.isGo {
+			p.GoFiles = append(p.GoFiles, c.name)
+			p.src[c.name] = c.b
 		} else {
-			p.SFiles = append(p.SFiles, name)
+			p.SFiles = append(p.SFiles, c.name)
 		}
 	}
 	return nil
+}
+
+// fileIO: files read at once, over all directories (FC_FILEIO).
+var fileIO = func() chan struct{} {
+	n := 64
+	if v, err := strconv.Atoi(os.Getenv("FC_FILEIO")); err == nil && v > 0 {
+		n = v
+	}
+	return make(chan struct{}, n)
+}()
+
+var dirSerial = os.Getenv("FC_DIRSERIAL") == "1"
+
+// ioStat: what reading the program's directories cost (the summary's "read" line).
+var ioStat struct {
+	start        time.Time
+	dirs         atomic.Int64
+	dirNS        atomic.Int64 // sum over directories of the wall time of loadDir
+	last         atomic.Int64 // when the last directory was read, from start
+	files, bytes atomic.Int64 // files read whole from their directories (not from a module's zip)
 }
 
 // pkgFor finds or creates the package an import in from refers to.
@@ -413,7 +562,7 @@ func (pr *Program) pkgFor(ip string, from *Pkg) (*Pkg, error) {
 	}
 	p := pr.byPath[real]
 	if p == nil {
-		p = &Pkg{ImportPath: real, Dir: dir, Standard: std}
+		p = &Pkg{ImportPath: real, Dir: dir, Standard: std, mod: mi}
 		if mi != nil {
 			p.Module = &struct{ Path, Version, GoVersion string }{mi.Path, mi.Version, mi.goVer()}
 		}

@@ -73,7 +73,8 @@ type Pkg struct {
 
 	parseOnce sync.Once
 	scanOnce  sync.Once
-	scanned   bool // imps, srcBytes and Name come from scan (a self plan)
+	mod       *modInfo // a self plan: the module the package is in (nil: the standard library, a main module)
+	scanned   bool     // imps, srcBytes and Name come from scan (a self plan)
 	discOnce  sync.Once
 	imps      []string          // import paths as written in the files
 	src       map[string][]byte // file bytes read by the self plan, until parsed
@@ -100,20 +101,20 @@ type Program struct {
 	plan   *selfPlan     // nil when the packages come from a plan file
 	mu     sync.Mutex    // guards byPath while packages are being discovered
 
-	tctx         *types.Context // shared by every package: one object per instantiated type
-	byTpkg       sync.Map       // *types.Package -> *Pkg
-	declPkgs     sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
-	linkNames    sync.Map       // types.Type -> its link name, for every compiler of a whole-program build
-	typeOwner    sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
-	wrapOwner    sync.Map       // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
-	lazyTypes    bool           // descriptors by demand (rtype.go: lazyNamed)
-	lazyFuncs    bool           // functions by demand (demand.go)
-	fnWanted     sync.Map       // *types.Func -> true: compiled as a root or queued for its package
-	pending      atomic.Int64   // packages in their first pass + queued functions not yet compiled
-	quiet        chan struct{}  // closed when pending reaches zero: nothing more will be asked for
-	quietOnce    sync.Once
-	idleJobs     chan chan func() // parked goroutines of runJob
-	stockPath    map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
+	tctx      *types.Context // shared by every package: one object per instantiated type
+	byTpkg    sync.Map       // *types.Package -> *Pkg
+	declPkgs  sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
+	linkNames sync.Map       // types.Type -> its link name, for every compiler of a whole-program build
+	typeOwner sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
+	wrapOwner sync.Map       // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
+	lazyTypes bool           // descriptors by demand (rtype.go: lazyNamed)
+	lazyFuncs bool           // functions by demand (demand.go)
+	fnWanted  sync.Map       // *types.Func -> true: compiled as a root or queued for its package
+	pending   atomic.Int64   // packages in their first pass + queued functions not yet compiled
+	quiet     chan struct{}  // closed when pending reaches zero: nothing more will be asked for
+	quietOnce sync.Once
+	idleJobs  chan chan func() // parked goroutines of runJob
+	stockPath map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
 	// stockArchives: the stock linker links this build and these packages are the stock compiler's (by plain
 	// import path, its archive): an itab both sides can write is merged by content, as the stock compiler's
 	// are, so its references to their symbols are by index (writeITab, indexRefs)
@@ -122,18 +123,18 @@ type Program struct {
 	mainPath      string // fc build -link: the program's main package (the only "main" to the linker)
 	stockIdxOnce  sync.Once
 	stockIdx      map[idxKey]idxRef
-	instOwner    sync.Map         // instance symbol name -> the *compiler that compiles it
-	rtWidth      sync.Map         // runtime function name -> the argument area of its real signature
-	rtcOnce      sync.Once
-	rtClosure    map[string]bool // the runtime and what it imports, by plain import path
-	fullFn       sync.Map        // a declarations-pass *types.Func -> the full pass's
-	declNS       int64           // time in declarations-only checks
-	byInfo       sync.Map        // *types.Info -> *Pkg
-	rtOnce       sync.Once
-	localGeneric sync.Map // *types.Named declared in a function -> does its definition use type parameters
-	localMu      sync.Mutex
-	localInst    map[localKey]*types.Named
-	rtDecls      *types.Package // the runtime functions the stock compiler knows, for their signatures
+	instOwner     sync.Map // instance symbol name -> the *compiler that compiles it
+	rtWidth       sync.Map // runtime function name -> the argument area of its real signature
+	rtcOnce       sync.Once
+	rtClosure     map[string]bool // the runtime and what it imports, by plain import path
+	fullFn        sync.Map        // a declarations-pass *types.Func -> the full pass's
+	declNS        int64           // time in declarations-only checks
+	byInfo        sync.Map        // *types.Info -> *Pkg
+	rtOnce        sync.Once
+	localGeneric  sync.Map // *types.Named declared in a function -> does its definition use type parameters
+	localMu       sync.Mutex
+	localInst     map[localKey]*types.Named
+	rtDecls       *types.Package // the runtime functions the stock compiler knows, for their signatures
 }
 
 func newProgram() *Program {

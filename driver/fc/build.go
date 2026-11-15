@@ -105,6 +105,7 @@ func buildMode(args []string) {
 		rtByFc = withFclink
 	}
 	t0 := time.Now()
+	ioStat.start = t0
 	c0 := cpuSeconds()
 	pr := newProgram()
 	var targets []*Pkg
@@ -663,6 +664,15 @@ func buildMode(args []string) {
 	})
 	if asmRuns > 0 {
 		fmt.Printf("assembler in process: %d runs, %.0f ms assembling (of which the symbol ABI passes %.0f ms), %.0f ms waiting for one another\n", asmRuns, float64(asmNS)/1e6, float64(asmABINS)/1e6, float64(asmWaitNS)/1e6)
+	}
+	if n := ioStat.dirs.Load(); n > 0 {
+		fmt.Printf("read: %d directories, the last at %d ms (the program's graph is known then); %.0f ms waiting in them, summed; %d files (%.1f MB) from their directories",
+			n, ioStat.last.Load()/1e6, float64(ioStat.dirNS.Load())/1e6, ioStat.files.Load(), float64(ioStat.bytes.Load())/1e6)
+		if zipStat.mods.Load() > 0 || zipStat.fallbacks.Load() > 0 {
+			fmt.Printf("; %d files (%.1f MB) from %d module zips in %d reads of %.1f MB, %d fallbacks",
+				zipStat.files.Load(), float64(zipStat.inflated.Load())/1e6, zipStat.mods.Load(), zipStat.reads.Load(), float64(zipStat.bytes.Load())/1e6, zipStat.fallbacks.Load())
+		}
+		fmt.Println()
 	}
 	fmt.Printf("tax: %d processes started (assembler; %.2f core-s), %d intermediate files written and read back (%.1f MB: assembler objects, symabis, headers), page faults %d here + %d in children\n",
 		toolStarts, float64(ruc.Utime.Sec)+float64(ruc.Utime.Usec)/1e6+float64(ruc.Stime.Sec)+float64(ruc.Stime.Usec)/1e6, interFiles, float64(interBytes)/1e6, ru.Minflt+ru.Majflt, ruc.Minflt+ruc.Majflt)
