@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -109,6 +110,7 @@ type Program struct {
 	tctx      *types.Context // shared by every package: one object per instantiated type
 	byTpkg    sync.Map       // *types.Package -> *Pkg
 	declPkgs  sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
+	lineDirs  sync.Map       // *token.File -> true: the file may have //line directives (fileLine)
 	linkNames sync.Map       // types.Type -> its link name, for every compiler of a whole-program build
 	typeOwner sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
 	wrapOwner sync.Map       // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
@@ -854,6 +856,11 @@ func (pr *Program) parse(p *Pkg) {
 				return
 			}
 			p.files = append(p.files, f)
+			if bytes.Contains(src, []byte("//line ")) || bytes.Contains(src, []byte("/*line ")) {
+				// (a superset of the files whose positions a //line directive moves: those take the slow
+				// path of fileLine, the rest none)
+				pr.lineDirs.Store(pr.fset.File(f.Pos()), true)
+			}
 			if p.Name == "" {
 				p.Name = f.Name.Name
 			}

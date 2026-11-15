@@ -1,5 +1,3 @@
-devirtualization_nil_panics.go
-inline_literal.go
 method5.go
 noinit.go
 recover.go
@@ -7,21 +5,17 @@ shift3.go
 stackobj.go
 stackobj3.go
 zerosize.go
-fixedbugs/bug347.go
 fixedbugs/issue12133.go
 fixedbugs/issue15175.go
 fixedbugs/issue15277.go
 fixedbugs/issue15281.go
 fixedbugs/issue15992.go
-fixedbugs/issue18149.go
 fixedbugs/issue18636.go
-fixedbugs/issue22662.go
 fixedbugs/issue22881.go
 fixedbugs/issue23837.go
 fixedbugs/issue24491a.go
 fixedbugs/issue24491b.go
 fixedbugs/issue27518b.go
-fixedbugs/issue29504.go
 fixedbugs/issue31546.go
 fixedbugs/issue32477.go
 fixedbugs/issue35576.go

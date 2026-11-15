@@ -397,7 +397,7 @@ func (g *gen) index(e *ast.IndexExpr) loc {
 	_, isArray := xt.Underlying().(*types.Array)
 	inFrame := isArray && xl.noBarrier()
 	xl = g.stash(xl, xt)
-	el := g.indexAddr(xt, xl, g.expr(e.Index), it)
+	el := g.indexAddr(xt, xl, g.expr(e.Index), it, e.Lbrack)
 	if inFrame && el.isMem() {
 		el.stk = true // an element of an array that is in this frame
 	}
@@ -426,9 +426,10 @@ func (g *gen) indexBase(x ast.Expr, xt types.Type) loc {
 }
 
 // indexAddr: the element of x (type xt, at xl, safe from the index's evaluation) at index il, after the
-// bounds check.
-func (g *gen) indexAddr(xt types.Type, xl loc, il loc, it types.Type) loc {
+// bounds check, which is at lbrack (the stock compiler's position of an index expression: its '[').
+func (g *gen) indexAddr(xt types.Type, xl loc, il loc, it types.Type, lbrack token.Pos) loc {
 	g.loadIndex(BX, il, it)
+	g.pos(lbrack)
 	var es int64 = 1
 	switch u := xt.Underlying().(type) {
 	case *types.Array:
@@ -526,7 +527,8 @@ func (g *gen) sliceExpr(e *ast.SliceExpr) loc {
 		return l
 	}
 	lo, hi, max = idx(e.Low), idx(e.High), idx(e.Max)
-	// base pointer in DX, length in SI, capacity in DI
+	// base pointer in DX, length in SI, capacity in DI; the checks are at the '[' (as the stock compiler's)
+	g.pos(e.Lbrack)
 	if arrLen >= 0 {
 		g.loadTo(DX, xl, xt)
 		g.a.nilcheck(DX)

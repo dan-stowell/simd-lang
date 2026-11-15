@@ -648,7 +648,7 @@ func (g *gen) lvalueLate(e ast.Expr) func() loc {
 				it = types.Typ[types.Uint]
 			}
 		}
-		return func() loc { return g.indexAddr(xt, xl, il, it) }
+		return func() loc { return g.indexAddr(xt, xl, il, it, ix.Lbrack) }
 	}
 	l := g.pin(g.expr(e))
 	return func() loc { return l }

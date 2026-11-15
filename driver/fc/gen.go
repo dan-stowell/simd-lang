@@ -977,6 +977,22 @@ func (sc *genScratch) give(a *asm, slots []slotInfo, unsafe, lines, stackmap, sp
 	scratchPool.Put(sc)
 }
 
+// endsInReturn: the function body scan (a block or a function literal) ends in a return statement.
+func endsInReturn(scan ast.Node) bool {
+	var b *ast.BlockStmt
+	switch s := scan.(type) {
+	case *ast.BlockStmt:
+		b = s
+	case *ast.FuncLit:
+		b = s.Body
+	}
+	if b == nil || len(b.List) == 0 {
+		return false
+	}
+	_, ok := b.List[len(b.List)-1].(*ast.ReturnStmt)
+	return ok
+}
+
 func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, body func()) {
 	var sc *genScratch
 	if scratchOn {
@@ -1047,7 +1063,12 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 		g.hasDefer = true
 	}
 	body()
-	g.pos(end)
+	if !endsInReturn(scan) {
+		// The end of the body is reached: the epilogue is at the closing brace. After a final return it is
+		// reached only from returns, and stays at the last one's line, as the stock compiler's is (whose
+		// function has no code at its '}' then: $GOROOT/test/inline_literal.go).
+		g.pos(end)
+	}
 	g.epilogue()
 	if sc == nil {
 		g.finish(pos)
@@ -1322,7 +1343,7 @@ func (g *gen) finish(pos token.Pos) {
 		size := len(code)
 		out.pcsp, out.pcunsafe, out.pcstack = pctab(sp, size), pctab(unsafe, size), pctab(stackmap, size)
 		files, lns := sc.fFiles[:0], sc.fLn[:0]
-		var tf *token.File
+		var tf *token.File // the file of the last position, when it has no //line directive
 		var fidx int32
 		var ln int32
 		for _, l := range lines {
@@ -1331,7 +1352,9 @@ func (g *gen) finish(pos token.Pos) {
 				fidx, ln = g.c.fileLine(p)
 				tf = nil
 				if p.IsValid() {
-					tf = g.c.pr.fset.File(p) // (most of a function's lines are in one file: no lock for those)
+					if f := g.c.pr.fset.File(p); !g.c.hasLineDirs(f) {
+						tf = f // (most of a function's lines are in one file: no lock for those)
+					}
 				}
 				if !slices.Contains(out.usedFiles, fidx) {
 					out.usedFiles = append(out.usedFiles, fidx)

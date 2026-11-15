@@ -90,6 +90,7 @@ func (g *gen) selectStmt(s *ast.SelectStmt, name string) {
 			continue
 		}
 		sc := &scase{cc: cc}
+		g.pos(cc.Comm.Pos()) // a case's operands are evaluated at its line (a nil pointer in one faults there)
 		switch st := cc.Comm.(type) {
 		case *ast.SendStmt:
 			sc.send = true
@@ -114,6 +115,7 @@ func (g *gen) selectStmt(s *ast.SelectStmt, name string) {
 		}
 		cases = append(cases, sc)
 	}
+	g.pos(s.Select) // the select itself (the runtime's call) is at its line
 	n := len(cases)
 	nsend := 0
 	for _, sc := range cases {

@@ -153,6 +153,9 @@ func (g *gen) call(e *ast.CallExpr) []loc {
 	if done {
 		return rs
 	}
+	// the call is at its '(' (the stock compiler's position of a call): a call split over lines, or a nil
+	// method value or interface that faults on the way in, is reported where the stock compiler reports it
+	g.pos(e.Lparen)
 	return g.emitCall(ai, args, c)
 }
 
