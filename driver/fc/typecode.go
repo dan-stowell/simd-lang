@@ -155,7 +155,7 @@ func (c *compiler) genWrapper(r wrapperReq) {
 	if r.instance {
 		// the method itself, compiled for these type arguments
 		origin := r.method.Origin()
-		rt := msig.Recv().Type()
+		rt := types.Unalias(msig.Recv().Type())
 		if p, ok := rt.(*types.Pointer); ok {
 			rt = p.Elem()
 		}
