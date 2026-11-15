@@ -158,16 +158,25 @@ func main() {
 	log.SetFlags(0)
 	log.SetPrefix("bzfc: ")
 	flag.Parse()
+	if *flagQuery != "" && *flagQDump != "" {
+		loadQuery()
+		qdump()
+		return
+	}
 	go stdList() // in parallel with reading the DAG
-	f, err := os.Open(*flagAq)
-	if err != nil {
-		log.Fatal(err)
+	if *flagQuery != "" {
+		readQuery() // (query.go: the actions derived from the rules)
+	} else {
+		f, err := os.Open(*flagAq)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := readAquery(f); err != nil {
+			log.Fatal(err)
+		}
+		f.Close()
+		index()
 	}
-	if err := readAquery(f); err != nil {
-		log.Fatal(err)
-	}
-	f.Close()
-	index()
 	// (what only reading the DAG needed: about half of the executor's 6 GB heap)
 	aq.PathFragments, aq.Artifacts, aq.DepSets = nil, nil, nil
 	runtime.GC()
