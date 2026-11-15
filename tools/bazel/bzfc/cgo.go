@@ -26,6 +26,71 @@ import (
 	"time"
 )
 
+// prestock starts stockCgo for the closure of root before the whole generation stage is over: it waits only
+// for the generated files of the cgo packages' closure. (A failure here is reported by fcBuild's call.)
+func prestock(root *Pkg) {
+	pkgs := allPkgs(root)
+	var roots []*Pkg
+	for _, p := range pkgs {
+		if cgoOn(p.a) && hasCgo(p.a) {
+			roots = append(roots, p)
+		}
+	}
+	if len(roots) == 0 {
+		return
+	}
+	seen := map[*Pkg]bool{}
+	var set []*Pkg
+	var walk func(p *Pkg)
+	walk = func(p *Pkg) {
+		if seen[p] {
+			return
+		}
+		seen[p] = true
+		for _, d := range p.deps {
+			walk(d)
+		}
+		set = append(set, p)
+	}
+	for _, r := range roots {
+		walk(r)
+	}
+	for _, p := range set {
+		for _, s := range append(append([]string{}, p.a.args["-src"]...), p.a.args["-embedsrc"]...) {
+			if w := byOutput[s]; strings.HasPrefix(s, "bazel-out/") && w != nil && w.done != nil {
+				<-w.done
+				if w.err != nil {
+					return
+				}
+			}
+		}
+	}
+	for _, p := range set {
+		if fill(p, filepath.Join(*flagWork, "farm")) != nil {
+			return
+		}
+	}
+	stockCgo(set)
+}
+
+// hasCgo: has the action cgo sources in a cgo configuration (the sources that are not generated)?
+func hasCgo(a *action) bool {
+	cgoCtxt := ctxtFor(a, true)
+	for _, s := range a.args["-src"] {
+		if strings.HasPrefix(s, "bazel-out/") {
+			continue
+		}
+		x := abs(s)
+		switch ext := filepath.Ext(s); ext {
+		case ".c", ".cc", ".cpp", ".cxx", ".m", ".S", ".go":
+			if okc, _ := cgoCtxt.MatchFile(filepath.Dir(x), filepath.Base(x)); okc && (ext != ".go" || usesCgo(x)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 type stockSet struct {
 	once    sync.Once
 	entries map[string]json.RawMessage // plan entries (fc's Pkg fields) by import path
@@ -170,7 +235,14 @@ func (s *stockSet) build(order []*Pkg, roots []string, tag string) error {
 	// (-gcflags=all=-l: as fc's own stock packages, go list -export in driver/fc/build.go)
 	cmd := exec.Command(*flagGo, append([]string{"list", "-deps", "-export", "-compiled", "-json", "-gcflags=all=-l"}, roots...)...)
 	cmd.Dir = src
-	cmd.Env = append(os.Environ(), s.env...)
+	// (not SB_*: goroot-sb's compiler is the baseline mode's and reads them; SB_HUGE from cold.sh made it
+	// crash in the runtime's regalloc)
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "SB_") {
+			cmd.Env = append(cmd.Env, kv)
+		}
+	}
+	cmd.Env = append(cmd.Env, s.env...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	outb, err := cmd.Output()

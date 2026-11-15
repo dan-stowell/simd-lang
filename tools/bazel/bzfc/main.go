@@ -260,6 +260,9 @@ func main() {
 		}
 		run(w)
 	}
+	// the binary's cgo closure (the go command's) as soon as its own generated files are there, beside
+	// the rest of the generation (cgo.go: stockCgo is once per closure; fcBuild's call then waits for it)
+	go prestock(root)
 	wg.Wait()
 	if len(errs) > 0 {
 		for _, e := range errs {

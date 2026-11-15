@@ -575,6 +575,11 @@ func buildMode(args []string) {
 				linker = "fclink"
 			}
 			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+			for _, kv := range os.Environ() {
+				if !strings.HasPrefix(kv, "SB_") { // (fc's heap settings, which goroot-sb's runtime reads too)
+					cmd.Env = append(cmd.Env, kv)
+				}
+			}
 			if err := cmd.Run(); err != nil {
 				log.Fatalf("fc build -link: link: %v", err)
 			}
