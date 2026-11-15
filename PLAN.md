@@ -187,8 +187,7 @@ package in a hello program, 1,910 of 41,088 in buildifier). Merge it like the ot
 merged tree, gotest + lang rt + samebytes, then push). Never `pkill -f` (it killed my own test run at 22:06).
 For the quiet pass: before build/fc is rebuilt, `cp build/fc build/fc-5b23b5d`, and A/B user+sys of MinIO against
 the new one (the sorts in NewUnit and the fixed-seed hash are the cost of part one; not measured yet).
-Then, second: escape analysis where it pays (uglyfib: 150x; ask it only for functions that take addresses?), counted
-on MinIO's build CPU.
+Escape analysis everywhere was counted (JOURNAL 22:20): +1.1 core-s on MinIO's 18, code no smaller: left off.
 (2) **The soak** is `tools/fc/soak.sh [runs] [workers]` (an fc-built protoc-gen-go against the stock-built one at
 GOGC=1; hangs get their stacks from a core by tools/fc/corebt): 0 bad of 6,000 on de605c5. Run `tools/fc/soak.sh 1500 4`
 on HEAD after the pass (today's fixes add stores and nil checks everywhere). Also worth soaking MinIO's server under
