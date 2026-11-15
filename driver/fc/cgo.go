@@ -169,7 +169,7 @@ func (r *cgoRun) generate(p *Pkg) error {
 	for _, f := range p.CgoFiles {
 		files = append(files, absIn(p.Dir, f))
 	}
-	args := append([]string{"-objdir", r.objdir, "-importpath", p.ImportPath}, cgoflags...)
+	args := append([]string{"-objdir", r.objdir, "-importpath", plainPath(p.ImportPath)}, cgoflags...)
 	args = append(append(append(args, "--"), cppflags...), cflags...)
 	args = append(args, files...)
 	cmd := exec.Command(filepath.Join(runtime.GOROOT(), "pkg/tool/linux_amd64/cgo"), args...)
