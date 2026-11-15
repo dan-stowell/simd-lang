@@ -19,7 +19,9 @@ read _ tool dir target < <(grep -E "^$name +bazel " "$here/tools/scoreboard/corp
 [ -n "$dir" ] || { echo "no bazel project $name"; exit 2; }
 BAZEL=${BAZEL:-/home/exedev/bin/bazelisk}
 FC_BIN=${FC_BIN:-$here/build/fc}; BZFC=${BZFC:-$here/build/bzfc}
-[ -x "$BZFC" ] || (cd "$here/tools/bazel/bzfc" && GOTOOLCHAIN=local go build -o "$BZFC" .) || exit 2
+# (built every time unless BZFC names another one: a stale build/bzfc failed a run after a merge; the go command's
+# cache makes this a no-op when nothing changed, and it is outside the timer)
+[ -n "${BZFC_KEEP:-}" ] || [ "$BZFC" != "$here/build/bzfc" ] || (cd "$here/tools/bazel/bzfc" && GOTOOLCHAIN=local go build -o "$BZFC" .) || exit 2
 [ -n "${FC_LINKER+x}" ] || { [ -x "$(dirname "$FC_BIN")/fclink" ] && export FC_LINKER=$(dirname "$FC_BIN")/fclink; }
 out=${FC_COLD:-$T/fc-cold}/$name/bazel-p$P${WARM:+-warm}; rm -rf "$out"; mkdir -p "$out"
 scratch=${BZ_SCRATCH:-$T/bz-scratch}; mkdir -p "$scratch"
