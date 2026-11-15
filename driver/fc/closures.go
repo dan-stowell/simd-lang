@@ -292,6 +292,11 @@ func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Si
 		}
 		vals = append(vals, typedLoc{a, ai.in[i].typ})
 	}
+	nvals := len(vals)
+	for _, k := range g.bindKeep {
+		vals = append(vals, typedLoc{k, unsafePtr}) // held, never read
+	}
+	g.bindKeep = nil
 	return g.bindValues(kind, vals, sig, func(cg *gen, locs []loc) {
 		cc := c
 		var cargs []loc
@@ -302,7 +307,7 @@ func (g *gen) bind(kind string, ai *abiInfo, args []loc, c callee, sig *types.Si
 			cc.iface = locs[0] // the two words are adjacent in the closure object
 			cargs = append(cargs, locs[1])
 		}
-		cargs = append(cargs, locs[ncallee:]...)
+		cargs = append(cargs, locs[ncallee:nvals]...)
 		nbound := len(args)
 		for i := nbound; i < len(ai.in); i++ {
 			cargs = append(cargs, cg.paramLoc(cg.abi.in[i-nbound]))
@@ -370,7 +375,13 @@ func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 			return g.deferredBuiltin(call, b.Name(), kind)
 		}
 	}
+	// (pointers the arguments turn into uintptrs are held by the wrapper until the call has run)
+	g.callDepth++
+	mark := len(g.keepPtrs)
 	ai, args, c, _, _ := g.prepCall(call, false)
+	g.callDepth--
+	keep := append([]loc(nil), g.keepPtrs[mark:]...)
+	g.keepPtrs = g.keepPtrs[:mark]
 	if c.kind == 2 {
 		// a method of a nil interface: the panic is here, not when the call runs
 		g.a.load(R13, g.m(c.iface, R13), 8, false)
@@ -385,6 +396,7 @@ func (g *gen) deferred(call *ast.CallExpr, kind string) loc {
 		g.a.lea(AX, msym(g.c.staticClosure(c.sym), 0))
 		return loc{kind: lReg, reg: AX}
 	}
+	g.bindKeep = keep
 	return g.bind(kind, ai, args, c, nil)
 }
 

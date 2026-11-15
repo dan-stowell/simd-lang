@@ -520,7 +520,8 @@ func (g *gen) assign(s *ast.AssignStmt) {
 				return
 			}
 		}
-		if g.pure(rhs) {
+		if g.pure(rhs) && !(g.isMapIndex(lhs) && mayPanic(rhs)) {
+			// (m[k] = *p: the fault comes before the insertion, $GOROOT/test/fixedbugs/issue22881.go)
 			dst := g.lvalue(lhs)
 			g.move(dst, g.exprAs(rhs, t), t)
 			return
@@ -535,7 +536,7 @@ func (g *gen) assign(s *ast.AssignStmt) {
 			return
 		}
 		dst := g.lvalue(lhs)
-		g.move(dst, g.exprAs(rhs, t), t)
+		g.exprTo(rhs, dst, t)
 		return
 	}
 	// several targets: destinations, then values, then the stores
@@ -1092,7 +1093,7 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 			if blank(s.Value) {
 				// only the length matters; the operand is still evaluated unless it is a plain variable
 				if !g.pure(s.X) {
-					g.expr(s.X)
+					g.nilcheckLoc(g.expr(s.X)) // for range *f(): the dereference is part of the evaluation
 				}
 			} else {
 				base = g.keep(g.expr(s.X), xt)

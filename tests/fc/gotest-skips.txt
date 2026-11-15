@@ -1,0 +1,16 @@
+# $GOROOT/test programs the dev build (CHARTER.md, "This is a dev build") is excused from: <path> <reason>
+# Every line is reported in MORNING.md. Two reasons are allowed, as in skips.txt: the program asserts an
+# optimization, or it waits for the collector to free an object that fc's longer liveness keeps (a slot
+# lives until its function returns). Anything else is a bug in fc.
+stackobj.go liveness: expects a stack object collected while its function is still running
+stackobj3.go liveness: expects a stack object dead after its last use ("bad liveness")
+fixedbugs/issue15277.go liveness: expects 10 MB freed after x = nil while the caller's argument slot still holds it
+fixedbugs/issue15281.go liveness: expects an allocation freed before its function returns
+fixedbugs/issue27518b.go liveness: expects the finalizer after the last use of a result, inside the function
+fixedbugs/issue32477.go liveness: expects a parameter dead after its last use (finalizer inside a deferred function)
+fixedbugs/issue46725.go liveness: "never GC'd": expects an array element collected after its last use in main
+fixedbugs/issue57823.go liveness: "never GC'd": expects a slice's memory collected after its last use
+fixedbugs/issue4618.go optimization: asserts zero allocations for a non-escaping value (escape analysis)
+fixedbugs/issue8606b.go optimization: asserts that struct equality compares lengths and scalars before string contents (its own comment: "This is an optimization check")
+fixedbugs/issue75764.go optimization: asserts that method wrappers tail-call (running time independent of 10,000 nested wrappers)
+noinit.go optimization: asserts that every package-level initializer in the file is laid out statically (reads main..inittask through a linkname)

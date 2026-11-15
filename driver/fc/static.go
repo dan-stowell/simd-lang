@@ -506,7 +506,8 @@ func (c *compiler) static(s *obj.LSym, off int64, e ast.Expr, t types.Type, writ
 					}
 					val = kv.Value
 				}
-				if !c.static(s, off+offs[fi], val, u.Field(fi).Type(), write) {
+				// (a blank field's value is checked like the others and not written: it stays zero)
+				if !c.static(s, off+offs[fi], val, u.Field(fi).Type(), write && u.Field(fi).Name() != "_") {
 					return false
 				}
 			}

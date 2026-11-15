@@ -77,6 +77,11 @@ func (g *gen) varLoc(v *types.Var) loc {
 		return l
 	}
 	if v.Pkg() != nil && v.Parent() == v.Pkg().Scope() {
+		if g.c.sizeof(g.vt(v)) == 0 {
+			// every package-level variable of no size is at runtime.zerobase, where new of such a type
+			// points too (the stock linker puts them there; $GOROOT/test/zerosize.go compares)
+			return loc{kind: lSym, sym: g.c.rtVar("zerobase")}
+		}
 		return loc{kind: lSym, sym: g.c.globalSym(v)}
 	}
 	giveUp("variable %s has no home", v.Name())
@@ -221,11 +226,84 @@ func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
 
 // exprTo evaluates e into dst (memory), a variable of type t.
 func (g *gen) exprTo(e ast.Expr, dst loc, t types.Type) {
-	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) && !g.addrFrame(dst) {
+	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.inFrame() && types.Identical(g.typeOf(e), t) && !g.mentionsFrame(cl, dst) && !g.addrFrame(dst) && !(g.inResult(dst) && litMayPanic(cl)) {
 		g.compositeTo(cl, dst, t)
 		return
 	}
+	if cl, ok := ast.Unparen(e).(*ast.CompositeLit); ok && dst.isMem() && g.c.sizeof(t) > 128 && types.Identical(g.typeOf(e), t) && g.constLit(cl) {
+		// *p = T{...} with nothing but constants in it: built where it goes, not in a temporary of T's
+		// size in the frame first (a megabyte of frame in $GOROOT/test/fixedbugs/issue18636.go; the stock
+		// compiler copies such a literal from read-only data)
+		g.compositeTo(cl, g.pin(dst), t)
+		return
+	}
 	g.move(dst, g.exprAs(e, t), t)
+}
+
+// inResult: is dst (part of) a result of the function? A result is what the caller sees after a panic that
+// a deferred function recovers, so r = T{a, f()} must leave r alone when f panics: such a literal is not
+// built in place. (Any other variable in the frame that nothing points to is gone by then.)
+func (g *gen) inResult(dst loc) bool {
+	if dst.kind != lFrame {
+		return dst.kind == lOut
+	}
+	for i, h := range g.resHome {
+		if h.kind == lFrame && i < len(g.abi.out) {
+			if dst.off >= h.off && dst.off < h.off+align(g.c.sizeof(g.abi.out[i].typ), 8) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// litMayPanic: could evaluating an element of the literal panic (or not return)?
+func litMayPanic(cl *ast.CompositeLit) bool {
+	for _, el := range cl.Elts {
+		v := el
+		if kv, ok := el.(*ast.KeyValueExpr); ok {
+			v = kv.Value
+		}
+		v = ast.Unparen(v)
+		if tvOf(v).Value != nil {
+			continue
+		}
+		if c2, ok := v.(*ast.CompositeLit); ok {
+			if litMayPanic(c2) {
+				return true
+			}
+			continue
+		}
+		if mayPanic(v) {
+			return true
+		}
+	}
+	return false
+}
+
+// constLit: does the literal hold only constants, nil and literals of that kind (so that evaluating it
+// reads no variable)?
+func (g *gen) constLit(cl *ast.CompositeLit) bool {
+	for _, el := range cl.Elts {
+		v := el
+		if kv, ok := el.(*ast.KeyValueExpr); ok {
+			v = kv.Value
+		}
+		v = ast.Unparen(v)
+		if tvOf(v).Value != nil {
+			continue
+		}
+		if c2, ok := v.(*ast.CompositeLit); ok && g.constLit(c2) {
+			continue
+		}
+		if id, ok := v.(*ast.Ident); ok {
+			if _, isNil := useOf(id).(*types.Nil); isNil {
+				continue
+			}
+		}
+		return false
+	}
+	return true
 }
 
 // mentionsFrame: could evaluating the literal read the destination? (x = T{x.b, x.a} must not be built in place.)
@@ -272,7 +350,11 @@ func (g *gen) selector(e *ast.SelectorExpr) loc {
 	switch sel.Kind() {
 	case types.FieldVal:
 		l := g.expr(e.X)
-		l, _ = g.fieldPath(l, g.typeOf(e.X), sel.Index())
+		var ft types.Type
+		l, ft = g.fieldPath(l, g.typeOf(e.X), sel.Index())
+		if l.chk && g.c.sizeof(ft) == 0 {
+			g.nilcheckLoc(l) // p.x with x of no size: nothing is loaded or stored, nil must still fault
+		}
 		if len(sel.Index()) == 1 && l.isMem() && g.isStackPtr(e.X) {
 			l.stk = true // p.f with p a pointer into this frame (stackptr.go)
 		}
@@ -292,6 +374,9 @@ func (g *gen) fieldPath(l loc, t types.Type, path []int) (loc, types.Type) {
 		if p, ok := t.Underlying().(*types.Pointer); ok {
 			l = g.deref(l)
 			t = p.Elem()
+			if g.c.sizeof(t) == 0 {
+				g.nilcheckLoc(l) // (nothing will be loaded through it: $GOROOT/test/method5.go)
+			}
 		}
 		st := t.Underlying().(*types.Struct)
 		off := g.c.fieldOffsets(st)[i]
@@ -719,11 +804,6 @@ func (g *gen) binary(e *ast.BinaryExpr) loc {
 	}
 	t := g.typeOf(e)
 	if e.Op == token.SHL || e.Op == token.SHR {
-		if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
-			// x << (1 << y): the count is a shift of an untyped constant by a variable, which the
-			// checker leaves untyped; as a count the constant is a uint ($GOROOT/test/shift3.go)
-			t = types.Typ[types.Uint]
-		}
 		return g.shift(e.X, e.Y, e.Op, t)
 	}
 	return g.arith(e.X, e.Y, e.Op, t)
@@ -843,6 +923,15 @@ func (g *gen) shift(x, y ast.Expr, op token.Token, t types.Type) loc {
 	yt := g.typeOf(y)
 	if b, ok := yt.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
 		yt = types.Typ[types.Uint]
+	}
+	if tv := tvOf(y); tv.Value != nil && tv.Value.Kind() != constant.Int {
+		// x << 1.0, x << (1+0i): a constant count of another kind is the integer it represents
+		if v := constant.ToInt(tv.Value); v.Kind() == constant.Int {
+			l := g.expr(x)
+			g.loadTo(AX, l, t)
+			g.loadTo(CX, g.constLoc(v, yt), yt)
+			return g.shiftRegs(op, t, yt)
+		}
 	}
 	g.operands(x, y, t, yt, AX, CX)
 	return g.shiftRegs(op, t, yt)

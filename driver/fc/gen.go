@@ -144,19 +144,26 @@ type gen struct {
 	liveSets      []string            // the distinct sets of live slots at calls (bit sets by slot index)
 	liveIdx       map[string]int
 	nDecl         int
-	esc           escResult           // escape analysis of the package the body is in; nil: everything escapes
-	addrVars      map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
-	capByVal      map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
-	outerRef      map[*types.Var]bool // in a literal: the variables it captured by reference
-	assigned      map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
-	convSite      ast.Node            // the expression being converted to an interface (for the analysis's verdict)
-	convCall      *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
-	rf            *rfCtx              // set in the body of a range-over-func loop
-	deferTok      *types.Var          // the runtime's token for defers made in range-over-func loop bodies
-	sc            *genScratch         // this function's scratch buffers, if it has them (compileFunc)
-	root          *gen                // the function whose results a return there sets
-	abi0          bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
-	pinArgs       bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
+	esc           escResult // escape analysis of the package the body is in; nil: everything escapes
+	// uintptr(unsafe.Pointer(x)) among a call's arguments keeps x's object alive until the call returns
+	// (package unsafe's rule 4; //go:uintptrescapes, //go:uintptrkeepalive, the syscall functions): the
+	// pointer goes to a slot of its own that is cleared after the call. callDepth counts the calls,
+	// conversions and builtins being evaluated; keepPtrs are the slots filled and not yet cleared.
+	callDepth int
+	keepPtrs  []loc
+	bindKeep  []loc               // for the next bind: pointers a go or defer statement's wrapper must hold
+	addrVars  map[*types.Var]bool // variables whose address is taken or that are captured, heap or not
+	capByVal  map[*types.Var]bool // variables function literals hold copies of (byValCapture), and such copies in a literal
+	outerRef  map[*types.Var]bool // in a literal: the variables it captured by reference
+	assigned  map[*types.Var]bool // byValCapture's scan: variables assigned after their declaration
+	convSite  ast.Node            // the expression being converted to an interface (for the analysis's verdict)
+	convCall  *ast.CallExpr       // the conversion being compiled (a string conversion's site for the analysis)
+	rf        *rfCtx              // set in the body of a range-over-func loop
+	deferTok  *types.Var          // the runtime's token for defers made in range-over-func loop bodies
+	sc        *genScratch         // this function's scratch buffers, if it has them (compileFunc)
+	root      *gen                // the function whose results a return there sets
+	abi0      bool                // the function itself is called with ABI0 (a wrapper for assembly callers)
+	pinArgs   bool                // parameters and results stay in the argument frame (//go:cgo_unsafe_args)
 }
 
 const fullFrame = -1 << 30 // placeholder SP delta in the body's pcsp events: the whole frame
@@ -175,6 +182,15 @@ func (g *gen) typeOf(e ast.Expr) types.Type {
 			}
 		}
 		giveUp("no type for expression %T", e)
+	}
+	if b, ok := tv.Type.(*types.Basic); ok && tv.Value == nil && b.Info()&types.IsUntyped != 0 && b.Info()&types.IsNumeric != 0 {
+		// A value that is not a constant and has an untyped numeric type: x << (1 << y), the count of a
+		// shift built from untyped constants shifted by variables, which the checker leaves untyped. As a
+		// count the constant is a uint ($GOROOT/test/shift3.go, fixedbugs/issue12133.go).
+		return types.Typ[types.Uint]
+	}
+	if tv.Type == types.Typ[types.UntypedString] {
+		return types.Typ[types.String] // ""[i], for range "abc": a constant used where it is
 	}
 	return g.subst(tv.Type)
 }
@@ -716,6 +732,23 @@ func (g *gen) move(dst, src loc, t types.Type) {
 	if barrier {
 		g.noteWB()
 	}
+	// Two views of one array may overlap: *(*[32]byte)(y[4:36]) = *(*[32]byte)(y[2:34]). An assignment
+	// is a memmove then, not a copy from the low end ($GOROOT/test/fixedbugs/issue54467.go). Only arrays
+	// reached through pointers on both sides can do that.
+	overlap := false
+	if arr, ok := t.Underlying().(*types.Array); ok && arr.Len() > 1 {
+		ind := func(l loc) bool { return l.kind == lInd || l.kind == lRegInd }
+		overlap = ind(src) && ind(dst)
+	}
+	if overlap && size <= 128 {
+		tmp := g.temp(t)
+		if dst.kind == lRegInd {
+			dst = g.pin(dst) // (the copy to the temporary uses registers)
+		}
+		g.move(tmp, src, t)
+		g.move(dst, tmp, t)
+		return
+	}
 	if size > 128 {
 		g.addrTo(SI, src)
 		g.addrTo(DI, dst)
@@ -724,6 +757,38 @@ func (g *gen) move(dst, src loc, t types.Type) {
 			g.a.movRR(CX, SI)
 			g.a.lea(AX, msym(g.c.typeSym(t), 0))
 			g.callRT("typedmemmove")
+			return
+		}
+		if overlap {
+			// from the high end when the destination is above the source (the direction flag is set
+			// for those instructions only: no stop in between, the runtime counts on it being clear)
+			g.a.aluRR(aCMP, 8, DI, SI)
+			fwd := g.a.jcc(ccBE)
+			g.unsafeBegin()
+			r, o := size%8, size
+			for _, n := range []int64{4, 2, 1} {
+				if r&n != 0 {
+					o -= n
+					g.a.load(R8, mb(SI, o), int(n), false)
+					g.a.store(mb(DI, o), R8, int(n))
+				}
+			}
+			g.a.lea(SI, mb(SI, size-r-8))
+			g.a.lea(DI, mb(DI, size-r-8))
+			g.a.movImm(CX, size/8)
+			g.a.byte(0xFD) // STD
+			g.a.repMovsq()
+			g.a.byte(0xFC) // CLD
+			g.unsafeEnd()
+			done := g.a.jmp()
+			g.a.patch(fwd, g.a.pc())
+			g.a.movImm(CX, size/8)
+			g.a.repMovsq()
+			if r != 0 {
+				g.a.movImm(CX, r)
+				g.a.repMovsb()
+			}
+			g.a.patch(done, g.a.pc())
 			return
 		}
 		g.a.movImm(CX, size/8)
@@ -1356,6 +1421,14 @@ func (g *gen) finish(pos token.Pos) {
 	out.locals = int32(n)
 	if g.nosplit {
 		out.flags |= obj.NOSPLIT
+	}
+	if out.sym != nil {
+		switch out.sym.Name {
+		case "runtime.reflectcall", "reflect.callReflect", "reflect.callMethod":
+			// stock ir.setupTextLSym ("clumsy but important"): frames on the way to a deferred function
+			// called through reflect do not count when recover looks for its caller ($GOROOT/test/recover.go)
+			out.flags |= obj.WRAPPER
+		}
 	}
 	// stack maps. Arguments: index 0 (entry) has the parameters, index 1 (the body) also the stack results.
 	nargs := int(g.abi.argWidth / 8)

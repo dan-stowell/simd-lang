@@ -49,6 +49,12 @@ func (g *gen) compositeTo(e *ast.CompositeLit, dst loc, t types.Type) {
 				}
 				val = kv.Value
 			}
+			if u.Field(fi).Name() == "_" {
+				// a blank field is evaluated and not stored: it stays zero (reflection can read it;
+				// $GOROOT/test/fixedbugs/issue31546.go)
+				g.nilcheckLoc(g.expr(val))
+				continue
+			}
 			g.elemTo(val, dst.plus(offs[fi]), u.Field(fi).Type())
 		}
 	case *types.Array:

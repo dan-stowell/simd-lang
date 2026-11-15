@@ -149,11 +149,40 @@ func (g *gen) rtCall(name string, args ...loc) []loc {
 }
 
 func (g *gen) call(e *ast.CallExpr) []loc {
+	g.callDepth++
+	mark := len(g.keepPtrs)
 	ai, args, c, rs, done := g.prepCall(e, true)
+	g.callDepth--
 	if done {
+		// (a conversion or a builtin: what it kept is for the call around it; around none, it stays
+		// until the function returns)
+		if g.callDepth == 0 {
+			g.keepPtrs = g.keepPtrs[:0]
+		}
 		return rs
 	}
-	return g.emitCall(ai, args, c)
+	rs = g.emitCall(ai, args, c)
+	for _, k := range g.keepPtrs[mark:] {
+		g.a.storeImm(mb(BP, k.off), 0, 8)
+	}
+	g.keepPtrs = g.keepPtrs[:mark]
+	return rs
+}
+
+// keepPtr: the pointer at l (an unsafe.Pointer about to become a uintptr) is also stored in a slot of
+// its own, which the call being prepared clears when it returns.
+func (g *gen) keepPtr(l loc) loc {
+	j := g.newSlotBits(8, ptrShape)
+	k := loc{kind: lFrame, off: -g.slots[j].off}
+	r := R8
+	if l.kind == lReg {
+		r = l.reg
+	} else {
+		g.loadTo(R8, l, unsafePtr)
+	}
+	g.a.store(mb(BP, k.off), r, 8)
+	g.keepPtrs = append(g.keepPtrs, k)
+	return k
 }
 
 // prepCall evaluates the callee and the arguments of a call. A conversion or a built-in is carried out on
@@ -438,6 +467,9 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 	fu, tu := from.Underlying(), to.Underlying()
 	fb, _ := fu.(*types.Basic)
 	tb, _ := tu.(*types.Basic)
+	if g.callDepth > 1 && fb != nil && tb != nil && fb.Kind() == types.UnsafePointer && tb.Kind() == types.Uintptr && l.kind != lZero && l.kind != lImm {
+		l = g.keepPtr(l)
+	}
 	isInt := func(b *types.Basic) bool { return b != nil && b.Info()&types.IsInteger != 0 }
 	isFlt := func(b *types.Basic) bool { return b != nil && b.Info()&types.IsFloat != 0 }
 	isStr := func(b *types.Basic) bool { return b != nil && b.Info()&types.IsString != 0 }
@@ -614,6 +646,24 @@ func (g *gen) pairResult(t types.Type) loc {
 
 func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 	one := func(l loc) []loc { return []loc{l} }
+	if len(e.Args) == 1 {
+		if tup, ok := g.typeOf(e.Args[0]).(*types.Tuple); ok && tup.Len() > 1 {
+			// println(f()), append(f()), complex(f()) with f of several results: the results go to
+			// temporaries, and the builtin sees one name for each ($GOROOT/test/fixedbugs/issue5793.go)
+			e2 := *e
+			e2.Args = nil
+			for _, v := range g.multi(e.Args[0]) {
+				tmp := g.temp(v.t)
+				g.move(tmp, v.l, v.t)
+				tv := types.NewVar(e.Pos(), g.c.tpkg, ".r", v.t)
+				g.vars[tv] = tmp
+				id := &ast.Ident{NamePos: e.Args[0].Pos(), Name: tv.Name()}
+				types.SBSetUse(id, tv)
+				e2.Args = append(e2.Args, id)
+			}
+			return g.builtin(&e2, name)
+		}
+	}
 	intT := types.Typ[types.Int]
 	switch name {
 	case "len", "cap":
@@ -632,6 +682,9 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 			g.a.load(AX, g.m(l, R13).plus(off), 8, false)
 			return one(loc{kind: lReg, reg: AX})
 		case *types.Array:
+			// (not a constant, or it would not be here: the operand has a call in it and is evaluated,
+			// a nil dereference included: len(*f()), $GOROOT/test/fixedbugs/issue72844.go)
+			g.nilcheckLoc(l)
 			return one(loc{kind: lImm, imm: u.Len()})
 		case *types.Pointer:
 			return one(loc{kind: lImm, imm: u.Elem().Underlying().(*types.Array).Len()})
@@ -1171,6 +1224,9 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 			rl = g.addrOfLoc(l)
 		default:
 			rl = g.deref(l)
+			if g.c.sizeof(msig.Recv().Type()) == 0 {
+				g.nilcheckLoc(rl) // (a receiver of no size is not loaded: the nil pointer must fault here)
+			}
 		}
 		rl = g.stashValue(rl, msig.Recv().Type())
 		recv = rl
