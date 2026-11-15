@@ -5,7 +5,8 @@
 # Cold as CHARTER.md and tools/scoreboard/bazel1.sh define it for Bazel rows: a fresh output base, the Bazel server
 # started inside the timer, no disk or remote cache, page cache dropped; the repository cache (downloaded archives,
 # filled beforehand by `FETCH=1 tools/scoreboard/bazel1.sh`) is kept, like GOMODCACHE. Inside the timer:
-#   1. bazel aquery 'deps(<target>)' (server start, repository extraction, loading and analysis; nothing built)
+#   1. bazel aquery 'deps(<target>)' (server start, repository extraction, loading and analysis; nothing built),
+#      or with BZ_QUERY=1 bazel query (loading only: below)
 #   2. bzfc: the generated sources (protoc, genrules) by running their actions, the Go tools they need built
 #      by fc; then the binary by fc and fclink, the standard library and runtime included.
 # --experimental_output_paths=off: BuildBuddy's .bazelrc sets =strip (path mapping: command lines name
@@ -36,16 +37,29 @@ fi
 # carries its header list (BuildBuddy's executor: 3,745 CppCompile actions were 1.47 GB of the 1.56 GB of JSON, 48 s
 # of Bazel writing it and 8-30 s of bzfc reading it). AQ_ALL=1: everything, as before.
 expr="mnemonic(\"^(?!CppCompile\$).*\", deps($target))"; [ -z "${AQ_ALL:-}" ] || expr="deps($target)"
+bzcmd="aquery $flags --experimental_output_paths=off --include_file_write_contents --include_param_files --output=jsonproto '$expr' > $work/aq.json"
+fe="-aquery $work/aq.json"
+# BZ_QUERY=1: the loading phase only (bazel query: the target graph; no configured targets, no toolchain resolution, no
+# actions) and bzfc's query front end (tools/bazel/bzfc/query.go), which derives the actions from the rules. A query
+# resolves no toolchain, so the proto toolchain's target is named in the expression (BZ_QTOOLCHAINS: the one protobuf's
+# resolution picks on linux_x86_64): its repository is then fetched, and bzfc finds protoc in the graph.
+if [ -n "${BZ_QUERY:-}" ]; then
+  qtc=${BZ_QTOOLCHAINS-@@protobuf++protoc+prebuilt_protoc.linux_x86_64//:prebuilt_protoc_toolchain}
+  qexpr="deps($target)"; [ -z "$qtc" ] || qexpr="$qexpr + deps($qtc)"
+  qflags="--repository_cache=$T/bazel-repocache --disk_cache= --remote_cache= --remote_executor= --bes_backend= --bes_results_url= --noshow_progress"
+  bzcmd="query $qflags --consistent_labels --output=streamed_proto '$qexpr' > $work/q.pb"
+  fe="-query $work/q.pb"
+fi
 cd "$T/$dir" || exit 2
 sync; [ -n "${WARM:-}" ] || echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
 cat > "$out/run.sh" <<IN
 #!/usr/bin/env bash
 cg=/sys/fs/cgroup\$(cut -d: -f3 /proc/self/cgroup)
 t0=\$(date +%s.%N)
-taskset -c 0-$((P-1)) $BAZEL --output_base=$ob aquery $flags --experimental_output_paths=off --include_file_write_contents --include_param_files --output=jsonproto '$expr' > "$work/aq.json" 2> "$out/aquery.log"; rc=\$?
+taskset -c 0-$((P-1)) $BAZEL --output_base=$ob $bzcmd 2> "$out/aquery.log"; rc=\$?
 t1=\$(date +%s.%N); c1=\$(awk '\$1=="usage_usec"{print \$2/1e6}' \$cg/cpu.stat)
 if [ \$rc = 0 ]; then
-  GOMAXPROCS=$P taskset -c 0-$((P-1)) "$BZFC" -aquery "$work/aq.json" -ob $ob -ws "$T/$dir" -label "$target" -work "$work/w" -fc "$FC_BIN" -bin "$out/bin" -j $P > "$out/build.log" 2>&1; rc=\$?
+  GOMAXPROCS=$P taskset -c 0-$((P-1)) "$BZFC" $fe -ob $ob -ws "$T/$dir" -label "$target" -work "$work/w" -fc "$FC_BIN" -bin "$out/bin" -j $P > "$out/build.log" 2>&1; rc=\$?
 fi
 t2=\$(date +%s.%N)
 taskset -c 0-$((P-1)) $BAZEL --output_base=$ob shutdown
@@ -54,7 +68,7 @@ awk '\$1=="usage_usec"{print "core_s", \$2/1e6}' \$cg/cpu.stat
 IN
 chmod +x "$out/run.sh"
 systemd-run --user --scope -q -p MemoryMax=$mem "$out/run.sh" > "$out/meta.txt"
-{ echo "name $name"; echo "P $P"; echo "tool bazel+fc"
+{ echo "name $name"; echo "P $P"; echo "tool bazel+fc"; echo "front_end ${fe%% *}"
   sed -n 's/^bzfc: *\([0-9]*\) ms  generate: \([0-9]*\) files, \([0-9]*\) actions run, \([0-9.]*\) core-s, \([0-9]*\) retried/gen_end_ms \1\ngen_files \2\ngen_actions \3\ngen_core_s \4\ngen_retries \5/p' "$out/build.log"
   sed -n 's/^bzfc: *\([0-9]*\) ms  read the DAG.*/dag_ms \1/p' "$out/build.log"
   sed -n 's/^bzfc: *\([0-9]*\) ms  fc build.*/bzfc_ms \1/p' "$out/build.log"

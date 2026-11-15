@@ -83,6 +83,7 @@ type qSelEntry struct {
 
 type qRule struct {
 	Name, Class, Location string
+	ClassKey              string // rule_class_key: "<bzl label>%<class>" for Starlark rules
 	Attrs                 map[string]*qAttr
 	Inputs, Outputs       []string
 }
@@ -331,6 +332,8 @@ func decodeRule(data []byte) *qRule {
 			r.Inputs = append(r.Inputs, string(d))
 		case 6:
 			r.Outputs = append(r.Outputs, string(d))
+		case 16:
+			r.ClassKey = string(d)
 		}
 	}
 	return r

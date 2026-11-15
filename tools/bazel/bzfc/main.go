@@ -654,6 +654,10 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	if err != nil {
 		return err
 	}
+	os.WriteFile(filepath.Join(dir, "xdefs.txt"), []byte(strings.Join(link.args["-X"], "\n")), 0o666) // (plandiff.sh)
+	if *flagPlanOnly && what == "main" {
+		return nil
+	}
 	key := sha256.Sum256(append(b, []byte(strings.Join(xdefs, "\n"))...))
 	builtMu.Lock()
 	if o := builtBy[key]; o != nil {
