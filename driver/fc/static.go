@@ -9,6 +9,7 @@ import (
 	"go/types"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"cmd/internal/obj"
 	"cmd/internal/objabi"
@@ -718,3 +719,10 @@ func inlinable(fd *ast.FuncDecl, fn *types.Func, info *types.Info) bool {
 	})
 	return ok && n <= 120
 }
+
+// lazyBodiesOn (FC_LAZYBODIES=1, with FC_FUSE=1 and functions by demand): a body nothing asks for is not
+// checked. A measurement until it is decided whether an unreported error in dead code is acceptable.
+var lazyBodiesOn = os.Getenv("FC_LAZYBODIES") == "1"
+
+// lazyBodiesActive: lazyBodiesOn in a build that compiles functions by demand (set before the back end starts).
+var lazyBodiesActive atomic.Bool

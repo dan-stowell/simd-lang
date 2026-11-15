@@ -302,9 +302,19 @@ func (p *Pkg) finishBodies() {
 		return
 	}
 	p.finOnce.Do(func() {
-		for i := range p.bodyOnce {
-			if p.bodyDecl[i] != nil {
-				p.ensureBody(i)
+		if lazyBodiesActive.Load() {
+			// functions by demand: only what the variables' initializers reach is needed for the order;
+			// a function nothing asks for is never checked (and an error in it never reported)
+			p.bodies.ReachFromVars(func(i int) {
+				if p.bodyDecl[i] != nil {
+					p.ensureBody(i)
+				}
+			})
+		} else {
+			for i := range p.bodyOnce {
+				if p.bodyDecl[i] != nil {
+					p.ensureBody(i)
+				}
 			}
 		}
 		p.bodies.InitOrder(p.dinfo, p.onBodyErr)

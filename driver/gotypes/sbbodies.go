@@ -94,6 +94,45 @@ func (b *Bodies) Check(shard int, idx []int, infoOf func(i int) *Info, onErr fun
 	return
 }
 
+// ReachFromVars calls ensure(i) for every body that the initializers of the package's variables reach
+// through references: the functions they mention, and what those mention, as far as this package goes.
+// ensure(i) must return with body i checked (by Check, here or on another thread). After it InitOrder
+// gives the order a full check gives although other bodies are still unchecked: an unchecked function
+// has no recorded references, and no initializer can reach it.
+func (b *Bodies) ReachFromVars(ensure func(i int)) {
+	byDecl := make(map[*declInfo]int, len(b.jobs))
+	for i := range b.jobs {
+		if !b.jobs[i].lit {
+			byDecl[b.jobs[i].decl] = i
+		}
+	}
+	seen := map[*declInfo]bool{}
+	var work []*declInfo
+	push := func(d *declInfo) {
+		for o := range d.deps {
+			if f, ok := o.(*Func); ok {
+				if fd := b.objMap[f]; fd != nil && !seen[fd] {
+					seen[fd] = true
+					work = append(work, fd)
+				}
+			}
+		}
+	}
+	for o, d := range b.objMap {
+		if _, ok := o.(*Var); ok {
+			push(d)
+		}
+	}
+	for len(work) > 0 {
+		d := work[len(work)-1]
+		work = work[:len(work)-1]
+		if i, ok := byDecl[d]; ok {
+			ensure(i)
+		}
+		push(d)
+	}
+}
+
 // InitOrder computes info.InitOrder; call it when every body has been checked (the order depends on
 // which package-level variables and functions the bodies refer to).
 func (b *Bodies) InitOrder(info *Info, onErr func(error)) (err error) {

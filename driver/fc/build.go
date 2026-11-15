@@ -335,6 +335,7 @@ func buildMode(args []string) {
 		if lazyFuncsOn() {
 			// functions by demand (demand.go)
 			pr.lazyFuncs = true
+			lazyBodiesActive.Store(lazyBodiesOn)
 			pr.quiet = make(chan struct{})
 			pr.idleJobs = make(chan chan func(), 4096)
 			pr.pending.Store(int64(len(targets)))
