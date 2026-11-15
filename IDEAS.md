@@ -138,3 +138,15 @@ header, assemble once (files in parallel), take definitions and references with 
 symbols and relocations, then generate code. Kill test: the listing derived from the objects must equal the
 assembler's -gensymabis output for every package with assembly in the corpus (61 in MinIO) before it replaces it.
 Status: not started; 1.5% of the build.
+
+## Tidy frames in every package (2026-11-15)
+In the runtime's packages a frame slot is live only from its allocation to the end of its statement (a temporary)
+or block (a variable), cleared when it is taken, with a stack map per call; elsewhere every slot is always live.
+Turning it on everywhere (FC_TIDY=all) makes most of the liveness-wait skips pass (of the runtime's seven, five) and
+would end the class of stale pointers shown to the collector outside the runtime. Kill test: MinIO's counts.
+**Killed by the counts** (19:57 UTC, same compiler, FC_TIDY= against all): code 80.7 -> 107.4 MB, binary 126 -> 196
+MB, memory mapped during the build 6.0 -> 7.1 GB. The cost is one store per pointer word per slot lifetime and a
+stack map per distinct live set. A cheaper form, if liveness is wanted later: liveness by last use from one backward
+pass over the statements (no clearing: a slot is in the map only between its first store and its last load), which
+needs the generator to know a slot's last use before it emits the calls in between: a second pass or a patch-up of
+the maps after the body.

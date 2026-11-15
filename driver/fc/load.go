@@ -549,7 +549,7 @@ func (pr *Program) view(d *Pkg) (*types.Package, error) {
 			return
 		}
 		// (asked before the slot is taken: inRuntime may parse, which waits for a slot)
-		d.perFn = bodiesLater && fnInfos && escWhere != "1" && tidyKnob != "all" && !pr.inRuntime(d)
+		d.perFn = bodiesLater && fnInfos && escWhere != "1" && !pr.inRuntime(d)
 		pr.sem.acquire(prioDecl + d.srcBytes)
 		defer pr.sem.release()
 		conf := types.Config{Importer: pkgImporter{pr, d}, Sizes: pr.sizes, GoVersion: goVersionOf(d), Context: pr.tctx,

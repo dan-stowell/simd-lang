@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 20:00 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 19:58 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification, a soak and a builder.
 **Two runtime bugs of every earlier fc binary are fixed in the source; build/fc still has only the first** (7259dfb:
 write barriers where the runtime forbids them; 3ef1d06: asynchronous preemption inside what the stock compiler
@@ -150,10 +150,9 @@ timeouts and allocation counts disturbed by GOGC=10 (bytes TestGrow). Rerun it f
 Then the same over MinIO's packages. (b) the runtime's own suite alone
 (`tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`): its 13 whole-program failures are
 sorted (one fixed, twelve skip lines with evidence in tests/fc/skips.txt, the two pinner tests added after).
-**Liveness skips are now 20-odd tests and depend on what ran before**; FC_TIDY=all (slots die with their statement
-or block in every package, as in the runtime's) makes most pass: measure its cost in the quiet pass (3) and turn it
-on if it is under about 2% of the build's CPU (drop `tidyKnob != "all"` from d.perFn in load.go first: the
-per-function infos do not need it off).
+**Liveness skips are 20-odd tests and some depend on what ran before** (the pinner tests). FC_TIDY=all (slots die
+with their statement or block in every package, as in the runtime's) makes most pass but is killed by its counts
+(IDEAS: code +33%, binary +55%, build memory +18%).
 (2) **The soak** is `tools/fc/soak.sh [runs] [workers]` now (an fc-built protoc-gen-go against the stock-built one at
 GOGC=1; hangs get their stacks from a core by tools/fc/corebt). With the three fixes a scratch soak of 3,200 runs was
 started at 18:58 (not finished at 19:10: load 74); 0 bad of 1,600 with the first fix alone. **One segmentation fault
@@ -162,7 +161,7 @@ the pass is done; a bad run with rc 139 needs `ulimit -c unlimited` in the scrip
 worth soaking MinIO's server under load the same way.
 (3) **Quiet pass** (nothing else running; `uptime` under 1): order-balanced A/B of MinIO, 4 pairs each, user+sys and
 wall: cold FC_NOZIP=1 against default (module sources from zips, JOURNAL 18:33); warm FC_LAZYFUNCS=1, FC_FUSE=1,
-FC_SCRATCH=0, FC_ASMPROC=1, FC_TIDY=all, FC_CAPREF=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
+FC_SCRATCH=0, FC_ASMPROC=1, FC_CAPREF=1; `FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8`
 + tests/minio_smoke.sh); `tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md`
 (the Bazel rows of ours are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins
 on wall. Then TRACE.md: an fc section is owed (`fc build`'s summary lines: phases, read:, the link's table, tax).
