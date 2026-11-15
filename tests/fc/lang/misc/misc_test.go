@@ -378,3 +378,11 @@ func TestMixedInterfaceCompare(t *testing.T) {
 	check("error == any (same)", m.EqErr(e, e), true)
 	check("error == any (other)", m.EqErr(e, fmt.Errorf("e")), false)
 }
+
+func TestMixedInterfaceSwitch(t *testing.T) {
+	got := fmt.Sprint(m.SwitchAny("a"), m.SwitchAny("x"+"a"[1:]), m.SwitchAny(2), m.SwitchAny(int64(2)), m.SwitchAny(2.5), m.SwitchAny(nil), m.SwitchAny(m.MkPt(1, 2)), m.SwitchAny(m.MkPt(2, 1)),
+		m.SwitchStr("k"+fmt.Sprint(1), "k1", "k2"), m.SwitchStr("k2", "k1", "k"+fmt.Sprint(2)), m.SwitchStr("k3", "k1", nil), m.SwitchStr("1", 1, "1"))
+	if want := "1 0 2 0 3 4 5 0 1 2 0 2"; got != want {
+		t.Errorf("mixed switches: %s, want %s", got, want)
+	}
+}

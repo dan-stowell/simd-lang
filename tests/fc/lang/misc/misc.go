@@ -701,3 +701,30 @@ func MkPt(x, y int) any                        { return pt{x, y} }
 func EqErr(e error, v any) bool                { return e == v }
 func EqFloatAny(f float64, v any) (bool, bool) { return f == v, v != f }
 func EqBoolAny(b bool, v any) bool             { return b == v }
+
+// SwitchAny: an interface tag against concrete cases; SwitchStr: a concrete tag against interface cases.
+func SwitchAny(v any) int {
+	switch v {
+	case "a":
+		return 1
+	case 2:
+		return 2
+	case 2.5:
+		return 3
+	case nil:
+		return 4
+	case pt{1, 2}:
+		return 5
+	}
+	return 0
+}
+
+func SwitchStr(s string, a, b any) int {
+	switch s {
+	case a:
+		return 1
+	case b:
+		return 2
+	}
+	return 0
+}
