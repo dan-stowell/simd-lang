@@ -16,7 +16,7 @@ import os, re, shutil, sys
 src, out = sys.argv[1], sys.argv[2]
 os.makedirs(os.path.join(out, "cgo"), exist_ok=True)
 for f in os.listdir(src):
-    if f.endswith((".go", ".s", ".h")) and not f.endswith("_test.go"):
+    if f.endswith((".go", ".s", ".h")):   # (the _test.go files too: the runtime's own tests are in its package)
         shutil.copy(os.path.join(src, f), out)
 for f in os.listdir(os.path.join(src, "cgo")):
     if f.endswith(".h"):
