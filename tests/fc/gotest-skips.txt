@@ -14,3 +14,4 @@ fixedbugs/issue4618.go optimization: asserts zero allocations for a non-escaping
 fixedbugs/issue8606b.go optimization: asserts that struct equality compares lengths and scalars before string contents (its own comment: "This is an optimization check")
 fixedbugs/issue75764.go optimization: asserts that method wrappers tail-call (running time independent of 10,000 nested wrappers)
 noinit.go optimization: asserts that every package-level initializer in the file is laid out statically (reads main..inittask through a linkname)
+typeparam/chans.go liveness: TestRanger waits for the finalizer of its local r, which TestRanger's own frame still holds during runtime.GC() (the generics builder's reduction: with r in the waiting function's frame stock prints "finalized" and fc "not finalized"; with r in a helper that has returned, both finalize)

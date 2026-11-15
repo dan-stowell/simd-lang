@@ -138,9 +138,9 @@ type Program struct {
 	declNS        int64           // time in declarations-only checks
 	byInfo        sync.Map        // *types.Info -> *Pkg
 	rtOnce        sync.Once
-	localGeneric  sync.Map // *types.Named declared in a function -> does its definition use type parameters
 	localMu       sync.Mutex
-	localInst     map[localKey]*types.Named
+	localInst     map[*types.TypeName][]*localInst // a type declared in a generic function -> its instances
+	localOf       map[*types.Named]*localInst      // and back, from an instance
 	rtDecls       *types.Package // the runtime functions the stock compiler knows, for their signatures
 }
 

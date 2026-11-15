@@ -3,6 +3,7 @@ package main
 
 import (
 	"go/ast"
+	"go/constant"
 	"go/token"
 	"go/types"
 	"sort"
@@ -496,6 +497,13 @@ func (g *gen) convert(arg ast.Expr, to types.Type) loc {
 	from := g.typeOf(arg)
 	if isInterface(to) {
 		return g.exprAs(arg, to)
+	}
+	// a numeric constant converted to a type parameter (T(0), T(3.14) with T ~complex64): the conversion is
+	// not a constant in the generic body, but in the instance it is one, done at compile time
+	if v := tvOf(arg).Value; v != nil && (v.Kind() == constant.Int || v.Kind() == constant.Float || v.Kind() == constant.Complex) {
+		if tb, ok := to.Underlying().(*types.Basic); ok && tb.Info()&types.IsNumeric != 0 {
+			return g.constLoc(v, to)
+		}
 	}
 	l := g.expr(arg)
 	if b, ok := from.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
