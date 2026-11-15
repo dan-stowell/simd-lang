@@ -625,7 +625,7 @@ func buildMode(args []string) {
 		return nil
 	})
 	if asmRuns > 0 {
-		fmt.Printf("assembler in process: %d runs, %.0f ms assembling, %.0f ms waiting for one another\n", asmRuns, float64(asmNS)/1e6, float64(asmWaitNS)/1e6)
+		fmt.Printf("assembler in process: %d runs, %.0f ms assembling (of which the symbol ABI passes %.0f ms), %.0f ms waiting for one another\n", asmRuns, float64(asmNS)/1e6, float64(asmABINS)/1e6, float64(asmWaitNS)/1e6)
 	}
 	fmt.Printf("tax: %d processes started (assembler; %.2f core-s), %d intermediate files written and read back (%.1f MB: assembler objects, symabis, headers), page faults %d here + %d in children\n",
 		toolStarts, float64(ruc.Utime.Sec)+float64(ruc.Utime.Usec)/1e6+float64(ruc.Stime.Sec)+float64(ruc.Stime.Usec)/1e6, interFiles, float64(interBytes)/1e6, ru.Minflt+ru.Majflt, ruc.Minflt+ruc.Majflt)

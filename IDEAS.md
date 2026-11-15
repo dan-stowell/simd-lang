@@ -130,3 +130,11 @@ Picked for the next step: none of these. The head of the build (plan, then `runt
   (compileFunc 2.7 GB, type descriptors 1.2 GB, checker 1.6 GB); fresh memory is zeroed by the kernel and
   missed by the cache. Kill test: pool the gen's maps and the assembler's buffers and look for more than
   0.5 core-s. Status: not started.
+
+## One assembler pass per package (2026-11-15)
+The symbol ABI pass lexes every .s file before the compile and the object pass lexes it again after (35% of the
+in-process assembler's time on MinIO, about 0.2 s of CPU). go_asm.h needs only the type check, so: check, write the
+header, assemble once (files in parallel), take definitions and references with their ABIs from the assembled
+symbols and relocations, then generate code. Kill test: the listing derived from the objects must equal the
+assembler's -gensymabis output for every package with assembly in the corpus (61 in MinIO) before it replaces it.
+Status: not started; 1.5% of the build.

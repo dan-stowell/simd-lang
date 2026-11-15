@@ -38,6 +38,7 @@ var asmSerial = os.Getenv("FC_ASMSERIAL") != ""
 var (
 	asmArch                   *arch.Arch
 	asmNS, asmWaitNS, asmRuns int64 // time assembling, time waiting for asmMu, runs
+	asmABINS                  int64 // of asmNS: the symbol ABI passes
 )
 
 // assemble runs the assembler over files of package p: with symabis, the symbol ABI listing of all of them
@@ -61,6 +62,9 @@ func assemble(p *Pkg, dir string, files []string, out string, symabis bool) ([]b
 	defer func() {
 		atomic.AddInt64(&asmWaitNS, int64(t1.Sub(t0)))
 		atomic.AddInt64(&asmNS, int64(time.Since(t1)))
+		if symabis {
+			atomic.AddInt64(&asmABINS, int64(time.Since(t1)))
+		}
 		atomic.AddInt64(&asmRuns, 1)
 	}()
 	if asmArch == nil {
