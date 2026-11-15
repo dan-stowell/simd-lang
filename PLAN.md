@@ -129,7 +129,7 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 20:50 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
+Now (2026-11-15 20:46 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
 warm 1.77-1.92 s this afternoon.** No quiet numbers since: the machine is busy with verification and a builder.
 **Three bugs of every earlier fc binary were fixed today** (JOURNAL 19:01, 19:40, 20:12, 20:44): write barriers where
 the runtime forbids them (7259dfb; a deadlock), a stop inside what the stock compiler inlines into nosplit runtime
