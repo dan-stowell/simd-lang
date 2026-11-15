@@ -57,6 +57,11 @@ func buildMode(args []string) {
 		"directory relative to it, like . or ./cmd/x); the go command is not asked")
 	prof := fs.String("cpuprofile", "", "write a CPU profile")
 	memprof := fs.String("memprofile", "", "write an allocation profile at the end")
+	var xdefs []string // -X importpath.name=value, passed to the linker (a Bazel go_binary's x_defs)
+	fs.Func("X", "`importpath.name=value`: set a string variable at link time (repeatable)", func(v string) error {
+		xdefs = append(xdefs, v)
+		return nil
+	})
 	fs.Parse(args)
 	if *memprof != "" {
 		defer func() {
@@ -478,6 +483,10 @@ func buildMode(args []string) {
 		}
 		waitStock()
 		tl := time.Now()
+		var xargs []string // -X definitions, for whichever linker
+		for _, x := range xdefs {
+			xargs = append(xargs, "-X", x)
+		}
 		if inProc {
 			// the inputs in the order the importcfg would have them, the main package last
 			byPkg := map[*Pkg]*result{}
@@ -510,7 +519,7 @@ func buildMode(args []string) {
 					}
 				}
 			}
-			args := append([]string{"-s", "-o", *link}, strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+			args := append(append([]string{"-s", "-o", *link}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
 			fclinklib.Link(args, append(inputs, mainIn...))
 			fmt.Printf("link (fclink in process): %d fc units, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
 		} else {
@@ -531,11 +540,11 @@ func buildMode(args []string) {
 			}
 			cfgFile := filepath.Join(*out, "importcfg.link")
 			os.WriteFile(cfgFile, []byte(cfg.String()), 0o666)
-			cmd := exec.Command("go", "tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w", objPath(*out, mainPkg))
+			cmd := exec.Command("go", append(append([]string{"tool", "link", "-o", *link, "-importcfg", cfgFile, "-buildmode=exe", "-s", "-w"}, xargs...), objPath(*out, mainPkg))...)
 			linker := "stock linker"
 			if withFclink {
 				// the campaign's linker (driver/fclink) instead of the stock one
-				args := append([]string{"-s", "-o", *link, "-importcfg", cfgFile}, strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
+				args := append(append([]string{"-s", "-o", *link, "-importcfg", cfgFile}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
 				cmd = exec.Command(linkerPath(), append(args, objPath(*out, mainPkg))...)
 				linker = "fclink"
 			}
