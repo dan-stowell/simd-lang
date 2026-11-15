@@ -168,9 +168,7 @@ even after a fresh context; if none came, look at `git worktree list` and the ne
 reports (rebuild build/fc only when no pass is running; lang both modes, wbcheck, `tools/bazel/cold.sh bb-cli 8` and
 `bb-executor 8` rc 0 with checks). (b) Bazel's own part: the aquery without CppCompile is in cold.sh (JOURNAL 19:01:
 85 -> 49.5 s under load for the executor; build/bzfc must be rebuilt from tools/bazel/bzfc after a merge: cold.sh only
-builds it when missing, and a stale one failed a run at 18:45). The executor's first full run with it was still going
-at 19:03 (/home/exedev/targets/fc-cold/bb-executor/bazel-p8-warm/meta.txt: rc must be 0 and `bin --help` must have the
-reference's 415 flag lines). Next there: `--output=streamed_proto` read from a pipe while Bazel writes (the output
+builds it when missing, and a stale one failed a run at 18:45). The executor built that way with the fixed fc at 19:06 (rc 0, the reference's 415 flag lines, no retries). Next there: `--output=streamed_proto` read from a pipe while Bazel writes (the output
 handler is still 13 s for 74 MB of JSON), `--host_jvm_args=-XX:TieredStopAtLevel=1` (a one-shot server never warms
 up), A/B on buildifier first; analysis itself is 24 s for the executor. Then a reader of our own for the rules_go
 subset only if Bazel's part stays above a few seconds.
