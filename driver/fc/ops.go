@@ -143,8 +143,10 @@ func (g *gen) compareLocs(op token.Token, xl loc, xt types.Type, yl loc, yt type
 		}
 		t = xt
 	}
-	if isInterface(xt) && isInterface(yt) && !types.Identical(xt.Underlying(), yt.Underlying()) {
-		// two interface types: compare as empty interfaces (type words, not itabs)
+	if isInterface(xt) && isInterface(yt) && !types.Identical(xt, yt) {
+		// two interface types: compare as empty interfaces (type words, not itabs). Two named types with
+		// the same methods are two types here: each has its own descriptor, so its own itabs.
+		// ($GOROOT/test/cmp.go: I1(X(0)) == I2(X(0)) was false.)
 		anyT := g.c.anyType()
 		yl = g.keep(g.inMem(yl, yt), yt)
 		if !isEmptyIface(xt) {

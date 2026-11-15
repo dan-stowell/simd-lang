@@ -911,6 +911,9 @@ func (g *gen) switchStmt(s *ast.SwitchStmt, name string) {
 
 func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 	xt := g.typeOf(s.X)
+	if b, ok := xt.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
+		xt = types.Default(xt) // for range "abc", for range 10
+	}
 	// the iteration variables: new per iteration (:=) or existing lvalues (=)
 	var keyVar, valVar *types.Var
 	define := s.Tok == token.DEFINE
@@ -929,6 +932,14 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 			valVar = defOf(s.Value.(*ast.Ident)).(*types.Var)
 		}
 	}
+	// tuple: both targets are existing lvalues and the second is more than a name, so storing the first
+	// could change where the second is
+	tuple := false
+	if !define && !blank(s.Key) && !blank(s.Value) {
+		_, plain := ast.Unparen(s.Value).(*ast.Ident)
+		tuple = !plain
+	}
+	var pendKey typedLoc
 	// setKey / setVal store an iteration value
 	set := func(e ast.Expr, v *types.Var, src loc, st types.Type) {
 		if blank(e) {
@@ -944,6 +955,33 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 		}
 		src = g.keep(src, st)
 		dt := g.typeOf(e)
+		if tuple {
+			// for k, x[k] = range ...: one assignment of two values per iteration (the operands of both
+			// targets are evaluated before the first store: $GOROOT/test/range.go)
+			if e == s.Key {
+				pendKey = typedLoc{src, st}
+				return
+			}
+			dest := func(e ast.Expr) func() loc {
+				if g.isMapIndex(e) {
+					ix := ast.Unparen(e).(*ast.IndexExpr)
+					ml, kl := g.mapOperands(ix)
+					return func() loc { return g.mapAssignLocs(ix, ml, kl) }
+				}
+				return g.lvalueLate(e)
+			}
+			kd, vd := dest(s.Key), dest(s.Value)
+			kt := g.typeOf(s.Key)
+			store := func(d func() loc, v loc, t types.Type) {
+				if v.kind == lReg || v.kind == lRegInd {
+					v = g.keep(v, t)
+				}
+				g.move(d(), v, t)
+			}
+			store(kd, g.convertImplicit(pendKey.l, pendKey.t, kt), kt)
+			store(vd, g.convertImplicit(src, st, dt), dt)
+			return
+		}
 		if g.isMapIndex(e) {
 			ix := ast.Unparen(e).(*ast.IndexExpr)
 			ml, kl := g.mapOperands(ix)

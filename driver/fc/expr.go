@@ -87,18 +87,18 @@ func (g *gen) varLoc(v *types.Var) loc {
 func (g *gen) deref(l loc) loc {
 	switch l.kind {
 	case lFrame:
-		return loc{kind: lInd, slot: l.off}
+		return loc{kind: lInd, slot: l.off, chk: true}
 	case lReg:
-		return loc{kind: lRegInd, reg: l.reg}
+		return loc{kind: lRegInd, reg: l.reg, chk: true}
 	case lImm, lZero:
 		// a nil dereference: let it fault
 		g.a.movImm(AX, 0)
-		return loc{kind: lRegInd, reg: AX}
+		return loc{kind: lRegInd, reg: AX, chk: true}
 	}
 	g.a.load(R13, g.m(l, R13), 8, false)
 	tmp := g.ptrTemp()
 	g.a.store(mb(BP, tmp.off), R13, 8)
-	return loc{kind: lInd, slot: tmp.off}
+	return loc{kind: lInd, slot: tmp.off, chk: true}
 }
 
 // pure: evaluating e emits no code that disturbs AX, CX or X0 (it may use R12 and R13).
@@ -211,7 +211,9 @@ func (g *gen) convertImplicit(l loc, from, to types.Type) loc {
 		}
 		return g.toInterface(l, from, to)
 	}
-	if isInterface(to) && isInterface(from) && !types.Identical(from.Underlying(), to.Underlying()) {
+	// (stock Assignop: every conversion to a non-empty interface type that is not the same type gets that
+	// type's itab, two names for the same methods included; two empty interface types need no code)
+	if isInterface(to) && isInterface(from) && !types.Identical(from, to) && !(isEmptyIface(from) && isEmptyIface(to)) {
 		return g.ifaceToIface(l, from, to)
 	}
 	return l
@@ -717,6 +719,11 @@ func (g *gen) binary(e *ast.BinaryExpr) loc {
 	}
 	t := g.typeOf(e)
 	if e.Op == token.SHL || e.Op == token.SHR {
+		if b, ok := t.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
+			// x << (1 << y): the count is a shift of an untyped constant by a variable, which the
+			// checker leaves untyped; as a count the constant is a uint ($GOROOT/test/shift3.go)
+			t = types.Typ[types.Uint]
+		}
 		return g.shift(e.X, e.Y, e.Op, t)
 	}
 	return g.arith(e.X, e.Y, e.Op, t)
@@ -1025,6 +1032,11 @@ func (g *gen) addressOf(x ast.Expr) loc {
 	switch l.kind {
 	case lInd:
 		if l.off == 0 {
+			if l.chk {
+				// &*p, &p.f with f first: nil must fault here, as everywhere else ($GOROOT/test/nilptr2.go)
+				g.a.load(R13, mb(BP, l.slot), 8, false)
+				g.a.nilcheck(R13)
+			}
 			return loc{kind: lFrame, off: l.slot}
 		}
 		g.a.load(AX, mb(BP, l.slot), 8, false)
@@ -1032,7 +1044,7 @@ func (g *gen) addressOf(x ast.Expr) loc {
 		g.a.lea(AX, mb(AX, l.off))
 		return loc{kind: lReg, reg: AX}
 	case lRegInd:
-		if l.off != 0 {
+		if l.off != 0 || l.chk {
 			g.a.nilcheck(l.reg)
 		}
 		if l.off != 0 || l.reg != AX {

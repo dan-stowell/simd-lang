@@ -47,6 +47,7 @@ const (
 type loc struct {
 	kind locKind
 	stk  bool // memory reached through a pointer or an index that is known to lie in this function's frame (noBarrier)
+	chk  bool // memory reached through a pointer of the program's that may be nil: taking its address must fault then (&*p, &p.f)
 	off  int64
 	slot int64
 	sym  *obj.LSym

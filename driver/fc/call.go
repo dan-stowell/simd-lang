@@ -278,6 +278,11 @@ func (g *gen) addrOfLoc(l loc) loc {
 	switch l.kind {
 	case lInd:
 		if l.off == 0 {
+			if l.chk {
+				// &*p, &p.f with f first: nil must fault here, as everywhere else ($GOROOT/test/nilptr2.go)
+				g.a.load(R13, mb(BP, l.slot), 8, false)
+				g.a.nilcheck(R13)
+			}
 			return loc{kind: lFrame, off: l.slot}
 		}
 		g.a.load(AX, mb(BP, l.slot), 8, false)
@@ -285,7 +290,7 @@ func (g *gen) addrOfLoc(l loc) loc {
 		g.a.lea(AX, mb(AX, l.off))
 		return loc{kind: lReg, reg: AX}
 	case lRegInd:
-		if l.off != 0 {
+		if l.off != 0 || l.chk {
 			g.a.nilcheck(l.reg)
 		}
 		if l.off != 0 || l.reg != AX {
@@ -756,6 +761,9 @@ func (g *gen) builtin(e *ast.CallExpr, name string) []loc {
 		nt := g.typeOf(e.Args[1])
 		if b, ok := nt.Underlying().(*types.Basic); ok && b.Info()&types.IsUntyped != 0 {
 			nt = intT
+		}
+		if b, ok := pt.Underlying().(*types.Basic); ok && b.Kind() == types.UntypedNil {
+			pt = types.NewPointer(types.Typ[types.Byte]) // unsafe.String(nil, 0)
 		}
 		p := g.stashValue(g.expr(e.Args[0]), pt)
 		n := g.wordTemp()
