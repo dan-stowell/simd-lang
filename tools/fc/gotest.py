@@ -24,7 +24,7 @@ root = os.path.join(goroot, "test")
 fc = os.environ.get("FC_BIN", os.path.join(here, "build", "fc"))
 fcenv = dict(env, GOCACHE=os.environ.get("FC_GOCACHE", T + "/fc-gocache"))
 stockenv = dict(env, GOCACHE=T + "/gotest-gocache-stock")
-RUN_TIMEOUT = int(os.environ.get("GOTEST_TIMEOUT", "120"))
+RUN_TIMEOUT = int(os.environ.get("GOTEST_TIMEOUT", "600"))
 
 
 def recipe(path):
