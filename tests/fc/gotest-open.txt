@@ -36,6 +36,4 @@ fixedbugs/issue8606b.go
 fixedbugs/walk_bounded_overshift_empty_bound.go
 typeparam/chans.go
 typeparam/dottype.go
-typeparam/issue48137.go
-typeparam/issue50193.go
 typeparam/nested.go

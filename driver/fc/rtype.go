@@ -477,6 +477,7 @@ func (c *compiler) namedSymName(u *types.Named, mode fmtMode) string {
 // vargen is the number the stock compiler gives a type declared inside a function: a count, over the
 // package's files in order, of the type declarations inside function bodies (noder: declCollector).
 func (c *compiler) vargen(o *types.TypeName) int {
+	c.rtInit() // (asked before any descriptor is written: an instance's name, F[T] with T declared in main)
 	c.rtVargenMu.Lock()
 	defer c.rtVargenMu.Unlock()
 	m := c.rtVargen[o.Pkg()]
