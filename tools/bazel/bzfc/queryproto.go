@@ -73,8 +73,13 @@ func protoInfo(r *qRule, c *qcfg) *protoInfoT {
 	}
 	qKinds[r.Class]++
 	repo, pkg, name := splitLabel(r.Name)
-	pbRepo, _, _ := splitLabel(canon(r.Attrs["$protocopt"].Str)) // (protobuf's canonical repository name)
-	pb := "@@" + pbRepo
+	pflag := func(attr string) string { // (protobuf's flags, as the rule names them)
+		if a := r.Attrs[attr]; a != nil && a.Str != "" {
+			return c.flag(a.Str)
+		}
+		qfail("%s: no attribute %s", r.Name, attr)
+		return ""
+	}
 	var deps, optDeps []*protoInfoT
 	for _, d := range c.resolve(r, "deps").List {
 		deps = append(deps, protoInfo(protoRule(d, c, r.Name), c))
@@ -220,17 +225,17 @@ func protoInfo(r *qRule, c *qcfg) *protoInfoT {
 		}
 	}
 	argv = append(argv, "-I.")
-	if o := c.flag(pb + "//bazel/flags/cc:protocopt"); o != "" {
+	if o := pflag("$protocopt"); o != "" {
 		argv = append(argv, strings.Split(o, ",")...)
 	}
 	for _, s := range srcs {
 		argv = append(argv, s.path)
 	}
-	if c.flag(pb+"//bazel/flags:experimental_proto_descriptor_sets_include_source_info") == "true" {
+	if pflag("$experimental_proto_descriptor_sets_include_source_info") == "true" {
 		argv = append(argv, "--include_source_info")
 	}
 	argv = append(argv, "--retain_options")
-	strictDeps := c.flag(pb + "//bazel/flags:strict_proto_deps")
+	strictDeps := pflag("$strict_proto_deps")
 	if strictDeps == "error" {
 		strictDeps, _ = c.native("strict_proto_deps")
 	}
@@ -263,7 +268,7 @@ func protoInfo(r *qRule, c *qcfg) *protoInfoT {
 		argv = append(argv, "--option_dependencies", strings.Join(opt.list(), ":"))
 		argv = append(argv, fmt.Sprintf("--option_dependencies_violation_msg=%%s is option imported, but %s doesn't have direct `option_deps` on a proto_library that 'srcs' it.", lstr))
 	}
-	if si := c.flag(pb + "//bazel/flags:strict_public_imports"); si != "off" && strings.ToUpper(si) != "OFF" {
+	if si := pflag("$strict_public_imports"); si != "off" && strings.ToUpper(si) != "OFF" {
 		qfail("%s: strict_public_imports=%s is not handled", r.Name, si)
 	}
 	ins := append(p.transSources.list(), protoc)

@@ -29,12 +29,8 @@ pk() { awk '{print $1, $2}' "$1" | sort -u | wc -l; }
 echo "plandiff $name: aquery $(pk "$dir/aq.plan") (binary, package) pairs, $(wc -l < "$dir/aq.plan") lines; query $(pk "$dir/qy.plan"), $(wc -l < "$dir/qy.plan")"
 if diff "$dir/aq.plan" "$dir/qy.plan" > "$dir/plan.diff"; then echo "plandiff $name: plans equal"; else
   rc=1; echo "plandiff $name: plans differ ($(grep -c '^[<>]' "$dir/plan.diff") lines, $dir/plan.diff):"; head -40 "$dir/plan.diff"; fi
-# generated files: the paths both runs have must have the same contents; paths only one run has are listed
-join -j1 <(sed 's/ /\t/' "$dir/aq.files" | sort -t$'\t' -k1,1) <(sed 's/ /\t/' "$dir/qy.files" | sort -t$'\t' -k1,1) -t$'\t' > "$dir/both.files"
-nd=$(awk -F'\t' '$2 != $3 && $2 !~ /^ELF:/' "$dir/both.files" | tee "$dir/differ.files" | wc -l)
-ne=$(awk -F'\t' '$2 ~ /^ELF:/' "$dir/both.files" | wc -l); nde=$(awk -F'\t' '$2 != $3 && $2 ~ /^ELF:/' "$dir/both.files" | wc -l)
-only_aq=$(comm -23 <(cut -d' ' -f1 "$dir/aq.files" | sort -u) <(cut -d' ' -f1 "$dir/qy.files" | sort -u) | tee "$dir/only-aq.files" | wc -l)
-only_q=$(comm -13 <(cut -d' ' -f1 "$dir/aq.files" | sort -u) <(cut -d' ' -f1 "$dir/qy.files" | sort -u) | tee "$dir/only-q.files" | wc -l)
-echo "plandiff $name: files under bazel-out: $(($(wc -l < "$dir/both.files") - ne)) in both, $nd differ ($dir/differ.files); only aquery's $only_aq, only query's $only_q; tools built by fc: $ne in both, $nde with other bytes (they hold configuration directory names)"
-[ "$nd" = 0 ] || { rc=1; head -20 "$dir/differ.files"; }
+# generated files: a path both runs have must have the same contents (or the same after configuration directory names,
+# counted apart); paths only one run has are listed. elf: tools fc built (they hold configuration directory names).
+python3 "$here/tools/bazel/plancanon.py" --cmp "$dir/aq.files" "$dir/qy.files" > "$dir/files.cmp" || rc=1
+sed "s/^/plandiff $name: /" "$dir/files.cmp" | head -60
 exit $rc

@@ -152,6 +152,9 @@ func readQuery() {
 // newAction: a synthesized action with its outputs indexed and its inputs as one depset.
 func newAction(mnemonic, label string, c *qcfg, outs, ins []string) *action {
 	a := &action{Mnemonic: mnemonic, label: trimRepo(label), tool: c.exec, outs: outs}
+	if os.Getenv("BZFC_QDEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "action %s %s %v\n", mnemonic, label, outs)
+	}
 	for _, o := range outs {
 		if p := byOutput[o]; p != nil {
 			qfail("%s and %s both write %s", p.label, a.label, o)
@@ -226,6 +229,8 @@ func qfiles(l string, c *qcfg, from string) []string {
 		out = []string{protoInfo(r, c).descSet}
 	case "go_binary":
 		out = []string{goBinary(r, c).outs[0]}
+	case "_arch_genrule":
+		out = archGenrule(r, c)
 	default:
 		ensureRule(l, c)
 		for _, o := range r.Outputs {
@@ -289,6 +294,20 @@ func ensureRule(l string, c *qcfg) {
 		goYacc(r, c)
 	case "generate_tables":
 		generateTables(r, c)
+	case "_go_imports":
+		goImports(r, c)
+	case "go_stateify":
+		goStateify(r, c)
+	case "go_marshal":
+		goMarshal(r, c)
+	case "go_template_instance":
+		goTemplateInstance(r, c)
+	case "nogo_facts_render":
+		nogoFactsRender(r, c)
+	case "bpf_program":
+		bpfProgram(r, c)
+	case "_run_generator":
+		runGenerator(r, c)
 	default:
 		qfail("rule kind %s (%s) is not handled by the query front end", r.Class, l)
 	}

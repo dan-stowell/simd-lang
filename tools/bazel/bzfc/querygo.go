@@ -95,9 +95,13 @@ func goEnv(c *qcfg) [][2]string {
 	if pure(c) {
 		cgo = "0"
 	}
-	return [][2]string{{"GOARCH", "amd64"}, {"GOOS", "linux"}, {"GOEXPERIMENT", ""},
+	env := [][2]string{{"GOARCH", "amd64"}, {"GOOS", "linux"}, {"GOEXPERIMENT", ""},
 		{"GOROOT", path.Join(c.bin(), "external", rulesGo, "stdlib_")}, {"GOROOT_FINAL", "GOROOT"}, {"CGO_ENABLED", cgo},
-		{"GOPATH", ""}, {"GOTOOLCHAIN", "local"}, {"GODEBUG", "winsymlink=0"}, {"ZERO_AR_DATE", "1"}, {"PATH", "/usr/bin:/bin"}}
+		{"GOPATH", ""}, {"GOTOOLCHAIN", "local"}, {"GODEBUG", "winsymlink=0"}}
+	if cgo == "1" {
+		env = append(env, [2]string{"ZERO_AR_DATE", "1"}, [2]string{"PATH", "/usr/bin:/bin"}) // (the C toolchain's)
+	}
+	return env
 }
 
 func isGoRule(class string) bool {

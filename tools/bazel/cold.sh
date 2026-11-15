@@ -47,7 +47,7 @@ if [ -n "${BZ_QUERY:-}" ]; then
   qtc=${BZ_QTOOLCHAINS-@@protobuf++protoc+prebuilt_protoc.linux_x86_64//:prebuilt_protoc_toolchain}
   qexpr="deps($target)"; [ -z "$qtc" ] || qexpr="$qexpr + deps($qtc)"
   qflags="--repository_cache=$T/bazel-repocache --disk_cache= --remote_cache= --remote_executor= --bes_backend= --bes_results_url= --noshow_progress"
-  bzcmd="query $qflags --consistent_labels --output=streamed_proto '$qexpr' > $work/q.pb"
+  bzcmd="query $qflags --consistent_labels --noproto:flatten_selects --output=streamed_proto '$qexpr' > $work/q.pb"
   fe="-query $work/q.pb"
 fi
 cd "$T/$dir" || exit 2

@@ -38,6 +38,7 @@ var (
 	rcFlags            = map[string]string{} // .bazelrc: Starlark flags (canonical label -> value)
 	rcNative           = map[string]string{} // .bazelrc: native options
 	rcDefines          = map[string]string{}
+	rcUnmapped         = map[string]string{} // .bazelrc flags of repositories not mapped: //pkg:name -> as written
 	platformCons       = map[string]bool{"@@platforms//os:linux": true, "@@platforms//cpu:x86_64": true}
 )
 
@@ -113,6 +114,9 @@ func (c *qcfg) flagValue(l string) (string, error) {
 	}
 	if v, ok := c.set[l]; ok {
 		return v, nil
+	}
+	if _, rest, _ := strings.Cut(l, "//"); rcUnmapped["//"+rest] != "" {
+		return "", fmt.Errorf("build setting %s: the .bazelrc sets %s, whose repository is not known", l, rcUnmapped["//"+rest])
 	}
 	if v, ok := rcFlags[l]; ok && !c.exec {
 		return v, nil
@@ -244,6 +248,14 @@ var platformDefaults map[string]bool
 // platformHas: the target platform (= the exec platform) has the constraint value: linux/x86_64 explicitly, else the
 // default value of its constraint_setting.
 func platformHas(cv string) bool {
+	cv = canon(cv)
+	for i := 0; i < 20; i++ { // (aliases of constraint values: rules_go's //go/toolchain:linux)
+		r := qRules[cv]
+		if r == nil || r.Class != "alias" {
+			break
+		}
+		cv = canon(cfgTarget.resolve(r, "actual").Str)
+	}
 	if platformCons[cv] {
 		return true
 	}
@@ -393,7 +405,9 @@ func readBazelrc(ws string) {
 							v = "false"
 						}
 					}
-					rcFlags[canonRepo(k, repo)] = v
+					if cl := canonRepo(k, repo); cl != "" {
+						rcFlags[cl] = v
+					}
 				case k == "define":
 					dk, dv, _ := strings.Cut(v, "=")
 					rcDefines[dk] = dv
@@ -456,6 +470,8 @@ func canonRepo(l string, m map[string]string) string {
 	if c, ok := m[repo]; ok {
 		return "@@" + c + "//" + rest
 	}
-	qfail(".bazelrc names %s: repository @%s is not a bazel_dep of the main module", l, repo)
+	// (not a bazel_dep: an extension's repository; kept apart, and an error only if a flag of the same package and
+	// name is asked for: flagValue)
+	rcUnmapped["//"+rest] = l
 	return ""
 }
