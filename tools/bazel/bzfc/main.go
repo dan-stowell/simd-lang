@@ -162,16 +162,25 @@ func main() {
 	log.SetFlags(0)
 	log.SetPrefix("bzfc: ")
 	flag.Parse()
+	if *flagQuery != "" && *flagQDump != "" {
+		loadQuery()
+		qdump()
+		return
+	}
 	go stdList() // in parallel with reading the DAG
-	f, err := os.Open(*flagAq)
-	if err != nil {
-		log.Fatal(err)
+	if *flagQuery != "" {
+		readQuery() // (query.go: the actions derived from the rules)
+	} else {
+		f, err := os.Open(*flagAq)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := readAquery(f); err != nil {
+			log.Fatal(err)
+		}
+		f.Close()
+		index()
 	}
-	if err := readAquery(f); err != nil {
-		log.Fatal(err)
-	}
-	f.Close()
-	index()
 	// (what only reading the DAG needed: about half of the executor's 6 GB heap)
 	aq.PathFragments, aq.Artifacts, aq.DepSets = nil, nil, nil
 	runtime.GC()
@@ -644,6 +653,10 @@ func fcBuild(link *action, bin string, xdefs []string, what string) error {
 	b, stock, err := writePlan(pkgs, plan, filepath.Join(*flagWork, "farm"))
 	if err != nil {
 		return err
+	}
+	os.WriteFile(filepath.Join(dir, "xdefs.txt"), []byte(strings.Join(link.args["-X"], "\n")), 0o666) // (plandiff.sh)
+	if *flagPlanOnly && what == "main" {
+		return nil
 	}
 	key := sha256.Sum256(append(b, []byte(strings.Join(xdefs, "\n"))...))
 	builtMu.Lock()
