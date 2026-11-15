@@ -801,6 +801,37 @@ func (g *gen) appendCall(e *ast.CallExpr) loc {
 		g.move(res, s, st)
 		return res
 	}
+	// The operands are evaluated before anything is stored: append(x, 1, f()) with f writing x[0], and
+	// append(x[:0], x[1], x[0]), must not see the elements this append writes (the runtime's
+	// TestSideEffectOrder). One new element is stored as it is evaluated; so are several when each is a
+	// constant or a variable of the frame nothing points to; otherwise all are kept in temporaries first.
+	var vals []loc
+	if !e.Ellipsis.IsValid() && len(e.Args) > 2 {
+		direct := true
+		for _, a := range e.Args[1:] {
+			if tv := tvOf(a); tv.Value != nil {
+				continue
+			}
+			ok := false
+			if id, isID := ast.Unparen(a).(*ast.Ident); isID {
+				if v, isVar := useOf(id).(*types.Var); isVar {
+					if l, has := g.vars[v]; has && l.kind == lFrame && !g.addrVars[v] {
+						ok = true
+					}
+				}
+			}
+			if !ok {
+				direct = false
+				break
+			}
+		}
+		if !direct {
+			vals = make([]loc, len(e.Args)-1)
+			for i, a := range e.Args[1:] {
+				vals[i] = g.keep(g.exprAs(a, et), et)
+			}
+		}
+	}
 	// the number of new elements, and for the spread form where they come from
 	var src loc
 	n := g.wordTemp()
@@ -877,7 +908,12 @@ func (g *gen) appendCall(e *ast.CallExpr) loc {
 	g.scaleAdd(es)
 	g.a.store(mb(BP, base.off), AX, 8)
 	for i, a := range e.Args[1:] {
-		g.exprTo(a, loc{kind: lInd, slot: base.off, off: int64(i) * es}, et)
+		dst := loc{kind: lInd, slot: base.off, off: int64(i) * es}
+		if vals != nil {
+			g.move(dst, vals[i], et)
+		} else {
+			g.exprTo(a, dst, et)
+		}
 	}
 	return res
 }
