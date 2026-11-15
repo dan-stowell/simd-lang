@@ -8,11 +8,13 @@ import (
 	"cmd/internal/objabi"
 	"container/heap"
 	"encoding/binary"
+	"fmt"
 	"internal/abi"
 	"os"
 	"sort"
 	"strings"
 	"sync/atomic"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -399,8 +401,17 @@ func deadcode() {
 	reflectSeen := *flagNoDCE
 	levels, rounds := 0, 0
 	const grain = 64
+	deadStat := os.Getenv("FCLINK_DEADSTAT") != ""
+	tPrev := time.Now()
+	stat := func(what string, n int) {
+		if deadStat {
+			fmt.Fprintf(os.Stderr, "deadcode round %d %s: %d items, %.1f ms\n", rounds, what, n, float64(time.Since(tPrev).Microseconds())/1000)
+			tPrev = time.Now()
+		}
+	}
 	for {
 		rounds++
+		nflood, small := 0, 0
 		for {
 			frontier = frontier[:0]
 			for i := range ws {
@@ -411,12 +422,17 @@ func deadcode() {
 				break
 			}
 			levels++
+			nflood += len(frontier)
+			if len(frontier) < 8*grain {
+				small++
+			}
 			par((len(frontier)+grain-1)/grain, func(w, i int) {
 				for _, c := range frontier[i*grain : min((i+1)*grain, len(frontier))] {
 					ws[w].process(c)
 				}
 			})
 		}
+		stat(fmt.Sprintf("flood (%d levels so far, %d under %d items this round)", levels, small, 8*grain), nflood)
 		for i := range ws {
 			w := &ws[i]
 			for _, m := range w.ifaceM {
@@ -431,6 +447,7 @@ func deadcode() {
 		}
 		// methods of live types that something can now call: an interface with that method is live, or
 		// reflection may call any exported method
+		stat("gather", len(markable))
 		keep := make([]bool, len(markable))
 		const mgrain = 1024
 		par((len(markable)+mgrain-1)/mgrain, func(w, i int) {
@@ -457,6 +474,7 @@ func deadcode() {
 			}
 		}
 		markable = rem
+		stat("methods", len(markable))
 		more := false
 		for i := range ws {
 			more = more || len(ws[i].next) != 0
