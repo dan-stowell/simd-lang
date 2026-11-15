@@ -25,13 +25,13 @@ import (
 )
 
 type qcfg struct {
-	dir  string // bazel-out/<dir>/bin
-	exec bool
-	mode string            // compilation_mode
-	set  map[string]string // Starlark settings set by go_transition (canonical label -> value)
-	base *qcfg             // the configuration before the last go_transition (rules_go's non_go_transition)
-	kids map[string]*qcfg  // go_transition results, by their settings
-	platform map[string]bool // its target platform's constraint values (nil: the host's; platformHas)
+	dir      string // bazel-out/<dir>/bin
+	exec     bool
+	mode     string            // compilation_mode
+	set      map[string]string // Starlark settings set by go_transition (canonical label -> value)
+	base     *qcfg             // the configuration before the last go_transition (rules_go's non_go_transition)
+	kids     map[string]*qcfg  // go_transition results, by their settings
+	platform map[string]bool   // its target platform's constraint values (nil: the host's; platformHas)
 }
 
 var (
@@ -292,17 +292,64 @@ func (c *qcfg) platformHas(cv string) bool {
 
 var hostConstraints = []string{"@@platforms//os:linux", "@@platforms//cpu:x86_64"}
 
-// withPlatform: c with --platforms=l (a with_cfg or similar transition); a platform with the host's constraints
-// only is c itself.
+// withPlatform: c with --platforms=l (a with_cfg or similar transition): the platform's constraint values and its
+// flags (Starlark ones), its parents' under them; a platform that changes nothing is c itself.
 func (c *qcfg) withPlatform(l, from string) *qcfg {
 	r := follow(l, c, from)
 	if r.Class != "platform" {
 		qfail("%s: platform %s is a %s", from, r.Name, r.Class)
 	}
-	if len(c.resolve(r, "parents").List) > 0 || len(c.resolve(r, "flags").List) > 0 {
-		qfail("%s: platform %s has parents or flags: not handled", from, r.Name)
+	// constraints and flags, a parent's first (a child's value for the same constraint setting wins)
+	setOf := func(cv string) string {
+		if x := qRules[cv]; x != nil && x.Class == "constraint_value" {
+			return canon(x.Attrs["constraint_setting"].Str)
+		}
+		return cv
 	}
-	cons := c.resolve(r, "constraint_values").List
+	bySetting := map[string]string{}
+	set := map[string]string{}
+	for k, v := range c.set {
+		set[k] = v
+	}
+	var walk func(r *qRule, depth int)
+	walk = func(r *qRule, depth int) {
+		if depth > 10 {
+			qfail("%s: platform parents too deep", r.Name)
+		}
+		for _, p := range c.resolve(r, "parents").List {
+			pr := follow(p, c, r.Name)
+			if pr.Class != "platform" {
+				qfail("%s: parent %s is a %s", r.Name, pr.Name, pr.Class)
+			}
+			walk(pr, depth+1)
+		}
+		for _, cv := range c.resolve(r, "constraint_values").List {
+			cv = followConstraint(cv)
+			bySetting[setOf(cv)] = cv
+		}
+		repo, _, _ := splitLabel(r.Name)
+		for _, f := range c.resolve(r, "flags").List {
+			k, v, ok := strings.Cut(strings.TrimLeft(f, "-"), "=")
+			if !ok || !(strings.HasPrefix(k, "@") || strings.HasPrefix(k, "//")) {
+				qfail("%s: platform flag %q is not handled (Starlark flags with a value only)", r.Name, f)
+			}
+			var cl string
+			if repo == "" {
+				cl = canonRepo(k, moduleRepoMapping(*flagWS))
+			} else if strings.HasPrefix(k, "@@") {
+				cl = k
+			}
+			if cl == "" {
+				qfail("%s: platform flag %q: its repository is not known", r.Name, f)
+			}
+			set[canon(cl)] = v
+		}
+	}
+	walk(r, 0)
+	var cons []string
+	for _, cv := range bySetting {
+		cons = append(cons, cv)
+	}
 	p := platformOf(cons)
 	if !p["@@platforms//os:linux"] || !p["@@platforms//cpu:x86_64"] {
 		qfail("%s: platform %s is not linux/x86_64", from, r.Name)
@@ -310,9 +357,14 @@ func (c *qcfg) withPlatform(l, from string) *qcfg {
 	if c.platform == nil {
 		c.platform = platformOf(hostConstraints)
 	}
-	same := len(p) == len(c.platform)
+	same := len(p) == len(c.platform) && len(set) == len(c.set)
 	for k := range p {
 		if !c.platform[k] {
+			same = false
+		}
+	}
+	for k, v := range set {
+		if c.set[k] != v {
 			same = false
 		}
 	}
@@ -326,7 +378,7 @@ func (c *qcfg) withPlatform(l, from string) *qcfg {
 	if k := c.kids[id]; k != nil {
 		return k
 	}
-	n := &qcfg{dir: fmt.Sprintf("%s-ST-q%d", c.dir, len(c.kids)+1), exec: c.exec, mode: c.mode, set: c.set, base: c.base, platform: p}
+	n := &qcfg{dir: fmt.Sprintf("%s-ST-q%d", c.dir, len(c.kids)+1), exec: c.exec, mode: c.mode, set: set, base: c.base, platform: p}
 	c.kids[id] = n
 	return n
 }
@@ -515,26 +567,46 @@ func readBazelrc(ws string) {
 }
 
 // moduleRepoMapping: the main module's apparent repository names (bazel_dep repo_name or name) -> canonical names.
+var moduleMapping map[string]string
+
 func moduleRepoMapping(ws string) map[string]string {
-	m := map[string]string{}
-	b, err := os.ReadFile(filepath.Join(ws, "MODULE.bazel"))
-	if err != nil {
-		return m
+	if moduleMapping != nil {
+		return moduleMapping
 	}
-	re := regexp.MustCompile(`(?s)bazel_dep\((.*?)\)`)
+	m := map[string]string{}
+	re := regexp.MustCompile(`(?s)\bbazel_dep\((.*?)\)`)
+	modRe := regexp.MustCompile(`(?s)^\s*module\((.*?)\)`)
+	incRe := regexp.MustCompile(`(?m)^\s*include\("//([^:"]*):([^"]+)"\)`)
 	nameRe := regexp.MustCompile(`\bname\s*=\s*"([^"]+)"`)
 	repoRe := regexp.MustCompile(`\brepo_name\s*=\s*"([^"]+)"`)
-	for _, x := range re.FindAllStringSubmatch(string(b), -1) {
-		n := nameRe.FindStringSubmatch(x[1])
-		if n == nil {
-			continue
+	var read func(path string)
+	read = func(path string) { // (MODULE.bazel and the files it include()s)
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return
 		}
-		app := n[1]
-		if r := repoRe.FindStringSubmatch(x[1]); r != nil {
-			app = r[1]
+		if x := modRe.FindStringSubmatch(string(b)); x != nil {
+			if r := repoRe.FindStringSubmatch(x[1]); r != nil {
+				m[r[1]] = "" // (the main module's own repo_name)
+			}
 		}
-		m[app] = n[1] + "+"
+		for _, x := range re.FindAllStringSubmatch(string(b), -1) {
+			n := nameRe.FindStringSubmatch(x[1])
+			if n == nil {
+				continue
+			}
+			app := n[1]
+			if r := repoRe.FindStringSubmatch(x[1]); r != nil {
+				app = r[1]
+			}
+			m[app] = n[1] + "+"
+		}
+		for _, x := range incRe.FindAllStringSubmatch(string(b), -1) {
+			read(filepath.Join(ws, x[1], x[2]))
+		}
 	}
+	read(filepath.Join(ws, "MODULE.bazel"))
+	moduleMapping = m
 	return m
 }
 

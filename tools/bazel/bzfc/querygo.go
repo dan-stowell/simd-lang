@@ -217,7 +217,7 @@ func newGoInfo(r *qRule, c *qcfg, isMain, importable bool, generated []string, m
 	for _, kv := range c.resolve(r, "x_defs").Dict {
 		k, v := kv[0], kv[1]
 		if strings.Contains(v, "$") {
-			qfail("%s: x_defs %s=%q: location and make variable expansion is not handled", r.Name, k, v)
+			v = expandXdef(r, c, v)
 		}
 		if !strings.Contains(k, ".") {
 			k = im + "." + k

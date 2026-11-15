@@ -122,21 +122,17 @@ func genrule(r *qRule, c *qcfg) {
 	if len(c.resolve(r, "toolchains").List) > 0 {
 		qfail("%s: genrule toolchains (their make variables) are not handled", r.Name)
 	}
-	type loc struct {
-		label string
-		files []string
-	}
-	var locs []loc
+	var locs []qloc
 	var srcs, outs, ins []string
 	for _, s := range c.resolve(r, "srcs").List {
 		f := qfiles(s, c, r.Name)
 		srcs = append(srcs, f...)
-		locs = append(locs, loc{canon(s), f})
+		locs = append(locs, qloc{canon(s), f})
 	}
 	for _, o := range c.resolve(r, "outs").List {
 		f := outPath(c, canon(o), labelName(canon(o)))
 		outs = append(outs, f)
-		locs = append(locs, loc{canon(o), []string{f}})
+		locs = append(locs, qloc{canon(o), []string{f}})
 	}
 	for _, attr := range []string{"tools", "exec_tools"} {
 		for _, t := range c.resolve(r, attr).List {
@@ -147,39 +143,10 @@ func genrule(r *qRule, c *qcfg) {
 				f = qfiles(t, cfgExec, r.Name)
 			}
 			ins = append(ins, f...)
-			locs = append(locs, loc{canon(t), f})
+			locs = append(locs, qloc{canon(t), f})
 		}
 	}
 	repo, pkg, _ := splitLabel(r.Name)
-	find := func(ref string) []string {
-		ref = strings.TrimSpace(ref)
-		var want string
-		switch {
-		case strings.HasPrefix(ref, "@@"), strings.HasPrefix(ref, "//"):
-			want = canon(ref)
-			if strings.HasPrefix(ref, "//") {
-				want = canon("@@" + repo + ref)
-			}
-		case strings.HasPrefix(ref, "@"): // an apparent repository name: by package and name only
-			_, rest, _ := strings.Cut(ref, "//")
-			want = "*//" + rest
-			if !strings.Contains(rest, ":") {
-				want += ":" + path.Base(rest)
-			}
-		default:
-			want = canon("@@" + repo + "//" + pkg + ":" + strings.TrimPrefix(ref, ":"))
-		}
-		var hit []loc
-		for _, l := range locs {
-			if l.label == want || strings.HasPrefix(want, "*//") && strings.HasSuffix(l.label, want[1:]) {
-				hit = append(hit, l)
-			}
-		}
-		if len(hit) == 0 {
-			qfail("%s: $(location %s): not a label of srcs, outs or tools", r.Name, ref)
-		}
-		return hit[0].files
-	}
 	one := func(what string, xs []string) string {
 		if len(xs) != 1 {
 			qfail("%s: %s is %d files, one expected", r.Name, what, len(xs))
@@ -214,10 +181,12 @@ func genrule(r *qRule, c *qcfg) {
 			i += j
 			fn, arg, hasArg := strings.Cut(v, " ")
 			switch {
-			case hasArg && (fn == "location" || fn == "execpath" || fn == "rootpath" && repo == ""):
-				b.WriteString(one("$("+v+")", find(arg)))
-			case hasArg && (fn == "locations" || fn == "execpaths" || fn == "rootpaths" && repo == ""):
-				b.WriteString(strings.Join(find(arg), " "))
+			case hasArg:
+				x, ok := locFunc(r, locs, fn, arg)
+				if !ok {
+					qfail("%s: genrule function $(%s) is not handled", r.Name, v)
+				}
+				b.WriteString(x)
 			case v == "SRCS":
 				b.WriteString(strings.Join(srcs, " "))
 			case v == "OUTS":
@@ -246,4 +215,124 @@ func genrule(r *qRule, c *qcfg) {
 	full := "source external/bazel_tools/tools/genrule/genrule-setup.sh; " + b.String()
 	a := newAction("Genrule", r.Name, c, outs, append(srcs, ins...))
 	a.setArgv([]string{"/bin/bash", "-c", full}, [][2]string{{"PATH", "/bin:/usr/bin:/usr/local/bin"}})
+}
+
+// qloc: a label of a rule's attributes and its files, for $(location ...) and its family.
+type qloc struct {
+	label string
+	files []string
+}
+
+// findLoc: the files of a label written in a rule's string attribute (relative to the rule's package; an apparent
+// repository name is matched by package and name only), among locs.
+func findLoc(r *qRule, locs []qloc, ref string) []string {
+	repo, pkg, _ := splitLabel(r.Name)
+	ref = strings.TrimSpace(ref)
+	var want string
+	switch {
+	case strings.HasPrefix(ref, "@@"):
+		want = canon(ref)
+	case strings.HasPrefix(ref, "//"):
+		want = canon("@@" + repo + ref)
+	case strings.HasPrefix(ref, "@"):
+		_, rest, _ := strings.Cut(ref, "//")
+		want = "*//" + rest
+		if !strings.Contains(rest, ":") {
+			want += ":" + path.Base(rest)
+		}
+	default:
+		want = canon("@@" + repo + "//" + pkg + ":" + strings.TrimPrefix(ref, ":"))
+	}
+	for _, l := range locs {
+		if l.label == want || strings.HasPrefix(want, "*//") && strings.HasSuffix(l.label, want[1:]) {
+			return l.files
+		}
+	}
+	qfail("%s: $(location %s): not a label of the rule's attributes", r.Name, ref)
+	return nil
+}
+
+// locFunc: $(location x) and its family (execpath, rootpath, rlocationpath, and their plurals).
+func locFunc(r *qRule, locs []qloc, fn, arg string) (string, bool) {
+	var m func(string) string
+	plural := strings.HasSuffix(fn, "s")
+	switch strings.TrimSuffix(fn, "s") {
+	case "location", "execpath":
+		m = func(f string) string { return f }
+	case "rootpath":
+		m = rootPath
+	case "rlocationpath":
+		m = rlocationPath
+	default:
+		return "", false
+	}
+	fs := findLoc(r, locs, arg)
+	if !plural && len(fs) != 1 {
+		qfail("%s: $(%s %s) is %d files, one expected", r.Name, fn, arg, len(fs))
+	}
+	var out []string
+	for _, f := range fs {
+		out = append(out, m(f))
+	}
+	return strings.Join(out, " "), true
+}
+
+// rootPath: File.short_path of an exec path.
+func rootPath(f string) string {
+	if strings.HasPrefix(f, "bazel-out/") {
+		if parts := strings.SplitN(f, "/", 4); len(parts) == 4 {
+			f = parts[3]
+		}
+	}
+	if strings.HasPrefix(f, "external/") {
+		return "../" + strings.TrimPrefix(f, "external/")
+	}
+	return f
+}
+
+// rlocationPath: the runfiles path of an exec path (_main/ for the main repository).
+func rlocationPath(f string) string {
+	p := rootPath(f)
+	if strings.HasPrefix(p, "../") {
+		return p[3:]
+	}
+	return "_main/" + p
+}
+
+// expandXdef: an x_defs value as new_go_info expands it: ctx.expand_location over srcs and data, then make
+// variables ($$ only).
+func expandXdef(r *qRule, c *qcfg, v string) string {
+	var locs []qloc
+	for _, attr := range []string{"srcs", "data"} {
+		for _, s := range c.resolve(r, attr).List {
+			locs = append(locs, qloc{canon(s), qfiles(s, c.base, r.Name)})
+		}
+	}
+	var b strings.Builder
+	for i := 0; i < len(v); i++ {
+		if v[i] != '$' || i+1 == len(v) {
+			b.WriteByte(v[i])
+			continue
+		}
+		switch v[i+1] {
+		case '$':
+			b.WriteByte('$')
+			i++
+		case '(':
+			j := strings.IndexByte(v[i:], ')')
+			fn, arg, ok := strings.Cut(v[i+2:i+j], " ")
+			x := ""
+			if j > 0 && ok {
+				x, ok = locFunc(r, locs, fn, arg)
+			}
+			if !ok {
+				qfail("%s: x_defs value %q: only location functions are handled", r.Name, v)
+			}
+			b.WriteString(x)
+			i += j
+		default:
+			qfail("%s: x_defs value %q: make variables are not handled", r.Name, v)
+		}
+	}
+	return b.String()
 }
