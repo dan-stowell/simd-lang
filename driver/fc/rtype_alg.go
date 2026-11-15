@@ -137,10 +137,7 @@ var algPriority = [...]int8{algMem: -1, algOther: 0, algSpecial: 1, algNoeq: 2, 
 // noalgFlag: is t marked as having no algorithms: a compiler-made type, or a pointer to one (stock: Noalg)?
 func (c *compiler) noalgFlag(t types.Type) bool {
 	t = types.Unalias(t)
-	c.rtSm.Lock()
-	na := c.rtNoalg[t]
-	c.rtSm.Unlock()
-	if na {
+	if _, na := c.pr.noalg.Load(t); na {
 		return true
 	}
 	if p, ok := t.(*types.Pointer); ok {
@@ -413,16 +410,24 @@ func (c *compiler) algClosure(t types.Type, sig string, hash bool) *obj.LSym {
 		}
 	}
 	f := c.lookup("type:"+fn+sig, obj.ABIInternal, "")
-	c.rtSm.Lock()
-	if !c.rtAlg[f.Name] {
-		c.rtAlg[f.Name] = true
-		if hash {
-			c.needHash = append(c.needHash, algReq{sig, f, t})
-		} else {
-			c.needEq = append(c.needEq, algReq{sig, f, t})
+	if sh := c.route(f.Name); sh != nil {
+		sh.addAlg(f.Name, sig, t, hash) // (compiled by the shard of its name: shard.go)
+	} else {
+		c.rtSm.Lock()
+		queued := !c.rtAlg[f.Name]
+		if queued {
+			c.rtAlg[f.Name] = true
+			if hash {
+				c.needHash = append(c.needHash, algReq{sig, f, t})
+			} else {
+				c.needEq = append(c.needEq, algReq{sig, f, t})
+			}
+		}
+		c.rtSm.Unlock()
+		if queued {
+			c.kick()
 		}
 	}
-	c.rtSm.Unlock()
 	s.WriteAddr(c.ctxt, 0, 8, f, 0)
 	s.Set(obj.AttrDuplicateOK, true)
 	c.defData(s, objabi.SRODATA, 8)
@@ -476,7 +481,7 @@ func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 		return g
 	}
 	field := func(name string, t types.Type) *types.Var { return types.NewField(0, nil, name, t, false) }
-	noalg := func(t types.Type) types.Type { c.rtNoalg[t] = true; return t }
+	noalg := func(t types.Type) types.Type { c.pr.noalg.Store(t, true); return t }
 	var fields []*types.Var
 	if buildcfg.Experiment.MapSplitGroup {
 		fields = []*types.Var{
@@ -492,8 +497,8 @@ func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 		}
 	}
 	g := types.NewStruct(fields, nil)
-	c.rtNoalg[g] = true
-	c.rtGroup[g] = m
+	c.pr.noalg.Store(g, true)
+	c.pr.groupOf.Store(g, m)
 	c.rtGroups[key] = g
 	return g
 }

@@ -380,6 +380,11 @@ func buildMode(args []string) {
 			}
 		}
 	}
+	if inProc {
+		// what no one package owns (descriptors, wrappers, instances) has a home that does not depend on
+		// which package asked first: the same sources give the same bytes (shard.go)
+		pr.newShards(sem)
+	}
 	for i, p := range targets {
 		wg.Add(1)
 		go func() {
@@ -526,6 +531,11 @@ func buildMode(args []string) {
 		}()
 	}
 	wg.Wait()
+	var shardUnits []*fclinklib.Unit
+	var shardErrs []string
+	if pr.shards != nil {
+		shardUnits, shardErrs = pr.finishShards()
+	}
 	<-frontDone
 	if demandStat {
 		printDemandStat()
@@ -565,8 +575,11 @@ func buildMode(args []string) {
 				fmt.Fprintf(os.Stderr, "fc: %s: %s\n", r.p.ImportPath, r.errs[0])
 			}
 		}
-		if failed > 0 {
-			log.Fatalf("fc build -link: %d packages not compiled", failed)
+		for _, e := range shardErrs {
+			fmt.Fprintf(os.Stderr, "fc: %s\n", e)
+		}
+		if failed > 0 || len(shardErrs) > 0 {
+			log.Fatalf("fc build -link: %d packages and %d shards not compiled", failed, len(shardErrs))
 		}
 		waitStock()
 		tl := time.Now()
@@ -610,6 +623,10 @@ func buildMode(args []string) {
 						inputs = append(inputs, in...)
 					}
 				}
+			}
+			// then the shards, in shard order (shard.go), and the main package
+			for i, u := range shardUnits {
+				inputs = append(inputs, fclinklib.Input{Pkg: pr.shards[i].path, Unit: u})
 			}
 			args := append(append([]string{"-s", "-o", *link}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
 			fclinklib.Link(args, append(inputs, mainIn...))

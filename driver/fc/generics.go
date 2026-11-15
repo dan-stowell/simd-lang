@@ -312,6 +312,38 @@ func (c *compiler) instantiateM(origin *types.Func, tparams *types.TypeParamList
 		name = pp + "." + origin.Name() + args
 	}
 	sym := c.lookup(name, obj.ABIInternal, "_")
+	mkEnv := func() map[*types.TypeParam]types.Type {
+		env := map[*types.TypeParam]types.Type{}
+		for i, t := range targs {
+			env[tparams.At(i)] = t
+		}
+		for i, t := range margs {
+			env[mtparams.At(i)] = t
+		}
+		return env
+	}
+	if c.pr.shards != nil && !c.mixed {
+		// compiled by the shard of its name (shard.go)
+		sh := c.route(name)
+		if sh == nil {
+			sh = c
+		}
+		c.mu.Lock()
+		seen := c.instances[name]
+		c.instances[name] = true
+		c.mu.Unlock()
+		if !seen {
+			if sh != c {
+				sh.addInstance(origin, mkEnv(), name)
+			} else {
+				c.mu.Lock()
+				c.instQueue = append(c.instQueue, &instance{fn: origin, env: mkEnv(), sym: sym})
+				c.mu.Unlock()
+				c.kick()
+			}
+		}
+		return sym
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if !c.mixed && !c.instances[name] {
