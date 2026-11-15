@@ -1,0 +1,40 @@
+from pathlib import Path
+root=Path('/home/exedev/targets/byval-review')
+cases={}
+def add(name,body,extra='',imports=''):
+ cases[name]='package main\n'+imports+'\nfunc ptr(n int) *int { return &n }\n'+extra+'\nfunc main(){\n'+body+'\n}\n'
+add('01_short_redeclare','p:=ptr(1); f:=func()int{return *p}; p,q:=ptr(2),3; println(f(),q)')
+add('02_select_assign','p:=ptr(1); f:=func()int{return *p}; c:=make(chan *int,1); c<-ptr(2); select{case p=<-c:}; println(f())')
+add('03_select_short_shadow','p:=ptr(1); f:=func()int{return *p}; c:=make(chan *int,1); c<-ptr(2); select{case p,ok:=<-c: println(*p,ok)}; println(f())')
+add('04_type_switch','var fs []func()int; for _,v:=range []any{ptr(1),ptr(2)} { switch p:=v.(type){case *int: fs=append(fs,func()int{return *p})} }; println(fs[0](),fs[1]())')
+add('05_range_func_assign','p:=ptr(0); f:=func()int{return *p}; for p=range seq { }; println(f())','func seq(y func(*int)bool){if y(ptr(1)){y(ptr(2))}}')
+add('06_range_func_shared','p:=ptr(1); f:=func()int{return *p}; for range seq {p=ptr(2)}; println(f())','func seq(y func(int)bool){y(0)}')
+add('07_named_result_defer','println(*run())','func run()(p *int){p=ptr(1); defer func(){println(*p);p=ptr(3)}(); return ptr(2)}')
+add('08_two_levels_assign','p:=ptr(1); f:=func()int{return *p}; outer:=func()func(){return func(){p=ptr(2)}}; outer()(); println(f())')
+for k,typ,initial,other,read in [('map','map[int]int','M{0:1}','M{0:2}','m[0]'),('chan','chan int','make(M,1)','make(M,2)','cap(m)'),('func','func()int','M(func()int{return 1})','M(func()int{return 2})','m()')]:
+ extra=f'type M {typ}\nfunc(m *M) Set(){{*m={other}}}'
+ add('09_method_call_'+k,f'm:={initial}; f:=func()int{{return {read}}}; m.Set(); println(f())',extra)
+ add('10_method_value_'+k,f'm:={initial}; f:=func()int{{return {read}}}; set:=m.Set; set(); println(f())',extra)
+add('11_goto_declaration','var fs []func()int; i:=0; Again: p:=ptr(i); fs=append(fs,func()int{return *p}); i++; if i<3{goto Again}; println(fs[0](),fs[1](),fs[2]())')
+add('12_loop_late_assign','var fs []func()int; for i:=0;i<3;i++{p:=ptr(i); fs=append(fs,func()int{return *p}); p=ptr(i+10)}; println(fs[0](),fs[1](),fs[2]())')
+add('13_generic_pointer','println(run[int](ptr(1),ptr(2)))','func run[T any](p,q *T) T {f:=func()T{return *p};p=q;return f()}')
+add('14_type_param_map','println(run(map[int]int{0:1},map[int]int{0:2}))','func run[T ~map[int]int](p,q T) int {f:=func()int{return p[0]};p=q;return f()}')
+add('15_parameter_redeclare','println(run(ptr(1)))','func run(p *int)int{f:=func()int{return *p};p,x:=ptr(2),0;_ = x;return f()}')
+add('16_receiver_assign','m:=M{0:1}; println(m.Run())','type M map[int]int\nfunc(m M)Run()int{f:=func()int{return m[0]};m=M{0:2};return f()}')
+add('17_labeled_continue','var fs []func()int; Outer: for i:=0;i<3;i++{p:=ptr(i);fs=append(fs,func()int{return *p});for j:=0;j<1;j++{p=ptr(i+10);continue Outer}};println(fs[0](),fs[1](),fs[2]())')
+add('18_labeled_break_range','p:=ptr(1);f:=func()int{return *p}; Outer: for range seq{for range seq{p=ptr(2);break Outer}};println(f())','func seq(y func(int)bool){if y(0){y(1)}}')
+add('19_range_func_literal_local','var fs []func()int;for p:=range seq{fs=append(fs,func()int{return *p});p=ptr(*p+10)};println(fs[0](),fs[1]())','func seq(y func(*int)bool){if y(ptr(1)){y(ptr(2))}}')
+add('20_range_func_read_shared','p:=ptr(1);f:=func()int{return *p};for range seq{println(*p,f())};println(f())','func seq(y func(int)bool){y(0)}')
+add('21_named_result_range_return','println(*run())','func seq(y func(int)bool){y(0)}\nfunc run()(p *int){p=ptr(1);defer func(){println(*p)}();for range seq{return ptr(2)};return}')
+add('22_nested_addr','p:=ptr(1);f:=func()int{return *p};outer:=func()func(){return func(){q:=&p;*q=ptr(2)}};outer()();println(f())')
+add('23_for_init_rebind','var fs []func()int;for p:=ptr(0);*p<3;p=ptr(*p+1){fs=append(fs,func()int{return *p})};println(fs[0](),fs[1](),fs[2]())')
+add('24_range_assign','p:=ptr(0);f:=func()int{return *p};for _,p=range []*int{ptr(1),ptr(2)}{};println(f())')
+add('25_unsafe_pointer','a,b:=1,2;p:=unsafe.Pointer(&a);f:=func()int{return *(*int)(p)};p=unsafe.Pointer(&b);println(f())',imports='import "unsafe"')
+add('26_nested_named_result','run:=func()(p *int){p=ptr(1);defer func(){println(*p)}();return ptr(2)};println(*run())')
+add('27_range_func_deferred_set','p:=ptr(1);f:=func()int{return *p};func(){for range seq{defer func(){p=ptr(2)}()}}();println(f())','func seq(y func(int)bool){y(0)}')
+add('28_generic_typeparam_pointer','println(run(ptr(1),ptr(2)))','func run[T ~*int](p,q T)int{f:=func()int{return *p};p=q;return f()}')
+add('29_select_nested_lhs','p:=ptr(1);f:=func()int{return *p};c:=make(chan *int,1);c<-ptr(2);func(){func(){select{case p=<-c:}}()}();println(f())')
+add('30_goto_type_switch','var fs []func()int;i:=0;Again:switch p:=any(ptr(i)).(type){case *int:fs=append(fs,func()int{return *p})};i++;if i<3{goto Again};println(fs[0](),fs[1](),fs[2]())')
+for name,src in cases.items():
+ d=root/name;d.mkdir(exist_ok=True);(d/'main.go').write_text(src);(d/'go.mod').write_text('module example.com/capturetest\n\ngo 1.25\n')
+print('Created',len(cases),'cases')

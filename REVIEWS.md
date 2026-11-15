@@ -347,3 +347,9 @@ One line per inbox item; raw files in `reviews/done/`.
   receives, nested literals, named results, pointer-receiver calls and method values, range-over-func bodies). Not
   evidence either way. Fired again at 20:50 UTC with a writable scratch directory
   (/home/exedev/targets/byval-review; `20261115T2050-codex-byval2.md`).
+- `20261115T2050-codex-byval2.md` (Codex, the same hunt with a writable scratch directory): **no counterexample in 34
+  cases** (102 builds: stock, fc, fc with FC_CAPREF=1; outputs equal in all three), the cases the prompt named among
+  them (`:=` redeclaring, select receives, type-switch bindings, range-over-func bodies, named results and defers,
+  assignments and `&` two closures down, pointer-receiver calls and method values on named map/chan/func types, goto
+  re-executing a declaration, type parameters). Accepted as evidence, no action; the generator and the table are in
+  reviews/done/byval2/.
