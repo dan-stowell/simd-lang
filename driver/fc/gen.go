@@ -918,7 +918,42 @@ func (g *gen) newHeapVar(v *types.Var) {
 
 // compileFunc generates the code of a function: the parameters' homes, the body (a callback), the return.
 // scan is the syntax to search for variables that must live on the heap.
+// genScratch: the buffers a function's code and tables grow in while its body is generated. finish copies
+// what the function keeps at its final size, so the buffers serve the next function this thread compiles:
+// memory that is in the cache, where a fresh buffer per function (the allocator only moves forward) is not.
+type genScratch struct {
+	b                           []byte
+	relocs                      []obj.Reloc
+	unsafe, lines, stackmap, sp []pcval
+	slots                       []slotInfo
+}
+
+var scratchPool = sync.Pool{New: func() any { return new(genScratch) }}
+
+func (g *gen) takeScratch() *genScratch {
+	if g.a.b != nil || g.a.relocs != nil || g.slots != nil || g.out.unsafe != nil || g.out.lines != nil || g.out.stackmap != nil || g.out.sp != nil {
+		return nil // (something was generated before compileFunc: leave it where it is)
+	}
+	sc := scratchPool.Get().(*genScratch)
+	g.a.b, g.a.relocs, g.slots = sc.b[:0], sc.relocs[:0], sc.slots[:0]
+	g.out.unsafe, g.out.lines, g.out.stackmap, g.out.sp = sc.unsafe[:0], sc.lines[:0], sc.stackmap[:0], sc.sp[:0]
+	return sc
+}
+
+// giveScratch: after finish, with the buffers as the body left them (body, slots) and the tables' as bodyOut.
+func (sc *genScratch) give(a *asm, slots []slotInfo, unsafe, lines, stackmap, sp []pcval) {
+	clear(slots) // (what the function pointed to is not kept alive by the pool)
+	clear(a.relocs)
+	sc.b, sc.relocs, sc.slots = a.b[:0], a.relocs[:0], slots[:0]
+	sc.unsafe, sc.lines, sc.stackmap, sc.sp = unsafe[:0], lines[:0], stackmap[:0], sp[:0]
+	scratchPool.Put(sc)
+}
+
 func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, body func()) {
+	var sc *genScratch
+	if scratchOn {
+		sc = g.takeScratch()
+	}
 	if scan != nil {
 		g.findHeapVars(scan)
 	}
@@ -975,8 +1010,21 @@ func (g *gen) compileFunc(recv *types.Var, pos, end token.Pos, scan ast.Node, bo
 	body()
 	g.pos(end)
 	g.epilogue()
+	if sc == nil {
+		g.finish(pos)
+		return
+	}
+	a, o := &g.a, g.out
+	bu, bl, bs, bsp := o.unsafe, o.lines, o.stackmap, o.sp
 	g.finish(pos)
+	slots := g.slots
+	g.slots = nil
+	sc.give(a, slots, bu, bl, bs, bsp)
+	g.a.b, g.a.relocs = nil, nil
 }
+
+// scratchOn (FC_SCRATCH=0: off): see genScratch.
+var scratchOn = os.Getenv("FC_SCRATCH") != "0"
 
 // epilogue: the deferred calls, the results into their registers, and the return. Every return statement
 // jumps here.
@@ -1063,7 +1111,7 @@ func (g *gen) finish(pos token.Pos) {
 		p.xorps(X15, X15)
 		p.loadG()
 	}
-	var sp []pcval
+	sp := make([]pcval, 0, len(g.out.sp)+5)
 	sp = append(sp, pcval{0, 0})
 	spAt := p.pc()
 	p.push(BP)
@@ -1126,7 +1174,9 @@ func (g *gen) finish(pos token.Pos) {
 	code = append(append(code, p.b...), body.b...)
 	out := g.out
 	// tables: the prologue is one unsafe region at the function's first line
-	var unsafe, stackmap, lines []pcval
+	unsafe := make([]pcval, 0, len(out.unsafe)+3)
+	stackmap := make([]pcval, 0, len(out.stackmap)+3)
+	lines := make([]pcval, 0, len(out.lines)+2)
 	unsafe = append(unsafe, pcval{0, -2}, pcval{plen, -1})
 	stackmap = append(stackmap, pcval{0, -1}, pcval{plen, 1})
 	out.poss = append(out.poss, pos)
@@ -1151,7 +1201,7 @@ func (g *gen) finish(pos token.Pos) {
 	for i := range relocs {
 		relocs[i].Off += int32(plen)
 	}
-	relocs = append(append([]obj.Reloc(nil), p.relocs...), relocs...)
+	relocs = append(append(make([]obj.Reloc, 0, len(p.relocs)+len(relocs)+1), p.relocs...), relocs...)
 	if !g.nosplit {
 		// the stack is too small: store the register arguments where the prologue would, grow, start over
 		var t asm

@@ -199,18 +199,7 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 		}
 		sym, fsig := g.funcRef(fn, identOf(fun))
 		c = callee{sym: sym}
-		in := []types.Type{}
-		if r := fsig.Recv(); r != nil {
-			in = append(in, r.Type())
-		}
-		for i := 0; i < sig.Params().Len(); i++ {
-			in = append(in, sig.Params().At(i).Type())
-		}
-		var out []types.Type
-		for i := 0; i < sig.Results().Len(); i++ {
-			out = append(out, sig.Results().At(i).Type())
-		}
-		ai = g.c.abiOfTypes(in, out)
+		ai = g.abiOfCall(fsig.Recv(), false, sig)
 		if g.env == nil && fsig.Recv() == nil && samePkg(fn.Pkg(), g.c.tpkg) && g.c.bodyless()[fn.Name()] {
 			c.asm = true
 		}
@@ -219,6 +208,13 @@ func (g *gen) prepCall(e *ast.CallExpr, now bool) (ai *abiInfo, args []loc, c ca
 			// its wrapper (as the stock compiler does: the runtime counts on there being no frame between
 			// a function and systemstack)
 			c = callee{sym: g.c.lookup(sym.Name, obj.ABI0, sym.Pkg), abi0: true, asm: true}
+			var in, out []types.Type // (no receiver here)
+			for i := 0; i < sig.Params().Len(); i++ {
+				in = append(in, sig.Params().At(i).Type())
+			}
+			for i := 0; i < sig.Results().Len(); i++ {
+				out = append(out, sig.Results().At(i).Type())
+			}
 			ai = g.c.abi0Of(in, out)
 		}
 	}
@@ -1074,18 +1070,7 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 		}
 		sym, fsig := g.funcRef(fn, id)
 		c = callee{sym: sym}
-		in := []types.Type{}
-		if r := fsig.Recv(); r != nil {
-			in = append(in, r.Type())
-		}
-		for i := 0; i < sig.Params().Len(); i++ {
-			in = append(in, sig.Params().At(i).Type())
-		}
-		var out []types.Type
-		for i := 0; i < sig.Results().Len(); i++ {
-			out = append(out, sig.Results().At(i).Type())
-		}
-		ai = g.c.abiOfTypes(in, out)
+		ai = g.abiOfCall(fsig.Recv(), false, sig)
 	}
 	for once := true; once; once = false {
 		msig := fn.Type().(*types.Signature)
@@ -1106,15 +1091,7 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 				giveUp("interface method %s not found", fn.Name())
 			}
 			c = callee{kind: 2, iface: l, imeth: idx}
-			in := []types.Type{types.Typ[types.UnsafePointer]}
-			for i := 0; i < sig.Params().Len(); i++ {
-				in = append(in, sig.Params().At(i).Type())
-			}
-			var out []types.Type
-			for i := 0; i < sig.Results().Len(); i++ {
-				out = append(out, sig.Results().At(i).Type())
-			}
-			ai = g.c.abiOfTypes(in, out)
+			ai = g.abiOfCall(nil, true, sig)
 			recv = l.plus(8)
 			g.usedIfaceMethod(t, fn)
 			break

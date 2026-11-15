@@ -142,6 +142,52 @@ func (c *compiler) abiOf(sig *types.Signature) *abiInfo {
 	return ai
 }
 
+// abiOfCall: the layout of a call of a function or method with signature sig (the call's, which for a
+// generic callee is the instance's): the receiver first if there is one, an interface method's receiver
+// word if iface. Remembered per (receiver, signature) outside generic code: every call of a function
+// asks with the same two objects.
+type abiCallKey struct {
+	recv  *types.Var
+	iface bool
+	sig   *types.Signature
+}
+
+func (g *gen) abiOfCall(recv *types.Var, iface bool, sig *types.Signature) *abiInfo {
+	l := &g.c.layout
+	key := abiCallKey{recv, iface, sig}
+	if g.env == nil {
+		l.mu.Lock()
+		ai := l.callABIs[key]
+		l.mu.Unlock()
+		if ai != nil {
+			return ai
+		}
+	}
+	in := make([]types.Type, 0, sig.Params().Len()+1)
+	if iface {
+		in = append(in, types.Typ[types.UnsafePointer])
+	} else if recv != nil {
+		in = append(in, recv.Type())
+	}
+	for i := 0; i < sig.Params().Len(); i++ {
+		in = append(in, sig.Params().At(i).Type())
+	}
+	out := make([]types.Type, 0, sig.Results().Len())
+	for i := 0; i < sig.Results().Len(); i++ {
+		out = append(out, sig.Results().At(i).Type())
+	}
+	ai := g.c.abiOfTypes(in, out)
+	if g.env == nil {
+		l.mu.Lock()
+		if l.callABIs == nil {
+			l.callABIs = map[abiCallKey]*abiInfo{}
+		}
+		l.callABIs[key] = ai
+		l.mu.Unlock()
+	}
+	return ai
+}
+
 func (c *compiler) abiOfUncached(sig *types.Signature) *abiInfo {
 	var in, out []types.Type
 	if r := sig.Recv(); r != nil {

@@ -83,14 +83,15 @@ func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
 
 // Layout questions are asked over and over for the same types, and go/types answers each from scratch.
 type layoutCache struct {
-	mu     sync.Mutex
-	size   map[types.Type]int64
-	align  map[types.Type]int64
-	offs   map[*types.Struct][]int64
-	names  map[types.Type]string
-	ptrs   map[types.Type][]bool
-	abis   map[*types.Signature]*abiInfo
-	hasPtr map[types.Type]bool
+	mu       sync.Mutex
+	size     map[types.Type]int64
+	align    map[types.Type]int64
+	offs     map[*types.Struct][]int64
+	names    map[types.Type]string
+	ptrs     map[types.Type][]bool
+	abis     map[*types.Signature]*abiInfo
+	callABIs map[abiCallKey]*abiInfo
+	hasPtr   map[types.Type]bool
 }
 
 // wordLayout: size and alignment of the types whose layout does not depend on anything else (linux/amd64,

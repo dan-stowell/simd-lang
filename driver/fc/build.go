@@ -570,7 +570,7 @@ func buildMode(args []string) {
 		float64(parse)/1e9, float64(check)/1e9, float64(compile)/1e9, float64(parse+check+compile)/1e9, float64(okSrc)/1e6, float64(parse+check+compile)/1e9/(float64(okSrc)/1e6+1e-9))
 	var ru syscall.Rusage
 	syscall.Getrusage(syscall.RUSAGE_SELF, &ru)
-	fmt.Printf("total: %.0f ms wall, %.2f core-s (with the assembler and the linker), peak memory %.1f GB\n", float64(time.Since(t0).Milliseconds()), total, float64(ru.Maxrss)/1e6)
+	fmt.Printf("total: %.0f ms wall, %.2f core-s (with the assembler and the linker), peak memory %.1f GB + %.1f GB mapped by the bump allocator\n", float64(time.Since(t0).Milliseconds()), total, float64(ru.Maxrss)/1e6, float64(sbBumpMapped())/1e9)
 }
 
 // needsInit: does the package have initialization to run (an init function, or a variable whose value is

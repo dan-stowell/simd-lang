@@ -857,6 +857,7 @@ func (c *compiler) methods(t types.Type) []methodSig {
 	if !isDirectIface(t) {
 		irecv = types.NewPointer(t)
 	}
+	var imset *types.MethodSet
 	for _, sel := range sels {
 		fn := sel.Obj().(*types.Func)
 		sig := fn.Type().(*types.Signature)
@@ -867,7 +868,10 @@ func (c *compiler) methods(t types.Type) []methodSig {
 		if irecv == t {
 			isel = sel
 		} else {
-			isel = types.NewMethodSet(irecv).Lookup(fn.Pkg(), fn.Name())
+			if imset == nil {
+				imset = types.NewMethodSet(irecv) // (once per type, not once per method)
+			}
+			isel = imset.Lookup(fn.Pkg(), fn.Name())
 			if isel == nil {
 				// irecv is **T (a pointer to a not-in-heap type is not a pointer to the collector, so
 				// the interface holds a pointer to it): the wrapper loads *T and calls on
