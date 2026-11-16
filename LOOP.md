@@ -111,9 +111,41 @@ a context of about 30k tokens. Also take a fresh context after each milestone.
 
 ## VM safety
 
-- 31 GiB RAM, no swap, and a runaway child OOM-kills this whole session. Cap fuzzers and
-  anything with data-dependent allocation: `prlimit --as=8G`, `timeout`, or
-  `systemd-run --user --scope -p MemoryMax=8G`.
+- Run heavy correctness suites, fuzzers, and anything with data-dependent allocation through
+  `tools/memlimit.py`, with an explicit budget for the **whole process tree**, for example:
+
+      tools/memlimit.py --memory 8G -- tools/fc/gotest.py -j 4 -o /tmp/gotest-results.txt
+      tools/memlimit.py --memory 8G -- timeout 30m ./test.sh
+
+  The helper uses a new transient **user service**, not `--scope` and not the tmux/session
+  cgroup: `systemd-run --user --wait --pipe --collect --same-dir --service-type=exec
+  --expand-environment=no -p MemoryMax=8G -p MemorySwapMax=0 -p OOMPolicy=kill ...`.
+  It forwards exported environment variables (including PATH, FC_BIN, GOGC and GOCACHE),
+  working directory, literal arguments and standard streams. Shell syntax needs an explicit
+  `bash -c '...'`. It verifies the actual cgroup-v2 memory/swap/group-kill settings before
+  executing the workload, and fails closed if the user manager/controllers are unavailable.
+  Exported names must be valid systemd environment names (no exported bash functions).
+  Requires systemd 255+; see local `man systemd-run`, `man systemd.resource-control` and
+  `man systemd.service`. No sudo, `ulimit`-only fallback, or movement of tmux into the limit.
+- A limit kills the workload's entire service on OOM and propagates a **nonzero** status;
+  normal exit codes are preserved. The waiting shell, tmux and agent stay outside that
+  service. INT/TERM/HUP to the helper stop the service and its descendants. The helper prints
+  the unit name, so another terminal can use `systemctl --user stop compiler-test-….service`.
+  For pipelines use `set -o pipefail` so `tee` cannot hide a failed run. Never turn OOM,
+  timeout, incomplete results, or a missing runner into a correctness PASS/automatic SKIP.
+- This VM has about 31 GiB RAM and no swap. **Sum all parallel service budgets**, existing
+  workloads and reserved explicit hugepages, and leave several GiB for the OS, tmux and
+  agents. 8G is an example, not a measured requirement or permission to run four 8G jobs.
+  Check `free -h` and `/proc/meminfo` (especially `MemAvailable`, `Hugetlb`, `HugePages_*`)
+  before choosing budgets. Explicit hugetlb reservations are not ordinary MemoryMax-charged
+  memory; budget them separately. Limits do not prevent global OOM if the total exceeds RAM.
+- These are **correctness/safety runs, not performance measurements**: a memory limit can
+  change reclaim, allocation/GC and scheduling. Do not quote timings against unrestricted
+  baselines; disclose limits on both sides and keep such results separate from the campaign's
+  cold-build trace. No CPU limit is imposed by this helper.
+- Helper checks: `python3 tools/test_memlimit.py`; live isolation/OOM/cancellation checks:
+  `MEMLIMIT_INTEGRATION=1 python3 tools/test_memlimit.py` (64 MiB limit, allocator capped at
+  256 MiB, no heavy compiler suite).
 - Big target projects: clone them under `/home/exedev/targets/`, not inside this repo.
 
 ## Stopping
