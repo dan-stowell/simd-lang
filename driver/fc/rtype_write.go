@@ -386,28 +386,6 @@ func (c *compiler) writePtr(s *obj.LSym, off int64, target *obj.LSym) {
 	}
 }
 
-// typeSymFull is the name of t's descriptor symbol, "type:" and all, kept by type object: writeType is called
-// half a million times in a MinIO build, and building the name each time (the link name's map, algKind over
-// the fields for the "noalg." prefix, the concatenation) was a third of its cost. (A type is marked noalg when
-// it is made, before anything asks its name: rtype_alg.go.)
-func (c *compiler) typeSymFull(t types.Type) string {
-	if v, ok := c.tsNames.Load(t); ok {
-		return v.(string)
-	}
-	name := "type:" + c.typeSymName(t)
-	c.tsNames.Store(t, name)
-	return name
-}
-
-// ptrTo is the pointer type to t, one object for the program (a new one each time is a name built each time).
-func (pr *Program) ptrTo(t types.Type) *types.Pointer {
-	if v, ok := pr.ptrTypes.Load(t); ok {
-		return v.(*types.Pointer)
-	}
-	v, _ := pr.ptrTypes.LoadOrStore(t, types.NewPointer(t))
-	return v.(*types.Pointer)
-}
-
 // typeStat (FC_TYPESTAT=1, a measurement): writeType's calls, the symbols a compiler saw for the first time,
 // the descriptors written and their method-table entries, printed with the build's summary.
 var (
@@ -433,7 +411,7 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if typeStat {
 		typeStatCalls.Add(1)
 	}
-	s := c.lookup(c.typeSymFull(t), obj.ABI0, "")
+	s := c.lookup("type:"+c.typeSymName(t), obj.ABI0, "")
 	if !c.claim(s) {
 		return s
 	}

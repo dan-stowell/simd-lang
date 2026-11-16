@@ -199,4 +199,13 @@ Three steps, cheapest first, each with its kill test (user+sys of a MinIO build,
    already runs in rounds for reflection). Removes 28,000 of 60,600 descriptors and takes the rest off the
    critical path of the last package: expect 1 core-s or more, and it is the F4 shape (data made by a
    data-parallel pass over dense IDs). Kill: if the rounds add more link wall than the compile saves.
-Status: counted, not started (the machine is under the correctness pass; nothing here can be timed until it ends).
+Status: step 1 tried and killed the same hour (2026-11-16 01:25 UTC), by profile, not by timing: with the full name
+kept per compiler in a sync.Map by type object and one pointer type per element, the naming path was 0.98 s of 17.4
+where it had been 0.92 of 19.1, and the binaries were the same bytes (tools/fc/samebin.sh). The cost of naming is
+not the work the cache skipped; it is the concurrent maps keyed by type object themselves (sync.Map loads are 0.48 s
+of that path: the program-wide ones hold hundreds of thousands of entries and every load is several cache misses),
+and the cache added one more. So step 1 becomes: **facts about a type live on the type object** (our go/types is
+already patched: a slot on each type, or a dense ID given at creation, filled once per program with the link name,
+the symbol name, the noalg mark, size and alignment), which removes the type-keyed maps (linkNames, noalg, the
+per-compiler layout maps: about 1.2 core-s of loads and assigns in the profile) rather than adding to them.
+Steps 2 and 3 not started.

@@ -24,7 +24,6 @@ import (
 // rtypeState is the part of the compiler that belongs to the descriptors.
 type rtypeState struct {
 	tsFast  sync.Map // types.Type -> *obj.LSym: descriptors already asked for by that type object
-	tsNames sync.Map // types.Type -> string: the descriptor symbol's name (typeSymFull)
 	// Descriptors are written by the threads that compile functions, concurrently: the first thread to
 	// claim a symbol (rtClaim) writes it, the others take its address and go on. rtSm guards the small
 	// maps and lists below and is never held across a call that writes a descriptor. (One lock around the
@@ -149,7 +148,7 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 	s := c.writeType(t)
 	if hasSym(t) {
 		// stock WriteRuntimeTypes: a type with a name brings the pointer to it
-		c.writeType(c.pr.ptrTo(t))
+		c.writeType(types.NewPointer(t))
 	}
 	c.tsFast.Store(t0, s)
 	return s
