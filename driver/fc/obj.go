@@ -69,6 +69,7 @@ type compiler struct {
 	instances    map[string]bool
 	instQueue    []*instance
 	shard        *shardState // a shard compiler (shard.go), nil for a package
+	fsFast       sync.Map    // *types.Func -> *obj.LSym: funcSym's answers
 	rtypeState               // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator
 }
 
@@ -667,13 +668,19 @@ func (c *compiler) funcSymName(fn *types.Func) string {
 // funcSym is the symbol of a declared function or method, for a reference to it: the function is asked
 // for (demand.go). funcSymDecl is the symbol alone.
 func (c *compiler) funcSym(fn *types.Func) *obj.LSym {
+	// the same function again (most calls: one per call site): no name is built, hashed or compared
+	if s, ok := c.fsFast.Load(fn); ok {
+		return s.(*obj.LSym)
+	}
 	c.pr.demand(fn)
 	if c.pr.lazyFuncs && fn.Type().(*types.Signature).Recv() == nil {
 		if ln := c.linknameOf(fn.Pkg(), fn.Name()); ln != "" {
 			c.pr.demandName(ln)
 		}
 	}
-	return c.funcSymDecl(fn)
+	s := c.funcSymDecl(fn)
+	c.fsFast.Store(fn, s)
+	return s
 }
 
 func (c *compiler) funcSymDecl(fn *types.Func) *obj.LSym {
