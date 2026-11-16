@@ -28,15 +28,14 @@ type rtypeState struct {
 	// claim a symbol (rtClaim) writes it, the others take its address and go on. rtSm guards the small
 	// maps and lists below and is never held across a call that writes a descriptor. (One lock around the
 	// whole writer was the build's widest queue once a big package wrote most descriptors: demand.go.)
-	rtMu        sync.Mutex // (rtype_diff.go only)
-	rtSm        sync.Mutex
-	rtOnce      sync.Once
-	rtPtrOnce   sync.Once
-	rtClaim     sync.Map                     // *obj.LSym -> true: descriptors and their parts considered (written, or left to another object)
-	rtMeth      map[string][]methodSig       // method tables, by type symbol name
-	rtNoalg     map[types.Type]bool          // synthetic types with no equality and no hash (map groups, closures)
-	rtGroup     map[*types.Struct]*types.Map // the map a group struct belongs to
-	rtGroups    map[string]*types.Struct     // group struct by the map's link name
+	rtMu      sync.Mutex // (rtype_diff.go only)
+	rtSm      sync.Mutex
+	rtOnce    sync.Once
+	rtPtrOnce sync.Once
+	rtClaim   sync.Map               // *obj.LSym -> true: descriptors and their parts considered (written, or left to another object)
+	rtMeth    map[string][]methodSig // method tables, by type symbol name
+	// (synthetic types with no equality and no hash, and the map a group struct belongs to: Program.noalg, groupOf)
+	rtGroups    map[string]*types.Struct // group struct by the map's link name
 	rtVargen    map[*types.Package]map[token.Pos]int
 	rtVargenMu  sync.Mutex // (functions are compiled in parallel)
 	rtWrap      map[*obj.LSym]bool
@@ -81,8 +80,6 @@ func (c *compiler) claim(s *obj.LSym) bool {
 func (c *compiler) rtInit() {
 	c.rtOnce.Do(func() {
 		c.rtMeth = map[string][]methodSig{}
-		c.rtNoalg = map[types.Type]bool{}
-		c.rtGroup = map[*types.Struct]*types.Map{}
 		c.rtGroups = map[string]*types.Struct{}
 		c.rtVargen = map[*types.Package]map[token.Pos]int{}
 		c.rtWrap = map[*obj.LSym]bool{}
@@ -164,9 +161,7 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 // like): "type:noalg.<name>".
 func (c *compiler) typeSymNoalg(t types.Type) *obj.LSym {
 	c.rtInit()
-	c.rtSm.Lock()
-	c.rtNoalg[t] = true
-	c.rtSm.Unlock()
+	c.pr.noalg.Store(t, true)
 	return c.writeType(t)
 }
 
@@ -633,10 +628,8 @@ func (c *compiler) tconv(b *strings.Builder, t types.Type, mode fmtMode, short b
 			c.tconvParams(b, u.Results(), false, mode)
 		}
 	case *types.Struct:
-		c.rtSm.Lock()
-		m := c.rtGroup[u]
-		c.rtSm.Unlock()
-		if m != nil {
+		if v, ok := c.pr.groupOf.Load(u); ok {
+			m := v.(*types.Map)
 			b.WriteString("map.group[")
 			c.tconv(b, m.Key(), mode, false)
 			b.WriteByte(']')
@@ -842,16 +835,24 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 		return s // a declared method of this package (lazyNamed: or of the package that declares the type)
 	}
 	lazy := named != nil && c.lazyNamed(named.Obj().Pkg())
+	req := wrapperReq{sym: s, recv: recv, method: m, sel: sel, declPtr: declPtr,
+		instance: direct && inst, dupok: named == nil || inst || lazy}
 	if c.pr.lazyTypes && !c.mixed {
-		// one wrapper for the program, compiled by the first package that writes a method table with it
-		if owner, loaded := c.pr.wrapOwner.LoadOrStore(s.Name, c); loaded && owner != c {
+		// one wrapper for the program: compiled by the shard of its name (shard.go), or (objects for a
+		// linker of another process) by the first package that writes a method table with it
+		if c.pr.shards != nil {
+			if sh := c.route(s.Name); sh != nil {
+				sh.addWrapper(req)
+				return s
+			}
+		} else if owner, loaded := c.pr.wrapOwner.LoadOrStore(s.Name, c); loaded && owner != c {
 			return s
 		}
 	}
 	c.rtSm.Lock()
-	c.needWrapper = append(c.needWrapper, wrapperReq{sym: s, recv: recv, method: m, sel: sel, declPtr: declPtr,
-		instance: direct && inst, dupok: named == nil || inst || lazy})
+	c.needWrapper = append(c.needWrapper, req)
 	c.rtSm.Unlock()
+	c.kick()
 	return s
 }
 

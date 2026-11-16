@@ -122,6 +122,8 @@ func (c *compiler) pkgPathSym(p *types.Package) *obj.LSym {
 		prefix, path = c.pkgPrefix(p), p.Path()
 		if p == c.tpkg {
 			path = c.path
+		} else if prefix == "main" {
+			path = "main" // (the program's main package, written by another compiler: a shard)
 		}
 	}
 	s := c.lookup("type:.importpath."+prefix+".", obj.ABI0, "")
@@ -409,7 +411,17 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 		// One address space, one build: a descriptor that any object may carry (an unnamed type, an
 		// instance) is written by the first package that asks, and only referenced by the others.
 		if n, ok := tbase.(*types.Named); !ok || !samePkg(n.Obj().Pkg(), c.tpkg) || n.TypeArgs().Len() > 0 || isLocalInstance(n) || c.pr.lazyTypes {
-			if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
+			if c.pr.shards != nil {
+				// written by the shard of its name (shard.go), now, by this thread; but the descriptors
+				// package runtime writes for everybody (writeBasicTypes) are its own
+				if c.path != "runtime" || !writtenByBasic(tbase) {
+					if sh := c.route(s.Name); sh != nil {
+						sh.rtInit()
+						sh.writeType(t)
+						return s
+					}
+				}
+			} else if owner, loaded := c.pr.typeOwner.LoadOrStore(s.Name, c); loaded && owner != c {
 				return s
 			}
 		}

@@ -535,7 +535,7 @@ func (p *nameParser) lookup(name string) (t types.Type) {
 			if n, err := strconv.ParseInt(name[7:i], 10, 64); err == nil {
 				if e := p.lookup(name[i+1:]); e != nil {
 					t = types.NewArray(e, n)
-					p.c.rtNoalg[t] = true
+					p.c.pr.noalg.Store(t, true)
 				}
 			}
 		}
@@ -547,7 +547,7 @@ func (p *nameParser) lookup(name string) (t types.Type) {
 		if t == nil || q.pos != len(q.s) {
 			return nil
 		}
-		p.c.rtNoalg[t] = true
+		p.c.pr.noalg.Store(t, true)
 	case strings.HasPrefix(name, "noalg."):
 		return nil
 	default:

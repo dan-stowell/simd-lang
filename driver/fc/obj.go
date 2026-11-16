@@ -68,7 +68,8 @@ type compiler struct {
 	parity       func()   // mixed mode: define what stock importers expect of this object
 	instances    map[string]bool
 	instQueue    []*instance
-	rtypeState   // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator
+	shard        *shardState // a shard compiler (shard.go), nil for a package
+	rtypeState               // rtype.go: descriptors written; needEq, needHash, needWrapper for the code generator
 }
 
 func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
@@ -522,7 +523,7 @@ func (c *compiler) stackMapSym(nbit int, maps ...[]bool) *obj.LSym {
 
 // placeholderFunc defines s as a function that traps: a symbol the stock object has and fc does not.
 func (c *compiler) placeholderFunc(s *obj.LSym) {
-	f := &funcOut{sym: s, code: []byte{0x0F, 0x0B}, flags: obj.NOSPLIT, sp: []pcval{{0, 0}}, pos: c.pkg.files[0].Package}
+	f := &funcOut{sym: s, code: []byte{0x0F, 0x0B}, flags: obj.NOSPLIT, sp: []pcval{{0, 0}}, pos: c.pkgPos()}
 	c.installFunc(f)
 }
 
@@ -531,7 +532,9 @@ func (c *compiler) installFuncs() {
 	// (by position, then by name: instances and wrappers share a position, and the threads that compiled
 	// them finished in any order; the same sources give the same bytes)
 	sort.SliceStable(c.funcs, func(i, j int) bool {
-		if c.funcs[i].pos != c.funcs[j].pos {
+		// (a shard's functions are of many packages, whose positions depend on the order the files were
+		// read in: by name alone)
+		if c.shard == nil && c.funcs[i].pos != c.funcs[j].pos {
 			return c.funcs[i].pos < c.funcs[j].pos
 		}
 		return c.funcs[i].sym.Name < c.funcs[j].sym.Name
