@@ -28,7 +28,11 @@ transcripts="$HOME/.claude/projects/$(pwd | tr '/.' '--')"
 
 if [ -n "${TMUX_PANE:-}" ]; then
   pane=$TMUX_PANE
-  say() { tmux send-keys -t "$pane" -l "$1"; tmux send-keys -t "$pane" Enter; }
+  # Type a line into the session. A long line typed at once can read as a paste, and an Enter
+  # right behind it lands inside the paste instead of submitting, so it waits a moment.
+  say() { tmux send-keys -t "$pane" -l "$1"; sleep 2; tmux send-keys -t "$pane" Enter; }
+  # Did the session take the start prompt after a /clear? The new transcript has it.
+  took() { grep -q 'Continuous run. Read CHARTER.md' "$(ls -t "$transcripts"/*.jsonl 2>/dev/null | head -1)" 2>/dev/null; }
   (
     while sleep 30; do
       [ -f STOP ] && exit 0
@@ -40,6 +44,12 @@ if [ -n "${TMUX_PANE:-}" ]; then
         echo "watchdog: fresh context requested; clearing" >&2
         rm -f .claude/fresh
         say "/clear"; sleep 10; say "$prompt"
+        # Check that it took; if not, press Enter, then type the prompt again.
+        for try in 1 2 3 4; do
+          sleep 30; took && break
+          echo "watchdog: the start prompt didn't take (try $try)" >&2
+          if [ "$try" = 1 ]; then tmux send-keys -t "$pane" Enter; else tmux send-keys -t "$pane" C-u; say "$prompt"; fi
+        done
         continue
       fi
       # 2. A usage limit: nudge a minute after the reset time it printed.
