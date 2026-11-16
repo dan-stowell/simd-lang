@@ -87,6 +87,20 @@ func (c *compiler) rtInit() {
 // typeLinkName is the name of t as the linker knows it (stock: Type.LinkString); t's descriptor is "type:"
 // followed by it.
 func (c *compiler) typeLinkName(t types.Type) string {
+	// One build, one set of type objects (load.go: bodiesLater): a name built by any package's compiler is
+	// the name for all of them, and it is kept on the type object (facts.go).
+	if !c.mixed && bodiesLater {
+		if f := factsOf(t); f != nil {
+			if n := f.linkName.Load(); n != nil {
+				return *n
+			}
+			var b strings.Builder
+			c.tconv(&b, t, fmtID, false)
+			name := b.String()
+			f.linkName.Store(&name)
+			return name
+		}
+	}
 	l := &c.layout
 	l.mu.Lock()
 	name, ok := l.names[t]
@@ -148,7 +162,7 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 	s := c.writeType(t)
 	if hasSym(t) {
 		// stock WriteRuntimeTypes: a type with a name brings the pointer to it
-		c.writeType(types.NewPointer(t))
+		c.writeType(ptrTo(t))
 	}
 	c.tsFast.Store(t0, s)
 	return s
@@ -158,7 +172,7 @@ func (c *compiler) typeSym(t types.Type) *obj.LSym {
 // like): "type:noalg.<name>".
 func (c *compiler) typeSymNoalg(t types.Type) *obj.LSym {
 	c.rtInit()
-	c.pr.noalg.Store(t, true)
+	c.pr.setNoalg(t)
 	return c.writeType(t)
 }
 

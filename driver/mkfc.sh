@@ -7,8 +7,11 @@ set -e
 cd "$(dirname "$0")/.."
 # fc has a GOROOT of its own, a copy of the patched one: its go/ast and go/types carry fields and hooks
 # (driver/gotypes: sbbodies.go, sbslots.go) that the other tools built in goroot-sb do not want to depend on.
+# It is goroot-fc since 2026-11-16, not goroot-slots: that tree is also the standard library the correctness
+# passes compile and test (wpbatch -C goroot-slots/src), and a patch for fc there (a word in every type object)
+# is a failure of go/types' own TestSizeof, and a build of fc in the middle of a pass rewrote its sources.
 base=/home/exedev/targets/goroot-sb
-dst=${SB_GOROOT:-/home/exedev/targets/goroot-slots}
+dst=${SB_GOROOT:-/home/exedev/targets/goroot-fc}
 [ -d "$base" ] || { echo "run driver/mkcompiler.sh first"; exit 1; }
 [ -d "$dst" ] || cp -a "$base" "$dst"
 python3 driver/gotypes/patch.py "$(GOTOOLCHAIN=local go env GOROOT)/src/go/types" "$dst/src/go/types"   # CheckDecls + Bodies (sbbodies.go)

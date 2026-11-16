@@ -127,3 +127,39 @@ func SBSelection(x *ast.SelectorExpr) (*Selection, bool) {
 	}
 	return (*Selection)(x.SBSel), true
 }
+
+// sbFactSlot is a word in every type object but *Basic and *Union (driver/gotypes/patch.py).
+type sbFactSlot struct{ p unsafe.Pointer }
+
+// SBFacts is the address of a word that belongs to the type object t, for whatever its user keeps about the
+// type (a link name, a size): read and written with sync/atomic. nil for *Basic, *Union and types of other
+// implementations. A fact on the object is one load where a map keyed by the type is a hash and a miss.
+func SBFacts(t Type) *unsafe.Pointer {
+	switch t := t.(type) {
+	case *Named:
+		return &t.sbf.p
+	case *Pointer:
+		return &t.sbf.p
+	case *Struct:
+		return &t.sbf.p
+	case *Signature:
+		return &t.sbf.p
+	case *Slice:
+		return &t.sbf.p
+	case *Interface:
+		return &t.sbf.p
+	case *Map:
+		return &t.sbf.p
+	case *Array:
+		return &t.sbf.p
+	case *Tuple:
+		return &t.sbf.p
+	case *Chan:
+		return &t.sbf.p
+	case *TypeParam:
+		return &t.sbf.p
+	case *Alias:
+		return &t.sbf.p
+	}
+	return nil
+}

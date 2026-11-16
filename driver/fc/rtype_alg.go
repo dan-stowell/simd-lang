@@ -137,7 +137,7 @@ var algPriority = [...]int8{algMem: -1, algOther: 0, algSpecial: 1, algNoeq: 2, 
 // noalgFlag: is t marked as having no algorithms: a compiler-made type, or a pointer to one (stock: Noalg)?
 func (c *compiler) noalgFlag(t types.Type) bool {
 	t = types.Unalias(t)
-	if _, na := c.pr.noalg.Load(t); na {
+	if c.pr.isNoalg(t) {
 		return true
 	}
 	if p, ok := t.(*types.Pointer); ok {
@@ -149,6 +149,24 @@ func (c *compiler) noalgFlag(t types.Type) bool {
 // algKind is how values of t are compared (stock: types.AlgType, computed in CalcSize).
 func (c *compiler) algKind(t types.Type) algKind {
 	t = types.Unalias(t)
+	// (kept on the type object in a whole-program build: asked for every descriptor's name. A type is
+	// marked noalg when it is made, before anything asks: mapGroup)
+	var f *typeFacts
+	if !c.mixed && bodiesLater {
+		if f = factsOf(t); f != nil {
+			if k := f.alg.Load(); k != 0 {
+				return algKind(k - 1)
+			}
+		}
+	}
+	a := c.algKind1(t)
+	if f != nil {
+		f.alg.Store(uint32(a) + 1)
+	}
+	return a
+}
+
+func (c *compiler) algKind1(t types.Type) algKind {
 	if c.noalgFlag(t) {
 		return algNoalg
 	}
@@ -485,7 +503,7 @@ func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 		return g
 	}
 	field := func(name string, t types.Type) *types.Var { return types.NewField(0, nil, name, t, false) }
-	noalg := func(t types.Type) types.Type { c.pr.noalg.Store(t, true); return t }
+	noalg := func(t types.Type) types.Type { c.pr.setNoalg(t); return t }
 	var fields []*types.Var
 	if buildcfg.Experiment.MapSplitGroup {
 		fields = []*types.Var{
@@ -501,7 +519,7 @@ func (c *compiler) mapGroup(m *types.Map) *types.Struct {
 		}
 	}
 	g := types.NewStruct(fields, nil)
-	c.pr.noalg.Store(g, true)
+	c.pr.setNoalg(g)
 	c.pr.groupOf.Store(g, m)
 	c.rtGroups[key] = g
 	return g

@@ -61,3 +61,11 @@ pairs += [("type Expr interface {\n\tNode\n\texprNode()\n}",
           ('import (\n\t"go/token"\n', 'import (\n\t"go/token"\n\t"unsafe"\n'),
           ("return &Ident{token.NoPos, name, nil}", "return &Ident{NamePos: token.NoPos, Name: name}")]
 patchn("ast.go", pairs, src=asrc, dst=adst)
+
+# ---- a word on every type object for the client's facts about the type (sbslots.go: SBFacts)
+# (not Basic or Union: their values are written as unkeyed literals; SBFacts answers nil for them)
+for fname, tname in [("alias.go", "Alias"), ("array.go", "Array"), ("map.go", "Map"), ("interface.go", "Interface"),
+                     ("named.go", "Named"), ("pointer.go", "Pointer"), ("slice.go", "Slice"), ("struct.go", "Struct"),
+                     ("signature.go", "Signature"), ("tuple.go", "Tuple"), ("typeparam.go", "TypeParam"),
+                     ("chan.go", "Chan")]:  # (Union too is written unkeyed)
+    patchn(fname, [(f"type {tname} struct {{\n", f"type {tname} struct {{\n\tsbf sbFactSlot // driver/gotypes: SBFacts\n")])
