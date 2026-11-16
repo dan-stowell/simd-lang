@@ -82,8 +82,9 @@ func lazyFuncsOn() bool {
 	return lazyFuncsDefault || os.Getenv("FC_LAZYFUNCS") != ""
 }
 
-// (off until its wall clock is measured on a quiet machine: JOURNAL 2026-11-14)
-const lazyFuncsDefault = false
+// (on since 2026-11-16: MinIO warm 2.08-2.31 s by demand against 2.45-2.64 s, four order-balanced pairs,
+// 14.3-15.5 core-s against 15.1-16.1; the Go test directory, the language corpus and samebytes pass with it)
+const lazyFuncsDefault = true
 
 // demand asks for fn to be compiled by its package, once.
 func (pr *Program) demand(fn *types.Func) {
