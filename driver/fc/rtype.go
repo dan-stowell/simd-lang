@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"cmd/internal/obj"
 )
@@ -32,7 +33,6 @@ type rtypeState struct {
 	rtSm      sync.Mutex
 	rtOnce    sync.Once
 	rtPtrOnce sync.Once
-	rtClaim   sync.Map               // *obj.LSym -> true: descriptors and their parts considered (written, or left to another object)
 	rtMeth    map[string][]methodSig // method tables, by type symbol name
 	// (synthetic types with no equality and no hash, and the map a group struct belongs to: Program.noalg, groupOf)
 	rtGroups    map[string]*types.Struct // group struct by the map's link name
@@ -71,8 +71,8 @@ type wrapperReq struct {
 
 // claim: is the caller the one to define s? True once per symbol.
 func (c *compiler) claim(s *obj.LSym) bool {
-	_, loaded := c.rtClaim.LoadOrStore(s, true)
-	return !loaded
+	// (a word on the symbol itself, which belongs to this compiler: driver/objpatch.py)
+	return atomic.CompareAndSwapUint32(&s.FcClaim, 0, 1)
 }
 
 func (c *compiler) rtInit() {

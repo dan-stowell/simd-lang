@@ -13,6 +13,7 @@ dst=${SB_GOROOT:-/home/exedev/targets/goroot-slots}
 [ -d "$dst" ] || cp -a "$base" "$dst"
 python3 driver/gotypes/patch.py "$(GOTOOLCHAIN=local go env GOROOT)/src/go/types" "$dst/src/go/types"   # CheckDecls + Bodies (sbbodies.go)
 python3 driver/rtbump/patch.py "$dst/src/runtime"   # the bump allocator (sbbump.go)
+python3 driver/objpatch.py "$dst/src/cmd/internal/obj"   # LSym.FcClaim (rtype.go: claim)
 SB_GOROOT="$dst" driver/mkfclinklib.sh
 SB_GOROOT="$dst" driver/mkfcasmlib.sh   # the stock assembler as a library (driver/fc/asmlib.go)
 d="$dst/src/cmd/fc${FC_TAG:-}"

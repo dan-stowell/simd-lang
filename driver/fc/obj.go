@@ -215,6 +215,9 @@ func (c *compiler) pkgPrefix(p *types.Package) string {
 }
 
 func (c *compiler) lookup(name string, abi obj.ABI, pkg string) *obj.LSym {
+	// (a table of this compiler's own in front of the library's was tried, 2026-11-16: slower. Most lookups
+	// are a compiler's first sight of a name, the callers keep what they ask for twice, and hashing a
+	// 60-byte name costs the same in any table)
 	return c.ctxt.LookupABIInit(name, abi, func(s *obj.LSym) { s.Pkg = pkg })
 }
 
