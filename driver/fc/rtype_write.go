@@ -8,8 +8,10 @@ import (
 	"go/types"
 	"internal/abi"
 	"internal/buildcfg"
+	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"cmd/internal/hash"
 	"cmd/internal/obj"
@@ -384,6 +386,13 @@ func (c *compiler) writePtr(s *obj.LSym, off int64, target *obj.LSym) {
 	}
 }
 
+// typeStat (FC_TYPESTAT=1, a measurement): writeType's calls, the symbols a compiler saw for the first time,
+// the descriptors written and their method-table entries, printed with the build's summary.
+var (
+	typeStat                                                        = os.Getenv("FC_TYPESTAT") != ""
+	typeStatCalls, typeStatClaims, typeStatWritten, typeStatMethods atomic.Int64
+)
+
 func (c *compiler) writeMethodOff(s *obj.LSym, off int64, target *obj.LSym) {
 	s.WriteInt(c.ctxt, off, 4, 0)
 	s.AddRel(c.ctxt, obj.Reloc{Type: objabi.R_METHODOFF, Off: int32(off), Siz: 4, Sym: target})
@@ -399,9 +408,15 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 			giveUp("type descriptor for %v", t)
 		}
 	}
+	if typeStat {
+		typeStatCalls.Add(1)
+	}
 	s := c.lookup("type:"+c.typeSymName(t), obj.ABI0, "")
 	if !c.claim(s) {
 		return s
+	}
+	if typeStat {
+		typeStatClaims.Add(1)
 	}
 	tbase := typeBase(t)
 	if !c.needEmit(tbase) {
@@ -463,6 +478,10 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	D := C + dataAdd
 	E := D + int64(len(ms))*rtMethodSize
 
+	if typeStat {
+		typeStatWritten.Add(1)
+		typeStatMethods.Add(int64(len(ms)))
+	}
 	c.writeCommon(s, t)
 
 	switch u := t.Underlying().(type) {

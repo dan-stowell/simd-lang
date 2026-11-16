@@ -179,3 +179,24 @@ function literal, `&T{}`, `new`, a slice literal or make of constant size), and 
 Kill test: user+sys of a MinIO build, quiet machine, against default: drop it if it costs more than 0.3 core-s, or if
 MinIO's package tests (wpbatch, wall of the 46) do not get at least 10% faster. Status: not started; it is not on the
 path to the exit test (which does not time the built program), so it waits behind (1)-(3) of PLAN's Now.
+
+## Type descriptors cost 15% of the build and half are thrown away (2026-11-16)
+Counted on MinIO (FC_TYPESTAT=1; profile of 5acfc98, 19 core-s of samples under load, so read the shares):
+writeType is called 524,497 times, 238,901 of them a compiler's first sight of a symbol, and writes 60,597
+descriptors with 92,794 method-table entries; the linker keeps 32,360 types (9.1 MB). writeType's cumulative
+time is 2.8 core-s (14.7% of the build), all of it inside compileFunc: about 46 microseconds per descriptor
+written, of which naming is the largest part (typeSymName 0.9 s: typeLinkName's map under a mutex plus a
+sync.Map load per call, tconv 0.27 s because `types.NewPointer(t)` in typeSym is a new object every time, and
+algKind recomputed over the fields on every call only to decide the "noalg." prefix: 0.26 s), then method sets
+(methods 0.8 s: methodSym 0.45, go/types.NewMethodSet 0.22), name symbols 0.24, lookups 0.22, claims 0.13.
+Three steps, cheapest first, each with its kill test (user+sys of a MinIO build, strict rotation, quiet machine):
+1. The symbol's full name ("type:" + prefix + link name) kept per compiler by type object, and one pointer type
+   per element type for the program: expect 0.4-0.6 core-s; drop if under 0.2.
+2. Method tables written from a per-type record made once per program (the method set, the wrappers' names),
+   not per compiler that first sees the type: expect 0.3-0.5 core-s.
+3. Descriptors after the flood: compilers emit references only; the linker's dead-code pass says which types
+   are live and only those are written (their components and method types asked for in rounds, as the flood
+   already runs in rounds for reflection). Removes 28,000 of 60,600 descriptors and takes the rest off the
+   critical path of the last package: expect 1 core-s or more, and it is the F4 shape (data made by a
+   data-parallel pass over dense IDs). Kill: if the rounds add more link wall than the compile saves.
+Status: counted, not started (the machine is under the correctness pass; nothing here can be timed until it ends).

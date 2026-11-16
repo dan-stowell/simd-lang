@@ -547,6 +547,10 @@ func buildMode(args []string) {
 	if demandStat {
 		printDemandStat()
 	}
+	if typeStat {
+		fmt.Printf("types: writeType called %d times, %d first sights of a symbol in a compiler, %d descriptors written with %d method-table entries\n",
+			typeStatCalls.Load(), typeStatClaims.Load(), typeStatWritten.Load(), typeStatMethods.Load())
+	}
 	if slotCheck {
 		pr.checkSlots()
 	}
