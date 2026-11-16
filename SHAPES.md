@@ -1,122 +1,184 @@
-# SHAPES: what the runs found, as problem shapes
+# SHAPES: what made the build fast
 
-A distillation of JOURNAL.md, IDEAS.md, TRACE.md (simd-lang, 2026-11-11 to 11-16) and bottom-up's FLOOR.md and
-IDEAS.md (2026-11-13). It isn't about the compiler. It's about which reshapings made a real build fast, which
-few primitives they turned out to be, and what that says about a language that would make them the only way to
-write the code. Numbers are MinIO (1,312 packages, 75 MB of Go) on 8 cores unless it says otherwise; dates point
-into JOURNAL.md.
+A distillation of JOURNAL.md, IDEAS.md, TRACE.md (2026-11-11 to 11-16) and bottom-up's FLOOR.md (2026-11-13).
+The workload is building MinIO (1,312 Go packages, 75 MB of source) from cold, on 8 cores. Stock `go build`
+took 54.2 s; fc builds it in 2.2-2.4 s today. Dates point into JOURNAL.md.
 
-## The arc in one table
+## The ideas at a glance
 
-| step | MinIO cold | core-s | what changed |
+What held up under measurement, roughly in the order it was found:
+
+| bottleneck | win | idea | evidence |
 |---|---|---|---|
-| stock `go build` | 54.2 s | 282 | |
-| driver: own plan + critical-path scheduling | 47.6 | 265 | "no phase got faster" |
-| export data before back end, front ends first | 39.9 | 273 | chain 38.5 -> 12 s |
-| DWARF, inlining, collector off ("fair stock" is 32.5 s) | 22.0 | 144 | turning things off |
-| baseline code generator, no SSA, 97% of functions | 16.4 | 87 | largest single technique |
-| huge pages, one giant package sharded, denser code | 12.5 | 70 | 20 of 87 core-s had been page faults |
-| one-pass assembler, direct output, fork server | 11.2 | 62 | plateau: CPU-bound |
-| fc: one process, whole program, no export data | 6.8 | 26 | serialization boundary gone |
-| declarations first; slots to the biggest package | 3.9 | 22 | the tail was one package waiting its turn |
-| checker results in the syntax nodes, not maps | (warm 2.9 -> 2.6-2.7) | 16.1 -> 14.7 user | a quarter of the CPU was hash maps |
-| bump allocator; functions by demand | 2.2-2.4 | 13-15 | today |
+| Each package waits for everything it imports to finish compiling: a line of waiting 30 packages deep, 38.5 s of the 54 s | that line: 38.5 s -> 12 s, then to 0.3 s in fc | **Break the chain.** An importer needs only the declarations it imports, not their machine code; produce those first | 11-11 iteration 3; 11-13 |
+| Work nobody uses: debug info, inlining, the compiler's own garbage collector | 41 s -> 21 s | **Turn it off.** Stock with the same flags is 32.5 s, so this part isn't a technique | iteration 4 |
+| The optimizer: ~35% of compile CPU in SSA passes | 22 s -> 16.4 s; 144 -> 87 core-s | **A cheap code generator.** Walk the typed tree straight to machine code; the optimizer only for the 3% it can't do | iterations 11-13 |
+| 1,315 separate compiler processes handing each other files; a package's own typed tree written out and read back | 11.2 s -> 6.8 s | **One process, nothing written in between.** Packages refer to each other by pointer | 11-12 19:52 |
+| The one biggest package started late: work slots went out in arrival order | 6.8 s -> 3.6-4.1 s | **Biggest first.** Give the next slot to the largest waiting package | 11-13 22:53 |
+| Page faults: 7.8 million first touches of fresh memory, 20 of 87 compile core-s | kernel 21 -> 11 core-s; fc cold 10.5 s -> 6.6 s | **Huge pages.** 2 MB pages instead of 4 KB: 512 times fewer faults | iteration 14; 11-13 22:16 |
+| A quarter of all CPU in hash-map code: answers stored in tables keyed by object, looked up again later | user CPU 16.1 -> 14.7 s | **Store the answer on the thing.** A field on the syntax node or the type, not a map entry | 11-14 01:39; 11-16 |
+| The allocator's bookkeeping, for memory that's never freed anyway | cold 2.72 s -> 2.38 s | **Bump allocation.** Allocating is adding to a pointer | 11-15 17:17 |
+| The linker throws away 21% of the code that was compiled | 158 k -> 137 k functions; warm 2.45-2.64 -> 2.08-2.31 s | **Compile only what's reached.** Start at main and follow calls as code is generated | 11-14 01:15; 11-15 18:07 |
+| Shared pieces (generic instances, type descriptors) written by whichever thread got there first: a lock, and different bytes every build | same bytes from every build, for 0.19 s | **Owner chosen by name.** Hash the symbol's name to pick which compiler writes it | 11-15 22:10; 11-16 01:10 |
+| The linker matching 2.7 M references to definitions in one big table: every insert a cache miss | link 1,750 ms (stock) -> 303 (fclink) -> 170 (hlink) | **Partition, then join.** Sort keys into buckets first, then match each bucket in a table that fits in cache | 11-12 F4 spike; bottom-up |
+| Reading 7,766 small files cold: the disk is limited by requests, not bytes | ~10,000 -> ~4,300 disk requests | **Fewer, bigger reads.** Read each module's zip instead of its extracted files | 11-15 18:33 |
+| The assembler re-assembling a function when it guessed a jump's size wrong: 2.7 passes per function | compile 67 -> 61 core-s | **Assemble once.** Size far jumps long from the start | iteration 16 |
 
-The agent's own summary of the first night: "54 -> 32.5 is turning things off; 32.5 -> 12.5 is technique." Of
-the fc era: the wins were all about touching less memory.
+And what was tried and killed by its own measurement:
+
+| idea | why it looked good | why it died |
+|---|---|---|
+| Better scheduling (start the standard library early, etc.) | cores sat idle at the start | three tries bought 0.2-0.4 s, 0.14 s and 0: once the build is CPU-bound, "only removing work moves the trace" |
+| Skip dead functions by name before compiling | the linker drops 21% of code | a name-based pass finds only half of that; following real references (above) found the rest |
+| Compile duplicate bodies once | wrappers and generic copies repeat | only 8% of code; 20.8% of body shapes repeat, under the 25% kill line |
+| Split every big package across processes | one package ran alone at the end | each piece repeats the type check: 108 core-s against 87. "Overlap bought by repeating work is paid in the same currency" |
+| Start linking while compiles finish | the link ran last, alone | 390 of its 440 ms needs every object, and the output depended on arrival order |
+| A cache in front of a slow map | name lookups were hot | slower both times: the cost was the maps themselves |
+| Precise liveness for every stack slot | fewer stale pointers | code 80.7 -> 107.4 MB; every byte is paid three times (generate, assemble, link) |
+
+## Each idea, concretely
+
+### Break the chain
+**Before.** Go compiles a package only after everything it imports is compiled. MinIO's imports run about 30
+deep (`minio/cmd` -> `minio/internal/...` -> `crypto/...` -> `runtime`), and each step waited for the previous
+compile to finish completely: type check, machine code, object file. That line took 38.5 s of 54, with cores
+idle for lack of ready work.
+**Observation.** An importer needs only the imported package's declarations (type names, function
+signatures, constants), and those are known early.
+**Fix 1.** Publish the declarations as soon as type checking ends and let importers start; machine code keeps
+generating in the background. The line: 38.5 -> 12 s.
+**Fix 2 (fc).** Read only the declarations of every package in the program first, skipping all function
+bodies: 0.3 s of waiting for all of MinIO. After that every function body is independent and can be checked and
+compiled on any core, in any order.
+**Shape.** A small pass that computes what everyone depends on, then a wide pile of independent work.
+
+### Turn it off
+**Before.** By default the compiler writes debug info, inlines small functions, and runs its own garbage
+collector. **Fix.** `-dwarf=false`, `-l`, collector off: 41.4 -> 33.0 -> 26.2 -> 21.3 s. **Honest accounting.**
+Stock with the same flags takes 32.5 s, so every later claim is measured against that "fair stock" number,
+not 54 s.
+
+### A cheap code generator
+**Before.** Every function went through SSA form, dozens of optimization passes, and a register allocator.
+**Observation.** About 45 kinds of operation covered 35-40% of the back end's time, and an unoptimized MinIO still
+passes its smoke test. **Fix.** Walk the type-checked syntax tree and emit instructions directly. Every local lives in
+a stack slot. Anything the generator doesn't understand (1-3% of functions: pragmas, some type assertions) falls back to the
+optimizer. 22 -> 16.4 s, and kube-apiserver 43.9 -> 28.5 s. **The cost.** Binaries grew (153 vs 100 MB), and
+the built program is slower. This is where optimization was dropped: the charter times the build, not the
+program.
+
+### One process, nothing written in between
+**Before.** 1,315 compiler processes. Each writes a description of its package to disk; each importer reads and
+decodes it. Even a package's own typed tree was written out and read back (5.0 + 10.1 core-s of 72). **Fix (fc).**
+One process holds the whole program; packages refer to each other's types by pointer. 11.2 -> 6.8 s.
+
+### Biggest first
+**Before.** fc handed its work slots out in the order packages became ready. `minio/cmd`, the largest (5 MB),
+became ready late, waited 1.1 s for a slot, then ran nearly alone while 7 cores sat idle. **Fix.** The next slot
+goes to the biggest waiting package (the classic longest-job-first rule). Cold 6.8 -> 3.6-4.1 s. **Lesson.** It
+was found by logging when each package started, not totals: the slowdown was one package waiting its turn.
+
+### Huge pages
+**Before.** With its collector off, a compiler touches fresh memory constantly; each first touch of a 4 KB page
+is a page fault costing ~3.6 µs on this VM. 7.8 million of them were 20 of 87 compile core-s. **Fix.** Take
+memory from the kernel's pool of 2 MB pages. Kernel time 21 -> 11 core-s; in fc, cold 10.5 -> 6.6 s. (It needs
+`vm.nr_hugepages` set on the machine, which counts as configuration, not a cache.)
+
+### Store the answer on the thing
+**Before.** Go's type checker records the type of every expression in a hash map from expression to type: 9.6
+million entries for MinIO. The code generator then looks up each expression it visits. Every lookup hashes a
+pointer and jumps to a random spot in a large table, which is usually a cache miss. Profiles showed a quarter of
+all CPU in hash-map code. **Fix.** Add a slot to each syntax node. The checker writes the answer there, and the
+generator reads it from the node it's already holding. User CPU 16.1 -> 14.7 s, checked against the maps for all
+10 million nodes with zero differences. The same move, repeated: a type's facts (link name, size, alignment) on
+the type object; "who writes this descriptor" as a word on the symbol instead of a table under a lock. **What
+failed.** A cache in front of those maps was slower: the cost was the maps, so adding one made it worse.
+
+### Bump allocation
+**Before.** Go's allocator sorts objects by size class and tracks them for a collector that's turned off. **Fix.**
+Each thread gets a 4 MB chunk; allocating is "add n to a pointer, check the end." Nothing is freed; the process
+exits. Cold 2.72 -> 2.38 s. **What hurt.** A runtime lock packs a thread's address into a word and assumed the old
+allocator's alignment, so the first version hung at start.
+
+### Compile only what's reached
+**Before.** Every function of every package was compiled; the linker then threw away 21% of the code. **Fix.**
+Start from `main`, the `init` functions and the runtime's entry points. When generating code for a call to `f`,
+ask `f`'s package to compile `f`. It's a reachability walk done during code generation. 158 k -> 137 k functions.
+**What hurt.** The first version made each requested function its own job, about 130,000 jobs with two
+hand-offs each, and was *slower* than compiling everything. The fix was a thread that stays in one package's queue
+while it has work, so its data stays in cache. Then warm builds went 2.45-2.64 -> 2.08-2.31 s.
+
+### Owner chosen by name
+**Before.** Some pieces are needed by many packages: generic instantiations, wrappers, type descriptors. Whichever
+thread asked first wrote them, under one global lock (5 of 8 threads were seen queued on it). The result depended
+on timing, so two builds of the same source gave different bytes. One real miscompile hid because it
+passed or failed depending on where a descriptor landed. **Fix.** Hash the symbol's name to pick one of 64 "shard"
+compilers to own it, and sort everything else by name or content hash instead of arrival. The same bytes come from
+every build (buildifier, caddy, MinIO, three builds each). It costs 0.19 s, kept on purpose: a build that differs
+run to run can't be cached or compared.
+
+### Partition, then join
+**Before.** Every object file lists the symbols it defines and the names it uses; linking matches the two, 2.7
+million slots for MinIO. The stock linker inserts them one at a time into a big hash table. A table of 128 MB means
+each insert lands somewhere random in memory: about 270 ns, several DRAM misses. **Fix (bottom-up's hlink).** First
+split all keys into buckets by a few bits of their hash, which is fast because it writes sequentially. Then match
+each bucket in a small table that fits in cache. This is how analytical databases do joins. Whole link: 1,750 ms
+(stock) -> 303 (fclink) -> 170 (hlink); the hardware floor is about 10 ms.
+
+### Fewer, bigger reads
+**Before.** Reading 7,766 source files cold took about 10,000 disk requests. **Observation.** The disk does 20-50
+thousand requests a second regardless of how many readers ask, but 3 GB/s sequentially: the count is the cost, not
+the bytes. **Fix.** Read each module's zip from the download cache, one read per package. About 4,300 requests.
+
+### Assemble once
+**Before.** The assembler guesses every jump is short and re-assembles the function when one isn't: 2.7 passes per
+function on average. **Fix.** A jump to more than 12 instructions ahead starts long. One pass for everything, code
+0.7% bigger, compile 67 -> 61 core-s.
 
 ## What the hardware says the work is
 
-- **Text processing is under 1%.** Lexing and parsing all 75 MB of MinIO is 0.3-0.34 core-s (TRACE; JOURNAL
-  iteration 6). Byte-at-a-time SIMD work on source text is almost irrelevant to build time.
-- **The work is symbols, types and references: a graph, keyed by name.** Type descriptors were 15% of the build
-  (524,497 calls to write 60,597 descriptors). 1.84 M of the linker's 2.72 M symbol slots exist only to be deduplicated.
-  The link is a join plus a reachability walk.
-- **It is bound by memory latency, not instructions.** Core-seconds grow with cores (16.4 / 17.7 / 18.3 / 22.8
-  at 1/2/4/8; 11-14 00:55), and SMT, locks and GC were ruled out. One claim into a lock-free 128 MB table is about
-  270 ns, i.e. a few DRAM misses (bottom-up: a dependent miss is 158 ns on 4 KiB pages). The build allocated 88 bytes
-  of heap per byte of source and 13.9 kB per compiled function for 514 bytes of code (11-15 17:36).
-- **Process and file boundaries were a tax of about a fifth.** Export IR written and read back was 15 core-s of 72.
-  Page faults were 20 of 87 compile core-s. Cold reads cost requests, not bytes (20-50 k requests/s against 3 GB/s
-  sequential).
-- **Distance to the floor.** The link is at about 5% of its hardware floor (hlink 170-250 ms against 9.7 ms;
-  bottom-up FLOOR.md). The whole build is at about 2.5x TRACE's rough floor model of 0.84 s, but that model
-  guessed its per-byte costs for type checking and code generation, so treat that ratio as soft.
+- **Text is under 1%.** Lexing and parsing all of MinIO is 0.3 core-s. Fast byte-at-a-time processing of source
+  text doesn't move a build.
+- **The work is symbols, types and references.** Type descriptors were 15% of the build (524,497 requests to write
+  60,597 descriptors). Two thirds of the linker's symbols exist only to be deduplicated.
+- **It's bound by memory, not instructions or locks.** The same build takes 16.4 core-s on 1 core and 22.8 on 8:
+  each core gets slower as more of them share the memory system. Locks, the collector and hyperthreading were each
+  ruled out. The build allocates 88 bytes for every byte of source, and 13.9 kB of scratch to produce one function's
+  514 bytes of code.
+- **The link is at about 5% of its floor** (hlink 170-250 ms against ~10 ms computed from memory bandwidth and
+  latency). The whole build is about 2.5x TRACE's floor model of 0.84 s, but that model guessed its per-byte costs
+  for type checking and code generation, so treat that one loosely.
 
-## The primitives the wins turned out to be
+## What's still in the way
 
-Each row is a reshaping that held up under measurement, what it really was, and what the agent fought by hand.
-
-| primitive | where it showed up | evidence | what hurt |
-|---|---|---|---|
-| **break the chain** (a small serial pass, then a wide one) | export before back end; declarations of the whole program first, bodies after (fc) | chain 38.5 -> 12 s; front end done at 1.3-2.0 s with flat cores-busy | two passes made two objects for one type: every identity comparison needed a fix, until go/types was patched to keep one |
-| **map over independent units** | function bodies checked and compiled per function; sharded giant packages | bodies are the parallel bulk | sharding by repeating the type check lost: "overlap bought by repeating work is paid in the same currency" |
-| **flood** (reachability as a frontier) | plan as BFS rounds over imports; linker dead code; functions by demand | flood 52 ms for 424 k symbols in 117 levels; demand: 158 k -> 137 k functions | one job per requested function (130,000 jobs, two hand-offs each) made it *slower* until a thread stayed in one package's queue: the frontier has to be batched by locality |
-| **join** | linker resolve by name and content hash | stock 440 ms -> spike 160 ms -> hlink partitioned joins | a global lock-free table is latency-bound; partition first (radix), then join in cache-sized pieces (bottom-up) |
-| **scan** | layout by prefix sum; pc tables concatenated | layout 4 ms in the spike | none: the easy one |
-| **reduce by key, deterministic** ("lowest id wins") | duplicate symbols; shared descriptors and wrappers owned by a shard chosen by hash of name | same bytes from every build (buildifier, caddy, MinIO) | arrival order leaked everywhere: layout, numbering, file tables; a miscompile hid for days because an address varied |
-| **ownership instead of shared maps** | rtMu -> claim; claim as a word on the symbol; facts on the type object; checker results in node slots | a quarter of CPU was hash-map code; slots: user 16.1 -> 14.7 s, 0 differences in 10 M nodes | `concurrent map writes`, a race on a flag word the flood ORs, 5 of 8 threads queued on one mutex |
-| **arena / bump allocation** | collector off; bump allocator on huge pages; per-thread scratch | 2.72 -> 2.38 s cold; kernel 21 -> 11 core-s with huge pages | a runtime mutex packs an M's address and assumed allocator alignment |
-| **batching** | zips instead of 7,766 files; 128 kB writes; one assembler pass | requests ~10,000 -> ~4,300; 98,000 write calls gone | none |
-
-**The one pattern that ran through the whole fc era: replace a lookup keyed by an object with a field on the
-object (or a dense ID into a column).** The checker's maps went into slots on the nodes. The type facts and the
-descriptor claim moved onto the objects. Per-package Info became per-function. A "cache" of names was tried and
-was slower, because the cost was the keyed maps themselves (11-16 01:25). This is data-oriented design arrived at
-by profile: entities with dense IDs, attributes as columns, no pointer-keyed hash maps.
-
-## What did not survive, and why
-
-- **Scheduling, once the build was CPU-bound.** Three scheduling steps in a row bought 0.2-0.4 s, 0.14 s and 0:
-  "only removing work moves the trace" (11-12 13:50). Scheduling mattered exactly once: the critical path (front
-  ends first; slots to the biggest waiting package).
-- **Not compiling what the linker drops, by name.** Only 21% of code is dead, and a name-based pass finds half of
-  it. By demand, following real references, it saves 16% of code: kept, but modest.
-- **Deduplicating bodies or shapes.** 20.8% of bodies have a shape seen twice; 8.1% of code is duplicate-allowed
-  copies. Under every kill line.
-- **Streaming the link.** Resolution needs every object (390 of 440 ms), and output depended on arrival order.
-- **Caches in front of maps.** Slower or no gain twice (type-symbol cache, descriptor-name cache).
-- **Tidy frames everywhere.** Code 80.7 -> 107.4 MB. Precision about liveness costs bytes, and bytes are paid
-  three times (generator, assembler, linker).
-
-## What resists the shape (the open part)
-
-1. **Code generation is the biggest remaining row** (compileFunc about a third of samples) and it's still
-   per-function tree walking. The data-parallel answer was measured but never built: the top 4,096 *expression-node*
-   shapes cover 96.7% of 1.42 M nodes, while statement shapes cover only 80.9% (iteration 9). That's a
-   group-by-shape, then a stencil per shape, then a scatter of patches. It's bottom-up's campaign 2, and the
-   numbers say it's worth trying at node grain, not statement grain.
-2. **Type checking is inference over a graph.** The declaration pass is small (0.3 s chain for all of MinIO), but
-   bodies need answers from it in random order. It parallelizes as a map, but every lookup is a dependent miss.
-3. **Interop with an existing runtime cost the most hand work.** Stack maps for the collector, nosplit chains,
-   write-barrier rules, a vfork child's frame, a mutex word that packs an address. None of it is about speed. All of
-   it is where the agent fought at the level of locks and frames. A toolchain that owns its runtime doesn't have to
-   honor another compiler's private invariants.
-4. **Verification needed its own structure.** A slow, obviously right twin diffed on every build (the
-   string-keyed resolver, FC_SLOTCHECK, samebytes). A data-parallel language could give this for free: the same
-   program run sequentially is the oracle.
+1. **Code generation is the biggest remaining cost** (about a third of CPU), and it's still one function at a time,
+   walking a tree. A batch alternative was measured and never built: the 4,096 most common expression shapes (like
+   "add an int64 local to a constant") cover 96.7% of MinIO's 1.4 million expressions. Group expressions by shape,
+   emit each shape from a template, patch in the operands. That's bottom-up's campaign 2. Whole statements are too
+   varied for it (80.9%).
+2. **Type checking a function body jumps around memory.** Bodies are independent of each other, but every name in
+   a body is a lookup into declarations scattered across the program.
+3. **Most of the hand work at the level of locks and stack frames was keeping Go's existing runtime happy:** the
+   garbage collector's stack maps, functions that must not grow the stack, a vfork child's frame, a lock that packs
+   an address. None of it was about speed. A toolchain with its own runtime wouldn't have those rules to honor.
 
 ## What this suggests for a language
 
-- **The data model is entities with dense IDs and columns.** Maps keyed by objects are the anti-pattern the
-  profile kept finding.
-- **The core operations are few:** map, scan, partition/sort, join, flood (with frontier batching built in), and
-  reduce-by-key with a deterministic combiner. Nearly every lock in fc was a reduce-by-key written by hand ("who owns
-  this symbol?"). As a primitive it's lock-free and deterministic by construction, and the same-bytes property comes
-  free.
-- **No shared mutation; arenas per phase.** The bump allocator and the collector off were wins, and a phase that
-  owns its memory frees it in one step.
-- **A cost model in the type system.** Work and span (NESL) say statically how a program scales with cores. The
-  measurements add a third number that matters as much: memory touched. "Faster with more cores" failed here
-  (core-s +39% from 1 to 8) because of memory, not span.
-- **Vector width matters less than expected.** It speeds up scans, hashing, partitioning and the stencil copy. The
-  build's time is in latency-bound graph work, where the wins are cache locality and parallelism.
+- **Things have dense numbers, and their attributes live in arrays indexed by them.** "Store the answer on the
+  thing" was the fix that kept recurring; a table keyed by an object was the thing the profile kept finding.
+- **A handful of operations cover the wins:** do this to every item (map); running totals, for laying things out
+  (scan); sort into buckets (partition); match two lists by key (join); follow references from a starting set,
+  in batches (reachability); combine everything with the same key, the same way every time (reduce by key).
+- **The last one replaces the locks.** Nearly every lock in fc was answering "who owns this symbol?" by hand. As a
+  built-in that picks deterministically (say, lowest number wins), it needs no lock, and identical builds come free.
+- **Memory belongs to a phase and is dropped all at once.** The collector off and bump allocation were both wins.
+- **The cost model should count memory touched,** next to total work and the longest chain of waiting. Cores stopped
+  helping here because of memory, not because of the chain.
 
 ## Pictures worth drawing (all from data already in the repo)
 
-- The arc above as a waterfall: each change's seconds and core-seconds, kept vs killed.
-- Core-seconds against core count (16.4 -> 22.8): the memory wall, the most surprising number here.
-- The critical-path simulation (simcores, 11-12 15:35): wall time against cores, as-is vs declarations-first.
-- The build's cores-busy timeline before and after declarations-first (TRACE has the timelines).
-- The link against its floor, phase by phase (FLOOR.md): ms on one axis, % of floor on the other.
-- Where the CPU goes inside fc, before and after slots: the hash-map share shrinking.
+- The table above as a waterfall: each change's seconds and core-seconds, kept and killed.
+- Core-seconds against core count (16.4 -> 22.8): the memory wall.
+- Cores busy over time, before and after declarations-first (TRACE has the timelines).
+- The critical-path simulation (11-12 15:35): wall time against cores, as-is and declarations-first.
+- The link against its floor, phase by phase (bottom-up FLOOR.md).
