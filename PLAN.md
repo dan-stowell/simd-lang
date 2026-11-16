@@ -129,94 +129,51 @@ Log (append one line per milestone reached, with the oracle number):
   liveness waits, one environment skip. Language corpus 23 of 23. MinIO's own tests rerun with this fc: 45 of 46,
   cmd as stock (fc-minio-rt3.log). Oracle 2: MinIO 20-23 core-s for 75.5 MB (0.27-0.30 per MB).
 
-Now (2026-11-15 22:13 UTC): **MinIO cold 2.4-2.7 s on 8 cores this morning (idle, smoke passing; exit test 3.3 s);
-warm 1.77-1.92 s this afternoon.** No quiet numbers since, and those are numbers of a compiler that has changed:
-**the Go distribution's own compiler tests (`tools/fc/gotest.py`: $GOROOT/test's 1,048 single-file `// run` programs,
-never run before) found 30-odd differences from the stock compiler today, every one in every earlier fc binary**
-(JOURNAL 21:00, 21:20, 21:40 UTC: interface values of two named types, `for i, x[i] = range`, nil checks where nothing
-is loaded, uintptr arguments keeping their objects, recover through reflect, overlapping array assignment, blank
-fields, `switch { case i: }` with an interface value, line numbers, types local to generic functions, ...). HEAD:
-1,018 pass, 0 open, 13 skips with reasons (tests/fc/gotest-skips.txt), 17 excluded (stock does not pass them outside
-GOROOT/test). Compilers on disk: **build/fc = HEAD (5b23b5d, built 21:44)**; build/fcy = de605c5 (the sweep below
-runs on it: do not rebuild it); build/fcw, fcz, fcr (race detector), fcx: scratch, free to overwrite
-(`FC_TAG=w driver/mkfc.sh`; a build piped into tail needs `set -o pipefail`). In order:
-(1) **Correctness on HEAD.**
-(a) Running since 21:45 on build/fc: /home/exedev/targets/fc-verify-1115e.sh (log fc-verify-1115e.log there): wbcheck,
-safecheck, zipcheck, cgotest, gotest (as is, then 16 at once), lang three modes, std 260 through wpbatch, MinIO's
-packages, the corpus builds with their smoke tests, then gotest eight more rounds (binaries are not the same bytes
-from build to build, and a miscompile that depends on an address shows in some builds only: IDEAS "The same bytes").
-**While it runs do not rebuild build/fc and do not edit tools/fc/{wptest,wpbatch,lang,test,corpus,cgotest}.sh or
-gotest.py.** Expect: gotest PASS 1018 FAIL 0 NOFC 0 every time (21:50: the first run is exactly that) (a failing binary is kept under
-fc-verify-1115e.gotest-keep*: disassemble it, do not rerun and shrug); lang 26 of 26; std 260 of 260 (TestStackGrowth
-is a skip line now); MinIO 45 of 46 (cmd: TestTrackingResponseWriter, as stock). Any other line is a bug, or a timeout
-to rerun alone. The pass before it (1115d, on 09e6304) ended as expected: std 259 of 260, MinIO 45 of 46.
-**Pushed at 21:56** after its first lines were clean (checks PASS, gotest 1,018 / 0 / 0, lang 26 of 26 in three
-modes). The 16-at-once run had one timeout, abi/uglyfib.go: 94 s by fc against 0.64 s by stock (two heap allocations
-per call: no escape analysis outside the runtime's packages; JOURNAL 21:56; gotest's timeout is 600 s since, so the
-eight rounds should show 0 failures). When the whole pass is clean: the M-log line (std, MinIO, gotest counts) and
-tests/fc/passing.txt's header.
-(b) Running since 20:47 on build/fcy: /home/exedev/targets/fc-sweep-1115.sh (log fc-sweep-1115.log): the free-slot
-diagnostic (`WPTEST_FREECHECK=1`, tools/fc/freecheck.py) over the runtime's suite and MinIO's packages; its last lines
-list any report file. Its first step (the runtime's suite plain) failed on TestStackGrowth alone: a liveness wait
-(the skip line of 21:20), 34 minutes in chan receive; the freecheck run of the runtime will time out on it too (rerun
-that one alone afterwards: `WPTEST_FREECHECK=1 GOGC=25 tools/fc/wpbatch.sh -j 1 -C /home/exedev/targets/goroot-slots/src runtime`).
-(c) **gotest covers only `// run` with no flags** (1,048 of 3,405 files). **An Opus builder (launched 21:58, its own
-worktree under .claude/worktrees, compiler tag rd) is extending it** to `// rundir` (116 directories of several
-packages), `// runoutput` (17), `// run` with flags, `// build*`, and fixing or listing what they find; its report
-arrives as a task notification (if none came: `git worktree list`, the newest branch's commits). Merge it like the
-others: build a scratch compiler from the merged tree, gotest + lang rt, then push. `// compile`/`// errorcheck` are
-the front end's (go/types): not ours. Also worth one builder: the same harness over
-the test directories of older Go releases' regression programs that this GOROOT dropped, and a random-program
-differential (csmith-style) only if those dry up.
-(d) The corpus case of each finding is tests/fc/lang/gotestfinds (mine), lines, generics/consts+locals, localtarg (the
-builders'). FC_ESC=1 (escape analysis in every package) is not part of any pass and crashed on a corpus package until
-21:42: the next verify script is written with it and with samebytes on three
-projects: /home/exedev/targets/fc-verify-1115f.sh (run it on build/fc after 1115e ends and the builders are merged).
-**Liveness skips are 30-odd tests and some depend on what ran before** (the pinner tests, TestStackGrowth). FC_TIDY=all
-(slots die with their statement or block in every package, as in the runtime's) makes most pass but is killed by its
-counts (IDEAS: code +33%, binary +55%, build memory +18%).
-(e) **The same bytes from the same sources** (IDEAS, last entry; STATUS decision 2). **Part one is on main and pushed (9c9c81d + 6bd2555; `date -u` 22:21)**: one order inside a package; on its compiler (build/fcw) lang 26/26 in both modes and gotest PASS 1018 FAIL 0 NOFC 0. (The JOURNAL's 22:20-22:35 times of this evening run about 15 minutes fast: written without reading the clock.)
-**Part two is with an Opus builder (launched 22:12, its own worktree, compiler tag sb)**: shard compilers for the
-shared instances, wrappers and descriptors; its report arrives as a task notification (if none: `git worktree list`,
-the newest branch). Oracle: `tools/fc/samebytes.sh <dir> [target] [n]` exits 0 (today: 134 of 14,043 symbols change
-package in a hello program, 1,910 of 41,088 in buildifier). Merge it like the others (scratch compiler from the
-merged tree, gotest + lang rt + samebytes, then push). Never `pkill -f` (it killed my own test run at 22:06).
-For the quiet pass: before build/fc is rebuilt, `cp build/fc build/fc-5b23b5d`, and A/B user+sys of MinIO against
-the new one (the sorts in NewUnit and the fixed-seed hash are the cost of part one; not measured yet).
-Escape analysis everywhere was counted (JOURNAL 22:20): +1.1 core-s on MinIO's 18, code no smaller: left off.
-(2) **The soak** is `tools/fc/soak.sh [runs] [workers]` (an fc-built protoc-gen-go against the stock-built one at
-GOGC=1; hangs get their stacks from a core by tools/fc/corebt): 0 bad of 6,000 on de605c5. Run `tools/fc/soak.sh 1500 4`
-on HEAD after the pass (today's fixes add stores and nil checks everywhere). Also worth soaking MinIO's server under
-load the same way.
-(3) **Quiet pass** (after (1a) and (1b) are done: nothing else running; `uptime` under 1; the order was the other way
-round until 21:40: JOURNAL says why): order-balanced A/B of MinIO, 4 pairs each, user+sys and wall: cold FC_NOZIP=1
-against default (module sources from zips, JOURNAL 18:33); warm FC_LAZYFUNCS=1 (by demand compiles 137,630 of 158,189
-functions, 70.8 of 80.8 MB of code: counted at 20:50), FC_FUSE=1, FC_SCRATCH=0, FC_ASMPROC=1, FC_CAPREF=1;
-`FC_LINKFLAGS=-stats`; tools/fc/timeline.py -b 50; 5 cold runs (`tools/fc/cold.sh minio 8` + tests/minio_smoke.sh);
-`tools/scoreboard/ours.sh . 8 4 2 1` then `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md` (the Bazel rows of ours
-are not in SCOREBOARD.md yet). Flip `lazyFuncsDefault` (driver/fc/demand.go) if by demand wins on wall. Then TRACE.md:
-an fc section is owed (`fc build`'s summary lines: phases, read:, the link's table, tax). **Compare this morning's
-2.4-2.7 s with HEAD's first**: the fixes cost code (MinIO: 80.8 -> 80.9 MB compiled, pclntab 23.4 -> 22.0 MB, text
-64.5 MB both) and whatever they cost in time is the price of being right, to be stated, not tuned away.
-(4) **The demo rows (BuildBuddy) are only 3x under stock** (executor 111-141 s against 335; bb-cli 38-52 against 124),
-none of it fc's own time (fc: 9.4 s for the executor's 1,065 packages). Both builders are merged:
-(a) cgo packages by fc (d6ee59c): 0 packages from the stock compiler in bb-cli and bb-executor.
-(b) **The DAG from `bazel query` (loading only) instead of `aquery`: merged (e84d816, 21:17).** `BZ_QUERY=1
-tools/bazel/cold.sh <row> 8`; on all four rows the plan handed to fc equals the aquery path's package by package
-(tools/bazel/plandiff.sh), generated files byte for byte (but those that embed a configuration directory's name), and
-the binaries pass their checks. Checked warm, without huge pages, at load 10-40: **no timings yet**. Its approximations
-are listed in JOURNAL 21:15 (rule classes recognised by name, a table of native-option defaults, the exec platform
-taken to be the target platform; every miss stops the build with the label).
-Owed on a quiet machine, with build/fc at HEAD: `tools/bazel/cold.sh bb-cli 8`, `bb-executor 8`, then both with
-BZ_QUERY=1, cold, HUGEPAGES on; the stages (Bazel, read, generate, fc), and what is left. Make BZ_QUERY=1 the default
-if it is faster on every row. Smaller, if Bazel's part still matters then: `--host_jvm_args=-XX:TieredStopAtLevel=1`
-(a one-shot server never warms up), A/B on buildifier first.
-(5) Toward 2.0 s cold: what is left of cold reading after the zips (2,495 files from directories: the standard
-library and the main module; 241 .mod files; the graph is known at 287 ms warm), allocation volume (5.9 GB mapped per
-MinIO build; no site above 5%: NewUnit 6.6% cumulative, newGen 5.8%), type descriptors written while generating code
-(2.0 of 18 s of samples in a profile under load: writeCommon, writeUncommon, the names), one assembler pass per
-package (IDEAS), functions and bodies by demand (FC_FUSE=1 FC_LAZYBODIES=1), the link (250 ms: resolve 51, deadcode
-80, layout 27, write 71).
-Housekeeping: `df -h /` before long runs (9.5 GB free at 22:10); nr_hugepages must be 0 between
-runs (a killed build leaves it set); the four merged worktrees are gone; two builders' worktrees are live (rundir, same bytes);
-reviews: the by-value capture hunt came back with 34 cases and no counterexample (REVIEWS.md).
+Now (2026-11-16 01:12 UTC): **MinIO warm 2.1-2.3 s on 8 cores with the same bytes from every build (one core of the
+machine taken by another agent's browser); cold not measured on this HEAD yet (11-15 morning: 2.4-2.7 s; HEAD before
+tonight's fixes: 3.0-3.6 s, over the exit test's 3.3 s twice in five).** Compilers on disk: **build/fc = HEAD
+(5acfc98: functions by demand, shards, built 01:06)**; build/fc-5b23b5d (11-15 21:44), fc-part1 (before the shards),
+fc-part2a: for A/B, deletable; build/fcw, fcx: scratch (`FC_TAG=w driver/mkfc.sh`; a build piped into tail needs
+`set -o pipefail`). The session of 11-15 died in the kernel's OOM killer (JOURNAL 11-16 00:40): **every heavy run goes
+through tools/memlimit.py** (LOOP "VM safety"). In order:
+(1) **Correctness on HEAD.** Running since 01:07 on build/fc: /home/exedev/targets/fc-verify-1116a.sh (log
+fc-verify-1116a.log there; every stage in its own memory-limited service): wbcheck, safecheck, zipcheck, cgotest, gotest
+(all recipes; then 16 at once), lang in four ways, std 260 through wpbatch, MinIO's packages, the corpus builds with
+their smoke tests, samebytes on three projects, gotest three more rounds. **While it runs do not rebuild build/fc and
+do not edit tools/fc/{wptest,wpbatch,lang,test,corpus,cgotest,samebytes}.sh or gotest.py.** Expect: gotest 1,251 tests:
+PASS 1209 FAIL 0 NOFC 0; lang 26 of 26 but FC_ESC=1: 25 (closures/TestCleanupSeesCapture: JOURNAL 00:40); std 260 of
+260; MinIO 45 of 46 (cmd: TestTrackingResponseWriter, as stock); samebytes equal three times. A stage that prints
+"rc N" without a FAIL line was killed (OOM or timeout): rerun it alone. It is the first pass in a service's
+environment (soft open-file limit 1024, no terminal) and the first with functions by demand in every test binary:
+new failures are likely one of those two; FC_EAGERFUNCS=1 tells them apart. When the whole pass is clean: the M-log
+line (std, MinIO, gotest counts) and tests/fc/passing.txt's header. Then `tools/fc/soak.sh 1500 4` (0 bad of 6,000 on
+de605c5; today's fixes add stores and nil checks everywhere), through memlimit.
+(2) **Cold numbers of HEAD** (after (1): nothing else running; another agent's headless-shell may still hold a core:
+say so): 5 cold runs (`tools/fc/cold.sh minio 8` + tests/minio_smoke.sh), and order-balanced pairs against
+build/fc-5b23b5d as /home/exedev/targets/quiet-1116/run.sh does them (copy it; its `pairs` function). Then
+`tools/scoreboard/ours.sh . 8 4 2 1` and `tools/scoreboard/mkscoreboard.py > SCOREBOARD.md` (the Bazel rows of ours are
+not in SCOREBOARD.md yet), and TRACE.md: an fc section is owed (`fc build`'s summary lines: phases, read:, shards:, the
+link's table from FC_LINKFLAGS=-stats, tax). Then the milestone steps of LOOP.md (STATUS, MORNING, reviewers).
+(3) **The shards' remaining cost: +0.19 s wall, +1.1 core-s on MinIO** (JOURNAL 01:10). Measured ways in: the tail
+(`shards:` line: 70-90 ms after the last package: equality and hash functions compiled, then 64 NewUnit calls of
+0.5 core-s together: overlap them with the last package's back end by finishing a shard as soon as no package that
+can still ask is running, or split minio/cmd's tail); symbols looked up in two compilers (LookupABIInit 0.39 -> 0.92
+core-s in profiles, claim 0.11 -> 0.31): hand the shard the asker's name string and hash, or give each asker a
+per-compiler map from types.Type to the shard's symbol. A/B with FC_SHARDS=0, strict rotation, 6 rounds.
+(4) **Gotest beyond this GOROOT** (one Opus builder): the same harness over the regression programs of older Go
+releases that this GOROOT dropped, and a random-program differential (csmith-style) if those dry up. And the class the
+vfork bug belongs to: code that only works because the stock compiler keeps nothing in the frame across a call
+(runtime and syscall functions marked nosplit/norace/"must not split": audit fc's temporaries across calls there).
+(5) **The demo rows (BuildBuddy) are only 3x under stock** (executor 111-141 s against 335; bb-cli 38-52 against 124),
+none of it fc's own time (fc: 9.4 s for the executor's 1,065 packages). The DAG from `bazel query` (loading only) is
+merged (`BZ_QUERY=1 tools/bazel/cold.sh <row> 8`; same plans as the aquery path on all four rows; no timings yet).
+Owed on a quiet machine: `tools/bazel/cold.sh bb-cli 8`, `bb-executor 8`, then both with BZ_QUERY=1, cold, HUGEPAGES
+on; the stages (Bazel, read, generate, fc), and what is left. Make BZ_QUERY=1 the default if it is faster on every
+row. Smaller: `--host_jvm_args=-XX:TieredStopAtLevel=1`, A/B on buildifier first.
+(6) Toward 2.0 s cold: what is left of cold reading after the zips (2,495 files from directories; the graph is known
+at 173-184 ms warm, 370 ms cold), allocation volume (6.4 GB mapped per MinIO build), type descriptors written while
+generating code, one assembler pass per package (assembler: 170 runs, 666-691 ms of CPU, 227-268 of it symbol ABI
+passes), bodies by demand (FC_LAZYBODIES=1), the link (163-193 ms: resolve 39, deadcode 44, layout 20, write 52).
+Housekeeping: `df -h /` before long runs (25 GB free at 01:07 after `go clean -cache` of targets/fc-gocache, which
+grows by gigabytes a day); nr_hugepages must be 0 between runs (a killed build leaves it set); no builder worktrees
+are live; never `pkill -f`; the escape analysis everywhere (FC_ESC=1) stays off (+1.1 core-s, code no smaller).
