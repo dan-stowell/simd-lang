@@ -74,7 +74,7 @@ func assemble(p *Pkg, dir string, files []string, out string, symabis bool) ([]b
 	ctxt := obj.Linknew(architecture.LinkArch)
 	ctxt.CompressInstructions = true
 	ctxt.IsAsm = true
-	ctxt.Pkgpath = plainPath(p.ImportPath)
+	ctxt.Pkgpath = asmPkgpath(p)
 	ctxt.Std = p.Standard
 	ctxt.DwTextCount = objabi.DummyDwarfFunctionCountForAssembler()
 	ctxt.Bso = bufio.NewWriter(os.Stdout)

@@ -647,7 +647,7 @@ func (c *compiler) funcSymName(fn *types.Func) string {
 	sig := fn.Type().(*types.Signature)
 	pp := c.pkgPrefix(fn.Pkg())
 	if r := sig.Recv(); r != nil {
-		t := r.Type()
+		t := types.Unalias(r.Type()) // (`type P = *T; func (P) M()` is a method of *T)
 		ptr := false
 		if p, ok := t.(*types.Pointer); ok {
 			t, ptr = p.Elem(), true

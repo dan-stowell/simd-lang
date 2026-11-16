@@ -188,7 +188,7 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 		}
 		if osig.RecvTypeParams().Len() > 0 {
 			// a generic method of a generic type: the receiver's type arguments and the method's own
-			rt := sig.Recv().Type()
+			rt := types.Unalias(sig.Recv().Type())
 			if p, ok := rt.(*types.Pointer); ok {
 				rt = p.Elem()
 			}
@@ -205,7 +205,7 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 				giveUp("instantiate %v: %v", named, err)
 			}
 			var recv types.Type = rn
-			if _, ok := sig.Recv().Type().(*types.Pointer); ok {
+			if _, ok := types.Unalias(sig.Recv().Type()).(*types.Pointer); ok {
 				recv = types.NewPointer(rn)
 			}
 			rsig := types.NewSignatureType(types.NewParam(0, nil, "", recv), nil, nil, sig.Params(), sig.Results(), sig.Variadic())
@@ -214,7 +214,7 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 		return g.c.instantiate(origin, osig.TypeParams(), targs, nil), sig
 	case osig.RecvTypeParams().Len() > 0:
 		// a method of a generic type: the type arguments are the receiver's
-		rt := sig.Recv().Type()
+		rt := types.Unalias(sig.Recv().Type())
 		if p, ok := rt.(*types.Pointer); ok {
 			rt = p.Elem()
 		}
@@ -232,7 +232,7 @@ func (g *gen) funcRef(fn *types.Func, id *ast.Ident) (*obj.LSym, *types.Signatur
 		}
 		// the instantiated receiver decides the ABI
 		var recv types.Type = rn
-		if _, ok := sig.Recv().Type().(*types.Pointer); ok {
+		if _, ok := types.Unalias(sig.Recv().Type()).(*types.Pointer); ok {
 			recv = types.NewPointer(rn)
 		}
 		rsig := types.NewSignatureType(types.NewParam(0, nil, "", recv), nil, nil, sig.Params(), sig.Results(), sig.Variadic())
@@ -280,7 +280,7 @@ func (c *compiler) instantiateM(origin *types.Func, tparams *types.TypeParamList
 	if recv != nil {
 		osig := origin.Type().(*types.Signature)
 		base := recv.Obj().Name() + args
-		if _, ok := osig.Recv().Type().(*types.Pointer); ok {
+		if _, ok := types.Unalias(osig.Recv().Type()).(*types.Pointer); ok {
 			name = pp + ".(*" + base + ")." + origin.Name()
 		} else {
 			name = pp + "." + base + "." + origin.Name()
@@ -294,7 +294,7 @@ func (c *compiler) instantiateM(origin *types.Func, tparams *types.TypeParamList
 		}
 	} else if r := origin.Type().(*types.Signature).Recv(); r != nil {
 		// a generic method of an ordinary type
-		rt := r.Type()
+		rt := types.Unalias(r.Type()) // (a receiver type may be an alias of *T: `func (x AliasOfPtrT) M[U any]()`)
 		ptr := false
 		if p, ok := rt.(*types.Pointer); ok {
 			rt, ptr = p.Elem(), true

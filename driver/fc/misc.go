@@ -248,7 +248,7 @@ func (g *gen) findHeapVars(body ast.Node) {
 		case *ast.SelectorExpr:
 			if sel := selnOf(n); sel != nil && sel.Kind() == types.MethodVal {
 				fn := sel.Obj().(*types.Func)
-				if _, ptr := fn.Type().(*types.Signature).Recv().Type().(*types.Pointer); ptr {
+				if _, ptr := types.Unalias(fn.Type().(*types.Signature).Recv().Type()).(*types.Pointer); ptr {
 					// x.M() with a pointer receiver: &x, unless a pointer is followed first
 					t := g.typeOf(n.X)
 					path := sel.Index()

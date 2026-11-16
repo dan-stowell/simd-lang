@@ -1282,7 +1282,7 @@ func (g *gen) methodOn(l loc, xt types.Type, fn *types.Func, path []int, sig *ty
 			g.usedIfaceMethod(t, fn)
 			break
 		}
-		_, wantPtr := msig.Recv().Type().(*types.Pointer)
+		_, wantPtr := types.Unalias(msig.Recv().Type()).(*types.Pointer)
 		_, havePtr := t.Underlying().(*types.Pointer)
 		var rl loc
 		switch {
