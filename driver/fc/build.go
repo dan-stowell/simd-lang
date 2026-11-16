@@ -36,6 +36,9 @@ import (
 
 // cpuSeconds: user and system time of this process and of the children it has waited for (the assembler,
 // the linker).
+// shardTailMS: how long the build waited for the shards after its last package was done (finishShards).
+var shardTailMS float64
+
 func cpuSeconds() float64 {
 	t := 0.0
 	for _, who := range []int{syscall.RUSAGE_SELF, syscall.RUSAGE_CHILDREN} {
@@ -380,7 +383,8 @@ func buildMode(args []string) {
 			}
 		}
 	}
-	if inProc {
+	if inProc && os.Getenv("FC_SHARDS") != "0" {
+		// (FC_SHARDS=0: the first package that asks owns it, and two builds differ: for measuring only)
 		// what no one package owns (descriptors, wrappers, instances) has a home that does not depend on
 		// which package asked first: the same sources give the same bytes (shard.go)
 		pr.newShards(sem)
@@ -535,7 +539,9 @@ func buildMode(args []string) {
 	var shardUnits []*fclinklib.Unit
 	var shardErrs []string
 	if pr.shards != nil {
+		ts := time.Now()
 		shardUnits, shardErrs = pr.finishShards()
+		shardTailMS = float64(time.Since(ts).Microseconds()) / 1e3
 	}
 	<-frontDone
 	if demandStat {
@@ -632,6 +638,9 @@ func buildMode(args []string) {
 			args := append(append([]string{"-s", "-o", *link}, xargs...), strings.Fields(os.Getenv("FC_LINKFLAGS"))...)
 			fclinklib.Link(args, append(inputs, mainIn...))
 			fmt.Printf("link (fclink in process): %d fc units, %d stock archives, %.0f ms\n", len(targets), len(stock), float64(time.Since(tl).Milliseconds()))
+			if pr.shards != nil {
+				fmt.Printf("shards: %d, finished %.0f ms after the last package\n", len(pr.shards), shardTailMS)
+			}
 		} else {
 			var cfg strings.Builder
 			for _, p := range closure {

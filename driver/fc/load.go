@@ -27,6 +27,8 @@ import (
 
 // Pkg is one package of the build: the fields `go list -json` prints, and what the front end adds.
 type Pkg struct {
+	vargenOnce sync.Once // (rtype.go: vargen)
+	vargen     map[token.Pos]int
 	ImportPath string
 	Dir        string
 	Name       string

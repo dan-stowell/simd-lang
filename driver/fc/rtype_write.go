@@ -416,8 +416,12 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 				// package runtime writes for everybody (writeBasicTypes) are its own
 				if c.path != "runtime" || !writtenByBasic(tbase) {
 					if sh := c.route(s.Name); sh != nil {
-						sh.rtInit()
-						sh.writeType(t)
+						// (asked once for the program: every later asker, of any package, stops at
+						// this one load instead of the shard's name, lookup and claim)
+						if _, asked := c.pr.typeOwner.LoadOrStore(s.Name, sh); !asked {
+							sh.rtInit()
+							sh.writeType(t)
+						}
 						return s
 					}
 				}

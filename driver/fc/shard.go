@@ -34,13 +34,20 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"sync"
 
 	"cmd/internal/fclinklib"
 	"cmd/internal/obj"
 )
 
-const nShards = 64
+// nShards: how many shard compilers (FC_SHARDS; the same number gives the same bytes).
+var nShards = func() uint32 {
+	if n, err := strconv.Atoi(os.Getenv("FC_SHARDS")); err == nil && n > 0 {
+		return uint32(n)
+	}
+	return 64
+}()
 
 // shardState is what a shard compiler has besides a compiler's.
 type shardState struct {

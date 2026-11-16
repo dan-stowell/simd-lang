@@ -36,8 +36,6 @@ type rtypeState struct {
 	rtMeth    map[string][]methodSig // method tables, by type symbol name
 	// (synthetic types with no equality and no hash, and the map a group struct belongs to: Program.noalg, groupOf)
 	rtGroups    map[string]*types.Struct // group struct by the map's link name
-	rtVargen    map[*types.Package]map[token.Pos]int
-	rtVargenMu  sync.Mutex // (functions are compiled in parallel)
 	rtWrap      map[*obj.LSym]bool
 	rtAlg       map[string]bool
 	rtPtrTo     map[string]bool          // link names X such that the package mentions *X (stock: Type.IsPtrElem)
@@ -81,7 +79,6 @@ func (c *compiler) rtInit() {
 	c.rtOnce.Do(func() {
 		c.rtMeth = map[string][]methodSig{}
 		c.rtGroups = map[string]*types.Struct{}
-		c.rtVargen = map[*types.Package]map[token.Pos]int{}
 		c.rtWrap = map[*obj.LSym]bool{}
 		c.rtAlg = map[string]bool{}
 	})
@@ -493,21 +490,19 @@ func (c *compiler) namedSymName(u *types.Named, mode fmtMode) string {
 // vargen is the number the stock compiler gives a type declared inside a function: a count, over the
 // package's files in order, of the type declarations inside function bodies (noder: declCollector).
 func (c *compiler) vargen(o *types.TypeName) int {
-	c.rtInit() // (asked before any descriptor is written: an instance's name, F[T] with T declared in main)
-	c.rtVargenMu.Lock()
-	defer c.rtVargenMu.Unlock()
-	m := c.rtVargen[o.Pkg()]
-	if m == nil {
-		var p *Pkg
-		if samePkg(o.Pkg(), c.tpkg) {
-			p = c.pkg
-		} else {
-			p = c.pr.byPath[o.Pkg().Path()]
-		}
-		if p == nil || len(p.files) == 0 {
-			giveUp("local type %v of a package without source", o)
-		}
-		m = map[token.Pos]int{}
+	var p *Pkg
+	if samePkg(o.Pkg(), c.tpkg) {
+		p = c.pkg
+	} else {
+		p = c.pr.byPath[o.Pkg().Path()]
+	}
+	if p == nil || len(p.files) == 0 {
+		giveUp("local type %v of a package without source", o)
+	}
+	// one table per package for the whole program: every compiler that names the type asks (64 shard
+	// compilers each walked every package with a local type: 1.2 core-s of a MinIO build)
+	p.vargenOnce.Do(func() {
+		m := map[token.Pos]int{}
 		gen := 0
 		for _, f := range p.files {
 			var walk func(n ast.Node, within bool)
@@ -532,9 +527,9 @@ func (c *compiler) vargen(o *types.TypeName) int {
 			}
 			walk(f, false)
 		}
-		c.rtVargen[o.Pkg()] = m
-	}
-	return m[o.Pos()]
+		p.vargen = m
+	})
+	return p.vargen[o.Pos()]
 }
 
 // tconv writes t's name (stock: types.tconv2). short is the stock formatter's 'S' verb: a defined type
@@ -842,7 +837,9 @@ func (c *compiler) methodSym(recv types.Type, sel *types.Selection) *obj.LSym {
 		// linker of another process) by the first package that writes a method table with it
 		if c.pr.shards != nil {
 			if sh := c.route(s.Name); sh != nil {
-				sh.addWrapper(req)
+				if _, asked := c.pr.wrapOwner.LoadOrStore(s.Name, sh); !asked {
+					sh.addWrapper(req)
+				}
 				return s
 			}
 		} else if owner, loaded := c.pr.wrapOwner.LoadOrStore(s.Name, c); loaded && owner != c {
