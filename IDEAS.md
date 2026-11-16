@@ -208,4 +208,11 @@ and the cache added one more. So step 1 becomes: **facts about a type live on th
 already patched: a slot on each type, or a dense ID given at creation, filled once per program with the link name,
 the symbol name, the noalg mark, size and alignment), which removes the type-keyed maps (linkNames, noalg, the
 per-compiler layout maps: about 1.2 core-s of loads and assigns in the profile) rather than adding to them.
-Steps 2 and 3 not started.
+Done since (2026-11-16 01:50 UTC, commits "what the program knows about a type lives on the type object" and
+"sizes, alignments..."): the facts are on the type objects (facts.go, types.SBFacts); in paired profiles writeType
+went from 15-16% to 11-12% of the samples and compileFunc from 37% to 33.5%; to be timed on the quiet pass.
+**Step 3 is killed by a count**: of the 60,597 descriptors written only 8,799 are dead in the link (FC_TYPESTAT=<path>
+against fclink's -dumpmap; 5,444 of them func types, the method types of pruned methods): my "32,360 kept" above was
+the linker's count of sorted typelinks, not of live descriptors. There is no half to save. Step 2 not started;
+what is left inside writeType is method tables (0.7-0.9 s), names built for type objects seen for the first
+time (tconv 0.4 s) and the object library's lookups (0.4 s).
