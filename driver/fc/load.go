@@ -117,6 +117,7 @@ type Program struct {
 	byTpkg   sync.Map       // *types.Package -> *Pkg
 	declPkgs sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
 	lineDirs sync.Map       // *token.File -> true: the file may have //line directives (fileLine)
+	ptrTypes sync.Map       // types.Type -> *types.Pointer: one pointer type per element type (ptrTo)
 	// oldLoops: *token.File -> true: the file's language version is before go1.22, so the variables its for
 	// statements declare are one per loop, not one per iteration (oldLoopVars)
 	oldLoops    sync.Map
