@@ -388,6 +388,16 @@ func (g *gen) byValCapture(v *types.Var, body ast.Node) bool {
 				if n.Value != nil {
 					mark(n.Value)
 				}
+				if n.Tok == token.DEFINE && g.c.pr.oldLoopVar(n.For) {
+					// one variable for the whole loop: every iteration assigns it
+					for _, e := range []ast.Expr{n.Key, n.Value} {
+						if id, ok := e.(*ast.Ident); ok {
+							if v, ok := defOf(id).(*types.Var); ok {
+								g.assigned[v] = true
+							}
+						}
+					}
+				}
 			}
 			return true
 		})

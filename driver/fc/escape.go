@@ -41,7 +41,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"go/version"
 	"os"
 	"strings"
 	"sync"
@@ -876,7 +875,7 @@ func (pk *escPkg) batch(units []*escUnit) {
 			fn.obj = u.obj
 			fn.sig = u.obj.Type().(*types.Signature)
 			fn.generic = fn.sig.TypeParams().Len() > 0 || fn.sig.RecvTypeParams().Len() > 0
-			if v := pk.info.FileVersions[u.file]; v != "" && version.Compare(v, "go1.22") < 0 {
+			if pk.pr.oldLoopVar(u.file.Pos()) {
 				fn.perIter = false
 			}
 			b.initFn(fn)

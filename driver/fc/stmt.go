@@ -805,7 +805,8 @@ func (g *gen) forStmt(s *ast.ForStmt, name string) {
 	}
 	// loop variables declared by the init statement that live on the heap get a fresh object per iteration
 	var perIter []*types.Var
-	if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE {
+	// (not in a file before go1.22: one variable for the whole loop)
+	if as, ok := s.Init.(*ast.AssignStmt); ok && as.Tok == token.DEFINE && !g.c.pr.oldLoopVar(s.For) {
 		for _, lhs := range as.Lhs {
 			if id, ok := lhs.(*ast.Ident); ok {
 				if v, ok := defOf(id).(*types.Var); ok && g.heapVars[v] {
@@ -942,6 +943,20 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 			valVar = defOf(s.Value.(*ast.Ident)).(*types.Var)
 		}
 	}
+	// in a file before go1.22 the variables are made once, before the loop: what holds one of them (a
+	// closure, a pointer) sees every later iteration's value
+	var once map[*types.Var]bool
+	if define && g.c.pr.oldLoopVar(s.For) {
+		for _, v := range []*types.Var{keyVar, valVar} {
+			if v != nil && g.heapVars[v] {
+				if once == nil {
+					once = map[*types.Var]bool{}
+				}
+				once[v] = true
+				g.declareVar(v)
+			}
+		}
+	}
 	// tuple: both targets are existing lvalues and the second is more than a name, so storing the first
 	// could change where the second is
 	tuple := false
@@ -959,7 +974,12 @@ func (g *gen) rangeStmt(s *ast.RangeStmt, name string) {
 			if src.kind == lReg || src.kind == lRegInd {
 				src = g.keep(src, st)
 			}
-			l := g.declareVar(v)
+			var l loc
+			if once[v] {
+				l = g.vars[v]
+			} else {
+				l = g.declareVar(v)
+			}
 			g.move(l, g.convertImplicit(src, st, g.vt(v)), g.vt(v))
 			return
 		}

@@ -12,6 +12,7 @@ import (
 	"go/scanner"
 	"go/token"
 	"go/types"
+	"go/version"
 	"io"
 	"os"
 	"path/filepath"
@@ -109,21 +110,25 @@ type Program struct {
 	plan   *selfPlan     // nil when the packages come from a plan file
 	mu     sync.Mutex    // guards byPath while packages are being discovered
 
-	tctx      *types.Context // shared by every package: one object per instantiated type
-	byTpkg    sync.Map       // *types.Package -> *Pkg
-	declPkgs  sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
-	lineDirs  sync.Map       // *token.File -> true: the file may have //line directives (fileLine)
-	linkNames sync.Map       // types.Type -> its link name, for every compiler of a whole-program build
-	typeOwner sync.Map       // descriptor symbol name -> the *compiler that writes it (whole-program builds)
-	wrapOwner sync.Map       // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
-	lazyTypes bool           // descriptors by demand (rtype.go: lazyNamed)
-	lazyFuncs bool           // functions by demand (demand.go)
-	fnWanted  sync.Map       // *types.Func -> true: compiled as a root or queued for its package
-	pending   atomic.Int64   // packages in their first pass + queued functions not yet compiled
-	quiet     chan struct{}  // closed when pending reaches zero: nothing more will be asked for
-	quietOnce sync.Once
-	idleJobs  chan chan func() // parked goroutines of runJob
-	stockPath map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
+	tctx     *types.Context // shared by every package: one object per instantiated type
+	byTpkg   sync.Map       // *types.Package -> *Pkg
+	declPkgs sync.Map       // *types.Package -> true: the packages made by the declarations-only pass
+	lineDirs sync.Map       // *token.File -> true: the file may have //line directives (fileLine)
+	// oldLoops: *token.File -> true: the file's language version is before go1.22, so the variables its for
+	// statements declare are one per loop, not one per iteration (oldLoopVars)
+	oldLoops    sync.Map
+	anyOldLoops atomic.Bool
+	linkNames   sync.Map      // types.Type -> its link name, for every compiler of a whole-program build
+	typeOwner   sync.Map      // descriptor symbol name -> the *compiler that writes it (whole-program builds)
+	wrapOwner   sync.Map      // method wrapper symbol name -> the *compiler that compiles it (lazyTypes)
+	lazyTypes   bool          // descriptors by demand (rtype.go: lazyNamed)
+	lazyFuncs   bool          // functions by demand (demand.go)
+	fnWanted    sync.Map      // *types.Func -> true: compiled as a root or queued for its package
+	pending     atomic.Int64  // packages in their first pass + queued functions not yet compiled
+	quiet       chan struct{} // closed when pending reaches zero: nothing more will be asked for
+	quietOnce   sync.Once
+	idleJobs    chan chan func() // parked goroutines of runJob
+	stockPath   map[string]bool  // lazyTypes: the packages the stock compiler compiles in this build
 	// stockArchives: the stock linker links this build and these packages are the stock compiler's (by plain
 	// import path, its archive): an itab both sides can write is merged by content, as the stock compiler's
 	// are, so its references to their symbols are by index (writeITab, indexRefs)
@@ -650,6 +655,37 @@ func (pr *Program) resolveDeps(p *Pkg) error {
 	return p.depErr
 }
 
+// oldLoopVars: is the language version of a file before go1.22 (loop variables are per loop)? pkgV is the
+// module's go line ("" for the standard library: the toolchain's), fileV the version of the file's //go:build
+// line, if it has one. The checker's rule (go/types, initFiles): a file's line may raise the version, and
+// may lower it when the module is at go1.21 or later, though never under go1.21. As cmd/compile reads it
+// for its DistinctVars (noder: the file's version, "" or >= go1.22).
+func oldLoopVars(pkgV, fileV string) bool {
+	v := pkgV
+	if fileV != "" && version.IsValid(fileV) {
+		c := -1 // (below the toolchain's own version, or equal to it: then nothing is old)
+		if pkgV != "" {
+			c = version.Compare(fileV, pkgV)
+		}
+		if c > 0 || c < 0 && (pkgV == "" || version.Compare(pkgV, "go1.21") >= 0) {
+			v = fileV
+			if version.Compare(v, "go1.21") < 0 {
+				v = "go1.21"
+			}
+		}
+	}
+	return v != "" && version.Compare(v, "go1.22") < 0
+}
+
+// oldLoopVar: is the for statement at pos in a file whose loop variables are per loop?
+func (pr *Program) oldLoopVar(pos token.Pos) bool {
+	if !pr.anyOldLoops.Load() {
+		return false
+	}
+	_, old := pr.oldLoops.Load(pr.fset.File(pos))
+	return old
+}
+
 func goVersionOf(p *Pkg) string {
 	if p.Module != nil && p.Module.GoVersion != "" {
 		return "go" + p.Module.GoVersion
@@ -859,6 +895,10 @@ func (pr *Program) parse(p *Pkg) {
 				return
 			}
 			p.files = append(p.files, f)
+			if oldLoopVars(goVersionOf(p), f.GoVersion) {
+				pr.oldLoops.Store(pr.fset.File(f.Pos()), true)
+				pr.anyOldLoops.Store(true)
+			}
 			if bytes.Contains(src, []byte("//line ")) || bytes.Contains(src, []byte("/*line ")) {
 				// (a superset of the files whose positions a //line directive moves: those take the slow
 				// path of fileLine, the rest none)
