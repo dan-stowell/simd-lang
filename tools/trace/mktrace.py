@@ -532,6 +532,86 @@ def sb_section(name, L, out, stock):
         out.append('')
 
 
+FCT = os.environ.get('FCTRACE', '/home/exedev/targets/fc-trace')
+
+
+def fc_section(name, L, out):
+    """The campaign's compiler (driver/fc): cold runs collected by tools/trace/fc.sh."""
+    d = os.path.join(FCT, name)
+    runs = sorted((x for x in os.listdir(d) if x.startswith('run')), key=lambda x: int(x[3:])) if os.path.isdir(d) else []
+    if not runs: return
+    def kv(path):
+        m = {}
+        for line in open(path):
+            f = line.split(None, 1)
+            if len(f) == 2: m.setdefault(f[0], f[1].strip())
+        return m
+    metas = [kv(os.path.join(d, r, 'meta.txt')) for r in runs]
+    m = metas[0]
+    log = open(os.path.join(d, runs[0], 'build.log')).read()
+    def g(pat, default=0.0):
+        x = re.search(pat, log, re.M)
+        return float(x.group(1).replace(',', '')) if x else default
+    def line(prefix):
+        x = re.search(r'^' + re.escape(prefix) + r'.*$', log, re.M)
+        return x.group(0) if x else ''
+    known = g(r'^read: .*the last at (\d+) ms'); dirmb = g(r'files \(([\d.]+) MB\) from their directories'); zipmb = g(r'reads of ([\d.]+) MB')
+    checked = g(r'^front end: .*all checked (\d+) ms'); srcmb = g(r'^front end: \d+ packages, ([\d.]+) MB')
+    funcs = g(r'; (\d+) functions'); codemb = g(r'functions, ([\d.]+) MB of code')
+    parse = g(r'parse ([\d.]+) s'); check = g(r'check ([\d.]+) s')
+    total_ms = g(r'^total: (\d+) ms wall'); total_cs = g(r'^total: \d+ ms wall, ([\d.]+) core-s')
+    asm = g(r'runs, (\d+) ms assembling') / 1000; tail = g(r'^shards: \d+, finished (\d+) ms')
+    link_ms = g(r'^link \(fclink in process\).*, (\d+) ms')
+    st = {x.group(1): (float(x.group(2)), float(x.group(3))) for x in re.finditer(r'^(\w+)\s+([\d.]+)\s+([\d.]+)\s+(?:\[kernel|\d+ threads)', log, re.M)}
+    link_cpu = st.get('total', (0, 0))[1] / 1000; write_ms, write_cpu = st.get('write', (0, 0))
+    wall = float(m['wall_ms']) / 1000; cs = float(m['core_s']); binb = int(m.get('bin_bytes', 0))
+    gen = max(total_cs - parse - check - asm - link_cpu, 0)
+    mem = L.get('memcpy_8t_bytes_per_s', 0); small = L.get('smallfiles_cold_8t_bytes_per_s', 0); wbw = L.get('disk_write_bytes_per_s', 0)
+    tick = lambda n, t: n * t / (NCPU * TICKS)
+    gb = srcmb * 1e6; inb = (dirmb + zipmb) * 1e6
+    fl = {'read': inb / small if small else 0, 'parse': tick(gb, MODEL['lex'] + MODEL['parse']), 'types': tick(gb, MODEL['types']),
+          'codegen': tick(gb, MODEL['codegen']), 'link': binb / mem if mem else 0, 'write': binb / wbw if wbw else 0}
+    commit = open(os.path.join(d, 'commit.txt')).read().strip() if os.path.exists(os.path.join(d, 'commit.txt')) else m.get('commit', '?')[:7]
+    date = open(os.path.join(d, 'date.txt')).read().strip() if os.path.exists(os.path.join(d, 'date.txt')) else '?'
+    smokes = [open(os.path.join(d, r, 'smoke.txt')).read().strip() if os.path.exists(os.path.join(d, r, 'smoke.txt')) else '' for r in runs]
+    out.append(f'## {name}: the build trace (fc, 8 CPUs, cold)\n')
+    out.append(f"`fc build -link` at `{commit}`, {date} (`tools/trace/fc.sh {name} {len(runs)}`): every Go package by fc in one process, the runtime included; "
+               f"assembly by the stock assembler as a library; linked in the same process (fclink); no go command, no compiler or linker process, no export data. "
+               f"Cold as CHARTER.md defines it: nothing kept from an earlier build, page cache dropped; module sources read from the module cache's zips. "
+               f"fc's heap comes from a pool of {m.get('hugepages', '0')} explicit 2 MB pages reserved for the run (machine configuration). "
+               f"Dev build: no optimization, no inlining, no DWARF.\n")
+    out.append(f"Wall clock of {len(runs)} cold runs, ms (process start to exit): {', '.join(f'{int(x['wall_ms']):,}' for x in metas)}; "
+               f"core-seconds: {', '.join(f'{float(x['core_s']):.1f}' for x in metas)}; machine load when each began: {', '.join(x.get('load', '?') for x in metas)}. "
+               + (f"Smoke test of each binary: {sum(1 for x in smokes if x.startswith('PASS'))} of {len(smokes)} pass. " if any(smokes) else '')
+               + "The table is the first run. The front end and the back end overlap (a package's functions are compiled while later packages are still being checked), "
+               "so the rows give when each phase ended and what it cost in core-seconds, not a wall-clock share.\n")
+    out.append('| phase | ended at ms | core-s | bytes moved | floor ms | core-s / 8 over the floor | who does it |')
+    out.append('|---|---|---|---|---|---|---|')
+    def over(c, f): return f'{c / NCPU / f:,.0f}x' if f else ''
+    out.append(f"| read inputs (the package graph is known) | {known:,.0f} | | {dirmb:.1f} MB from directories + {zipmb:.1f} MB of zip reads | {ms(fl['read'])} | {known / 1000 / fl['read']:.1f}x (wall) | fc: directories and module zips, while parsing |")
+    out.append(f"| lex/parse | | {parse:.2f} | {srcmb:.1f} MB of Go | {ms(fl['parse'])} | {over(parse, fl['parse'])} | go/parser |")
+    out.append(f"| resolve/types | {checked:,.0f} | {check:.2f} | | {ms(fl['types'])} | {over(check, fl['types'])} | go/types: declarations once, bodies in shards |")
+    out.append(f"| lower/codegen | | {gen:.2f} | {funcs:,.0f} functions, {codemb:.1f} MB of code | {ms(fl['codegen'])} | {over(gen, fl['codegen'])} | fc: typed syntax straight to machine code and descriptors (the rest of the build's core-seconds) |")
+    out.append(f"| assemble (.s files) | | {asm:.2f} | | | | the stock assembler, in process |")
+    if tail: out.append(f"| shared instances, wrappers, descriptors | +{tail:,.0f} after the last package | | | | | fc's shard compilers (the same bytes from every build) |")
+    out.append(f"| link (resolve, dead code, layout) | {link_ms - write_ms:,.0f} long | {link_cpu - write_cpu / 1000:.2f} | | {ms(fl['link'])} | | fclink, in process |")
+    out.append(f"| write output | {write_ms:,.0f} long | {write_cpu / 1000:.2f} | {fmt_bytes(binb)} | {ms(fl['write'])} | {write_ms / 1000 / fl['write']:.1f}x (wall) | fclink: relocations applied while writing; into the page cache, not synced, which is how it can be under a disk floor |")
+    ftot = fl['read'] + fl['parse'] + fl['types'] + fl['codegen'] + fl['link'] + fl['write']
+    out.append(f"| **TOTAL** | **{wall * 1000:,.0f}** ({total_ms:,.0f} inside fc) | **{cs:.1f}** ({cs / wall:.1f} cores busy) | | **{ms(ftot)}** | **{wall / ftot:.1f}x** (wall) | |\n")
+    tax = line('tax:')
+    if tax: out.append(f"**The materialization tax** (fc's own count): {tax[5:]}.\n")
+    if 'resolve' in st:
+        out.append("The link, by phase (`-stats`; wall ms, CPU ms):\n")
+        out.append('```')
+        for x in re.finditer(r'^(phase|load|resolve|inittasks|deadcode|layout|create|write|finish|total)\s.*$', log, re.M):
+            out.append(x.group(0)[:150].rstrip())
+        out.append('```\n')
+    tl = os.path.join(d, 'timeline.txt')
+    if os.path.exists(tl):
+        out.append('Cores busy over time (one warm build without the huge-page pool, sampled every 100 ms from /proc; user and kernel):\n')
+        out.append('```'); out.append(open(tl).read().rstrip()); out.append('```\n')
+
+
 def main():
     L = limits()
     out = ['# TRACE', '',
@@ -546,6 +626,10 @@ def main():
     for name in TARGETS:
         if os.path.exists(os.path.join(T, name)):
             res[name] = target_section(name, L, stock_out)
+    for name in TARGETS:
+        fc_section(name, L, out)
+    if os.path.isdir(FCT):
+        out.append('# The frozen stock-compiler path (baseline of campaign 1; rungs 0-5)\n')
     for name in TARGETS:
         sb_section(name, L, out, res[name]['run'] if res.get(name) else None)
     out.append('# The stock toolchain (rung 0: the gap)\n')
