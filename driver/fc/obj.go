@@ -86,13 +86,10 @@ func newCompiler(pr *Program, p *Pkg, path, trimpath string) *compiler {
 }
 
 // Layout questions are asked over and over for the same types, and go/types answers each from scratch.
+// (Sizes, alignments, field offsets and pointer maps are on the type objects: facts.go.)
 type layoutCache struct {
 	mu       sync.Mutex
-	size     map[types.Type]int64
-	align    map[types.Type]int64
-	offs     map[*types.Struct][]int64
 	names    map[types.Type]string
-	ptrs     map[types.Type][]bool
 	abis     map[*types.Signature]*abiInfo
 	callABIs map[abiCallKey]*abiInfo
 	hasPtr   map[types.Type]bool
@@ -135,62 +132,124 @@ func (c *compiler) sizeof(t types.Type) int64 {
 	if s, _, ok := wordLayout(t); ok {
 		return s
 	}
-	l := &c.layout
-	l.mu.Lock()
-	v, ok := l.size[t]
-	l.mu.Unlock()
-	if !ok {
-		v = c.pr.sizes.Sizeof(t)
-		l.mu.Lock()
-		if l.size == nil {
-			l.size = map[types.Type]int64{}
+	// Arrays and structs: gc's rules (go/types gcsizes.go), with every answer kept on the type object, the
+	// answers for the elements and fields included; go/types' own Sizeof works a nested struct out again
+	// at every level, and a map per compiler kept only what that compiler had asked.
+	f := factsOf(t)
+	if f != nil {
+		if v := f.size.Load(); v != 0 {
+			return v - 2
 		}
-		l.size[t] = v
-		l.mu.Unlock()
+	}
+	var v int64
+	switch u := t.Underlying().(type) {
+	case *types.Array:
+		n := u.Len()
+		if n > 0 {
+			switch e := c.sizeof(u.Elem()); {
+			case e < 0:
+				v = -1 // element too large
+			case e > 0:
+				const maxInt64 = 1<<63 - 1
+				if e > maxInt64/n {
+					v = -1
+				} else {
+					v = e * n
+				}
+			}
+		}
+	case *types.Struct:
+		if n := u.NumFields(); n > 0 {
+			offs := c.fieldOffsets(u)[n-1]
+			size := c.sizeof(u.Field(n - 1).Type())
+			if offs < 0 || size < 0 {
+				v = -1
+			} else {
+				// gc: the last field of a struct that has a size is not allowed to have none
+				if offs > 0 && size == 0 {
+					size = 1
+				}
+				v = alignUp(offs+size, c.alignof(t))
+			}
+		}
+	default:
+		v = c.pr.sizes.Sizeof(t)
+	}
+	if f != nil {
+		f.size.Store(v + 2)
 	}
 	return v
 }
+
+func alignUp(x, a int64) int64 { return (x + a - 1) &^ (a - 1) }
 
 func (c *compiler) alignof(t types.Type) int64 {
 	if _, a, ok := wordLayout(t); ok {
 		return a
 	}
-	l := &c.layout
-	l.mu.Lock()
-	v, ok := l.align[t]
-	l.mu.Unlock()
-	if !ok {
-		v = c.pr.sizes.Alignof(t)
-		l.mu.Lock()
-		if l.align == nil {
-			l.align = map[types.Type]int64{}
+	f := factsOf(t)
+	if f != nil {
+		if v := f.align.Load(); v != 0 {
+			return v
 		}
-		l.align[t] = v
-		l.mu.Unlock()
+	}
+	var v int64
+	switch u := t.Underlying().(type) {
+	case *types.Array:
+		v = c.alignof(u.Elem())
+	case *types.Struct:
+		if u.NumFields() == 0 && isAtomicAlign64(t) {
+			v = 8 // (the empty struct that asks for the struct around it to be 64-bit aligned)
+			break
+		}
+		v = 1
+		for i := 0; i < u.NumFields(); i++ {
+			if a := c.alignof(u.Field(i).Type()); a > v {
+				v = a
+			}
+		}
+	default:
+		v = c.pr.sizes.Alignof(t)
+	}
+	if f != nil {
+		f.align.Store(v)
 	}
 	return v
 }
 
+// isAtomicAlign64: go/types' _IsSyncAtomicAlign64.
+func isAtomicAlign64(t types.Type) bool {
+	n, _ := types.Unalias(t).(*types.Named)
+	if n == nil {
+		return false
+	}
+	o := n.Obj()
+	return o.Name() == "align64" && o.Pkg() != nil && (o.Pkg().Path() == "sync/atomic" || o.Pkg().Path() == "internal/runtime/atomic")
+}
+
 // fieldOffsets: the offsets of a struct's fields. The result is shared: do not modify it.
 func (c *compiler) fieldOffsets(s *types.Struct) []int64 {
-	l := &c.layout
-	l.mu.Lock()
-	v, ok := l.offs[s]
-	l.mu.Unlock()
-	if ok {
-		return v
+	f := factsOf(s)
+	if p := f.offs.Load(); p != nil {
+		return *p
 	}
-	fs := make([]*types.Var, s.NumFields())
-	for i := range fs {
-		fs[i] = s.Field(i)
+	v := make([]int64, s.NumFields())
+	var offs int64
+	for i := range v {
+		if offs < 0 {
+			v[i] = -1 // all remaining offsets are too large
+			continue
+		}
+		ft := s.Field(i).Type()
+		offs = alignUp(offs, c.alignof(ft))
+		v[i] = offs
+		if d := c.sizeof(ft); d >= 0 && offs >= 0 {
+			offs += d
+		} else {
+			offs = -1
+		}
 	}
-	v = c.pr.sizes.Offsetsof(fs)
-	l.mu.Lock()
-	if l.offs == nil {
-		l.offs = map[*types.Struct][]int64{}
-	}
-	l.offs[s] = v
-	l.mu.Unlock()
+	f.offs.Store(&v)
 	return v
 }
 

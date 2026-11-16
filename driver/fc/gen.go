@@ -276,21 +276,17 @@ func nihElem(elem types.Type) bool {
 // ptrBits appends, for each word of t, whether it holds a pointer.
 func (c *compiler) ptrBits(t types.Type, bits []bool) []bool {
 	if bits == nil {
-		// the usual question: the whole map of one type (shared: do not modify)
-		l := &c.layout
-		l.mu.Lock()
-		v, ok := l.ptrs[t]
-		l.mu.Unlock()
-		if ok {
-			return v
+		// the usual question: the whole map of one type (shared: do not modify), kept on the type object
+		f := factsOf(t)
+		if f != nil {
+			if p := f.ptrs.Load(); p != nil {
+				return *p
+			}
 		}
-		v = c.ptrBitsUncached(t, make([]bool, 0, (c.sizeof(t)+7)/8))
-		l.mu.Lock()
-		if l.ptrs == nil {
-			l.ptrs = map[types.Type][]bool{}
+		v := c.ptrBitsUncached(t, make([]bool, 0, (c.sizeof(t)+7)/8))
+		if f != nil {
+			f.ptrs.Store(&v)
 		}
-		l.ptrs[t] = v
-		l.mu.Unlock()
 		return v
 	}
 	return c.ptrBitsUncached(t, bits)

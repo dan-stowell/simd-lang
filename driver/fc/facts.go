@@ -15,6 +15,10 @@ type typeFacts struct {
 	noalg    atomic.Bool            // a compiler-made type with no equality and no hash
 	alg      atomic.Uint32          // algKind + 1, in a whole-program build; 0: not asked yet
 	ptr      atomic.Pointer[types.Pointer]
+	size     atomic.Int64            // sizeof + 2; 0: not asked yet
+	align    atomic.Int64            // alignof; 0: not asked yet
+	offs     atomic.Pointer[[]int64] // a struct's field offsets
+	ptrs     atomic.Pointer[[]bool]  // ptrBits: the pointer map of the whole type
 }
 
 // factsOf is t's record, made if need be; nil for a type object without the word.

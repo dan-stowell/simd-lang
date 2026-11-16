@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"go/token"
 	"go/types"
 	"internal/abi"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"cmd/internal/hash"
@@ -391,6 +393,15 @@ func (c *compiler) writePtr(s *obj.LSym, off int64, target *obj.LSym) {
 var (
 	typeStat                                                        = os.Getenv("FC_TYPESTAT") != ""
 	typeStatCalls, typeStatClaims, typeStatWritten, typeStatMethods atomic.Int64
+	typeStatMu                                                      sync.Mutex
+	// FC_TYPESTAT=<a path with a slash>: also one line per descriptor written (symbol, methods, compiler)
+	typeStatNames = func() *os.File {
+		if p := os.Getenv("FC_TYPESTAT"); strings.Contains(p, "/") {
+			f, _ := os.Create(p)
+			return f
+		}
+		return nil
+	}()
 )
 
 func (c *compiler) writeMethodOff(s *obj.LSym, off int64, target *obj.LSym) {
@@ -481,6 +492,11 @@ func (c *compiler) writeType(t types.Type) *obj.LSym {
 	if typeStat {
 		typeStatWritten.Add(1)
 		typeStatMethods.Add(int64(len(ms)))
+		if typeStatNames != nil {
+			typeStatMu.Lock()
+			fmt.Fprintf(typeStatNames, "%s\t%d\t%s\n", s.Name, len(ms), c.path)
+			typeStatMu.Unlock()
+		}
 	}
 	c.writeCommon(s, t)
 
