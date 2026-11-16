@@ -39,7 +39,8 @@ Build constraints of a directory recipe's X.go are evaluated here (linux, amd64,
 
 Lines of the result: PASS, FAIL (fc's binary misbehaves, stock's passes), NOFC (fc does not compile it,
 stock does), EXCL (stock does not pass it either), SKIP (tests/fc/gotest-skips.txt: <path> <reason>).
-Exit 0 when there is no FAIL and no NOFC. Environment: FC_BIN (default build/fc), FC_GOCACHE.
+Exit 0 when there is no FAIL and no NOFC. Environment: FC_BIN (default build/fc), FC_GOCACHE, GOTEST_TIMEOUT (600), GOTEST_AS_GB (8: the address-space
+cap of each test program; 0 for none).
 """
 import concurrent.futures as cf, os, re, shlex, shutil, subprocess, sys, tempfile
 
@@ -53,6 +54,10 @@ fc = os.environ.get("FC_BIN", os.path.join(here, "build", "fc"))
 fcenv = dict(env, GOCACHE=os.environ.get("FC_GOCACHE", T + "/fc-gocache"))
 stockenv = dict(env, GOCACHE=T + "/gotest-gocache-stock")
 RUN_TIMEOUT = int(os.environ.get("GOTEST_TIMEOUT", "600"))
+# a test program's address space is capped (GOTEST_AS_GB, 0 = no cap): on 2026-11-15 a stock-built one grew to 28 GB
+# and the kernel's OOM killer took the whole correctness pass with it
+AS_GB = int(os.environ.get("GOTEST_AS_GB", "8"))
+CAP = ["prlimit", "--as=%d" % (AS_GB << 30)] if AS_GB else []
 LANG = ".".join(gover[2:].split(".")[:2])
 KINDS = ["run", "run+", "rundir", "runoutput", "runindir", "buildrun", "buildrundir", "build", "builddir"]
 
@@ -329,7 +334,7 @@ def attempt(tool, c, src, w):
     if c.kind in ("build", "builddir") or not c.main:
         return "ok", ""
     renv = dict(env, **c.runenv)
-    rc, out = run([exe] + c.args, src, renv, c.timeout)
+    rc, out = run(CAP + [exe] + c.args, src, renv, c.timeout)
     if c.kind == "runoutput":
         if rc != 0:
             return "bad", "generator " + verdict(rc, out, out)
@@ -341,7 +346,7 @@ def attempt(tool, c, src, w):
         exe, why = build(tool, c, g, w, tool + "-gen")
         if not exe:
             return "nobuild", "generated program: " + why
-        rc, out = run([exe], g, renv, c.timeout)
+        rc, out = run(CAP + [exe], g, renv, c.timeout)
     bad = verdict(rc, out, c.want)
     return ("bad", bad) if bad else ("ok", "")
 

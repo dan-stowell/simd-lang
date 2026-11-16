@@ -651,6 +651,16 @@ func (g *gen) lvalueLate(e ast.Expr) func() loc {
 		}
 		return func() loc { return g.indexAddr(xt, xl, il, it, ix.Lbrack) }
 	}
+	if id, ok := e.(*ast.Ident); ok {
+		if v, ok := useOf(id).(*types.Var); ok && !v.IsField() {
+			// a variable: nothing to pin, and no temporary. A variable on the heap is reached through the
+			// slot that holds its object, which no assignment changes; a copy of that pointer made before
+			// the right-hand side would be a frame temporary read after the call, and in
+			// syscall.forkAndExecInChild1 (`pid, err1 = rawVforkSyscall(...)`) the vfork child, running in
+			// the same frame, reuses the temporary before the parent comes back to it.
+			return func() loc { return g.varLoc(v) }
+		}
+	}
 	l := g.pin(g.expr(e))
 	return func() loc { return l }
 }
